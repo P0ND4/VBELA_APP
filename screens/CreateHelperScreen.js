@@ -136,7 +136,7 @@ const CreateGroup = ({ navigation, route }) => {
 
     const u = await getUser({ email: data.email });
 
-    if (u) {
+    if (!u.error) {
       const userFound = u.helpers.find((helper) => helper.user === data.user);
 
       if (userFound && userFound.password === data.password) {
