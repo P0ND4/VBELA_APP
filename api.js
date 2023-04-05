@@ -2,7 +2,7 @@ import axios from "axios";
 import { writeFile, readFile } from "./helpers/offline";
 import { socket } from "./socket";
 
-const production = false;
+const production = true;
 
 const API = production ? "http://165.22.4.43" : "http://192.168.230.48:5031";
 
