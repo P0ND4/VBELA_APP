@@ -27,6 +27,7 @@ import { socket } from "../socket";
 import { getUser } from "../api";
 import { readFile, removeFile, writeFile } from "../helpers/offline";
 import { changeDate } from "../helpers/libs";
+import cleanData from '../helpers/cleanData';
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
 
@@ -161,6 +162,13 @@ const Main = () => {
       const res = await getUser({
         email: activeGroup.active ? activeGroup.email : user?.email,
       });
+
+      if (res.error) {
+        navigation.current.replace("SignIn");
+        await removeFile({ name: 'data.json' });
+        await removeFile({ name: 'user.json' });
+        return cleanData(dispatch);
+      }
 
       const data = await readFile({ name: "data.json" });
 

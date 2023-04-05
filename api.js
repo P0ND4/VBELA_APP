@@ -2,7 +2,7 @@ import axios from "axios";
 import { writeFile, readFile } from "./helpers/offline";
 import { socket } from "./socket";
 
-const production = true;
+const production = false;
 
 const API = production ? "http://165.22.4.43" : "http://192.168.230.48:5031";
 
@@ -23,14 +23,14 @@ export const connect = async ({ data, url }) => {
       const r = await readFile({ name: "data.json" });
       const value = r ? r : [];
       const info = { url, data, creationDate: new Date().getTime() };
-      const typeOfProperty = data.ref ? "ref" : "id";
-      const identification = data.ref ? data.ref : data.id;
+      const options = ['helper','nomenclature','table'];
+      const identification = options.includes(url.slice(1).split("/")[0]) ? 'id' : 'ref';
 
       const index = value?.findIndex(
         (r) =>
           r.url.slice(1).split("/")[1] === "edit" &&
           r.url === url &&
-          r.data[typeOfProperty] === identification
+          r.data?.[identification] === data?.[identification]
       );
       if (index !== -1) {
         const data = value[index].url.slice(1).split("/")[1];
@@ -39,10 +39,10 @@ export const connect = async ({ data, url }) => {
           value.push(info);
         }
       } else if (url.slice(1).split("/")[1] === "remove") {
-        const toDelete = value.filter((v) => v.data[typeOfProperty] === identification);
+        const toDelete = value.filter((v) => v.data?.[identification] === data?.[identification]);
         for (let d of toDelete) {
           const index = value.findIndex(
-            (v) => v.data[typeOfProperty] === d.data[typeOfProperty]
+            (v) => v.data[identification] === d.data[identification]
           );
           value.splice(index, 1);
         }

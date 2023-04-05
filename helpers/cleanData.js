@@ -10,8 +10,8 @@ import { inactive as inactiveSession } from "../features/user/sessionSlice";
 import { inactive as inactiveGroup } from "../features/function/informationSlice";
 
 export default cleanData = (dispatch) => {
-  dispatch(inactiveGroup());
   dispatch(inactiveSession());
+  dispatch(inactiveGroup());
   dispatch(cleanUser());
   dispatch(cleanReservations());
   dispatch(cleanNomenclatures());
