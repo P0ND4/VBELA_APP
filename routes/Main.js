@@ -163,7 +163,7 @@ const Main = () => {
         email: activeGroup.active ? activeGroup.email : user?.email,
       });
 
-      if (res.error) {
+      if (res.error && res.type === "Username does not exist") {
         if (!activeGroup.active) {
           navigation.current.replace("SignIn");
           await removeFile({ name: "data.json" });
