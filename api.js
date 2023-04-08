@@ -4,13 +4,13 @@ import { socket } from "./socket";
 
 const production = false;
 
-const API = production ? "http://165.22.4.43" : "http://192.168.230.48:5031";
+const API = production ? "https://vbelapp.com" : "http://192.168.230.48:5031";
 
-export const connect = async ({ data, url }) => {
+export const connect = async ({ data = {}, url }) => {
   try {
-    const result = await axios.post(`${API}${url}`, data ? data : {}, { timeout: 3000 });
+    const result = await axios.post(`${API}${url}`, data, { timeout: 3000 });
 
-    if (data.groups?.length > 0)
+    if (data?.groups?.length > 0)
       socket.emit("change", { data: result, groups: data.groups });
 
     return await result.data;
@@ -132,5 +132,4 @@ export const editEconomy = async (data) =>
 export const removeEconomy = async (data) =>
   await connect({ data, url: "/economy/remove" });
 
-export const getRule = async () =>
-  await connect({ url: "/rule" });
+export const getRule = async () => await connect({ url: "/rule" });

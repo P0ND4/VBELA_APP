@@ -123,7 +123,7 @@ const Main = () => {
       const name = routes[routes.length - 1].name;
 
       const res = await getRule();
-
+      
       if (!res.error) {
         if (res.block) {
           if (name !== "Event")
@@ -263,7 +263,7 @@ const Main = () => {
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
-      setConnected(state.isConnected);
+      if (state.isConnected !== connected) setConnected(state.isConnected);
     });
 
     return () => unsubscribe();

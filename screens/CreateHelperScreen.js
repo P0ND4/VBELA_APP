@@ -307,7 +307,6 @@ const CreateGroup = ({ navigation, route }) => {
               <InputStyle
                 value={inputPassword}
                 placeholder="Contraseña"
-                right={inputPassword ? () => <TextStyle color={light.main2}>Contraseña</TextStyle> : null}
                 secureTextEntry
                 maxLength={50}
                 onChangeText={(text) => {
