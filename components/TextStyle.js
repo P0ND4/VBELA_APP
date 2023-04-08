@@ -1,12 +1,11 @@
-import { Text, StyleSheet, Dimensions } from 'react-native'
+import { Text, StyleSheet } from 'react-native'
 import theme from '../theme';
 
 const light = theme.colors.light;
-const width = Dimensions.get("screen").width;
 
 const styles = StyleSheet.create({
   default: {
-    fontSize: 23,
+    fontSize: 20,
     color: light.textDark
   }
 });
@@ -30,16 +29,16 @@ const TextStyle = ({
 }) => {
   const stylesTaken = [
     styles.default,
-    bigTitle && { fontSize: Math.floor(width / 8.1) },
-    title && { fontSize: Math.floor(width / 8.8) },
-    smallTitle && { fontSize: Math.floor(width / 10.1) },
-    bigSubtitle && { fontSize: Math.floor(width / 11) },
-    subtitle && { fontSize: Math.floor(width / 12) },
-    smallSubtitle && { fontSize: Math.floor(width / 13.1) },
-    bigParagraph && { fontSize: Math.floor(width / 14.6) },
-    paragrahp && { fontSize: Math.floor(width / 16.4) },
-    smallParagraph && { fontSize: Math.floor(width / 18.8) },
-    verySmall && { fontSize: Math.floor(width / 23.2) },
+    bigTitle && { fontSize: 45 },
+    title && { fontSize: 40 },
+    smallTitle && { fontSize: 35 },
+    bigSubtitle && { fontSize: 32 },
+    subtitle && { fontSize: 28 },
+    smallSubtitle && { fontSize: 25 },
+    bigParagraph && { fontSize: 21 },
+    paragrahp && { fontSize: 18 },
+    smallParagraph && { fontSize: 15 },
+    verySmall && { fontSize: 13 },
     color && { color },
     center && { textAlign: 'center' },
     justify && { textAlign: 'justify' },

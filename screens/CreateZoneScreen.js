@@ -113,6 +113,7 @@ const CreateZoneScreen = ({ route, navigation }) => {
             <View style={{ marginVertical: 30 }}>
               <InputStyle
                 value={name}
+                right={name ? () => <TextStyle color={light.main2}>Nombre</TextStyle> : null}
                 placeholder="Nombre"
                 maxLength={20}
                 onChangeText={(text) => {
@@ -127,6 +128,7 @@ const CreateZoneScreen = ({ route, navigation }) => {
               )}
               <InputStyle
                 value={description}
+                right={description ? () => <TextStyle color={light.main2}>Descripción</TextStyle> : null}
                 placeholder="Descripción"
                 maxLength={100}
                 onChangeText={(text) => {
@@ -136,6 +138,7 @@ const CreateZoneScreen = ({ route, navigation }) => {
               />
               <InputStyle
                 value={location}
+                right={location ? () => <TextStyle color={light.main2}>Ubicación</TextStyle> : null}
                 placeholder="Ubicación"
                 maxLength={50}
                 onChangeText={(text) => {

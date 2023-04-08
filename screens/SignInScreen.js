@@ -151,7 +151,7 @@ const SignInScreen = ({ navigation }) => {
     const email = response.data.email;
     let data = await addUser({ email, expoID: expoPushToken });
 
-    if (data.error && data.type === "Timeout of 5000ms exceeded") {
+    if (data.error && data.details === 'api') {
       setModalVisible(false);
       return setPercentage(0);
     }

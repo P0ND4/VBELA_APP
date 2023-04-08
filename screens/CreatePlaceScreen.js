@@ -148,6 +148,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
               <InputStyle
                 placeholder="Nomenclatura"
                 maxLength={5}
+                right={nomenclature ? () => <TextStyle color={light.main2}>Nomenclatura</TextStyle> : null}
                 value={nomenclature}
                 keyboardType="numeric"
                 onChangeText={(text) => {
@@ -165,6 +166,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
               <InputStyle
                 placeholder="Nombre"
                 value={name}
+                right={name ? () => <TextStyle color={light.main2}>Nombre</TextStyle> : null}
                 maxLength={20}
                 onChangeText={(text) => {
                   setValue("name", text);
@@ -173,6 +175,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
               />
               <InputStyle
                 value={amount}
+                right={amount ? () => <TextStyle color={light.main2}>Valor</TextStyle> : null}
                 keyboardType="numeric"
                 placeholder="Valor por día (por persona)"
                 onChangeText={(text) => {
@@ -188,6 +191,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
               )}
               <InputStyle
                 value={capability}
+                right={capability ? () => <TextStyle color={light.main2}>Capacidad</TextStyle> : null}
                 placeholder="Capacidad"
                 maxLength={3}
                 keyboardType="numeric"

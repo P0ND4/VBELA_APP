@@ -160,9 +160,7 @@ const StatisticScreen = ({ route, navigation }) => {
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
                 Descuento:{" "}
-                <TextStyle color={light.main2}>
-                  {reserve?.discount}%
-                </TextStyle>
+                <TextStyle color={light.main2}>{reserve?.discount}%</TextStyle>
               </TextStyle>
             )}
             <TextStyle
@@ -182,6 +180,39 @@ const StatisticScreen = ({ route, navigation }) => {
               </TextStyle>
             </TextStyle>
           </View>
+          <ButtonStyle
+            backgroundColor={mode === "light" ? light.main5 : dark.main2}
+            onPress={() =>
+              navigation.push("CreateOrder", {
+                name: reserve?.fullName,
+                data: "food",
+                ref: route.params.ref,
+              })
+            }
+          >
+            <TextStyle
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              COMIDA
+            </TextStyle>
+          </ButtonStyle>
+          <ButtonStyle
+            backgroundColor={mode === "light" ? light.main5 : dark.main2}
+            onPress={() =>
+              navigation.push("CreateOrder", {
+                name: reserve?.fullName,
+                data: "drink",
+                ref: route.params.ref,
+              })
+            }
+          >
+            <TextStyle
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              BEBIDA
+            </TextStyle>
+          </ButtonStyle>
+
           <ButtonStyle
             backgroundColor={light.main2}
             onPress={() => {
@@ -221,38 +252,6 @@ const StatisticScreen = ({ route, navigation }) => {
             }}
           >
             Eliminar reservación
-          </ButtonStyle>
-          <ButtonStyle
-            backgroundColor={mode === "light" ? light.main5 : dark.main2}
-            onPress={() =>
-              navigation.push("CreateOrder", {
-                name: reserve?.fullName,
-                data: "food",
-                ref: route.params.ref,
-              })
-            }
-          >
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              COMIDA
-            </TextStyle>
-          </ButtonStyle>
-          <ButtonStyle
-            backgroundColor={mode === "light" ? light.main5 : dark.main2}
-            onPress={() =>
-              navigation.push("CreateOrder", {
-                name: reserve?.fullName,
-                data: "drink",
-                ref: route.params.ref,
-              })
-            }
-          >
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              BEBIDA
-            </TextStyle>
           </ButtonStyle>
 
           {orders.length > 0 && (

@@ -8,7 +8,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { reduce, thousandsSystem } from "../helpers/libs";
+import { thousandsSystem } from "../helpers/libs";
 import { remove } from "../features/tables/informationSlice";
 import { removeTable } from "../api";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -172,22 +172,10 @@ const TableInformation = ({ route, navigation }) => {
                 color={mode === "light" ? light.textDark : dark.textWhite}
                 smallParagraph
               >
-                {reduce(item.amount * item.gave)}
+                {thousandsSystem(item.amount * item.gave)}
               </TextStyle>
-              {item.type && (
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                  smallParagraph
-                >
-                  {item.type === "breakfast"
-                    ? "Desayuno"
-                    : item.type === "lunch"
-                    ? "Almuerzo"
-                    : "Cena"}
-                </TextStyle>
-              )}
               <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
+                color={light.main2}
                 smallParagraph
               >
                 {item.pay ? "Pagó" : "Pendiente"}
@@ -210,8 +198,8 @@ const TableInformation = ({ route, navigation }) => {
               {
                 text: "Estoy seguro",
                 onPress: async () => {
-                  dispatch(remove({ ref: route.params.ref }));
-                  dispatch(removeMany({ ref: route.params.ref }));
+                  dispatch(remove({ id: route.params.id }));
+                  dispatch(removeMany({ ref: route.params.id }));
                   navigation.pop();
                   await removeTable({
                     email: activeGroup.active ? activeGroup.email : user.email,

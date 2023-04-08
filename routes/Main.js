@@ -24,12 +24,14 @@ import { active, inactive } from "../features/function/informationSlice";
 import { change as changeHelpers } from "../features/helpers/informationSlice";
 import { change as changeUser } from "../features/user/informationSlice";
 import { socket } from "../socket";
-import { getUser } from "../api";
+import { getRule, getUser } from "../api";
 import { readFile, removeFile, writeFile } from "../helpers/offline";
 import { changeDate } from "../helpers/libs";
 import cleanData from "../helpers/cleanData";
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
+import version from "../version.json";
+import Event from "../screens/EventScreen";
 
 const BACKGROUND_FETCH_TASK = "Sincronizando";
 
@@ -42,11 +44,11 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
   try {
     const data = await readFile({ name: "data.json" });
     const work = await readFile({ name: "work.json" });
-    if (data?.length > 0) {
+    if (!data.error) {
       socket.emit("sync", { data, ...work });
       await removeFile({ name: "data.json" });
     }
-    return data?.length > 0
+    return !data.error
       ? BackgroundFetch.BackgroundFetchResult.NewData
       : BackgroundFetch.BackgroundFetchResult.NoData;
   } catch (e) {
@@ -102,7 +104,7 @@ const Main = () => {
         userFound.password !== activeGroup.password
       ) {
         dispatch(inactive());
-        if (information) changeGeneralInformation(dispatch, information);
+        if (!information.error) changeGeneralInformation(dispatch, information);
         return { error: true, type: "User or password changed" };
       } else {
         dispatch(active({ ...userFound, email: activeGroup.email }));
@@ -110,10 +112,40 @@ const Main = () => {
       }
     } else {
       dispatch(inactive());
-      if (information) changeGeneralInformation(dispatch, information);
+      if (!information.error) changeGeneralInformation(dispatch, information);
       return { error: true, type: "Helper not found" };
     }
   };
+
+  useEffect(() => {
+    const getAppInformation = async () => {
+      const routes = navigation.current.getState().routes;
+      const name = routes[routes.length - 1].name;
+
+      const res = await getRule();
+
+      if (!res.error) {
+        if (res.block) {
+          if (name !== "Event")
+            navigation.current.replace("Event", { mode: "blocked" });
+          return;
+        }
+
+        if (res.version.detail !== version.detail && res.version.required) {
+          if (name !== "Event")
+            navigation.current.replace("Event", {
+              mode: "update",
+              version: res.version.detail,
+            });
+          return;
+        }
+
+        if (name === "Event")
+          navigation.current.replace(!session ? "SignIn" : "Home");
+      }
+    };
+    getAppInformation();
+  }, [connected]);
 
   useEffect(() => {
     const initializeSync = async () => {
@@ -154,8 +186,8 @@ const Main = () => {
         },
       });
     };
-    work();
-  }, []);
+    if (connected && session) work();
+  }, [connected, session]);
 
   useEffect(() => {
     const getInformation = async () => {
@@ -177,7 +209,7 @@ const Main = () => {
 
       const data = await readFile({ name: "data.json" });
 
-      if (data?.length > 0) {
+      if (!data.error) {
         const check = checkUser(res);
         const file = data;
 
@@ -322,7 +354,7 @@ const Main = () => {
         <Stack.Screen
           name="Tables"
           component={Tables}
-          options={{ title: "Consumo" }}
+          options={{ title: "Ventas" }}
         />
         <Stack.Screen
           name="CreateTable"
@@ -333,6 +365,11 @@ const Main = () => {
         <Stack.Screen name="CreateOrder" component={CreateOrder} />
         <Stack.Screen name="CreateEconomy" component={CreateEconomy} />
       </Stack.Group>
+      <Stack.Screen
+        name="Event"
+        component={Event}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 };

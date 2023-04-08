@@ -45,6 +45,7 @@ const HomeScreen = ({ navigation }) => {
   const [month, setMonth] = useState(0);
   const [year, setYear] = useState(2023);
   const [days, setDays] = useState([]);
+  const [refDaysAvailable, setRefDaysAvailable] = useState(0);
 
   const activeGroup = useSelector((state) => state.activeGroup);
   const nomenclatures = useSelector((state) => state.nomenclatures);
@@ -321,7 +322,7 @@ const HomeScreen = ({ navigation }) => {
                 onPress={() => navigation.push("Tables")}
                 backgroundColor={light.main2}
               >
-                Consumo
+                Ventas
               </ButtonStyle>
               <Image source={Premium} style={styles.premium} />
             </View>
@@ -329,7 +330,7 @@ const HomeScreen = ({ navigation }) => {
           {(!activeGroup.active || activeGroup.accessToReservations) && (
             <View style={styles.divider}>
               <TextStyle color={mode === "light" ? null : dark.main4}>
-                Disponibles
+                {refDaysAvailable === 0 ? "No" : ""} Disponibles
               </TextStyle>
               <Picker
                 ref={pickerMonthRef}
@@ -415,6 +416,11 @@ const HomeScreen = ({ navigation }) => {
                       refDays = newRef;
                     }
                   }
+
+                  setTimeout(() => {
+                    if (refDaysAvailable !== refDays.length)
+                      setRefDaysAvailable(refDays.length);
+                  }, 100);
 
                   return (
                     <ButtonStyle

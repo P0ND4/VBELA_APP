@@ -12,13 +12,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingRight: 12,
     fontSize: 20,
+    flexGrow: 1,
   },
   defaultContainer: {
     borderRadius: 8,
     marginVertical: 4,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center'
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 });
 
@@ -38,16 +39,17 @@ const InputStyle = ({
   secureTextEntry,
   onFocus,
   onBlur,
-  left
+  left,
+  right,
 }) => {
   const mode = useSelector((state) => state.mode);
   const [isShow, setShow] = useState(false);
 
   const stylesTakenInput = [
     styles.defaultInput,
-    secureTextEntry ? { width: '88%' } : { width: '100%' },
     { color: mode === "light" ? light.textDark : dark.textWhite },
-    left ? { paddingLeft: 0 } : { paddingLeft: 12 }
+    left ? { paddingLeft: 0 } : { paddingLeft: 12 },
+    right ? { paddingRigh: 0, maxWidth: "70%" } : { paddingRight: 12 },
   ];
 
   const stylesTakenContainer = [styles.defaultContainer];
@@ -94,6 +96,7 @@ const InputStyle = ({
           />
         </TouchableOpacity>
       )}
+      {right && <View style={{ marginRight: 15 }}>{right()}</View>}
     </View>
   );
 };

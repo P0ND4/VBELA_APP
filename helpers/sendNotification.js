@@ -24,10 +24,12 @@ export default sendNotification = async ({ title, body, to, array = [] }) => {
 
   if (array.length === 0 && !to) return "There is no goal";
 
-  const res = await axios.post(
-    "https://exp.host/--/api/v2/push/send",
-    array.length > 0 ? messages : schema
-  );
-
-  return res.data;
+  try {
+    const res = await axios.post(
+      "https://exp.host/--/api/v2/push/send",
+      array.length > 0 ? messages : schema
+    );
+  
+    return res.data;
+  } catch (e) { return { error: true, type: e.message } }
 };

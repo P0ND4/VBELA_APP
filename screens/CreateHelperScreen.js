@@ -292,6 +292,7 @@ const CreateGroup = ({ navigation, route }) => {
               <InputStyle
                 value={inputUser}
                 placeholder="Usuario"
+                right={inputUser ? () => <TextStyle color={light.main2}>Usuario</TextStyle> : null}
                 maxLength={15}
                 onChangeText={(text) => {
                   setValue("user", text.trim());
@@ -306,6 +307,7 @@ const CreateGroup = ({ navigation, route }) => {
               <InputStyle
                 value={inputPassword}
                 placeholder="Contraseña"
+                right={inputPassword ? () => <TextStyle color={light.main2}>Contraseña</TextStyle> : null}
                 secureTextEntry
                 maxLength={50}
                 onChangeText={(text) => {

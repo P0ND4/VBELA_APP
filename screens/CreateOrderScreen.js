@@ -246,6 +246,7 @@ const CreateOrder = ({ navigation, route }) => {
                 <InputStyle
                   placeholder="Nombre"
                   value={name}
+                  right={name ? () => <TextStyle color={light.main2}>Nombre</TextStyle> : null}
                   maxLength={15}
                   onChangeText={(text) => {
                     setValue("name", text);
@@ -254,6 +255,7 @@ const CreateOrder = ({ navigation, route }) => {
                 />
                 <InputStyle
                   placeholder="Costo (por unidad)"
+                  right={amount ? () => <TextStyle color={light.main2}>Costo</TextStyle> : null}
                   value={amount}
                   maxLength={10}
                   keyboardType="numeric"
@@ -270,6 +272,7 @@ const CreateOrder = ({ navigation, route }) => {
                 )}
                 <InputStyle
                   placeholder="Cantidad dada"
+                  right={gave ? () => <TextStyle color={light.main2}>Cantidad</TextStyle> : null}
                   value={gave}
                   maxLength={3}
                   keyboardType="numeric"

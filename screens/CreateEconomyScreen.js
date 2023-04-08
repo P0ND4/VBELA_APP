@@ -191,6 +191,7 @@ const CreateEconomy = ({ route, navigation }) => {
               <InputStyle
                 value={name}
                 placeholder="Nombre"
+                right={name ? () => <TextStyle color={light.main2}>Nombre</TextStyle> : null}
                 maxLength={20}
                 onChangeText={(text) => {
                   setValue("name", text);
@@ -205,6 +206,7 @@ const CreateEconomy = ({ route, navigation }) => {
               <InputStyle
                 value={amount}
                 placeholder="Valor"
+                right={amount ? () => <TextStyle color={light.main2}>Valor</TextStyle> : null}
                 maxLength={10}
                 keyboardType="numeric"
                 onChangeText={(text) => {
@@ -212,7 +214,7 @@ const CreateEconomy = ({ route, navigation }) => {
                   setAmount(thousandsSystem(text.replace(/[^0-9]/g, "")));
                 }}
               />
-              {errors.value?.type && (
+              {errors.amount?.type && (
                 <TextStyle verySmall color={light.main2}>
                   El valor es obligatorio
                 </TextStyle>

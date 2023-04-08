@@ -7,7 +7,7 @@ import {
   Modal,
   ActivityIndicator,
   FlatList,
-  Image
+  Image,
 } from "react-native";
 import { useSelector } from "react-redux";
 import { ProgressChart, LineChart } from "react-native-chart-kit";
@@ -38,15 +38,13 @@ const StatisticScreen = ({ navigation }) => {
   const [purchase, setPurchase] = useState(0);
   const [expense, setExpense] = useState(0);
   const [food, setFood] = useState(0);
+  const [sales, setSales] = useState(0);
 
   const [FBreaksfast, setFBreaksfast] = useState(0);
   const [FLunch, setFLunch] = useState(0);
   const [FDinner, setFDinner] = useState(0);
 
   const [drink, setDrink] = useState(0);
-
-  const [drinkOrders, setDrinkOrders] = useState([]);
-  const [foodOrders, setFoodOrders] = useState([]);
 
   const [DBreaksfast, setDBreaksfast] = useState(0);
   const [DLunch, setDLunch] = useState(0);
@@ -80,8 +78,7 @@ const StatisticScreen = ({ navigation }) => {
 
     setYears(years);
 
-    let drinkOrders = [];
-    let foodOrders = [];
+    let sales = 0;
     let people = 0;
     let amount = 0;
     let purchase = 0;
@@ -117,28 +114,25 @@ const StatisticScreen = ({ navigation }) => {
     }
 
     for (let order of orders) {
+      const amount = order.amount * order.gave;
       const date = new Date(order.creationDate);
       if (dateValidation(date) || !order.pay) continue;
 
+      sales += amount;
       if (order.product === "food") {
-        foodOrders.push(order);
-        food += order.amount * order.gave;
-        if (order.type === "breakfast")
-          fbreaksfast += order.amount * order.gave;
-        if (order.type === "lunch") flunch += order.amount * order.gave;
-        if (order.type === "dinner") fdinner += order.amount * order.gave;
+        food += amount;
+        if (order.type === "breakfast") fbreaksfast += amount;
+        if (order.type === "lunch") flunch += amount;
+        if (order.type === "dinner") fdinner += amount;
       } else {
-        drinkOrders.push(order);
-        drink += order.amount * order.gave;
-        if (order.type === "breakfast")
-          dbreaksfast += order.amount * order.gave;
-        if (order.type === "lunch") dlunch += order.amount * order.gave;
-        if (order.type === "dinner") ddinner += order.amount * order.gave;
+        drink += amount;
+        if (order.type === "breakfast") dbreaksfast += amount;
+        if (order.type === "lunch") dlunch += amount;
+        if (order.type === "dinner") ddinner += amount;
       }
     }
 
-    setDrinkOrders(drinkOrders);
-    setFoodOrders(foodOrders);
+    setSales(sales);
     setPeople(people);
     setAmount(amount);
     setPurchase(purchase);
@@ -231,47 +225,6 @@ const StatisticScreen = ({ navigation }) => {
         </TextStyle>
         <TextStyle color={light.main2} verySmall>
           {item.type === "expense" && "-"} {thousandsSystem(item.amount)}
-        </TextStyle>
-      </TouchableOpacity>
-    );
-  };
-
-  const Order = ({ item }) => {
-    return (
-      <TouchableOpacity
-        style={[
-          styles.card,
-          {
-            backgroundColor: mode === "light" ? light.main5 : dark.main2,
-            height: Math.floor(height / 12),
-          },
-        ]}
-        onPress={() =>
-          navigation.push("CreateOrder", {
-            editing: true,
-            item,
-            data: item.product,
-          })
-        }
-      >
-        <TextStyle
-          color={mode === "light" ? light.textDark : dark.textWhite}
-          verySmall
-        >
-          {item.name}
-        </TextStyle>
-        <TextStyle
-          color={mode === "light" ? light.textDark : dark.textWhite}
-          verySmall
-        >
-          {item.type === "breakfast"
-            ? "DESAYUNO"
-            : item.type === "lunch"
-            ? "ALMUERZO"
-            : "CENA"}
-        </TextStyle>
-        <TextStyle verySmall color={light.main2}>
-          {thousandsSystem(item.amount * item.gave)}
         </TextStyle>
       </TouchableOpacity>
     );
@@ -511,54 +464,31 @@ const StatisticScreen = ({ navigation }) => {
                 renderItem={(item) => <Economy {...item} />}
               />
             )}
-            <View style={{ marginVertical: 10 }}>
+            <Information name="VENTAS" value={thousandsSystem(sales)} />
+            <Information
+              name="VENTAS POR COMIDAS"
+              value={thousandsSystem(food)}
+            />
+            <View style={{ marginLeft: 20 }}>
               <Information
-                name="VENTAS POR COMIDAS"
-                value={thousandsSystem(food)}
+                name="DESAYUNO"
+                value={thousandsSystem(FBreaksfast)}
               />
-              <View style={{ marginLeft: 20 }}>
-                <Information
-                  name="DESAYUNO"
-                  value={thousandsSystem(FBreaksfast)}
-                />
-                <Information name="ALMUERZO" value={thousandsSystem(FLunch)} />
-                <Information name="CENA" value={thousandsSystem(FDinner)} />
-              </View>
+              <Information name="ALMUERZO" value={thousandsSystem(FLunch)} />
+              <Information name="CENA" value={thousandsSystem(FDinner)} />
             </View>
-            {foodOrders.length > 0 && (
-              <FlatList
-                data={foodOrders}
-                style={{ marginVertical: 15 }}
-                horizontal={true}
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.id + item.modificationDate}
-                renderItem={(item) => <Order {...item} />}
-              />
-            )}
-            <View style={{ marginVertical: 10 }}>
+            <Information
+              name="VENTAS POR BEBIDAS"
+              value={thousandsSystem(drink)}
+            />
+            <View style={{ marginLeft: 20 }}>
               <Information
-                name="VENTAS POR BEBIDAS"
-                value={thousandsSystem(drink)}
+                name="DESAYUNO"
+                value={thousandsSystem(DBreaksfast)}
               />
-              <View style={{ marginLeft: 20 }}>
-                <Information
-                  name="DESAYUNO"
-                  value={thousandsSystem(DBreaksfast)}
-                />
-                <Information name="ALMUERZO" value={thousandsSystem(DLunch)} />
-                <Information name="CENA" value={thousandsSystem(DDinner)} />
-              </View>
+              <Information name="ALMUERZO" value={thousandsSystem(DLunch)} />
+              <Information name="CENA" value={thousandsSystem(DDinner)} />
             </View>
-            {drinkOrders.length > 0 && (
-              <FlatList
-                data={drinkOrders}
-                style={{ marginVertical: 15 }}
-                horizontal={true}
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.id + item.modificationDate}
-                renderItem={(item) => <Order {...item} />}
-              />
-            )}
             <Information
               name="PERSONAS HOSPEDADAS"
               value={thousandsSystem(people)}

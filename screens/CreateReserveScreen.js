@@ -60,17 +60,18 @@ const ReserveScreen = ({ route, navigation }) => {
   const [amount, setAmount] = useState("");
   const [amountWithDiscount, setAmountWithDiscount] = useState("");
   const [email, setEmail] = useState(editing ? reserve.email : "");
-  const [discount, setDiscount] = useState(editing ? reserve.discount : "");
+  const [discount, setDiscount] = useState(
+    editing ? thousandsSystem(reserve.discount) : ""
+  );
 
   const dispatch = useDispatch();
 
   useEffect(() => {
     const amount = people * nomenclature.value * days;
 
-    if (discount) {
-      setAmount(Math.floor(amount - amount * (discount / 100)));
-      setAmountWithDiscount(Math.floor(amount * (discount / 100)));
-    } else setAmount(amount);
+    setAmount(amount);
+    if (discount)
+      setAmountWithDiscount(amount - discount.replace(/[^0-9]/g, ""));
   }, [people, days, discount]);
 
   useEffect(() => {
@@ -242,6 +243,11 @@ const ReserveScreen = ({ route, navigation }) => {
               <InputStyle
                 value={fullName}
                 placeholder="Nombre Completo"
+                right={
+                  fullName
+                    ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
+                    : null
+                }
                 maxLength={30}
                 onChangeText={(text) => {
                   setValue("fullName", text);
@@ -256,6 +262,11 @@ const ReserveScreen = ({ route, navigation }) => {
               <InputStyle
                 value={email}
                 placeholder="Correo electrónico"
+                right={
+                  email
+                    ? () => <TextStyle color={light.main2}>Correo</TextStyle>
+                    : null
+                }
                 maxLength={40}
                 onChangeText={(text) => {
                   setValue("email", text);
@@ -266,6 +277,11 @@ const ReserveScreen = ({ route, navigation }) => {
                 value={identification}
                 placeholder="Cédula"
                 maxLength={15}
+                right={
+                  identification
+                    ? () => <TextStyle color={light.main2}>Cédula</TextStyle>
+                    : null
+                }
                 keyboardType="numeric"
                 onChangeText={(text) => {
                   setValue("identification", text.replace(/[^0-9]/g, ""));
@@ -277,6 +293,11 @@ const ReserveScreen = ({ route, navigation }) => {
               <InputStyle
                 value={phoneNumber}
                 placeholder="Número de teléfono"
+                right={
+                  phoneNumber
+                    ? () => <TextStyle color={light.main2}>Teléfono</TextStyle>
+                    : null
+                }
                 keyboardType="numeric"
                 maxLength={15}
                 onChangeText={(text) => {
@@ -288,6 +309,11 @@ const ReserveScreen = ({ route, navigation }) => {
                 placeholder="Cantidad de personas"
                 keyboardType="numeric"
                 value={people}
+                right={
+                  people
+                    ? () => <TextStyle color={light.main2}>Personas</TextStyle>
+                    : null
+                }
                 onChangeText={(num) => {
                   setPeople(num.replace(/[^0-9]/g, ""));
                   setValue("people", num);
@@ -303,6 +329,11 @@ const ReserveScreen = ({ route, navigation }) => {
               )}
               <InputStyle
                 placeholder="Número de días"
+                right={
+                  days
+                    ? () => <TextStyle color={light.main2}>Días</TextStyle>
+                    : null
+                }
                 keyboardType="numeric"
                 value={days}
                 onChangeText={(num) => {
@@ -319,21 +350,27 @@ const ReserveScreen = ({ route, navigation }) => {
                 </TextStyle>
               )}
               <InputStyle
-                placeholder="Descuento (En porcentaje)"
+                placeholder="Descuento (En valor)"
                 value={discount}
-                maxLength={3}
+                right={
+                  discount
+                    ? () => <TextStyle color={light.main2}>Descuento</TextStyle>
+                    : null
+                }
                 keyboardType="numeric"
                 onChangeText={(text) => {
-                  if (text > 100) return;
-                  setValue("discount", text);
-                  setDiscount(text.replace(/[^0-9]/g, ""));
+                  const value = text.replace(/[^0-9]/g, "");
+
+                  if (value > amount) return;
+                  setValue("discount");
+                  setDiscount(thousandsSystem(value));
                 }}
               />
             </View>
             <TextStyle
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
-              Total a pagar:{" "}
+              Total{!discount ? " a pagar" : ""}:{" "}
               <TextStyle color={light.main2} smallSubtitle>
                 {thousandsSystem(amount)}
               </TextStyle>
@@ -342,7 +379,17 @@ const ReserveScreen = ({ route, navigation }) => {
               <TextStyle
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                Descuento del {discount}%:{" "}
+                Descuento:{" "}
+                <TextStyle color={light.main2} smallSubtitle>
+                  {discount}
+                </TextStyle>
+              </TextStyle>
+            )}
+            {discount && (
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Total a pagar:{" "}
                 <TextStyle color={light.main2} smallSubtitle>
                   {thousandsSystem(amountWithDiscount)}
                 </TextStyle>

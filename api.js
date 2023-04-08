@@ -2,57 +2,62 @@ import axios from "axios";
 import { writeFile, readFile } from "./helpers/offline";
 import { socket } from "./socket";
 
-const production = true;
+const production = false;
 
 const API = production ? "http://165.22.4.43" : "http://192.168.230.48:5031";
 
 export const connect = async ({ data, url }) => {
   try {
-    const result = await axios.post(`${API}${url}`, data, { timeout: 5000 });
+    const result = await axios.post(`${API}${url}`, data ? data : {}, { timeout: 3000 });
 
     if (data.groups?.length > 0)
       socket.emit("change", { data: result, groups: data.groups });
 
     return await result.data;
   } catch (e) {
-    const error = { error: true, type: "Timeout of 5000ms exceeded" };
+    const error = { error: true, details: "api", type: e.message };
 
-    if (url === "/user") return error;
+    if (url === "/user" || url === "/rule") return error;
 
-    if (e.message === "timeout of 5000ms exceeded") {
-      const r = await readFile({ name: "data.json" });
-      const value = r ? r : [];
-      const info = { url, data, creationDate: new Date().getTime() };
-      const options = ['helper','nomenclature','table'];
-      const identification = options.includes(url.slice(1).split("/")[0]) ? 'id' : 'ref';
+    const r = await readFile({ name: "data.json" });
+    const value = !r.error ? r : [];
+    const info = { url, data, creationDate: new Date().getTime() };
+    const options = ["helper", "nomenclature", "table"];
+    const typeOfData = url.slice(1).split("/")[0];
+    const identification = options.includes(typeOfData) ? "id" : "ref";
 
-      const index = value?.findIndex(
-        (r) =>
-          r.url.slice(1).split("/")[1] === "edit" &&
-          r.url === url &&
-          r.data?.[identification] === data?.[identification]
+    const index = value?.findIndex(
+      (r) =>
+        r.url.slice(1).split("/")[1] === "edit" &&
+        r.url === url &&
+        r.data?.[typeOfData]?.[identification] ===
+          data?.[typeOfData]?.[identification]
+    );
+
+    if (index !== -1) {
+      const data = value[index].url.slice(1).split("/")[1];
+      if (data !== "add") {
+        value.splice(index, 1);
+        value.push(info);
+      }
+    } else if (url.slice(1).split("/")[1] === "remove") {
+      const toDelete = value.filter(
+        (v) => v.data?.[typeOfData]?.[identification] === data?.[identification]
       );
-      if (index !== -1) {
-        const data = value[index].url.slice(1).split("/")[1];
-        if (data !== "add") {
-          value.splice(index, 1);
-          value.push(info);
-        }
-      } else if (url.slice(1).split("/")[1] === "remove") {
-        const toDelete = value.filter((v) => v.data?.[identification] === data?.[identification]);
-        for (let d of toDelete) {
-          const index = value.findIndex(
-            (v) => v.data[identification] === d.data[identification]
-          );
-          value.splice(index, 1);
-        }
-      } else value.push(info);
+      for (let d of toDelete) {
+        const index = value.findIndex(
+          (v) =>
+            v.data?.[typeOfData]?.[identification] ===
+            d.data?.[typeOfData]?.[identification]
+        );
+        value.splice(index, 1);
+      }
+      value.push(info);
+    } else value.push(info);
 
-      if (!r) await writeFile({ name: "data.json", value });
-      else await writeFile({ name: "data.json", value });
+    await writeFile({ name: "data.json", value });
 
-      return error;
-    }
+    return error;
   }
 };
 
@@ -126,3 +131,6 @@ export const editEconomy = async (data) =>
 
 export const removeEconomy = async (data) =>
   await connect({ data, url: "/economy/remove" });
+
+export const getRule = async () =>
+  await connect({ url: "/rule" });

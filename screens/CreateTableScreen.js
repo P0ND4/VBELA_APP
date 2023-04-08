@@ -127,6 +127,7 @@ const CreateTableScreen = ({ navigation, route }) => {
             <View style={{ marginVertical: 30 }}>
               <InputStyle
                 placeholder="Mesa"
+                right={table ? () => <TextStyle color={light.main2}>Mesa</TextStyle> : null}
                 value={table}
                 maxLength={5}
                 keyboardType="numeric"
@@ -144,6 +145,7 @@ const CreateTableScreen = ({ navigation, route }) => {
               )}
               <InputStyle
                 placeholder="Nombre"
+                right={name ? () => <TextStyle color={light.main2}>Nombre</TextStyle> : null}
                 value={name}
                 maxLength={20}
                 onChangeText={(text) => {
@@ -153,6 +155,7 @@ const CreateTableScreen = ({ navigation, route }) => {
               />
               <InputStyle
                 placeholder="Descripción"
+                right={description ? () => <TextStyle color={light.main2}>Descripción</TextStyle> : null}
                 value={description}
                 maxLength={100}
                 onChangeText={(text) => {

@@ -86,7 +86,9 @@ const TablesScreen = ({ navigation }) => {
         </TextStyle>
         <ScrollView style={{ maxHeight: height / 1.5 }}>
           {tables?.map((table) => {
-            const OF = orders.filter(o => o.ref === table.id && o.pay === false);
+            const OF = orders.filter(
+              (o) => o.ref === table.id && o.pay === false
+            );
 
             return (
               <View key={table.modificationDate} style={styles.section}>
@@ -96,7 +98,13 @@ const TablesScreen = ({ navigation }) => {
                   }
                 >
                   <TextStyle
-                    color={light.main2}
+                    color={
+                      OF.length === 0
+                        ? light.main2
+                        : mode === "light"
+                        ? dark.main2
+                        : light.main4
+                    }
                     customStyle={{ marginRight: 8 }}
                     smallSubtitle
                   >
@@ -109,7 +117,7 @@ const TablesScreen = ({ navigation }) => {
                   onPress={() =>
                     navigation.push("CreateOrder", {
                       data: "food",
-                      ref: table.id
+                      ref: table.id,
                     })
                   }
                 >
@@ -126,7 +134,7 @@ const TablesScreen = ({ navigation }) => {
                   onPress={() =>
                     navigation.push("CreateOrder", {
                       data: "drink",
-                      ref: table.id
+                      ref: table.id,
                     })
                   }
                 >
@@ -137,7 +145,17 @@ const TablesScreen = ({ navigation }) => {
                     BEBIDA
                   </TextStyle>
                 </ButtonStyle>
-                <Ionicons name={OF.length === 0 ? "checkbox" : "backspace"} size={40} color={light.main2} />
+                <Ionicons
+                  name={OF.length === 0 ? "checkbox" : "backspace"}
+                  size={40}
+                  color={
+                    OF.length === 0
+                      ? light.main2
+                      : mode === "light"
+                      ? dark.main2
+                      : light.main4
+                  }
+                />
               </View>
             );
           })}
