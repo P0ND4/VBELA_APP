@@ -123,7 +123,7 @@ const Main = () => {
       const name = routes[routes.length - 1].name;
 
       const res = await getRule();
-      
+
       if (!res.error) {
         if (res.block) {
           if (name !== "Event")
@@ -131,7 +131,17 @@ const Main = () => {
           return;
         }
 
-        if (res.version.detail !== version.detail && res.version.required) {
+        const convertToNumber = (string) => {
+          try {
+            parseInt(string.split(".").join(""));
+          } catch (e) {
+            return 0;
+          }
+        };
+
+        if (
+          convertToNumber(version.detail) < convertToNumber(res.version.detail)
+        ) {
           if (name !== "Event")
             navigation.current.replace("Event", {
               mode: "update",
@@ -171,7 +181,7 @@ const Main = () => {
   };
 
   useEffect(() => {
-    const work = async () => {
+    const getInformation = async () => {
       const groups = user?.helpers.map((h) => h.id);
       if (user && activeGroup.active)
         socket.emit("connected", { groups: [activeGroup.id] });
@@ -185,12 +195,7 @@ const Main = () => {
           email: user?.email,
         },
       });
-    };
-    if (connected && session) work();
-  }, [connected, session]);
 
-  useEffect(() => {
-    const getInformation = async () => {
       const res = await getUser({
         email: activeGroup.active ? activeGroup.email : user?.email,
       });
@@ -229,25 +234,14 @@ const Main = () => {
           }
         }
 
-        if (activeGroup.active && check.type !== "Helper not found") {
-          await helperNotification(
-            activeGroup,
-            user,
-            `${user?.email} ha recuperado la conexión`,
-            `Los cambios que se hicieron fuera de línea han sido sincronizados`
-          );
-        } else if (check.type !== "Helper not found") {
-          await helperNotification(
-            activeGroup,
-            user,
-            `${user?.email} ha salido del grupo el día ${changeDate(
-              new Date(activeGroup.disconnection)
-            )}`,
-            check.error
-              ? "Algunos cambios hechos por el usuario antes del cambio fueron sincronizados"
-              : "Los cambios hechos por el usuario han sido sincronizados"
-          );
-        }
+        await helperNotification(
+          activeGroup,
+          user,
+          `${user?.email} ha recuperado la conexión`,
+          check.error
+            ? "Algunos cambios hechos por el usuario antes del cambio fueron sincronizados"
+            : "Los cambios que se hicieron fuera de línea han sido sincronizados"
+        );
       } else {
         if (!activeGroup.active) {
           dispatch(changeUser(res));
@@ -278,10 +272,10 @@ const Main = () => {
   useEffect(() => {
     const change = (information) => {
       if (activeGroup.active) {
-        const user = checkUser(information.data);
+        const user = checkUser(information);
         if (user.error) return;
       }
-      changeGeneralInformation(dispatch, information.data);
+      changeGeneralInformation(dispatch, information);
     };
 
     socket.on("change", change);
