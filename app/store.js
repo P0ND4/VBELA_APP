@@ -12,6 +12,8 @@ import informationJobSlice from "../features/function/informationSlice";
 import informationTablesSlice from "../features/tables/informationSlice";
 import ordersSlice from "../features/tables/ordersSlice";
 import economySlice from "../features/function/economySlice";
+import menuSlice from '../features/tables/menuSlice';
+import sectionSlice from '../features/tables/sectionSlice';
 
 const reducers = combineReducers({
   mode: modeSlice, // Mode light and dark
@@ -25,6 +27,8 @@ const reducers = combineReducers({
   tables: informationTablesSlice,
   orders: ordersSlice,
   economy: economySlice,
+  menu: menuSlice,
+  section: sectionSlice
 });
 
 const persistConfig = {

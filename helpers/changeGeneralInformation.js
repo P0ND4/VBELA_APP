@@ -4,6 +4,7 @@ import { change as changeGroups } from "../features/groups/informationSlice";
 import { change as changeTables } from "../features/tables/informationSlice";
 import { change as changeOrders } from "../features/tables/ordersSlice";
 import { change as changeEconomy } from "../features/function/economySlice";
+import { change as changeMenu } from "../features/tables/menuSlice";
 
 export default changeGeneralInformation = (dispatch, data) => {
   dispatch(changeGroups(data.groups));
@@ -12,4 +13,5 @@ export default changeGeneralInformation = (dispatch, data) => {
   dispatch(changeTables(data.tables));
   dispatch(changeOrders(data.orders));
   dispatch(changeEconomy(data.economy));
+  dispatch(changeMenu(data.menu));
 };

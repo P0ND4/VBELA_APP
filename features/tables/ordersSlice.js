@@ -21,7 +21,7 @@ export const ordersSlice = createSlice({
     edit: (state, action) => {
       const { id, data } = action.payload;
       const index = state.findIndex((o) => o.id === id);
-      state[index] = { ...state[index], ...data };
+      state[index] = data;
     },
     change: (state, action) => state = action.payload,
     clean: (state, action) => state = []

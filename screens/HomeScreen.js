@@ -45,7 +45,6 @@ const HomeScreen = ({ navigation }) => {
   const [month, setMonth] = useState(0);
   const [year, setYear] = useState(2023);
   const [days, setDays] = useState([]);
-  const [refDaysAvailable, setRefDaysAvailable] = useState(0);
 
   const activeGroup = useSelector((state) => state.activeGroup);
   const nomenclatures = useSelector((state) => state.nomenclatures);
@@ -329,8 +328,8 @@ const HomeScreen = ({ navigation }) => {
           )}
           {(!activeGroup.active || activeGroup.accessToReservations) && (
             <View style={styles.divider}>
-              <TextStyle color={mode === "light" ? null : dark.main4}>
-                {refDaysAvailable === 0 ? "No" : ""} Disponibles
+              <TextStyle color={mode === "light" ? null : dark.main4} >
+                Control De Reservas
               </TextStyle>
               <Picker
                 ref={pickerMonthRef}
@@ -416,11 +415,6 @@ const HomeScreen = ({ navigation }) => {
                       refDays = newRef;
                     }
                   }
-
-                  setTimeout(() => {
-                    if (refDaysAvailable !== refDays.length)
-                      setRefDaysAvailable(refDays.length);
-                  }, 100);
 
                   return (
                     <ButtonStyle
@@ -516,8 +510,8 @@ const styles = StyleSheet.create({
     borderBottomStartRadius: 8,
   },
   premium: {
-    height: Math.floor(width / 17),
-    width: Math.floor(width / 17),
+    height: Math.floor(width / 20),
+    width: Math.floor(width / 20),
     position: "absolute",
     top: -8,
     right: -12,

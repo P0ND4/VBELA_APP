@@ -17,7 +17,6 @@ import CreateHelper from "../screens/CreateHelperScreen";
 import Tables from "../screens/TablesScreen";
 import CreateTable from "../screens/CreateTableScreen";
 import TableInformation from "../screens/TableInformationScreen";
-import CreateOrder from "../screens/CreateOrderScreen";
 import changeGeneralInformation from "../helpers/changeGeneralInformation";
 import CreateEconomy from "../screens/CreateEconomyScreen";
 import { active, inactive } from "../features/function/informationSlice";
@@ -356,7 +355,6 @@ const Main = () => {
           options={{ title: "Crear mesa" }}
         />
         <Stack.Screen name="TableInformation" component={TableInformation} />
-        <Stack.Screen name="CreateOrder" component={CreateOrder} />
         <Stack.Screen name="CreateEconomy" component={CreateEconomy} />
       </Stack.Group>
       <Stack.Screen

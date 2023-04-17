@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   TouchableOpacity,
@@ -16,11 +16,13 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import Layout from "../components/Layout";
 import TextStyle from "../components/TextStyle";
 import ButtonStyle from "../components/ButtonStyle";
+import Menu from "../components/Menu";
 import theme from "../theme";
 
 const dark = theme.colors.dark;
 const light = theme.colors.light;
 
+const width = Dimensions.get("screen").width;
 const height = Dimensions.get("screen").height;
 
 const StatisticScreen = ({ route, navigation }) => {
@@ -33,9 +35,12 @@ const StatisticScreen = ({ route, navigation }) => {
   );
   const activeGroup = useSelector((state) => state.activeGroup);
   const user = useSelector((state) => state.user);
-  const orders = useSelector((state) =>
-    state.orders.filter((o) => o.ref === route.params.ref && o.pay === false)
-  );
+  const orders = useSelector((state) => state.orders);
+
+  const OF = orders.find((o) => o.ref === route.params.ref && o.pay === false);
+
+  const [menuActive, setMenuActive] = useState(false);
+  const [menuInformation, setMenuInformation] = useState({});
 
   useEffect(() => {
     navigation.setOptions({ title: reserve?.fullName });
@@ -180,39 +185,61 @@ const StatisticScreen = ({ route, navigation }) => {
               </TextStyle>
             </TextStyle>
           </View>
-          <ButtonStyle
-            backgroundColor={mode === "light" ? light.main5 : dark.main2}
-            onPress={() =>
-              navigation.push("CreateOrder", {
-                name: reserve?.fullName,
-                data: "food",
-                ref: route.params.ref,
-              })
-            }
-          >
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              COMIDA
-            </TextStyle>
-          </ButtonStyle>
-          <ButtonStyle
-            backgroundColor={mode === "light" ? light.main5 : dark.main2}
-            onPress={() =>
-              navigation.push("CreateOrder", {
-                name: reserve?.fullName,
-                data: "drink",
-                ref: route.params.ref,
-              })
-            }
-          >
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              BEBIDA
-            </TextStyle>
-          </ButtonStyle>
 
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between", alignItems: 'center' }}
+          >
+            <ButtonStyle
+              style={{ width: width / 1.4 }}
+              backgroundColor={
+                !OF ? light.main2 : mode === "light" ? dark.main2 : light.main4
+              }
+              onPress={() => {
+                setMenuInformation({
+                  editing: OF ? true : false,
+                  id: OF ? OF.id : undefined,
+                  ref: route.params.ref,
+                  table: route.params.ref,
+                  selection: OF ? OF.selection : false,
+                });
+                setMenuActive(true);
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <TextStyle
+                  color={
+                    !OF
+                      ? dark.textWhite
+                      : mode === "light"
+                      ? dark.textWhite
+                      : light.textDark
+                  }
+                  customStyle={{ fontSize: width / 19 }}
+                >
+                  Menu
+                </TextStyle>
+                <Ionicons
+                  name="book-outline"
+                  size={21}
+                  style={{ marginLeft: 10 }}
+                  color={
+                    !OF
+                      ? dark.textWhite
+                      : mode === "light"
+                      ? dark.textWhite
+                      : light.textDark
+                  }
+                />
+              </View>
+            </ButtonStyle>
+            <Ionicons
+              name={OF ? "receipt-outline" : "checkbox"}
+              size={50}
+              color={
+                !OF ? light.main2 : mode === "light" ? dark.main2 : light.main4
+              }
+            />
+          </View>
           <ButtonStyle
             backgroundColor={light.main2}
             onPress={() => {
@@ -253,84 +280,15 @@ const StatisticScreen = ({ route, navigation }) => {
           >
             Eliminar reservación
           </ButtonStyle>
-
-          {orders.length > 0 && (
-            <TextStyle
-              center
-              color={mode === "light" ? light.textDark : dark.textWhite}
-              customStyle={{ marginVertical: 20 }}
-            >
-              Pedidos de la habitación
-            </TextStyle>
-          )}
-          <View style={{ maxHeight: 300 }}>
-            {orders.reverse().map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={[
-                  styles.card,
-                  {
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
-                  },
-                ]}
-                onPress={() => {
-                  navigation.push("CreateOrder", {
-                    data: item.product,
-                    item,
-                    editing: true,
-                  });
-                }}
-              >
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                  smallParagraph
-                >
-                  {item.product === "food" ? "Comida" : "Bebida"}
-                </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                  smallParagraph
-                >
-                  {reduce(item.amount * item.gave)}
-                </TextStyle>
-                {item.type && (
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                    smallParagraph
-                  >
-                    {item.type === "breakfast"
-                      ? "Desayuno"
-                      : item.type === "lunch"
-                      ? "Almuerzo"
-                      : "Cena"}
-                  </TextStyle>
-                )}
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                  smallParagraph
-                >
-                  {item.pay ? "Pagó" : "Pendiente"}
-                </TextStyle>
-              </TouchableOpacity>
-            ))}
-          </View>
         </ScrollView>
       </View>
+      <Menu
+        active={menuActive}
+        information={menuInformation}
+        setActive={setMenuActive}
+      />
     </Layout>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginVertical: 6,
-  },
-});
 
 export default StatisticScreen;

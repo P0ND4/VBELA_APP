@@ -33,31 +33,17 @@ const TableInformation = ({ route, navigation }) => {
 
   const ors = useSelector((state) => state.orders);
 
-  const [orders, setOrders] = useState([]);
   const [totalMoney, setTotalMoney] = useState(0);
-  const [totalMoneyDrinks, setTotalMoneyDrinks] = useState(0);
-  const [totalMoneyFood, setTotalMoneyFood] = useState(0);
 
   useEffect(() => {
-    let orders = [];
     let amount = 0;
-    let drinks = 0;
-    let food = 0;
 
-    const ordersFilter = ors.filter(
-      (o) => o.ref === route.params.id && o.pay === false
-    );
+    const ordersFilter = ors.filter((o) => o.ref === route.params.id);
 
     for (let order of ordersFilter) {
-      orders.push(order);
-      amount += order.amount * order.gave;
-      if (order.product === "drink") drinks += order.amount * order.gave;
-      if (order.product === "food") food += order.amount * order.gave;
+      amount += order?.buy?.reduce((a, b) => a + b.total, 0);
     }
 
-    setOrders(orders);
-    setTotalMoneyDrinks(thousandsSystem(drinks));
-    setTotalMoneyFood(thousandsSystem(food));
     setTotalMoney(thousandsSystem(amount));
   }, [ors]);
 
@@ -66,13 +52,6 @@ const TableInformation = ({ route, navigation }) => {
   }, [table]);
 
   const dispatch = useDispatch();
-
-  const changeDate = (date) => {
-    return `${("0" + date.getDate()).slice(-2)}/${(
-      "0" +
-      (date.getMonth() + 1)
-    ).slice(-2)}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}`;
-  };
 
   return (
     <Layout
@@ -120,69 +99,9 @@ const TableInformation = ({ route, navigation }) => {
       )}
       <View style={{ marginVertical: 30 }}>
         <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-          Deuda total: <TextStyle color={light.main2}>{totalMoney}</TextStyle>
+          Dinero recolectado:{" "}
+          <TextStyle color={light.main2}>{totalMoney}</TextStyle>
         </TextStyle>
-        <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-          Dinero en bebidas:{" "}
-          <TextStyle color={light.main2}>{totalMoneyDrinks}</TextStyle>
-        </TextStyle>
-        <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-          Dinero en comida:{" "}
-          <TextStyle color={light.main2}>{totalMoneyFood}</TextStyle>
-        </TextStyle>
-        {orders.length > 0 && (
-          <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-            Creación del pedido:{" "}
-            <TextStyle color={light.main2}>
-              {changeDate(new Date(orders[orders.length - 1].modificationDate))}
-            </TextStyle>
-          </TextStyle>
-        )}
-      </View>
-      <View style={{ maxHeight: height / 2.2 }}>
-        <FlatList
-          data={orders}
-          style={{ marginBottom: 20 }}
-          inverted
-          showsVerticalScrollIndicator={false}
-          keyExtractor={(item) => item.id + item.modificationDate}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.card,
-                {
-                  backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                },
-              ]}
-              onPress={() => {
-                navigation.push("CreateOrder", {
-                  data: item.product,
-                  item,
-                  editing: true,
-                });
-              }}
-            >
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-                smallParagraph
-              >
-                {item.product === "food" ? "Comida" : "Bebida"}
-              </TextStyle>
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-                smallParagraph
-              >
-                {thousandsSystem(item.amount * item.gave)}
-              </TextStyle>
-              <TextStyle
-                color={light.main2}
-                smallParagraph
-              >
-                {item.pay ? "Pagó" : "Pendiente"}
-              </TextStyle>
-            </TouchableOpacity>
-          )}
-        />
       </View>
       <ButtonStyle
         backgroundColor={light.main2}

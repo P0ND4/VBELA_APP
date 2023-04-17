@@ -22,7 +22,7 @@ export const connect = async ({ data = {}, url }) => {
     const r = await readFile({ name: "data.json" });
     const value = !r.error ? r : [];
     const info = { url, data, creationDate: new Date().getTime() };
-    const options = ["helper", "nomenclature", "table"];
+    const options = ["helper", "nomenclature", "table", "menu"];
     const typeOfData = url.slice(1).split("/")[0];
     const identification = options.includes(typeOfData) ? "id" : "ref";
 
@@ -133,3 +133,6 @@ export const removeEconomy = async (data) =>
   await connect({ data, url: "/economy/remove" });
 
 export const getRule = async () => await connect({ url: "/rule" });
+
+export const addMenu = async (data) =>
+  await connect({ data, url: "/menu/add" });

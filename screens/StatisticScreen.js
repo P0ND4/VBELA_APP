@@ -575,8 +575,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   premium: {
-    height: Math.floor(width / 17),
-    width: Math.floor(width / 17),
+    height: Math.floor(width / 20),
+    width: Math.floor(width / 20),
     position: "absolute",
     top: 10,
     right: 10,
