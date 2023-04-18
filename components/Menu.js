@@ -219,7 +219,6 @@ const Menu = ({ active, information, setActive }) => {
   const saveOrder = async (pay) => {
     const id = random(20);
     if (orders.find((order) => order.id === id)) return onSubmitCreate(data);
-
     const data = {};
 
     data.id = id;

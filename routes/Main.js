@@ -241,7 +241,7 @@ const Main = () => {
             ? "Algunos cambios hechos por el usuario antes del cambio fueron sincronizados"
             : "Los cambios que se hicieron fuera de línea han sido sincronizados"
         );
-      } else {
+
         if (!activeGroup.active) {
           dispatch(changeUser(res));
           dispatch(changeHelpers(res.helpers));

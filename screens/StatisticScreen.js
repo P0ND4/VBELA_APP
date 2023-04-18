@@ -37,18 +37,7 @@ const StatisticScreen = ({ navigation }) => {
   const [expenses, setExpenses] = useState([]);
   const [purchase, setPurchase] = useState(0);
   const [expense, setExpense] = useState(0);
-  const [food, setFood] = useState(0);
   const [sales, setSales] = useState(0);
-
-  const [FBreaksfast, setFBreaksfast] = useState(0);
-  const [FLunch, setFLunch] = useState(0);
-  const [FDinner, setFDinner] = useState(0);
-
-  const [drink, setDrink] = useState(0);
-
-  const [DBreaksfast, setDBreaksfast] = useState(0);
-  const [DLunch, setDLunch] = useState(0);
-  const [DDinner, setDDinner] = useState(0);
 
   const [people, setPeople] = useState(0);
   const [amount, setAmount] = useState(0);
@@ -85,14 +74,6 @@ const StatisticScreen = ({ navigation }) => {
     let expense = 0;
     let purchases = [];
     let expenses = [];
-    let food = 0;
-    let fbreaksfast = 0;
-    let flunch = 0;
-    let fdinner = 0;
-    let drink = 0;
-    let dbreaksfast = 0;
-    let dlunch = 0;
-    let ddinner = 0;
 
     for (let reservation of reservations) {
       const date = new Date(reservation.creationDate);
@@ -114,22 +95,11 @@ const StatisticScreen = ({ navigation }) => {
     }
 
     for (let order of orders) {
-      const amount = order.amount * order.gave;
+      const amount = order?.buy.reduce((a, b) => a + b.total, 0);
       const date = new Date(order.creationDate);
       if (dateValidation(date) || !order.pay) continue;
 
       sales += amount;
-      if (order.product === "food") {
-        food += amount;
-        if (order.type === "breakfast") fbreaksfast += amount;
-        if (order.type === "lunch") flunch += amount;
-        if (order.type === "dinner") fdinner += amount;
-      } else {
-        drink += amount;
-        if (order.type === "breakfast") dbreaksfast += amount;
-        if (order.type === "lunch") dlunch += amount;
-        if (order.type === "dinner") ddinner += amount;
-      }
     }
 
     setSales(sales);
@@ -137,14 +107,6 @@ const StatisticScreen = ({ navigation }) => {
     setAmount(amount);
     setPurchase(purchase);
     setExpense(expense);
-    setFood(food);
-    setFBreaksfast(fbreaksfast);
-    setFLunch(flunch);
-    setFDinner(fdinner);
-    setDrink(drink);
-    setDBreaksfast(dbreaksfast);
-    setDLunch(dlunch);
-    setDDinner(ddinner);
     setPurchases(purchases);
     setExpenses(expenses);
 
@@ -268,8 +230,9 @@ const StatisticScreen = ({ navigation }) => {
     const date = new Date(order.creationDate);
     if (dateValidation(date)) continue;
     if (order.pay) {
-      amountTotal += order.amount * order.gave;
-      sale += order.amount * order.gave;
+      const amount = order?.buy.reduce((a, b) => a + b.total, 0);
+      amountTotal += amount;
+      sale += amount;
     }
   }
 
@@ -465,30 +428,6 @@ const StatisticScreen = ({ navigation }) => {
               />
             )}
             <Information name="VENTAS" value={thousandsSystem(sales)} />
-            <Information
-              name="VENTAS POR COMIDAS"
-              value={thousandsSystem(food)}
-            />
-            <View style={{ marginLeft: 20 }}>
-              <Information
-                name="DESAYUNO"
-                value={thousandsSystem(FBreaksfast)}
-              />
-              <Information name="ALMUERZO" value={thousandsSystem(FLunch)} />
-              <Information name="CENA" value={thousandsSystem(FDinner)} />
-            </View>
-            <Information
-              name="VENTAS POR BEBIDAS"
-              value={thousandsSystem(drink)}
-            />
-            <View style={{ marginLeft: 20 }}>
-              <Information
-                name="DESAYUNO"
-                value={thousandsSystem(DBreaksfast)}
-              />
-              <Information name="ALMUERZO" value={thousandsSystem(DLunch)} />
-              <Information name="CENA" value={thousandsSystem(DDinner)} />
-            </View>
             <Information
               name="PERSONAS HOSPEDADAS"
               value={thousandsSystem(people)}
