@@ -6,6 +6,7 @@ import {
   Dimensions,
   //FlatList,
   TouchableOpacity,
+  TouchableNativeFeedback,
   ScrollView,
   Alert,
 } from "react-native";
@@ -24,13 +25,24 @@ import ButtonStyle from "./ButtonStyle";
 import InputStyle from "./InputStyle";
 import theme from "../theme";
 import { thousandsSystem, random } from "../helpers/libs";
-import { add as addMu } from "../features/tables/menuSlice";
+import {
+  add as addMu,
+  edit as editMu,
+  remove as removeMu,
+} from "../features/tables/menuSlice";
 import {
   add as addO,
   remove as deleteO,
   edit as editO,
 } from "../features/tables/ordersSlice";
-import { addOrder, editOrder, removeOrder, addMenu } from "../api";
+import {
+  addOrder,
+  editOrder,
+  removeOrder,
+  addMenu,
+  editMenu,
+  removeMenu,
+} from "../api";
 
 const light = theme.colors.light;
 const dark = theme.colors.dark;
@@ -67,6 +79,11 @@ const Menu = ({ active, information, setActive }) => {
   const [selection, setSelection] = useState([]);
   const [calculator, setCalculator] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Efectivo");
+
+  const [isEditingProduct, setIsEditingProduct] = useState({
+    id: null,
+    editing: false,
+  });
 
   useEffect(() => {
     registerProduct("name", { value: "", required: true });
@@ -214,6 +231,52 @@ const Menu = ({ active, information, setActive }) => {
         ? [activeGroup.id]
         : user.helpers.map((h) => h.id),
     });
+  };
+
+  const editProduct = async (data) => {
+    data.id = isEditingProduct.item.id;
+    data.group = null;
+    data.creationDate = isEditingProduct.item.creationDate;
+    data.modificationDate = new Date().getTime();
+
+    dispatch(editMu({ id: isEditingProduct.item.id, data }));
+    setSelection(selection.filter((s) => s.id !== isEditingProduct.item.id));
+    cleanCreateProduct();
+    setIsEditingProduct({ item: null, editing: false });
+    await editMenu({
+      email: activeGroup.active ? activeGroup.email : user.email,
+      menu: data,
+      groups: activeGroup.active
+        ? [activeGroup.id]
+        : user.helpers.map((h) => h.id),
+    });
+  };
+
+  const removeProduct = async () => {
+    Alert.alert("Eliminar", "¿Esta seguro que desea eliminar el producto?", [
+      {
+        text: "No",
+        style: "cancel",
+      },
+      {
+        text: "Si",
+        onPress: async () => {
+          dispatch(removeMu({ id: isEditingProduct.item.id }));
+          setSelection(
+            selection.filter((s) => s.id !== isEditingProduct.item.id)
+          );
+          cleanCreateProduct();
+          setIsEditingProduct({ item: null, editing: false });
+          await removeMenu({
+            email: activeGroup.active ? activeGroup.email : user.email,
+            id: isEditingProduct.item.id,
+            groups: activeGroup.active
+              ? [activeGroup.id]
+              : user.helpers.map((h) => h.id),
+          });
+        },
+      },
+    ]);
   };
 
   const saveOrder = async (pay) => {
@@ -414,68 +477,81 @@ const Menu = ({ active, information, setActive }) => {
               >
                 {products.map((item, index) => {
                   return (
-                    <TouchableOpacity
+                    <TouchableNativeFeedback
                       key={item.id ? item.id : item}
-                      style={[
-                        styles.catalogue,
-                        {
-                          backgroundColor:
-                            mode === "light" ? light.main4 : dark.main2,
-                        },
-                      ]}
+                      onLongPress={() => {
+                        if (item.id) {
+                          setIsEditingProduct({ item, editing: true });
+                          setValueProduct('name', item.name);
+                          setValueProduct('price', item.price);
+                          setName(item.name);
+                          setPrice(thousandsSystem(item.price));
+                        }
+                        setRoute("createCatalogue");
+                      }}
                       onPress={() =>
                         item?.id
                           ? setSelection([...selection, item])
                           : setRoute("createCatalogue")
                       }
                     >
-                      {item.id && (
-                        <View
-                          style={{ flex: 1, justifyContent: "space-between" }}
-                        >
+                      <View
+                        style={[
+                          styles.catalogue,
+                          {
+                            backgroundColor:
+                              mode === "light" ? light.main4 : dark.main2,
+                          },
+                        ]}
+                      >
+                        {item.id && (
                           <View
-                            style={{
-                              justifyContent: "center",
-                              alignItems: "center",
-                              height: "60%",
-                            }}
+                            style={{ flex: 1, justifyContent: "space-between" }}
                           >
-                            <TextStyle
-                              color={
-                                mode === "light"
-                                  ? light.textDark
-                                  : dark.textWhite
-                              }
+                            <View
+                              style={{
+                                justifyContent: "center",
+                                alignItems: "center",
+                                height: "60%",
+                              }}
                             >
-                              {item.name.slice(0, 8)}
-                            </TextStyle>
+                              <TextStyle
+                                color={
+                                  mode === "light"
+                                    ? light.textDark
+                                    : dark.textWhite
+                                }
+                              >
+                                {item.name.slice(0, 8)}
+                              </TextStyle>
+                            </View>
+                            <View
+                              style={[
+                                styles.footerCatalogue,
+                                {
+                                  width: Math.floor(SCREEN_WIDTH / 3.5),
+                                  paddingHorizontal: 4,
+                                },
+                              ]}
+                            >
+                              <TextStyle smallParagraph>
+                                {item.name.slice(0, 8)}
+                              </TextStyle>
+                              <TextStyle smallParagraph>
+                                {thousandsSystem(item.price)}
+                              </TextStyle>
+                            </View>
                           </View>
-                          <View
-                            style={[
-                              styles.footerCatalogue,
-                              {
-                                width: Math.floor(SCREEN_WIDTH / 3.5),
-                                paddingHorizontal: 4,
-                              },
-                            ]}
-                          >
-                            <TextStyle smallParagraph>
-                              {item.name.slice(0, 8)}
-                            </TextStyle>
-                            <TextStyle smallParagraph>
-                              {thousandsSystem(item.price)}
-                            </TextStyle>
-                          </View>
-                        </View>
-                      )}
-                      {!item?.id && index === menu.length && (
-                        <Ionicons
-                          name="add"
-                          size={55}
-                          color={mode === "light" ? "#BBBBBB" : dark.main1}
-                        />
-                      )}
-                    </TouchableOpacity>
+                        )}
+                        {!item?.id && index === menu.length && (
+                          <Ionicons
+                            name="add"
+                            size={55}
+                            color={mode === "light" ? "#BBBBBB" : dark.main1}
+                          />
+                        )}
+                      </View>
+                    </TouchableNativeFeedback>
                   );
                 })}
               </ScrollView>
@@ -521,7 +597,12 @@ const Menu = ({ active, information, setActive }) => {
                 marginBottom: 20,
               }}
             >
-              <TouchableOpacity onPress={() => cleanCreateProduct()}>
+              <TouchableOpacity
+                onPress={() => {
+                  cleanCreateProduct();
+                  setIsEditingProduct({ item: null, editing: false });
+                }}
+              >
                 <Ionicons
                   name="arrow-back"
                   size={35}
@@ -606,16 +687,35 @@ const Menu = ({ active, information, setActive }) => {
                 )}
               </View>
             </View>
-            <ButtonStyle
-              backgroundColor="transparent"
-              style={{
-                borderWidth: 2,
-                borderColor: light.main2,
-              }}
-              onPress={handleSubmitProduct(addProduct)}
-            >
-              <TextStyle color={light.main2}>Añadir producto</TextStyle>
-            </ButtonStyle>
+            <View>
+              {isEditingProduct.editing && (
+                <ButtonStyle
+                  backgroundColor="transparent"
+                  style={{
+                    marginTop: 10,
+                    borderWidth: 2,
+                    borderColor: light.main2,
+                  }}
+                  onPress={() => removeProduct()}
+                >
+                  <TextStyle color={light.main2}>Eliminar pedido</TextStyle>
+                </ButtonStyle>
+              )}
+              <ButtonStyle
+                backgroundColor="transparent"
+                style={{
+                  borderWidth: 2,
+                  borderColor: light.main2,
+                }}
+                onPress={handleSubmitProduct(
+                  !isEditingProduct.editing ? addProduct : editProduct
+                )}
+              >
+                <TextStyle color={light.main2}>
+                  {!isEditingProduct.editing ? "Añadir producto" : "Guardar"}
+                </TextStyle>
+              </ButtonStyle>
+            </View>
           </View>
         )}
         {route === "createOrder" && (

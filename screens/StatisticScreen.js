@@ -95,7 +95,7 @@ const StatisticScreen = ({ navigation }) => {
     }
 
     for (let order of orders) {
-      const amount = order?.buy.reduce((a, b) => a + b.total, 0);
+      const amount = order?.buy?.reduce((a, b) => a + b.total, 0);
       const date = new Date(order.creationDate);
       if (dateValidation(date) || !order.pay) continue;
 
@@ -230,7 +230,7 @@ const StatisticScreen = ({ navigation }) => {
     const date = new Date(order.creationDate);
     if (dateValidation(date)) continue;
     if (order.pay) {
-      const amount = order?.buy.reduce((a, b) => a + b.total, 0);
+      const amount = order?.buy?.reduce((a, b) => a + b.total, 0);
       amountTotal += amount;
       sale += amount;
     }

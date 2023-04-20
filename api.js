@@ -136,3 +136,9 @@ export const getRule = async () => await connect({ url: "/rule" });
 
 export const addMenu = async (data) =>
   await connect({ data, url: "/menu/add" });
+
+export const editMenu = async (data) =>
+  await connect({ data, url: "/menu/edit" });
+
+export const removeMenu = async (data) =>
+  await connect({ data, url: "/menu/remove" });
