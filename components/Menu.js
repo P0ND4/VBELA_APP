@@ -75,10 +75,19 @@ const Menu = ({ active, information, setActive }) => {
   const [price, setPrice] = useState("");
   const [pending, setPending] = useState(false);
   const [buy, setBuy] = useState([]);
+  const [openEditOrder, setOpenEditOrder] = useState(null);
 
   const [selection, setSelection] = useState([]);
-  const [calculator, setCalculator] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Efectivo");
+
+  const [discount, setDiscount] = useState({});
+  const [percentage, setPercentage] = useState("");
+  const [discountInAmount, setDiscountInAmount] = useState("");
+  const [totalDiscount, setTotalDiscount] = useState(0);
+
+  const [amount, setAmount] = useState({});
+
+  const [editPrice, setEditPrice] = useState({});
 
   const [isEditingProduct, setIsEditingProduct] = useState({
     id: null,
@@ -149,14 +158,20 @@ const Menu = ({ active, information, setActive }) => {
     setRoute("main");
     setPending(false);
     setSelection([]);
-    setCalculator("");
     setPaymentMethod("Efectivo");
+    setDiscount({});
+    setDiscountInAmount("");
+    setPercentage("");
+    setTotalDiscount(0);
+    setAmount({});
+    setEditPrice({});
   };
 
   useEffect(() => {
     if (active) {
       if (information.editing) {
-        setRoute("pay");
+        setRoute("main");
+        setTotalDiscount(information.totalDiscount);
         setSelection(information.selection);
       } else clean();
       scrollTo(MAX_TRANSLATE_Y);
@@ -235,6 +250,7 @@ const Menu = ({ active, information, setActive }) => {
 
   const editProduct = async (data) => {
     data.id = isEditingProduct.item.id;
+    data.discount = totalDiscount;
     data.group = null;
     data.creationDate = isEditingProduct.item.creationDate;
     data.modificationDate = new Date().getTime();
@@ -289,6 +305,7 @@ const Menu = ({ active, information, setActive }) => {
     data.buy = buy;
     data.selection = selection;
     data.pay = pay;
+    data.discount = totalDiscount;
     data.method = paymentMethod;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
@@ -350,22 +367,6 @@ const Menu = ({ active, information, setActive }) => {
     ]);
   };
 
-  const numericKeyboardEvent = (num) => {
-    const calculatorString = calculator.replace(/[^0-9]/g, "");
-
-    if (num !== "backspace") {
-      if (calculatorString.length <= 12) {
-        if (calculatorString === "0") setCalculator(JSON.stringify(num));
-        else setCalculator(thousandsSystem(calculatorString + num));
-      }
-    } else {
-      const substring = calculatorString.slice(0, calculatorString.length - 1);
-
-      if (!substring) setCalculator("0");
-      else setCalculator(thousandsSystem(substring));
-    }
-  };
-
   useEffect(() => {
     setBuy([]);
     let buy = [];
@@ -376,7 +377,7 @@ const Menu = ({ active, information, setActive }) => {
       if (b !== -1) {
         buy[b].count += 1;
         buy[b].total += s.price;
-      } else buy.push({ ...s, count: 1, total: s.price });
+      } else buy.push({ ...s, count: 1, total: s.price, discount: 0 });
     }
 
     setBuy(buy);
@@ -482,8 +483,8 @@ const Menu = ({ active, information, setActive }) => {
                       onLongPress={() => {
                         if (item.id) {
                           setIsEditingProduct({ item, editing: true });
-                          setValueProduct('name', item.name);
-                          setValueProduct('price', item.price);
+                          setValueProduct("name", item.name);
+                          setValueProduct("price", item.price);
                           setName(item.name);
                           setPrice(thousandsSystem(item.price));
                         }
@@ -555,29 +556,39 @@ const Menu = ({ active, information, setActive }) => {
                   );
                 })}
               </ScrollView>
-              <ButtonStyle
-                backgroundColor="transparent"
-                style={{
-                  borderWidth: 2,
-                  borderColor: light.main2,
-                }}
-                onPress={() => {
-                  if (selection.length === 0)
-                    Alert.alert(
-                      "El carrito está vacío",
-                      "Precisa adicionar un producto al carrito para poder velor"
-                    );
-                  else setRoute("createOrder");
-                }}
-              >
-                <TextStyle color={light.main2}>
-                  {selection.length === 0
-                    ? "Ningún ítem"
-                    : `${selection.length} ítem = ${thousandsSystem(
-                        selection.reduce((a, b) => a + b.price, 0)
-                      )}`}
-                </TextStyle>
-              </ButtonStyle>
+              <View>
+                {information.editing && (
+                  <ButtonStyle
+                    backgroundColor={light.main2}
+                    onPress={() => removeO()}
+                  >
+                    <TextStyle smallParagraph>Eliminar pedido</TextStyle>
+                  </ButtonStyle>
+                )}
+                <ButtonStyle
+                  backgroundColor="transparent"
+                  style={{
+                    borderWidth: 2,
+                    borderColor: light.main2,
+                  }}
+                  onPress={() => {
+                    if (selection.length === 0)
+                      Alert.alert(
+                        "El carrito está vacío",
+                        "Precisa adicionar un producto al carrito para poder velor"
+                      );
+                    else setRoute("createOrder");
+                  }}
+                >
+                  <TextStyle color={light.main2} smallParagraph>
+                    {selection.length === 0
+                      ? "Ningún ítem"
+                      : `${selection.length} ítem = ${thousandsSystem(
+                          selection.reduce((a, b) => a + b.price, 0)
+                        )}`}
+                  </TextStyle>
+                </ButtonStyle>
+              </View>
             </View>
           </>
         )}
@@ -588,15 +599,7 @@ const Menu = ({ active, information, setActive }) => {
               justifyContent: "space-between",
             }}
           >
-            <View
-              style={{
-                width: "100%",
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 20,
-              }}
-            >
+            <View style={styles.arrowContainer}>
               <TouchableOpacity
                 onPress={() => {
                   cleanCreateProduct();
@@ -721,15 +724,13 @@ const Menu = ({ active, information, setActive }) => {
         {route === "createOrder" && (
           <View style={{ flex: 1, justifyContent: "space-between" }}>
             <View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 20,
-                }}
-              >
-                <TouchableOpacity onPress={() => setRoute("main")}>
+              <View style={styles.arrowContainer}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setRoute("main");
+                    setOpenEditOrder(null);
+                  }}
+                >
                   <Ionicons
                     name="arrow-back"
                     size={35}
@@ -744,153 +745,209 @@ const Menu = ({ active, information, setActive }) => {
                   Carrito
                 </TextStyle>
               </View>
-              {buy.map((item, index) => (
-                <View
-                  key={item.id}
-                  style={[
-                    styles.chosenProduct,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main4 : dark.main2,
-                    },
-                  ]}
-                >
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    <TextStyle color={light.main2}>
-                      {thousandsSystem(item.count)}
-                    </TextStyle>
-                    x {item.name.slice(0, 8)}
-                  </TextStyle>
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    {thousandsSystem(item.total)}
-                  </TextStyle>
-                </View>
-              ))}
+              <ScrollView style={{ maxHeight: 380 }}>
+                {buy.map((item, index) => {
+                  return (
+                    <View style={{ marginVertical: 2 }} key={item.id}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (index === openEditOrder) setOpenEditOrder(null);
+                          else setOpenEditOrder(index);
+                        }}
+                        style={[
+                          styles.chosenProduct,
+                          {
+                            opacity:
+                              openEditOrder === index || openEditOrder === null
+                                ? 1
+                                : 0.6,
+                            backgroundColor:
+                              mode === "light" ? light.main4 : dark.main2,
+                          },
+                        ]}
+                      >
+                        <TextStyle
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                        >
+                          <TextStyle color={light.main2}>
+                            {thousandsSystem(item.count)}
+                          </TextStyle>
+                          x {item.name.slice(0, 8)}
+                        </TextStyle>
+                        <TextStyle
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                        >
+                          {thousandsSystem(
+                            item.discount !== 0 ? item.discount : item.total
+                          )}
+                        </TextStyle>
+                      </TouchableOpacity>
+                      {openEditOrder === index && (
+                        <View
+                          style={[
+                            styles.chosenProduct,
+                            {
+                              borderTopWidth: 1,
+                              borderColor: light.main2,
+                              backgroundColor:
+                                mode === "light" ? light.main4 : dark.main2,
+                            },
+                          ]}
+                        >
+                          <TouchableOpacity
+                            style={{ alignItems: "center" }}
+                            onPress={() => {
+                              setAmount({
+                                amount: thousandsSystem(
+                                  selection.filter((s) => s.id === item.id)
+                                    .length
+                                ),
+                                id: item.id,
+                              });
+                              setRoute("editItem");
+                            }}
+                          >
+                            <Ionicons
+                              name="file-tray-stacked"
+                              size={28}
+                              color={
+                                mode === "light"
+                                  ? light.textDark
+                                  : dark.textWhite
+                              }
+                              style={{ marginLeft: 5 }}
+                            />
+                            <TextStyle
+                              color={
+                                mode === "light"
+                                  ? light.textDark
+                                  : dark.textWhite
+                              }
+                            >
+                              {thousandsSystem(
+                                selection.filter((s) => s.id === item.id).length
+                              )}{" "}
+                              items
+                            </TextStyle>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={{ alignItems: "center" }}
+                            onPress={() => {
+                              setEditPrice({
+                                price: thousandsSystem(
+                                  selection.find((i) => i.id === item.id).price
+                                ),
+                                id: item.id,
+                              });
+                              setRoute("editAmount");
+                            }}
+                          >
+                            <Ionicons
+                              name="cash"
+                              size={28}
+                              color={
+                                mode === "light"
+                                  ? light.textDark
+                                  : dark.textWhite
+                              }
+                              style={{ marginLeft: 5 }}
+                            />
+                            <TextStyle
+                              color={
+                                mode === "light"
+                                  ? light.textDark
+                                  : dark.textWhite
+                              }
+                            >
+                              {thousandsSystem(item.total)}
+                            </TextStyle>
+                            <TextStyle
+                              smallParagraph
+                              color={
+                                mode === "light"
+                                  ? light.textDark
+                                  : dark.textWhite
+                              }
+                            >
+                              Unidad
+                            </TextStyle>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={{ alignItems: "center" }}
+                            onPress={() => {
+                              setDiscount({
+                                title: item.name.slice(0, 8),
+                                amount: item.total,
+                                id: item.id,
+                              });
+                              setRoute("createPercentage");
+                            }}
+                          >
+                            <Ionicons
+                              name="pricetag"
+                              size={28}
+                              color={light.main2}
+                              style={{ marginLeft: 5 }}
+                            />
+                            <TextStyle smallParagraph color={light.main2}>
+                              DESCUENTO
+                            </TextStyle>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+              </ScrollView>
               <View style={{ alignItems: "flex-end", marginTop: 20 }}>
-                <TouchableOpacity onPress={() => {}}>
-                  <TextStyle color={light.main2}>Dar descuento</TextStyle>
+                <TouchableOpacity
+                  style={{ flexDirection: "row", alignItems: "center" }}
+                  onPress={() => {
+                    setDiscount({
+                      title: "Descuento total",
+                      amount: buy.reduce(
+                        (a, b) => (a + b.discount !== 0 ? b.discount : b.total),
+                        0
+                      ),
+                    });
+                    setRoute("createPercentage");
+                  }}
+                >
+                  {totalDiscount !== 0 && (
+                    <TouchableOpacity onPress={() => setTotalDiscount(0)}>
+                      <Ionicons
+                        name="close-circle-outline"
+                        size={30}
+                        style={{ marginRight: 15 }}
+                        color={light.main2}
+                      />
+                    </TouchableOpacity>
+                  )}
+                  <TextStyle color={light.main2}>
+                    {totalDiscount !== 0
+                      ? `Descuento: ${totalDiscount}`
+                      : "Dar descuento"}
+                  </TextStyle>
                 </TouchableOpacity>
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
-                  TOTAL: {thousandsSystem(buy.reduce((a, b) => a + b.total, 0))}
+                  TOTAL:{" "}
+                  {totalDiscount !== 0
+                    ? totalDiscount
+                    : thousandsSystem(
+                        buy.reduce(
+                          (a, b) =>
+                            a + b.discount !== 0 ? b.discount : b.total,
+                          0
+                        )
+                      )}
                 </TextStyle>
               </View>
-            </View>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <TouchableOpacity
-                style={{
-                  padding: 4,
-                  borderRadius: 8,
-                  marginRight: 10,
-                  borderWidth: 2,
-                  borderColor: light.main2,
-                }}
-                onPress={() => {
-                  Alert.alert(
-                    "Limpiar carrito",
-                    "¿Estás seguro que quieres limipiar el carrito?",
-                    [
-                      {
-                        text: "No",
-                        style: "cancel",
-                      },
-                      {
-                        text: "Si",
-                        onPress: () => {
-                          setSelection([]);
-                          setRoute("main");
-                        },
-                      },
-                    ]
-                  );
-                }}
-              >
-                <Ionicons name="trash" size={32} color={light.main2} />
-              </TouchableOpacity>
-              <ButtonStyle
-                backgroundColor="transparent"
-                style={{
-                  borderWidth: 2,
-                  borderColor: light.main2,
-                  width: "85%",
-                }}
-                onPress={() => setRoute("pay")}
-              >
-                <TextStyle color={light.main2}>Avanzar</TextStyle>
-              </ButtonStyle>
-            </View>
-          </View>
-        )}
-        {route === "pay" && (
-          <View style={{ flex: 1, justifyContent: "space-between" }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 20,
-              }}
-            >
-              <TouchableOpacity onPress={() => setRoute("createOrder")}>
-                <Ionicons
-                  name="arrow-back"
-                  size={35}
-                  color={light.main2}
-                  style={{ marginLeft: 5 }}
-                />
-              </TouchableOpacity>
-              <TextStyle
-                smallSubtitle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                Pago
-              </TextStyle>
-            </View>
-            <View style={{ alignItems: "center" }}>
-              <TextStyle
-                title
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {thousandsSystem(buy.reduce((a, b) => a + b.total, 0))}
-              </TextStyle>
-              <ButtonStyle
-                backgroundColor="transparent"
-                style={{
-                  marginTop: 10,
-                  borderWidth: 2,
-                  borderColor: light.main2,
-                  width: "40%",
-                }}
-                onPress={() => {
-                  setPending(true);
-                  if (information.editing) updateOrder(false);
-                  else saveOrder(false);
-                }}
-              >
-                <TextStyle smallParagraph color={light.main2}>
-                  Guardar pedido
-                </TextStyle>
-              </ButtonStyle>
-              {information.editing && (
-                <ButtonStyle
-                  backgroundColor={light.main2}
-                  style={{ width: "40%" }}
-                  onPress={() => removeO()}
-                >
-                  <TextStyle smallParagraph>Eliminar pedido</TextStyle>
-                </ButtonStyle>
-              )}
             </View>
             <View>
               <View
@@ -898,6 +955,7 @@ const Menu = ({ active, information, setActive }) => {
                   flexDirection: "row",
                   flexWrap: "wrap",
                   justifyContent: "space-between",
+                  marginVertical: 10,
                 }}
               >
                 <TouchableOpacity
@@ -1001,35 +1059,91 @@ const Menu = ({ active, information, setActive }) => {
                   </TextStyle>
                 </TouchableOpacity>
               </View>
-              <ButtonStyle
-                backgroundColor="transparent"
+              <View
                 style={{
-                  marginTop: 20,
-                  borderWidth: 2,
-                  borderColor: light.main2,
-                }}
-                onPress={() => {
-                  setCalculator(
-                    thousandsSystem(buy.reduce((a, b) => a + b.total, 0))
-                  );
-                  setRoute("finish");
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                 }}
               >
-                <TextStyle color={light.main2}>Avanzar</TextStyle>
-              </ButtonStyle>
+                <TouchableOpacity
+                  style={{
+                    padding: 4,
+                    borderRadius: 8,
+                    marginRight: 10,
+                    borderWidth: 2,
+                    borderColor: light.main2,
+                  }}
+                  onPress={() => {
+                    Alert.alert(
+                      "Limpiar carrito",
+                      "¿Estás seguro que quieres limipiar el carrito?",
+                      [
+                        {
+                          text: "No",
+                          style: "cancel",
+                        },
+                        {
+                          text: "Si",
+                          onPress: () => {
+                            setSelection([]);
+                            setRoute("main");
+                          },
+                        },
+                      ]
+                    );
+                  }}
+                >
+                  <Ionicons name="trash" size={28} color={light.main2} />
+                </TouchableOpacity>
+                <ButtonStyle
+                  backgroundColor="transparent"
+                  style={{
+                    borderWidth: 2,
+                    borderColor: light.main2,
+                    width: "40%",
+                  }}
+                  onPress={() => {
+                    setPending(true);
+                    if (information.editing) updateOrder(false);
+                    else saveOrder(false);
+                  }}
+                >
+                  <TextStyle smallParagraph color={light.main2}>
+                    Guardar pedido
+                  </TextStyle>
+                </ButtonStyle>
+                <ButtonStyle
+                  backgroundColor="transparent"
+                  style={{
+                    borderWidth: 2,
+                    borderColor: light.main2,
+                    width: "40%",
+                  }}
+                  onPress={() => {
+                    if (information.editing) updateOrder(true);
+                    else saveOrder(true);
+                  }}
+                >
+                  <TextStyle smallParagraph color={light.main2}>
+                    Finalizar
+                  </TextStyle>
+                </ButtonStyle>
+              </View>
             </View>
           </View>
         )}
-        {route === "finish" && (
+        {route === "createPercentage" && (
           <View style={{ flex: 1, justifyContent: "space-between" }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <TouchableOpacity onPress={() => setRoute("pay")}>
+            <View style={styles.arrowContainer}>
+              <TouchableOpacity
+                onPress={() => {
+                  setRoute("createOrder");
+                  setDiscount({});
+                  setPercentage("");
+                  setDiscountInAmount("");
+                }}
+              >
                 <Ionicons
                   name="arrow-back"
                   size={35}
@@ -1041,277 +1155,272 @@ const Menu = ({ active, information, setActive }) => {
                 smallSubtitle
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                Pago: {paymentMethod}
+                Descuento
               </TextStyle>
             </View>
             <View style={{ alignItems: "center" }}>
               <TextStyle
+                customStyle={{ marginBottom: 10 }}
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                VALOR RECIBIDO
+                Descuento fijo
               </TextStyle>
+              <InputStyle
+                placeholder="Valor"
+                value={discountInAmount}
+                keyboardType="numeric"
+                onChangeText={(num) => {
+                  if (parseInt(num.replace(/[^0-9]/g, "")) > discount.amount)
+                    return;
+                  const operation =
+                    parseInt(num.replace(/[^0-9]/g, "")) /
+                    parseInt(discount.amount);
+                  if (isNaN(operation) || operation === Infinity)
+                    setPercentage("");
+                  else setPercentage((operation.toFixed(2) * 100).toString());
+                  setDiscountInAmount(
+                    thousandsSystem(num.replace(/[^0-9]/g, ""))
+                  );
+                }}
+                stylesContainer={{ width: "60%" }}
+                stylesInput={{ textAlign: "center", width: 0 }}
+              />
+            </View>
+            <View style={{ alignItems: "center" }}>
               <TextStyle
-                title
-                customStyle={{ marginVertical: 5 }}
-                color={light.main2}
+                customStyle={{ marginBottom: 10 }}
+                color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                {calculator}
+                Descuento por porcentaje
               </TextStyle>
-              {parseInt(calculator.replace(/[^0-9]/g, "")) !==
-                buy.reduce((a, b) => a + b.total, 0) && (
+              <InputStyle
+                maxLength={3}
+                placeholder="Porcentaje"
+                value={percentage}
+                keyboardType="numeric"
+                onChangeText={(num) => {
+                  if (parseInt(num.replace(/[^0-9]/g, "")) > 100) return;
+                  const operation = Math.floor(
+                    (parseInt(discount.amount) *
+                      parseInt(num.replace(/[^0-9]/g, ""))) /
+                      100
+                  ).toString();
+
+                  if (!isNaN(operation)) setDiscountInAmount(operation);
+                  else setDiscountInAmount("");
+                  setPercentage(thousandsSystem(num.replace(/[^0-9]/g, "")));
+                }}
+                stylesContainer={{ width: "60%" }}
+                stylesInput={{ textAlign: "center", width: 0 }}
+              />
+            </View>
+            <View
+              style={{
+                paddingVertical: 10,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <View style={{ marginBottom: 15, alignItems: "center" }}>
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
-                  {parseInt(calculator.replace(/[^0-9]/g, "")) -
-                    buy.reduce((a, b) => a + b.total, 0) <
-                  0
-                    ? `Debe: ${thousandsSystem(
-                        (parseInt(calculator.replace(/[^0-9]/g, "")) -
-                          buy.reduce((a, b) => a + b.total, 0)) *
-                          -1
-                      )}`
-                    : `Vuelto: ${thousandsSystem(
-                        parseInt(calculator.replace(/[^0-9]/g, "")) -
-                          buy.reduce((a, b) => a + b.total, 0)
-                      )}`}
+                  {discount.title}
                 </TextStyle>
-              )}
+                <TextStyle color={light.main2} title>
+                  {thousandsSystem(
+                    discount.amount - discountInAmount.replace(/[^0-9]/g, "")
+                  )}
+                </TextStyle>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                  customStyle={{
+                    textDecorationLine: "line-through",
+                    textDecorationStyle: "solid",
+                  }}
+                >
+                  {thousandsSystem(discount.amount)}
+                </TextStyle>
+              </View>
+              <ButtonStyle
+                backgroundColor={light.main2}
+                onPress={() => {
+                  if (discount.id) {
+                    const newBuy = buy.map((b) => {
+                      if (b.id === discount.id)
+                        b.discount =
+                          discount.amount -
+                          discountInAmount.replace(/[^0-9]/g, "");
+                      return b;
+                    });
+                    setBuy(newBuy);
+                  } else
+                    setTotalDiscount(
+                      discount.amount - discountInAmount.replace(/[^0-9]/g, "")
+                    );
+                  setRoute("createOrder");
+                  setDiscount({});
+                  setPercentage("");
+                  setDiscountInAmount("");
+                }}
+              >
+                Aplicar descuento
+              </ButtonStyle>
+            </View>
+          </View>
+        )}
+        {route === "editItem" && (
+          <View style={{ flex: 1, justifyContent: "space-between" }}>
+            <View style={styles.arrowContainer}>
+              <TouchableOpacity
+                onPress={() => {
+                  setRoute("createOrder");
+                  setAmount({});
+                }}
+              >
+                <Ionicons
+                  name="arrow-back"
+                  size={35}
+                  color={light.main2}
+                  style={{ marginLeft: 5 }}
+                />
+              </TouchableOpacity>
+              <TextStyle
+                smallSubtitle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Cantidad
+              </TextStyle>
             </View>
             <View style={{ alignItems: "center" }}>
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-                customStyle={{
-                  backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                  padding: 5,
-                  width: "100%",
+              <TextStyle color={light.main2}>Cantidad: </TextStyle>
+              <InputStyle
+                placeholder="Cantidad"
+                value={amount.amount}
+                maxLength={3}
+                keyboardType="numeric"
+                onChangeText={(num) => {
+                  if (parseInt(num.replace(/[^0-9]/g, "")) <= 0) return;
+                  setAmount({
+                    ...amount,
+                    amount: thousandsSystem(num.replace(/[^0-9]/g, "")),
+                  });
                 }}
-                center
-              >
-                {thousandsSystem(buy.reduce((a, b) => a + b.total, 0))}
-              </TextStyle>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                }}
-              >
-                <TouchableOpacity
-                  style={[
-                    styles.numericKeyboardItem,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                  onPress={() => numericKeyboardEvent(1)}
-                >
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    1
-                  </TextStyle>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.numericKeyboardItem,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                  onPress={() => numericKeyboardEvent(2)}
-                >
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    2
-                  </TextStyle>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.numericKeyboardItem,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                  onPress={() => numericKeyboardEvent(3)}
-                >
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    3
-                  </TextStyle>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.numericKeyboardItem,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                  onPress={() => numericKeyboardEvent(4)}
-                >
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    4
-                  </TextStyle>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.numericKeyboardItem,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                  onPress={() => numericKeyboardEvent(5)}
-                >
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    5
-                  </TextStyle>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.numericKeyboardItem,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                  onPress={() => numericKeyboardEvent(6)}
-                >
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    6
-                  </TextStyle>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.numericKeyboardItem,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                  onPress={() => numericKeyboardEvent(7)}
-                >
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    7
-                  </TextStyle>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.numericKeyboardItem,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                  onPress={() => numericKeyboardEvent(8)}
-                >
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    8
-                  </TextStyle>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.numericKeyboardItem,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                  onPress={() => numericKeyboardEvent(9)}
-                >
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    9
-                  </TextStyle>
-                </TouchableOpacity>
-                <View
-                  style={[
-                    styles.numericKeyboardItem,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.numericKeyboardItem,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                  onPress={() => numericKeyboardEvent(0)}
-                >
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    0
-                  </TextStyle>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.numericKeyboardItem,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                  onPress={() => numericKeyboardEvent("backspace")}
-                >
-                  <Ionicons
-                    name="backspace-outline"
-                    size={32}
-                    color={light.main2}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-            <View>
-              <ButtonStyle
-                style={{ backgroundColor: light.main2 }}
-                onPress={() => {
-                  setPending(true);
-                  if (information.editing) updateOrder(false);
-                  else saveOrder(false);
-                }}
-              >
-                <TextStyle>Guardar pedido</TextStyle>
-              </ButtonStyle>
+                stylesContainer={{ width: "60%", marginVertical: 10 }}
+                stylesInput={{ textAlign: "center", width: 0 }}
+              />
               <ButtonStyle
                 backgroundColor="transparent"
                 style={{
                   borderWidth: 2,
                   borderColor: light.main2,
+                  width: "40%",
                 }}
                 onPress={() => {
-                  if (information.editing) updateOrder(true);
-                  else saveOrder(true);
+                  const remove = selection.filter(
+                    (item) => item.id !== amount.id
+                  );
+                  setSelection(remove);
+                  setAmount({});
+                  if (remove.length === 0) setRoute("main");
+                  else setRoute("createOrder");
                 }}
               >
-                <TextStyle color={light.main2}>
-                  Finalizar{" "}
-                  {thousandsSystem(buy.reduce((a, b) => a + b.total, 0))}
+                <TextStyle smallParagraph color={light.main2}>
+                  Remover producto
                 </TextStyle>
               </ButtonStyle>
             </View>
+            <ButtonStyle
+              backgroundColor={light.main2}
+              onPress={() => {
+                const item = selection.find((item) => item.id === amount.id);
+                const remove = selection.filter(
+                  (item) => item.id !== amount.id
+                );
+                for (
+                  let i = 0;
+                  i < parseInt(amount.amount.replace(/[^0-9]/g, ""));
+                  i++
+                ) {
+                  remove.push(item);
+                }
+                setSelection(remove);
+                setRoute("createOrder");
+                setAmount({});
+              }}
+            >
+              <TextStyle smallParagraph>Guardar</TextStyle>
+            </ButtonStyle>
+          </View>
+        )}
+        {route === "editAmount" && (
+          <View style={{ flex: 1, justifyContent: "space-between" }}>
+            <View style={styles.arrowContainer}>
+              <TouchableOpacity
+                onPress={() => {
+                  setRoute("createOrder");
+                  setEditPrice({});
+                }}
+              >
+                <Ionicons
+                  name="arrow-back"
+                  size={35}
+                  color={light.main2}
+                  style={{ marginLeft: 5 }}
+                />
+              </TouchableOpacity>
+              <TextStyle
+                smallSubtitle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Precio unitario
+              </TextStyle>
+            </View>
+            <View style={{ alignItems: "center" }}>
+              <TextStyle color={light.main2}>Editar precio unitario</TextStyle>
+              <InputStyle
+                placeholder="Precio"
+                value={editPrice.price}
+                maxLength={10}
+                keyboardType="numeric"
+                onChangeText={(num) => {
+                  if (parseInt(num.replace(/[^0-9]/g, "")) <= 0) return;
+                  setEditPrice({
+                    ...editPrice,
+                    price: thousandsSystem(num.replace(/[^0-9]/g, "")),
+                  });
+                }}
+                stylesContainer={{ width: "60%", marginVertical: 10 }}
+                stylesInput={{ textAlign: "center", width: 0 }}
+              />
+              <TextStyle
+                verySmall
+                color={mode === "light" ? light.textDark : dark.textWhite}
+                customStyle={{ width: "50%" }}
+                center
+              >
+                El precio unitario de este producto será cambiado por solo esta
+                venta.
+              </TextStyle>
+            </View>
+            <ButtonStyle
+              backgroundColor={light.main2}
+              onPress={() => {
+                const items = buy.map((item) => {
+                  if (item.id === editPrice.id)
+                    item.total =
+                      item.count *
+                      parseInt(editPrice.price.replace(/[^0-9]/g, ""));
+                  return item;
+                });
+                setBuy(items);
+                setRoute("createOrder");
+                setEditPrice({});
+              }}
+            >
+              <TextStyle smallParagraph>Guardar</TextStyle>
+            </ButtonStyle>
           </View>
         )}
         {route === "bought" && (
@@ -1339,30 +1448,10 @@ const Menu = ({ active, information, setActive }) => {
                 smallTitle
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                {pending
-                  ? thousandsSystem(buy.reduce((a, b) => a + b.total, 0))
-                  : calculator}
+                {totalDiscount !== 0
+                  ? totalDiscount
+                  : thousandsSystem(buy.reduce((a, b) => a + b.total, 0))}
               </TextStyle>
-              {parseInt(calculator.replace(/[^0-9]/g, "")) !==
-                buy.reduce((a, b) => a + b.total, 0) &&
-                calculator && (
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    {parseInt(calculator.replace(/[^0-9]/g, "")) -
-                      buy.reduce((a, b) => a + b.total, 0) <
-                    0
-                      ? `Debía: ${thousandsSystem(
-                          (parseInt(calculator.replace(/[^0-9]/g, "")) -
-                            buy.reduce((a, b) => a + b.total, 0)) *
-                            -1
-                        )}`
-                      : `Vuelto: ${thousandsSystem(
-                          parseInt(calculator.replace(/[^0-9]/g, "")) -
-                            buy.reduce((a, b) => a + b.total, 0)
-                        )}`}
-                  </TextStyle>
-                )}
             </View>
             <ButtonStyle
               backgroundColor="transparent"
@@ -1429,10 +1518,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   chosenProduct: {
-    marginVertical: 2,
     paddingVertical: 10,
     paddingHorizontal: 15,
-    borderRadius: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1460,6 +1547,13 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 5,
     borderBottomRightRadius: 5,
     paddingHorizontal: 14,
+  },
+  arrowContainer: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
   },
 });
 
