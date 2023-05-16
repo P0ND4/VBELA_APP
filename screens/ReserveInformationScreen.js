@@ -1,14 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   View,
   TouchableOpacity,
   Alert,
   Dimensions,
-  StyleSheet,
   ScrollView,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { changeDate, months, thousandsSystem, reduce } from "../helpers/libs";
+import { changeDate, months, thousandsSystem } from "../helpers/libs";
 import { remove } from "../features/groups/reservationsSlice";
 import { removeReservation } from "../api";
 import helperNotification from "../helpers/helperNotification";
@@ -16,7 +15,6 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import Layout from "../components/Layout";
 import TextStyle from "../components/TextStyle";
 import ButtonStyle from "../components/ButtonStyle";
-import Menu from "../components/Menu";
 import theme from "../theme";
 
 const dark = theme.colors.dark;
@@ -33,14 +31,13 @@ const StatisticScreen = ({ route, navigation }) => {
   const nomenclature = useSelector((state) =>
     state.nomenclatures.find((n) => n.id === route.params.id)
   );
+  const group = useSelector(state => state.groups.find(g => g.ref === nomenclature.ref));
+
   const activeGroup = useSelector((state) => state.activeGroup);
   const user = useSelector((state) => state.user);
   const orders = useSelector((state) => state.orders);
 
   const OF = orders.find((o) => o.ref === route.params.ref && o.pay === false);
-
-  const [menuActive, setMenuActive] = useState(false);
-  const [menuInformation, setMenuInformation] = useState({});
 
   useEffect(() => {
     navigation.setOptions({ title: reserve?.fullName });
@@ -187,7 +184,11 @@ const StatisticScreen = ({ route, navigation }) => {
           </View>
 
           <View
-            style={{ flexDirection: "row", justifyContent: "space-between", alignItems: 'center' }}
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
           >
             <ButtonStyle
               style={{ width: width / 1.4 }}
@@ -195,14 +196,14 @@ const StatisticScreen = ({ route, navigation }) => {
                 !OF ? light.main2 : mode === "light" ? dark.main2 : light.main4
               }
               onPress={() => {
-                setMenuInformation({
+                navigation.push("CreateOrder", {
                   editing: OF ? true : false,
                   id: OF ? OF.id : undefined,
                   ref: route.params.ref,
-                  table: route.params.ref,
-                  selection: OF ? OF.selection : false,
+                  table: nomenclature.nomenclature,
+                  selection: OF ? OF.selection : [],
+                  reservation: group.name
                 });
-                setMenuActive(true);
               }}
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -282,11 +283,6 @@ const StatisticScreen = ({ route, navigation }) => {
           </ButtonStyle>
         </ScrollView>
       </View>
-      <Menu
-        active={menuActive}
-        information={menuInformation}
-        setActive={setMenuActive}
-      />
     </Layout>
   );
 };

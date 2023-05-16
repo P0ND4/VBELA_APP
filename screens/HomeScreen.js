@@ -92,7 +92,7 @@ const HomeScreen = ({ navigation }) => {
     setTimeout(async () => {
       const active = activeGroup;
       if (user.helpers.length > 0) {
-        const helpers = user.helpers.map((helper) => ({
+        const helpers = user.helpers?.map((helper) => ({
           ...helper,
           expoID: helper.expoID.filter((e) => e !== user.expoID),
         }));
@@ -217,7 +217,7 @@ const HomeScreen = ({ navigation }) => {
                       onPress: async () => {
                         const active = activeGroup;
                         socket.emit("leave", { groups: [active.id] });
-                        const groups = user.helpers.map((h) => h.id);
+                        const groups = user.helpers?.map((h) => h.id);
                         if (groups.length > 0)
                           socket.emit("connected", { groups });
                         changeGeneralInformation(dispatch, user);
@@ -277,6 +277,19 @@ const HomeScreen = ({ navigation }) => {
           )}
         </View>
         <View style={styles.content}>
+          {(!activeGroup.active ||
+            activeGroup.accessToKitchen ||
+            activeGroup.accessToTable) && (
+            <View>
+              <ButtonStyle
+                onPress={() => navigation.push("Kitchen")}
+                backgroundColor={light.main2}
+              >
+                <TextStyle color={light.textDark}>Producción</TextStyle>
+              </ButtonStyle>
+              <Image source={Premium} style={styles.premium} />
+            </View>
+          )}
           {(!activeGroup.active || activeGroup.accessToEconomy) && (
             <View>
               <ButtonStyle
@@ -290,7 +303,7 @@ const HomeScreen = ({ navigation }) => {
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
-                  Compra
+                  Compra/Costos
                 </TextStyle>
               </ButtonStyle>
               <Image source={Premium} style={styles.premium} />
@@ -309,8 +322,19 @@ const HomeScreen = ({ navigation }) => {
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
-                  Gasto
+                  Gasto/Inversión
                 </TextStyle>
+              </ButtonStyle>
+              <Image source={Premium} style={styles.premium} />
+            </View>
+          )}
+          {(!activeGroup.active || activeGroup.accessToRoster) && (
+            <View>
+              <ButtonStyle
+                onPress={() => navigation.push("CreateRoster")}
+                backgroundColor={light.main2}
+              >
+                <TextStyle color={light.textDark}>Pagos De Nomina</TextStyle>
               </ButtonStyle>
               <Image source={Premium} style={styles.premium} />
             </View>
@@ -321,14 +345,14 @@ const HomeScreen = ({ navigation }) => {
                 onPress={() => navigation.push("Tables")}
                 backgroundColor={light.main2}
               >
-                Ventas
+                Ventas Diarias
               </ButtonStyle>
               <Image source={Premium} style={styles.premium} />
             </View>
           )}
           {(!activeGroup.active || activeGroup.accessToReservations) && (
             <View style={styles.divider}>
-              <TextStyle color={mode === "light" ? null : dark.main4} >
+              <TextStyle color={mode === "light" ? null : dark.main4}>
                 Control De Reservas
               </TextStyle>
               <Picker
@@ -513,8 +537,9 @@ const styles = StyleSheet.create({
     height: Math.floor(width / 20),
     width: Math.floor(width / 20),
     position: "absolute",
-    top: -8,
-    right: -12,
+    top: 0,
+    right: 0,
+    display: "none",
   },
 });
 

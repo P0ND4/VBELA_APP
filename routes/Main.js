@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { createStackNavigator } from "@react-navigation/stack";
+import { active, inactive } from "../features/function/informationSlice";
+import { change as changeHelpers } from "../features/helpers/informationSlice";
+import { change as changeUser } from "../features/user/informationSlice";
+import { socket } from "../socket";
+import { getRule, getUser } from "../api";
+import { readFile, removeFile, writeFile } from "../helpers/offline";
 import NetInfo from "@react-native-community/netinfo";
 import SignIn from "../screens/SignInScreen";
 import Home from "../screens/HomeScreen";
@@ -19,18 +25,23 @@ import CreateTable from "../screens/CreateTableScreen";
 import TableInformation from "../screens/TableInformationScreen";
 import changeGeneralInformation from "../helpers/changeGeneralInformation";
 import CreateEconomy from "../screens/CreateEconomyScreen";
-import { active, inactive } from "../features/function/informationSlice";
-import { change as changeHelpers } from "../features/helpers/informationSlice";
-import { change as changeUser } from "../features/user/informationSlice";
-import { socket } from "../socket";
-import { getRule, getUser } from "../api";
-import { readFile, removeFile, writeFile } from "../helpers/offline";
-import { changeDate } from "../helpers/libs";
-import cleanData from "../helpers/cleanData";
-import * as BackgroundFetch from "expo-background-fetch";
-import * as TaskManager from "expo-task-manager";
+import CreateProduct from "../screens/CreateProductScreen";
 import version from "../version.json";
 import Event from "../screens/EventScreen";
+import CreateOrder from "../screens/CreateOrderScreen";
+import PreviewOrder from "../screens/PreviewOrderScreen";
+import OrderCompletion from "../screens/OrderCompletionScreen";
+import cleanData from "../helpers/cleanData";
+import CreatePercentage from "../screens/CreatePercentageScreen";
+import EditOrder from "../screens/EditOrderScreen";
+import Invoice from "../screens/InvoiceScreen";
+import InvoiceByEmail from "../screens/InvoiceByEmailScreen";
+import EditInvoice from "../screens/EditInvoiceScreen";
+import Kitchen from "../screens/KitchenScreen";
+import CreateRoster from "../screens/CreateRosterScreen";
+
+import * as BackgroundFetch from "expo-background-fetch";
+import * as TaskManager from "expo-task-manager";
 
 const BACKGROUND_FETCH_TASK = "Sincronizando";
 
@@ -81,7 +92,7 @@ const Main = () => {
   const [status, setStatus] = useState(null);
 
   const sendSync = async (data) => {
-    const groups = user?.helpers.map((h) => h.id);
+    const groups = user?.helpers?.map((h) => h.id);
     socket.emit("sync", {
       data,
       groups: activeGroup.id ? [activeGroup.id] : [],
@@ -181,10 +192,10 @@ const Main = () => {
 
   useEffect(() => {
     const getInformation = async () => {
-      const groups = user?.helpers.map((h) => h.id);
+      const groups = user?.helpers?.map((h) => h.id);
       if (user && activeGroup.active)
         socket.emit("connected", { groups: [activeGroup.id] });
-      else if (user && user?.helpers.length > 0)
+      else if (user && user?.helpers?.length > 0)
         socket.emit("connected", { groups });
       await writeFile({
         name: "work.json",
@@ -220,12 +231,12 @@ const Main = () => {
         if (!check.error && file?.length > 0) sendSync(data);
         if (check.error && file?.length > 0) {
           if (check.type === "Helper not found") {
-            for (let i = 0; i < file.length; i++) {
+            for (let i = 0; i < file?.length; i++) {
               if (file[i].data.email !== user?.email) file.splice(i, 1);
             }
             sendSync(file);
           } else {
-            for (let i = 0; i < file.length; i++) {
+            for (let i = 0; i < file?.length; i++) {
               if (file[i].creationDate < check.userFound.modificationDate)
                 file.splice(i, 1);
             }
@@ -356,6 +367,57 @@ const Main = () => {
         />
         <Stack.Screen name="TableInformation" component={TableInformation} />
         <Stack.Screen name="CreateEconomy" component={CreateEconomy} />
+        <Stack.Screen
+          name="CreateOrder"
+          component={CreateOrder}
+          options={{ title: "Vender" }}
+        />
+        <Stack.Screen
+          name="CreateProduct"
+          component={CreateProduct}
+          options={{ title: "Nuevo producto" }}
+        />
+        <Stack.Screen
+          name="PreviewOrder"
+          component={PreviewOrder}
+          options={{ title: "Carrito" }}
+        />
+        <Stack.Screen
+          name="OrderCompletion"
+          component={OrderCompletion}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="CreatePercentage"
+          component={CreatePercentage}
+          options={{ title: "Crear descuento" }}
+        />
+        <Stack.Screen name="EditOrder" component={EditOrder} />
+        <Stack.Screen
+          name="Invoice"
+          component={Invoice}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="InvoiceByEmail"
+          component={InvoiceByEmail}
+          options={{ title: "Enviar por Email" }}
+        />
+        <Stack.Screen
+          name="EditInvoice"
+          component={EditInvoice}
+          options={{ title: "Configurar mi recibo" }}
+        />
+        <Stack.Screen
+          name="Kitchen"
+          component={Kitchen}
+          options={{ title: "Cocina" }}
+        />
+        <Stack.Screen
+          name="CreateRoster"
+          component={CreateRoster}
+          options={{ title: "Nómina" }}
+        />
       </Stack.Group>
       <Stack.Screen
         name="Event"

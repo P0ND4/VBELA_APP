@@ -25,6 +25,7 @@ const TextStyle = ({
   verySmall,
   center,
   justify,
+  right,
   children,
 }) => {
   const stylesTaken = [
@@ -42,6 +43,7 @@ const TextStyle = ({
     color && { color },
     center && { textAlign: 'center' },
     justify && { textAlign: 'justify' },
+    right && { textAlign: 'right' },
     customStyle
   ]
 

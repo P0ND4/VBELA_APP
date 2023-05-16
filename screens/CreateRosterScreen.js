@@ -5,24 +5,25 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import { useForm } from "react-hook-form";
 import { useSelector, useDispatch } from "react-redux";
 import { random } from "../helpers/libs";
-import { addEconomy, editEconomy, removeEconomy } from "../api";
+import { Picker } from "@react-native-picker/picker";
+import { addRoster, editRoster, removeRoster } from "../api";
 import ButtonStyle from "../components/ButtonStyle";
 import InputStyle from "../components/InputStyle";
 import Layout from "../components/Layout";
 import TextStyle from "../components/TextStyle";
 import theme from "../theme";
 import { thousandsSystem } from "../helpers/libs";
-import { add, edit, remove } from "../features/function/economySlice";
-import helperNotification from "../helpers/helperNotification";
+import { add, edit, remove } from "../features/function/rosterSlice";
 
 const light = theme.colors.light;
 const dark = theme.colors.dark;
 
-const CreateEconomy = ({ route, navigation }) => {
+const CreateRoster = ({ route, navigation }) => {
   const {
     register,
     setValue,
@@ -31,8 +32,9 @@ const CreateEconomy = ({ route, navigation }) => {
   } = useForm();
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
-  const groups = useSelector((state) => state.groups);
+  const roster = useSelector((state) => state.roster);
   const activeGroup = useSelector((state) => state.activeGroup);
+  const helpers = useSelector((state) => state.helpers);
 
   const data = route.params?.item;
   const editing = route.params?.editing;
@@ -41,93 +43,57 @@ const CreateEconomy = ({ route, navigation }) => {
   const [amount, setAmount] = useState(
     editing ? thousandsSystem(data.amount) : ""
   );
-  const [payment, setPayment] = useState(
-    editing ? thousandsSystem(data.amount) : ""
+  const [rosterSelected, setRosterSelected] = useState(
+    editing ? data.roster : ""
   );
-
-  useEffect(() => {
-    setPayment(amount);
-    setValue("payment", amount.replace(/[^0-9]/g, ""));
-  }, [amount]);
 
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (route.params.type === "expense")
-      navigation.setOptions({ title: "Crear gasto" });
-    else navigation.setOptions({ title: "Crear compra" });
-  }, []);
-
-  useEffect(() => {
     register("name", { value: editing ? data.name : "", required: true });
     register("amount", { value: editing ? data.amount : "", required: true });
-    register("payment", { value: editing ? data.payment : "", required: true });
+    register("roster", { value: editing ? data.roster : "", required: true });
   }, []);
 
   const onSubmitEdit = async (d) => {
     Keyboard.dismiss();
     d.ref = data.ref;
-    d.type = data.type;
     d.creationDate = data.creationDate;
     d.modificationDate = new Date().getTime();
-    dispatch(edit({ ref: data.ref, data: d }));
+    dispatch(edit({ id: data.id, data: d }));
     navigation.pop();
-    await editEconomy({
+    await editRoster({
       email: activeGroup.active ? activeGroup.email : user.email,
-      economy: d,
+      roster: d,
       groups: activeGroup.active
         ? [activeGroup.id]
         : user.helpers.map((h) => h.id),
     });
-    await helperNotification(
-      activeGroup,
-      user,
-      route.params.type === "expense" ? "Gasto editado" : "Compra editada",
-      `${
-        route.params.type === "expense"
-          ? "Un gasto ha sido editado"
-          : "Una compra ha sido editada"
-      } por ${user.email}`
-    );
   };
 
   const onSubmitCreate = async (data) => {
     Keyboard.dismiss();
-    const ref = random(20);
-    if (groups.find((group) => group.ref === ref)) onSubmitCreate(data);
+    const id = random(20);
+    if (roster.find((r) => r.id === id)) onSubmitCreate(data);
 
-    data.ref = ref;
-    data.type = route.params.type;
+    data.id = id;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
     dispatch(add(data));
     navigation.pop();
-    await addEconomy({
+    await addRoster({
       email: activeGroup.active ? activeGroup.email : user.email,
-      economy: data,
+      roster: data,
       groups: activeGroup.active
         ? [activeGroup.id]
         : user.helpers.map((h) => h.id),
     });
-
-    await helperNotification(
-      activeGroup,
-      user,
-      route.params.type === "expense" ? "Gasto creado" : "Compra creada",
-      `${
-        route.params.type === "expense"
-          ? "Un gasto ha sido creado"
-          : "Una compra ha sido creada"
-      } por ${user.email}`
-    );
   };
 
-  const deleteEconomy = () => {
+  const deleteRoster = () => {
     Keyboard.dismiss();
     Alert.alert(
-      `¿Estás seguro que quieres eliminar ${
-        route.params.type === "expense" ? "el gasto" : "la compra"
-      }?`,
+      `¿Estás seguro que quieres eliminar la nómina?`,
       "No podrá recuperar esta información una vez borrada",
       [
         {
@@ -137,27 +103,15 @@ const CreateEconomy = ({ route, navigation }) => {
         {
           text: "Si",
           onPress: async () => {
-            dispatch(remove({ ref: data.ref }));
+            dispatch(remove({ id: data.id }));
             navigation.pop();
-            await removeEconomy({
+            await removeRoster({
               email: activeGroup.active ? activeGroup.email : user.email,
-              ref: data.ref,
+              id: data.id,
               groups: activeGroup.active
                 ? [activeGroup.id]
                 : user.helpers.map((h) => h.id),
             });
-            await helperNotification(
-              activeGroup,
-              user,
-              route.params.type === "expense"
-                ? "Gasto eliminado"
-                : "Compra eliminada",
-              `${
-                route.params.type === "expense"
-                  ? "Un gasto ha sido eliminado"
-                  : "Una compra ha sido eliminada"
-              } por ${user.email}`
-            );
           },
         },
       ],
@@ -193,7 +147,7 @@ const CreateEconomy = ({ route, navigation }) => {
                 center
                 color={mode === "light" ? null : dark.textWhite}
               >
-                Crear {route.params.type === "expense" ? "Gasto" : "Compra"}
+                Crear Nómina
               </TextStyle>
             </View>
             <View style={{ marginVertical: 10 }}>
@@ -236,10 +190,42 @@ const CreateEconomy = ({ route, navigation }) => {
                   El valor es obligatorio
                 </TextStyle>
               )}
+              <TouchableOpacity
+                style={{
+                  backgroundColor: mode === "light" ? light.main5 : dark.main2,
+                  borderRadius: 8,
+                  marginVertical: 4,
+                }}
+              >
+                <Picker
+                  style={{
+                    color: mode === "light" ? light.textDark : dark.textWhite,
+                  }}
+                  selectedValue={rosterSelected}
+                  onValueChange={(value) => {
+                    setValue("roster", value);
+                    setRosterSelected(value);
+                  }}
+                >
+                  <Picker.Item label="SELECCIONE EL CARGO" value="" />
+                  {helpers.map((item) => (
+                    <Picker.Item
+                      key={item.id}
+                      label={item.user}
+                      value={item.user}
+                    />
+                  ))}
+                </Picker>
+              </TouchableOpacity>
+              {errors.roster?.type && (
+                <TextStyle verySmall color={light.main2}>
+                  Seleccione el cargo al hacer la nómina
+                </TextStyle>
+              )}
             </View>
             {editing && (
               <ButtonStyle
-                onPress={() => deleteEconomy()}
+                onPress={() => deleteRoster()}
                 backgroundColor={mode === "light" ? light.main5 : dark.main2}
               >
                 <TextStyle
@@ -249,45 +235,12 @@ const CreateEconomy = ({ route, navigation }) => {
                 </TextStyle>
               </ButtonStyle>
             )}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
+            <ButtonStyle
+              onPress={handleSubmit(editing ? onSubmitEdit : onSubmitCreate)}
+              backgroundColor={light.main2}
             >
-              <ButtonStyle
-                onPress={handleSubmit(editing ? onSubmitEdit : onSubmitCreate)}
-                backgroundColor={light.main2}
-                style={{ width: "40%" }}
-              >
-                {editing ? "Guardar" : "Pagado"}
-              </ButtonStyle>
-              <InputStyle
-                value={payment}
-                stylesContainer={{ width: "55%" }}
-                placeholder="Abono"
-                right={
-                  payment
-                    ? () => <TextStyle color={light.main2}>Abono</TextStyle>
-                    : null
-                }
-                maxLength={10}
-                keyboardType="numeric"
-                onChangeText={(text) => {
-                  const num = text.replace(/[^0-9]/g, "");
-                  if (parseInt(num) > parseInt(amount.replace(/[^0-9]/g, "")))
-                    return;
-                  setValue("payment", num);
-                  setPayment(thousandsSystem(num));
-                }}
-              />
-            </View>
-            {errors.payment?.type && (
-              <TextStyle right verySmall color={light.main2}>
-                El campo está vacío, digite el abono o el monto pagado
-              </TextStyle>
-            )}
+              {editing ? "Guardar" : "Pagado"}
+            </ButtonStyle>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -295,4 +248,4 @@ const CreateEconomy = ({ route, navigation }) => {
   );
 };
 
-export default CreateEconomy;
+export default CreateRoster;

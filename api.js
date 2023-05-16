@@ -22,7 +22,7 @@ export const connect = async ({ data = {}, url }) => {
     const r = await readFile({ name: "data.json" });
     const value = !r.error ? r : [];
     const info = { url, data, creationDate: new Date().getTime() };
-    const options = ["helper", "nomenclature", "table", "menu"];
+    const options = ["helper", "nomenclature", "table", "menu", "kitchen"];
     const typeOfData = url.slice(1).split("/")[0];
     const identification = options.includes(typeOfData) ? "id" : "ref";
 
@@ -114,6 +114,9 @@ export const editOrder = async (data) =>
 export const removeOrder = async (data) =>
   await connect({ data, url: "/order/remove" });
 
+export const orderInvoice = async (data) =>
+  await connect({ data, url: "/order/invoice" });
+
 export const addReservation = async (data) =>
   await connect({ data, url: "/reservation/add" });
 
@@ -142,3 +145,24 @@ export const editMenu = async (data) =>
 
 export const removeMenu = async (data) =>
   await connect({ data, url: "/menu/remove" });
+
+export const addKitchen = async (data) =>
+  await connect({ data, url: "/kitchen/add" });
+
+export const editKitchen = async (data) =>
+  await connect({ data, url: "/kitchen/edit" });
+
+export const removeKitchen = async (data) =>
+  await connect({ data, url: "/kitchen/remove" });
+  
+export const removeManyKitchen = async (data) =>
+  await connect({ data, url: "/kitchen/remove/many" });
+
+  export const addRoster = async (data) =>
+  await connect({ data, url: "/roster/add" });
+
+export const editRoster = async (data) =>
+  await connect({ data, url: "/roster/edit" });
+
+export const removeRoster = async (data) =>
+  await connect({ data, url: "/roster/remove" });

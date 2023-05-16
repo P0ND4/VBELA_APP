@@ -31,6 +31,7 @@ const StatisticScreen = ({ navigation }) => {
   const economy = useSelector((state) => state.economy);
   const orders = useSelector((state) => state.orders);
   const reservations = useSelector((state) => state.reservations);
+  const roster = useSelector((state) => state.roster);
 
   const [isLoading, setIsLoading] = useState(true);
   const [purchases, setPurchases] = useState([]);
@@ -48,6 +49,14 @@ const StatisticScreen = ({ navigation }) => {
   const [day, setDay] = useState("all");
   const [month, setMonth] = useState("all");
   const [year, setYear] = useState("all");
+
+  const [ro, setRo] = useState(0);
+  const [ros, setRos] = useState([]);
+
+  const [accountsPayable, setAccountsPayable] = useState([]);
+  const [accountsPayableAmount, setAccountsPayableAmount] = useState(0);
+
+  const [averageUtility, setAverageUtility] = useState(0);
 
   const dateValidation = (date) => {
     let error = false;
@@ -72,8 +81,19 @@ const StatisticScreen = ({ navigation }) => {
     let amount = 0;
     let purchase = 0;
     let expense = 0;
+    let accountsPayableAmount = 0;
+    let ro = 0;
     let purchases = [];
     let expenses = [];
+    let ros = [];
+    let accountsPayable = [];
+
+    for (let data of roster) {
+      const date = new Date(data.creationDate);
+      if (dateValidation(date)) continue;
+      ro += parseInt(data.amount);
+      ros.push(data);
+    }
 
     for (let reservation of reservations) {
       const date = new Date(reservation.creationDate);
@@ -85,6 +105,10 @@ const StatisticScreen = ({ navigation }) => {
     for (let data of economy) {
       const date = new Date(data.creationDate);
       if (dateValidation(date)) continue;
+      if (data.amount !== data.payment) {
+        accountsPayableAmount += parseInt(data.amount - data.payment);
+        accountsPayable.push(data);
+      }
       if (data.type === "purchase") {
         purchase += parseInt(data.amount);
         purchases.push(data);
@@ -95,7 +119,7 @@ const StatisticScreen = ({ navigation }) => {
     }
 
     for (let order of orders) {
-      const amount = order?.buy?.reduce((a, b) => a + b.total, 0);
+      const amount = order?.selection?.reduce((a, b) => a + b.total, 0);
       const date = new Date(order.creationDate);
       if (dateValidation(date) || !order.pay) continue;
 
@@ -109,11 +133,16 @@ const StatisticScreen = ({ navigation }) => {
     setExpense(expense);
     setPurchases(purchases);
     setExpenses(expenses);
+    setRos(ros);
+    setRo(ro);
+    setAccountsPayable(accountsPayable);
+    setAccountsPayableAmount(accountsPayableAmount);
+    setAverageUtility(sales - expense - purchase - ro)
 
     setTimeout(() => {
       setIsLoading(false);
     }, 200);
-  }, [day, month, year, economy, orders]);
+  }, [day, month, year, economy, orders, roster]);
 
   useEffect(() => {
     const date = new Date();
@@ -192,28 +221,43 @@ const StatisticScreen = ({ navigation }) => {
     );
   };
 
-  const Information = ({ name, value }) => {
+  const Information = ({ name, value, onPress }) => {
+    const [active, setActive] = useState(false);
+
+    const Controller = ({ children, ...props }) =>
+      onPress ? (
+        <TouchableOpacity {...props}>{children}</TouchableOpacity>
+      ) : (
+        <View {...props}>{children}</View>
+      );
+
     return (
-      <View
-        style={[
-          styles.container,
-          { borderColor: mode === "light" ? light.main5 : dark.main2 },
-        ]}
-      >
-        <TextStyle
-          verySmall
-          color={mode === "light" ? light.textDark : dark.textWhite}
+      <>
+        <Controller
+          style={[
+            styles.container,
+            { borderColor: mode === "light" ? light.main5 : dark.main2 },
+          ]}
+          onPress={() => {
+            if (onPress) setActive(!active);
+          }}
         >
-          {name}
-        </TextStyle>
-        <View style={{ maxWidth: width / 2.5 }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator>
-            <TextStyle verySmall color={light.main2}>
-              {value}
-            </TextStyle>
-          </ScrollView>
-        </View>
-      </View>
+          <TextStyle
+            verySmall
+            color={mode === "light" ? light.textDark : dark.textWhite}
+          >
+            {name}
+          </TextStyle>
+          <View style={{ maxWidth: width / 2.5 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator>
+              <TextStyle verySmall color={light.main2}>
+                {value}
+              </TextStyle>
+            </ScrollView>
+          </View>
+        </Controller>
+        {active && onPress()}
+      </>
     );
   };
 
@@ -230,7 +274,7 @@ const StatisticScreen = ({ navigation }) => {
     const date = new Date(order.creationDate);
     if (dateValidation(date)) continue;
     if (order.pay) {
-      const amount = order?.buy?.reduce((a, b) => a + b.total, 0);
+      const amount = order?.selection?.reduce((a, b) => a + b.total, 0);
       amountTotal += amount;
       sale += amount;
     }
@@ -405,35 +449,171 @@ const StatisticScreen = ({ navigation }) => {
             showsVerticalScrollIndicator={false}
             style={{ marginTop: 20, height: height / 1.25 }}
           >
-            <Information name="COMPRAS" value={thousandsSystem(purchase)} />
-            {purchases.length > 0 && (
-              <FlatList
-                data={purchases}
-                style={{ marginVertical: 15 }}
-                horizontal={true}
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.ref + item.modificationDate}
-                renderItem={(item) => <Economy {...item} />}
-              />
-            )}
-            <Information name="GASTOS" value={thousandsSystem(expense)} />
-            {expenses.length > 0 && (
-              <FlatList
-                data={expenses}
-                style={{ marginVertical: 15 }}
-                horizontal={true}
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.ref + item.modificationDate}
-                renderItem={(item) => <Economy {...item} />}
-              />
-            )}
-            <Information name="VENTAS" value={thousandsSystem(sales)} />
             <Information
-              name="PERSONAS HOSPEDADAS"
+              name="UTILIDAD PROMEDIO"
+              value={thousandsSystem(averageUtility)}
+            />
+            <Information
+              name="COMPRAS/COSTOS"
+              value={thousandsSystem(purchase)}
+              onPress={() =>
+                purchases.length !== 0 ? (
+                  <FlatList
+                    data={purchases}
+                    style={{ marginVertical: 15 }}
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item) => item.ref + item.modificationDate}
+                    renderItem={(item) => <Economy {...item} />}
+                  />
+                ) : (
+                  <TextStyle
+                    verySmall
+                    color={light.main2}
+                    customStyle={{ margin: 5 }}
+                  >
+                    No hay compras o costos realizados
+                  </TextStyle>
+                )
+              }
+            />
+            <Information
+              name="GASTOS/INVERSIÓN"
+              value={thousandsSystem(expense)}
+              onPress={() =>
+                expenses.length !== 0 ? (
+                  <FlatList
+                    data={expenses}
+                    style={{ marginVertical: 15 }}
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item) => item.ref + item.modificationDate}
+                    renderItem={(item) => <Economy {...item} />}
+                  />
+                ) : (
+                  <TextStyle
+                    verySmall
+                    color={light.main2}
+                    customStyle={{ margin: 5 }}
+                  >
+                    No hay gatos o inversiones realizados
+                  </TextStyle>
+                )
+              }
+            />
+            <Information
+              name="PAGOS DE NÓMINA"
+              value={thousandsSystem(ro)}
+              onPress={() =>
+                ros.length !== 0 ? (
+                  <FlatList
+                    data={ros}
+                    style={{ marginVertical: 15 }}
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item) => item.id + item.modificationDate}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={[
+                          styles.card,
+                          {
+                            backgroundColor:
+                              mode === "light" ? light.main5 : dark.main2,
+                          },
+                        ]}
+                        onPress={() =>
+                          navigation.push("CreateRoster", {
+                            editing: true,
+                            item,
+                          })
+                        }
+                      >
+                        <TextStyle
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                          verySmall
+                        >
+                          {item.name}
+                        </TextStyle>
+                        <TextStyle color={light.main2} verySmall>
+                          {thousandsSystem(item.amount)}
+                        </TextStyle>
+                      </TouchableOpacity>
+                    )}
+                  />
+                ) : (
+                  <TextStyle
+                    verySmall
+                    color={light.main2}
+                    customStyle={{ margin: 5 }}
+                  >
+                    No hay nominas realizadas
+                  </TextStyle>
+                )
+              }
+            />
+            <Information
+              name="CUENTAS POR PAGAR"
+              value={thousandsSystem(accountsPayableAmount)}
+              onPress={() =>
+                accountsPayable.length !== 0 ? (
+                  <FlatList
+                    data={accountsPayable}
+                    style={{ marginVertical: 15 }}
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item) => item.ref + item.modificationDate}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={[
+                          styles.card,
+                          {
+                            backgroundColor:
+                              mode === "light" ? light.main5 : dark.main2,
+                          },
+                        ]}
+                        onPress={() =>
+                          navigation.push("CreateEconomy", {
+                            editing: true,
+                            item,
+                          })
+                        }
+                      >
+                        <TextStyle
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                          verySmall
+                        >
+                          {item.name}
+                        </TextStyle>
+                        <TextStyle color={light.main2} verySmall>
+                          Deuda {thousandsSystem(item.amount - item.payment)}
+                        </TextStyle>
+                      </TouchableOpacity>
+                    )}
+                  />
+                ) : (
+                  <TextStyle
+                    verySmall
+                    color={light.main2}
+                    customStyle={{ margin: 5 }}
+                  >
+                    No hay cuentas por pagar
+                  </TextStyle>
+                )
+              }
+            />
+
+            <Information name="VENTAS DIARIAS" value={thousandsSystem(sales)} />
+
+            <Information
+              name="HUÉSPEDES ALOJADOS"
               value={thousandsSystem(people)}
             />
             <Information
-              name="RECAUDADO POR RESERVAS"
+              name="ALOJAMIENTO"
               value={thousandsSystem(amount)}
             />
 

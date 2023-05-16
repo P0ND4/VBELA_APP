@@ -54,6 +54,15 @@ const CreateGroup = ({ navigation, route }) => {
   const [accessToEconomy, setAccessToEconomy] = useState(
     route.params.data === "Edit" ? item.accessToEconomy : false
   );
+  const [accessToRoster, setAccessToRoster] = useState(
+    route.params.data === "Edit" ? item.accessToRoster : false
+  );
+  const [accessToKitchen, setAccessToKitchen] = useState(
+    route.params.data === "Edit" ? item.accessToKitchen : false
+  );
+  const [accessToTable, setAccessToTable] = useState(
+    route.params.data === "Edit" ? item.accessToTable : false
+  );
 
   const [inputUser, setInputUser] = useState(
     route.params.data === "Edit" ? item.user : ""
@@ -102,18 +111,32 @@ const CreateGroup = ({ navigation, route }) => {
     register("accessToEconomy", {
       value: route.params.data === "Edit" ? item.accessToEconomy : false,
     });
+    register("accessToRoster", {
+      value: route.params.data === "Edit" ? item.accessToRoster : false,
+    });
+    register("accessToKitchen", {
+      value: route.params.data === "Edit" ? item.accessToKitchen : false,
+    });
+    register("accessToTable", {
+      value: route.params.data === "Edit" ? item.accessToTable : false,
+    });
   }, []);
+
+  const permissionValidation = (data) => {
+    if (!data.accessToTables &&
+      !data.accessToReservations &&
+      !data.accessToStatistics &&
+      !data.accessToEconomy &&
+      !data.accessToRoster &&
+      !data.accessToKitchen &&
+      !data.accessToTable) return true
+    else return false;
+  }
 
   const onSubmitCreate = async (data) => {
     Keyboard.dismiss();
     setErrorAccess(false);
-    if (
-      !data.accessToTables &&
-      !data.accessToReservations &&
-      !data.accessToStatistics &&
-      !data.accessToEconomy
-    )
-      return setErrorAccess(true);
+    if (permissionValidation(data)) return setErrorAccess(true);
 
     data.id = random(20);
     data.expoID = [user.expoID];
@@ -178,13 +201,7 @@ const CreateGroup = ({ navigation, route }) => {
   const onSubmitEdit = async (data) => {
     Keyboard.dismiss();
     setErrorAccess(false);
-    if (
-      !data.accessToTables &&
-      !data.accessToReservations &&
-      !data.accessToStatistics &&
-      !data.accessToEconomy
-    )
-      return setErrorAccess(true);
+    if (permissionValidation(data)) return setErrorAccess(true);
 
     data.modificationDate = new Date().getTime();
     data.creationDate = item.creationDate;
@@ -264,7 +281,7 @@ const CreateGroup = ({ navigation, route }) => {
                   : "Edición de usuarios"}
               </TextStyle>
             </View>
-            <View style={{ marginVertical: 30 }}>
+            <View style={{ marginVertical: 20 }}>
               {route.params.data !== "Create" &&
                 route.params.data !== "Edit" && (
                   <InputStyle
@@ -324,7 +341,7 @@ const CreateGroup = ({ navigation, route }) => {
                 <View style={{ marginTop: 10 }}>
                   <View style={styles.toggles}>
                     <TextStyle smallParagraph color={light.main2}>
-                      Acceso al consumo
+                      Acceso a VENTAS DIARIAS
                     </TextStyle>
                     <Switch
                       trackColor={{ false: dark.main2, true: light.main2 }}
@@ -339,7 +356,7 @@ const CreateGroup = ({ navigation, route }) => {
                   </View>
                   <View style={styles.toggles}>
                     <TextStyle smallParagraph color={light.main2}>
-                      Acceso a reservaciones
+                      Acceso a RESERVACIONES
                     </TextStyle>
                     <Switch
                       trackColor={{ false: dark.main2, true: light.main2 }}
@@ -354,7 +371,7 @@ const CreateGroup = ({ navigation, route }) => {
                   </View>
                   <View style={styles.toggles}>
                     <TextStyle smallParagraph color={light.main2}>
-                      Acceso a estadísticas
+                      Acceso a ESTADÍSTICAS
                     </TextStyle>
                     <Switch
                       trackColor={{ false: dark.main2, true: light.main2 }}
@@ -380,6 +397,51 @@ const CreateGroup = ({ navigation, route }) => {
                         setValue("accessToEconomy", !accessToEconomy);
                       }}
                       value={accessToEconomy}
+                    />
+                  </View>
+                  <View style={styles.toggles}>
+                    <TextStyle smallParagraph color={light.main2}>
+                      Acceso a NÓMINA
+                    </TextStyle>
+                    <Switch
+                      trackColor={{ false: dark.main2, true: light.main2 }}
+                      thumbColor={light.main4}
+                      ios_backgroundColor="#3e3e3e"
+                      onValueChange={() => {
+                        setAccessToRoster(!accessToRoster);
+                        setValue("accessToRoster", !accessToRoster);
+                      }}
+                      value={accessToRoster}
+                    />
+                  </View>
+                  <View style={styles.toggles}>
+                    <TextStyle smallParagraph color={light.main2}>
+                      Acceso a COCINA
+                    </TextStyle>
+                    <Switch
+                      trackColor={{ false: dark.main2, true: light.main2 }}
+                      thumbColor={light.main4}
+                      ios_backgroundColor="#3e3e3e"
+                      onValueChange={() => {
+                        setAccessToKitchen(!accessToKitchen);
+                        setValue("accessToKitchen", !accessToKitchen);
+                      }}
+                      value={accessToKitchen}
+                    />
+                  </View>
+                  <View style={styles.toggles}>
+                    <TextStyle smallParagraph color={light.main2}>
+                      Acceso a MESA (lo que sale de producción)
+                    </TextStyle>
+                    <Switch
+                      trackColor={{ false: dark.main2, true: light.main2 }}
+                      thumbColor={light.main4}
+                      ios_backgroundColor="#3e3e3e"
+                      onValueChange={() => {
+                        setAccessToTable(!accessToTable);
+                        setValue("accessToTable", !accessToTable);
+                      }}
+                      value={accessToTable}
                     />
                   </View>
                 </View>
@@ -429,7 +491,7 @@ const styles = StyleSheet.create({
   toggles: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "center"
   },
 });
 

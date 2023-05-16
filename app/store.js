@@ -14,6 +14,9 @@ import ordersSlice from "../features/tables/ordersSlice";
 import economySlice from "../features/function/economySlice";
 import menuSlice from '../features/tables/menuSlice';
 import sectionSlice from '../features/tables/sectionSlice';
+import invoiceSlice from "../features/tables/invoiceSlice";
+import kitchenSlice from "../features/tables/kitchenSlice";
+import rosterSlice from "../features/function/rosterSlice";
 
 const reducers = combineReducers({
   mode: modeSlice, // Mode light and dark
@@ -28,7 +31,10 @@ const reducers = combineReducers({
   orders: ordersSlice,
   economy: economySlice,
   menu: menuSlice,
-  section: sectionSlice
+  section: sectionSlice,
+  invoice: invoiceSlice,
+  kitchen: kitchenSlice,
+  roster: rosterSlice
 });
 
 const persistConfig = {
@@ -44,6 +50,7 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
+      immutableCheck: false,
     }),
 });
 

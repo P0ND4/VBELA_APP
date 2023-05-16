@@ -5,9 +5,12 @@ import { clean as cleanGroups } from "../features/groups/informationSlice";
 import { clean as cleanHelpers } from "../features/helpers/informationSlice";
 import { clean as cleanTables } from "../features/tables/informationSlice";
 import { clean as cleanOrders } from "../features/tables/ordersSlice";
+import { clean as cleanKitchen } from "../features/tables/kitchenSlice";
+import { clean as cleanMenu } from "../features/tables/menuSlice";
 import { clean as cleanEconomy } from "../features/function/economySlice";
 import { inactive as inactiveSession } from "../features/user/sessionSlice";
 import { inactive as inactiveGroup } from "../features/function/informationSlice";
+import { clean as cleanRoster } from "../features/function/rosterSlice";
 
 export default cleanData = (dispatch) => {
   dispatch(inactiveSession());
@@ -20,4 +23,7 @@ export default cleanData = (dispatch) => {
   dispatch(cleanTables());
   dispatch(cleanOrders());
   dispatch(cleanEconomy());
+  dispatch(cleanMenu());
+  dispatch(cleanKitchen());
+  dispatch(cleanRoster());
 };
