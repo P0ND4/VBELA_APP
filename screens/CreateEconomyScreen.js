@@ -87,7 +87,8 @@ const CreateEconomy = ({ route, navigation }) => {
         route.params.type === "expense"
           ? "Un gasto ha sido editado"
           : "Una compra ha sido editada"
-      } por ${user.email}`
+      } por ${user.email}`,
+      'accessToEconomy'
     );
   };
 
@@ -118,7 +119,8 @@ const CreateEconomy = ({ route, navigation }) => {
         route.params.type === "expense"
           ? "Un gasto ha sido creado"
           : "Una compra ha sido creada"
-      } por ${user.email}`
+      } por ${user.email}`,
+      'accessToEconomy'
     );
   };
 
@@ -156,7 +158,8 @@ const CreateEconomy = ({ route, navigation }) => {
                 route.params.type === "expense"
                   ? "Un gasto ha sido eliminado"
                   : "Una compra ha sido eliminada"
-              } por ${user.email}`
+              } por ${user.email}`,
+              'accessToEconomy'
             );
           },
         },

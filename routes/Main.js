@@ -42,6 +42,15 @@ import CreateRoster from "../screens/CreateRosterScreen";
 
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
+import * as Notifications from "expo-notifications";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 const BACKGROUND_FETCH_TASK = "Sincronizando";
 
@@ -127,6 +136,51 @@ const Main = () => {
     }
   };
 
+  const dataNotUploadedInformation = async (res) => {
+    const data = await readFile({ name: "data.json" });
+    if (!data.error) {
+      const check = checkUser(res);
+      const file = data;
+
+      if (!check.error) await sendSync(data);
+      else {
+        if (check.type === "Helper not found") {
+          for (let i = 0; i < file?.length; i++) {
+            if (file[i].email !== user?.email) file.splice(i, 1);
+          }
+          await sendSync(file);
+        } else {
+          for (let i = 0; i < file?.length; i++) {
+            if (file[i].creationDate < check.userFound.modificationDate)
+              file.splice(i, 1);
+          }
+          await sendSync(file);
+        }
+      }
+
+      await helperNotification(
+        activeGroup,
+        user,
+        `${user?.email} ha recuperado la conexión`,
+        check.error
+          ? "Algunos cambios hechos por el usuario antes del cambio fueron sincronizados"
+          : "Los cambios que se hicieron fuera de línea han sido sincronizados"
+      );
+
+      const userChanged = await getUser({
+        email: activeGroup.active ? activeGroup.email : user?.email,
+      });
+
+      if (!activeGroup.active) {
+        dispatch(changeUser(userChanged));
+        dispatch(changeHelpers(userChanged.helpers));
+      }
+
+      changeGeneralInformation(dispatch, userChanged);
+      return true;
+    } else return false;
+  };
+
   useEffect(() => {
     const getAppInformation = async () => {
       const routes = navigation.current.getState().routes;
@@ -191,6 +245,20 @@ const Main = () => {
   };
 
   useEffect(() => {
+    const activeNotification = async () => {
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "default",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#FF231F7C",
+        });
+      }
+    };
+    activeNotification();
+  }, []);
+
+  useEffect(() => {
     const getInformation = async () => {
       const groups = user?.helpers?.map((h) => h.id);
       if (user && activeGroup.active)
@@ -210,7 +278,9 @@ const Main = () => {
         email: activeGroup.active ? activeGroup.email : user?.email,
       });
 
-      if (res.error && res.type === "Username does not exist") {
+      if (res.error && res?.details === "api") return;
+
+      if (res.error && res.type === "Username does not exist" && connected) {
         if (!activeGroup.active) {
           navigation.current.replace("SignIn");
           await removeFile({ name: "data.json" });
@@ -222,43 +292,12 @@ const Main = () => {
         }
       }
 
-      const data = await readFile({ name: "data.json" });
+      const isChange = await dataNotUploadedInformation(res);
+      if (!isChange) changeGeneralInformation(dispatch, res);
 
-      if (!data.error) {
-        const check = checkUser(res);
-        const file = data;
-
-        if (!check.error && file?.length > 0) sendSync(data);
-        if (check.error && file?.length > 0) {
-          if (check.type === "Helper not found") {
-            for (let i = 0; i < file?.length; i++) {
-              if (file[i].data.email !== user?.email) file.splice(i, 1);
-            }
-            sendSync(file);
-          } else {
-            for (let i = 0; i < file?.length; i++) {
-              if (file[i].creationDate < check.userFound.modificationDate)
-                file.splice(i, 1);
-            }
-            sendSync(file);
-          }
-        }
-
-        await helperNotification(
-          activeGroup,
-          user,
-          `${user?.email} ha recuperado la conexión`,
-          check.error
-            ? "Algunos cambios hechos por el usuario antes del cambio fueron sincronizados"
-            : "Los cambios que se hicieron fuera de línea han sido sincronizados"
-        );
-
-        if (!activeGroup.active) {
-          dispatch(changeUser(res));
-          dispatch(changeHelpers(res.helpers));
-        }
-
-        changeGeneralInformation(dispatch, res);
+      if (!activeGroup.active && !res.error) {
+        dispatch(changeUser(res));
+        dispatch(changeHelpers(res.helpers));
       }
     };
 
@@ -267,7 +306,9 @@ const Main = () => {
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
-      if (state.isConnected !== connected) setConnected(state.isConnected);
+      if (state.isConnected !== connected) {
+        setConnected(state.isConnected);
+      }
     });
 
     return () => unsubscribe();

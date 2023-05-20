@@ -13,7 +13,6 @@ const dark = theme.colors.dark;
 const OrderCompletionScreen = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
 
-  const pending = route.params.pending;
   const data = route.params.data;
   const total = route.params.total;
 
@@ -29,7 +28,7 @@ const OrderCompletionScreen = ({ route, navigation }) => {
         <View />
         <View style={{ alignItems: "center" }}>
           <Ionicons
-            name={pending ? "time-outline" : "checkmark-circle-outline"}
+            name={!data.pay ? "time-outline" : "checkmark-circle-outline"}
             size={180}
             color={light.main2}
           />
@@ -37,7 +36,7 @@ const OrderCompletionScreen = ({ route, navigation }) => {
             bigParagraph
             color={mode === "light" ? light.textDark : dark.textWhite}
           >
-            {pending ? "Pedido registrado" : "Hecho"}
+            {!data.pay ? "Pedido registrado" : "Hecho"}
           </TextStyle>
           <TextStyle
             smallTitle

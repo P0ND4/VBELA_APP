@@ -25,7 +25,7 @@ const PreviewOrderScreen = ({ route, navigation }) => {
   const mainSelection = route.params.selection;
   const saveOrder = route.params.saveOrder;
   const updateOrder = route.params.updateOrder;
-  const setPending = route.params.setPending;
+  const sendToKitchen = route.params.sendToKitchen;
   const editing = route.params.editing;
 
   const [selection, setSelection] = useState(mainSelection);
@@ -122,12 +122,49 @@ const PreviewOrderScreen = ({ route, navigation }) => {
                         style={{ marginLeft: 5 }}
                       />
                       <TextStyle
+                        smallParagraph
                         color={
                           mode === "light" ? light.textDark : dark.textWhite
                         }
                       >
                         {thousandsSystem(item.count)} items
                       </TextStyle>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={{ alignItems: "center" }}
+                      onPress={() =>
+                        navigation.push("EditOrder", {
+                          data: "observation",
+                          id: item.id,
+                          observation: item.observation,
+                          setSelection,
+                          selection,
+                          newSelection: route.params.newSelection,
+                          setNewSelection: route.params.setNewSelection
+                        })
+                      }
+                    >
+                      <Ionicons
+                        name="reader"
+                        size={28}
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                        style={{ marginLeft: 5 }}
+                      />
+                      <TextStyle
+                        smallParagraph
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Observación
+                      </TextStyle>
+                      {item.observation && (
+                        <TextStyle smallParagraph color={light.main2}>
+                          {item.observation.length} palabras
+                        </TextStyle>
+                      )}
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={{ alignItems: "center" }}
@@ -150,6 +187,7 @@ const PreviewOrderScreen = ({ route, navigation }) => {
                         style={{ marginLeft: 5 }}
                       />
                       <TextStyle
+                        smallParagraph
                         color={
                           mode === "light" ? light.textDark : dark.textWhite
                         }
@@ -462,29 +500,34 @@ const PreviewOrderScreen = ({ route, navigation }) => {
             style={{
               borderWidth: 2,
               borderColor: light.main2,
-              width: "84%",
+              width: SCREEN_WIDTH / 2.8,
+            }}
+            onPress={() => sendToKitchen()}
+          >
+            <TextStyle verySmall color={light.main2}>
+              Enviar a cocina
+            </TextStyle>
+          </ButtonStyle>
+          <ButtonStyle
+            backgroundColor="transparent"
+            style={{
+              borderWidth: 2,
+              borderColor: light.main2,
+              width: SCREEN_WIDTH / 2.8,
             }}
             onPress={() => {
-              setPending(false);
-              if (editing)
-                updateOrder({
-                  pay: true,
-                  discount: totalDiscount,
-                  tax,
-                  tip,
-                  method: paymentMethod,
-                });
-              else
-                saveOrder({
-                  pay: true,
-                  discount: totalDiscount,
-                  tax,
-                  tip,
-                  method: paymentMethod,
-                });
+              const obj = {
+                pay: true,
+                discount: totalDiscount,
+                tax,
+                tip,
+                method: paymentMethod,
+              };
+              if (editing) updateOrder(obj);
+              else saveOrder(obj);
             }}
           >
-            <TextStyle smallParagraph color={light.main2}>
+            <TextStyle verySmall color={light.main2}>
               Finalizar
             </TextStyle>
           </ButtonStyle>

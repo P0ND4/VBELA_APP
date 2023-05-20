@@ -247,7 +247,8 @@ const PlaceInformation = ({ route, navigation }) => {
                       params.type === "General"
                         ? `del grupo (${group.name})`
                         : `en (${group.name} | ${nomenclature.nomenclature})`
-                    }`
+                    }`,
+                    'accessToReservations'
                   );
                 },
               },

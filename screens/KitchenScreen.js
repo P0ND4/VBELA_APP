@@ -1,16 +1,25 @@
 import { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { View, StyleSheet, Dimensions, ScrollView, Alert } from "react-native";
-import { editKitchen, removeKitchen, getUser } from "../api";
+import {
+  View,
+  StyleSheet,
+  Dimensions,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+} from "react-native";
+import { editKitchen, removeKitchen } from "../api";
 import { thousandsSystem } from "../helpers/libs";
 import {
   edit as editK,
   remove as removeK,
 } from "../features/tables/kitchenSlice";
+import helperNotification from "../helpers/helperNotification";
 import Layout from "../components/Layout";
 import TextStyle from "../components/TextStyle";
 import ButtonStyle from "../components/ButtonStyle";
 import theme from "../theme";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 const light = theme.colors.light;
 const dark = theme.colors.dark;
@@ -32,6 +41,37 @@ const KitchenScreen = () => {
     setOrders(kitchen.filter((k) => k.finished === false));
     setOrdersFinished(kitchen.filter((k) => k.finished));
   }, [kitchen]);
+
+  const Observation = ({ item }) => {
+    const [open, isOpen] = useState(false);
+
+    return (
+      <View>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
+            <TextStyle color={light.main2} paragrahp>
+              {thousandsSystem(item.count)}
+            </TextStyle>
+            x {item.name}
+          </TextStyle>
+          {item.observation && (
+            <TouchableOpacity onPress={() => isOpen(!open)}>
+              <Ionicons color={light.main2} name={open ? "eye-off" : "eye"} size={22} />
+            </TouchableOpacity>
+          )}
+        </View>
+        {open && (
+          <TextStyle verySmall color={light.main2}>{item.observation}</TextStyle>
+        )}
+      </View>
+    );
+  };
 
   const Main = ({ order, type }) => {
     const [visualize, setVisualize] = useState(false);
@@ -77,7 +117,7 @@ const KitchenScreen = () => {
           {
             text: "Si",
             onPress: () => {
-              const kit = kitchen.find((k) => k.id === id);
+              const kit = { ...kitchen.find((k) => k.id === id) };
               kit.finished = true;
               kit.modificationDate = new Date();
 
@@ -117,39 +157,13 @@ const KitchenScreen = () => {
       ]);
     };
 
-    const sendNotificationToKitchen = async () => {
-      const title = "Pedido finalizado";
-      const body = `El pedido esta en espera de retiro en ${
-        order.reservation ? order.reservation : `la mesa`
-      } ${order.table}`;
-  
-      const organizer = async (user, extra) => {
-        const helpers = user.helpers.filter((helper) => helper.accessToTable);
-        const expoID = [];
-        if (extra) expoID.push(extra);
-        for (let helper of helpers) {
-          expoID.push(...helper.expoID);
-        }
-        const unique = expoID.filter((id, index) => expoID.indexOf(id) === index);
-        const devices = unique.filter((expoID) => expoID !== user.expoID);
-  
-        if (devices.length !== 0) {
-          await sendNotification({ title, body, array: devices });
-        }
-      };
-  
-      if (activeGroup.active) {
-        const u = await getUser({ email: activeGroup.email });
-        organizer(u, u.expoID);
-      } else await organizer(user);
-    };
-
     return (
       <>
         <View style={{ marginVertical: 5 }}>
           <View style={styles.card}>
             <View style={[styles.center, styles.chronometer]}>
               <TextStyle
+                paragrahp
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
                 {minutes}:{seconds}
@@ -157,26 +171,35 @@ const KitchenScreen = () => {
             </View>
             <ButtonStyle
               onPress={() => setVisualize(!visualize)}
-              style={{ width: SCREEN_WIDTH / 2.3, margin: 0 }}
+              style={{ width: SCREEN_WIDTH / 2.2, margin: 0 }}
               backgroundColor={mode === "light" ? light.main5 : dark.main2}
             >
               <TextStyle
+                paragrahp
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
                 {order.reservation ? order.reservation : "Mesa"} {order.table}
               </TextStyle>
             </ButtonStyle>
             <ButtonStyle
-              style={{ width: SCREEN_WIDTH / 4, margin: 0 }}
-              onPress={() => {
+              style={{ width: SCREEN_WIDTH / 4.2, margin: 0 }}
+              onPress={async () => {
                 if (type === "kitchen") {
                   finished({ id: order.id });
-                  sendNotificationToKitchen();
+                  await helperNotification(
+                    activeGroup,
+                    user,
+                    "Pedido finalizado",
+                    `El pedido esta en espera de retiro en ${
+                      order.reservation ? order.reservation : `la mesa`
+                    } ${order.table}`,
+                    "accessToTable"
+                  );
                 } else received({ id: order.id });
               }}
               backgroundColor={light.main2}
             >
-              <TextStyle>
+              <TextStyle paragrahp>
                 {type === "kitchen" ? "Enviar" : "Recibido"}
               </TextStyle>
             </ButtonStyle>
@@ -192,15 +215,7 @@ const KitchenScreen = () => {
           ]}
         >
           {order.selection.map((item) => (
-            <TextStyle
-              key={item.id}
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              <TextStyle color={light.main2} paragrahp>
-                {thousandsSystem(item.count)}
-              </TextStyle>
-              x {item.name}
-            </TextStyle>
+            <Observation key={item.id} item={item} />
           ))}
         </View>
       </>

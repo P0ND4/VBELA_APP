@@ -163,7 +163,8 @@ const ReserveScreen = ({ route, navigation }) => {
       "Reservación editada",
       `Una reservación ha sido editada por ${days} días, por el usuario ${
         user.email
-      }, desde ${changeDate(data.start)} hasta ${changeDate(data.end)}`
+      }, desde ${changeDate(new Date(data.start))} hasta ${changeDate(new Date(data.end))}`,
+      'accessToReservations'
     );
   };
 
@@ -201,7 +202,8 @@ const ReserveScreen = ({ route, navigation }) => {
       "Reservación creada",
       `Una reservación de ${days} días ha sido creada por ${
         user.email
-      } desde ${changeDate(data.start)} hasta ${changeDate(data.end)}`
+      } desde ${changeDate(new Date(data.start))} hasta ${changeDate(new Date(data.end))}`,
+      'accessToReservations'
     );
   };
 

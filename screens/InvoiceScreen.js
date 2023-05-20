@@ -47,19 +47,25 @@ const InvoiceScreen = ({ route, navigation }) => {
       return (
         a +
         `<tr>
-            <td style="text-align: left;">${thousandsSystem(item.count)}x ${
-          item.name
-        }</td>
-            <td style="text-align: right;">${thousandsSystem(
-              item.discount !== 0
-                ? item.total - item.discount
-                : selection.reduce((a, b) => {
-                    if (b.id === item.id) {
-                      return a + (b.discount !== 0 ? b.discount : b.total);
-                    }
-                    return (a = a);
-                  }, 0)
-            )}</td>
+            <td style="text-align: left;">
+              <p style="font-size: 28px; font-weight: 600;">${thousandsSystem(item.count)}x ${
+                item.name
+              }</p>
+            </td>
+            <td style="text-align: right;">
+              <p style="font-size: 28px; font-weight: 600;">
+              ${thousandsSystem(
+                item.discount !== 0
+                  ? item.total - item.discount
+                  : selection.reduce((a, b) => {
+                      if (b.id === item.id) {
+                        return a + (b.discount !== 0 ? b.discount : b.total);
+                      }
+                      return (a = a);
+                    }, 0)
+              )}
+              </p>
+            </td>
           </tr>`
       );
     }, "");
@@ -89,22 +95,22 @@ const InvoiceScreen = ({ route, navigation }) => {
 
 <body>
 <view style="padding: 20px; width: 500px; display: block; margin: 20px auto; background-color: #FFFFFF;">
-    <h2 style="text-align: center; color: #444444;">
+    <h2 style="text-align: center; color: #444444; font-size: 50px; font-weight: 800;">
       #${code}
     </h2>
-    <view style="width: 100%; margin: 15px;">
-      <p style="font-weight: 600; color: #444444">
+    <view style="width: 100%; margin: 20px 0;">
+      <p style="font-weight: 600; color: #444444; font-size: 24px; font-weight: 600;">
         ${invoice?.name ? invoice?.name : "Sin nombre"}
       </p>
-      <p style="font-size: 14px;">
-        ${invoice?.name && invoice?.name} ${
-    invoice?.address && `- ${invoice?.address}`
-  } ${invoice?.number && `- ${invoice?.number}`} ${
-    invoice?.complement && `- ${invoice?.complement}`
+      <p style="font-size: 32px; font-weight: 600;">
+        ${invoice?.name ? invoice?.name : ''} ${
+    invoice?.address ? `- ${invoice?.address}` : ''
+  } ${invoice?.number ? `- ${invoice?.number}` : ''} ${
+    invoice?.complement ? `- ${invoice?.complement}` : ''
   }
       </p>
     </view>
-    <p style="font-size: 15px; font-weight: 600; color: #444444; margin-bottom: 12px;">${selection.reduce(
+    <p style="font-size: 32px; font-weight: 600; color: #444444; margin-bottom: 12px;">${selection.reduce(
       (a, b) => a + b.count,
       0
     )} Artículos</p>
@@ -113,12 +119,12 @@ const InvoiceScreen = ({ route, navigation }) => {
         ${text.replace(/,/g, "")}
       </table>
           
-      <p style="text-align: center; font-weight: 600; margin-top: 20px;">Total: ${thousandsSystem(
+      <p style="text-align: center; font-size: 30px; font-weight: 600; margin-top: 20px;">Total: ${thousandsSystem(
         total
       )}</p>
       
     </view>
-    <p style="text-align: center; color: #777777">${changeDate(date)} ${(
+    <p style="text-align: center; font-size: 30px; font-weight: 600;">${changeDate(date)} ${(
     "0" + date.getHours()
   ).slice(-2)}:
     ${("0" + date.getMinutes()).slice(-2)}</p>

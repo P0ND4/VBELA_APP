@@ -10,14 +10,14 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { remove } from "../features/tables/ordersSlice";
-import { getUser, removeOrder } from "../api";
+import { removeOrder } from "../api";
 import { thousandsSystem, random } from "../helpers/libs";
 import { add, edit } from "../features/tables/ordersSlice";
 import {
   add as addK,
   removeMany as removeManyK,
 } from "../features/tables/kitchenSlice";
-import sendNotification from "../helpers/sendNotification";
+import helperNotification from "../helpers/helperNotification";
 import { addOrder, editOrder, addKitchen, removeManyKitchen } from "../api";
 import Layout from "../components/Layout";
 import TextStyle from "../components/TextStyle";
@@ -42,13 +42,19 @@ const CreateOrderScreen = ({ route, navigation }) => {
   const [products, setProducts] = useState([]);
   const [selection, setSelection] = useState(route.params.selection);
   const [newSelection, setNewSelection] = useState([]);
-  const [pending, setPending] = useState(false);
   const [search, setSearch] = useState(false);
   const [count, setCount] = useState(1);
   const [filter, setFilter] = useState("");
+  const [order, setOrder] = useState("");
 
   const information = route.params;
   const reservation = route.params.reservation;
+
+  useEffect(() => {
+    if (route.params.id) {
+      setOrder(orders.find((o) => o.id === route.params.id));
+    }
+  }, []);
 
   const getTotal = (totalDiscount, selection, tip, tax) =>
     totalDiscount !== 0
@@ -74,35 +80,41 @@ const CreateOrderScreen = ({ route, navigation }) => {
         tip -
         tax;
 
-  const saveOrder = async ({
-    pay,
-    discount = null,
-    tax = null,
-    tip = null,
-    method = null,
-    ID = null,
-  }) => {
-    const id = ID ? ID : random(20);
-    if (orders.find((order) => order.id === id)) return saveOrder(pay);
+  const extractObject = (d) => {
+    return { 
+      pay: d.pay, 
+      discount: !d.discount ? null : d.discount,
+      tax: !d.tax ? null : d.tax,
+      tip: !d.tip ? null : d.tip,
+      method: !d.method ? null : d.method,
+      ID: !d.ID ? null : d.ID
+    };
+  };
+
+  const saveOrder = async (dat) => {
+    const d = extractObject(dat);
+    const id = d.ID ? d.ID : random(20);
+
+    if (orders.find((order) => order.id === id)) return saveOrder(dat);
     const data = {};
-    const total = getTotal(discount, selection, tip, tax);
+    const total = getTotal(d.discount, selection, d.tip, d.tax);
 
     data.id = id;
     data.ref = route.params.ref;
     data.table = information.table;
     data.reservation = reservation;
     data.selection = selection;
-    data.pay = pay;
-    data.discount = discount;
-    data.tax = tax;
-    data.tip = tip;
-    data.method = method;
+    data.pay = d.pay;
+    data.discount = d.discount;
+    data.tax = d.tax;
+    data.tip = d.tip;
+    data.method = d.method;
     data.total = total;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
     dispatch(add(data));
-    if (pay) navigation.pop();
-    navigation.replace("OrderCompletion", { pending, data, total });
+    if (d.pay) navigation.pop();
+    navigation.replace("OrderCompletion", { data, total });
     await addOrder({
       email: activeGroup.active ? activeGroup.email : user.email,
       order: data,
@@ -112,32 +124,27 @@ const CreateOrderScreen = ({ route, navigation }) => {
     });
   };
 
-  const updateOrder = async ({
-    pay,
-    discount = null,
-    tax = null,
-    tip = null,
-    method = null,
-  }) => {
+  const updateOrder = async (dat) => {
     const data = {};
-    const total = getTotal(discount, selection, tip, tax);
+    const d = extractObject(dat);
+    const total = getTotal(d.discount, selection, d.tip, d.tax);
 
     data.id = route.params.id;
     data.ref = route.params.ref;
     data.table = information.table;
     data.reservation = reservation;
     data.selection = selection;
-    data.pay = pay;
-    data.discount = discount;
-    data.tax = tax;
-    data.tip = tip;
-    data.method = method;
-    data.creationDate = information.creationDate;
+    data.pay = d.pay;
+    data.discount = d.discount;
+    data.tax = d.tax;
+    data.tip = d.tip;
+    data.method = d.method;
     data.total = total;
+    data.creationDate = order.creationDate;
     data.modificationDate = new Date().getTime();
     dispatch(edit({ id: information.id, data }));
-    if (pay) navigation.pop();
-    navigation.replace("OrderCompletion", { pending, data, total });
+    if (d.pay) navigation.pop();
+    navigation.replace("OrderCompletion", { data, total });
     await editOrder({
       email: activeGroup.active ? activeGroup.email : user.email,
       order: data,
@@ -147,32 +154,54 @@ const CreateOrderScreen = ({ route, navigation }) => {
     });
   };
 
-  const sendNotificationToKitchen = async () => {
-    const title = "Nuevo pedido pendiente";
-    const body = `Una orden ha sido pedida en ${
-      reservation ? reservation : `la mesa`
-    } ${route.params.table}`;
+  const sendToKitchen = async () => {
+    if (newSelection.length > 0) {
+      const orderID = route.params.id ? route.params.id : random(20);
+      const kitchenID = random(20);
+      const orderToKitchen = route.params.id
+        ? newSelection
+        : selection;
 
-    const organizer = async (user, extra) => {
-      const helpers = user.helpers.filter((helper) => helper.accessToKitchen);
-      const expoID = [];
-      if (extra) expoID.push(extra);
-      for (let helper of helpers) {
-        expoID.push(...helper.expoID);
-      }
-      const unique = expoID.filter((id, index) => expoID.indexOf(id) === index);
-      const devices = unique.filter((expoID) => expoID !== user.expoID);
+      const obj = {
+        id: kitchenID,
+        ref: orderID,
+        selection: orderToKitchen,
+        reservation: route.params.reservation,
+        table: route.params.table,
+        finished: false,
+        creationDate: new Date(),
+        modificationDate: new Date(),
+      };
 
-      if (devices.length !== 0) {
-        await sendNotification({ title, body, array: devices });
-      }
-    };
+      dispatch(addK(obj));
 
-    if (activeGroup.active) {
-      const u = await getUser({ email: activeGroup.email });
-      organizer(u, u.expoID);
-    } else await organizer(user);
-  };
+      if (information.editing) updateOrder({ pay: false });
+      else saveOrder({ pay: false, ID: orderID });
+      await addKitchen({
+        email: activeGroup.active ? activeGroup.email : user.email,
+        kitchen: obj,
+        groups: activeGroup.active
+          ? [activeGroup.id]
+          : user.helpers.map((h) => h.id),
+      });
+      await helperNotification(
+        activeGroup,
+        user,
+        "Nuevo pedido pendiente",
+        `Una orden ha sido pedida en ${
+          reservation ? reservation : `la mesa`
+        } ${route.params.table}`,
+        "accessToKitchen"
+      );
+    } else {
+      Alert.alert(
+        "El carrito está vacío",
+        selection.length > 0
+          ? "No hay productos nuevos seleccionado para mandarlo a cocina"
+          : "Precisa adicionar un producto al carrito para poder guardarlo"
+      );
+    }
+  }
 
   const dispatch = useDispatch();
 
@@ -207,7 +236,13 @@ const CreateOrderScreen = ({ route, navigation }) => {
       {
         text: "Si",
         onPress: async () => {
-          removeManyKitchen({ ref: route.params.id });
+          removeManyKitchen({
+            email: activeGroup.active ? activeGroup.email : user.email,
+            ref: route.params.id,
+            groups: activeGroup.active
+              ? [activeGroup.id]
+              : user.helpers.map((h) => h.id),
+          });
           dispatch(removeManyK({ ref: route.params.id }));
           dispatch(remove({ id: information.id }));
           navigation.pop();
@@ -243,44 +278,10 @@ const CreateOrderScreen = ({ route, navigation }) => {
               borderColor: light.main2,
               width: "40%",
             }}
-            onPress={async () => {
-              if (newSelection.length > 0) {
-                setPending(true);
-                const orderID = route.params.id ? route.params.id : random(20);
-                const kitchenID = random(20);
-                const orderToKitchen = route.params.id
-                  ? newSelection
-                  : selection;
-
-                const obj = {
-                  id: kitchenID,
-                  ref: orderID,
-                  selection: orderToKitchen,
-                  reservation: route.params.reservation,
-                  table: route.params.table,
-                  finished: false,
-                  creationDate: new Date(),
-                  modificationDate: new Date(),
-                };
-
-                addKitchen(obj);
-                dispatch(addK(obj));
-
-                if (information.editing) updateOrder({ pay: false });
-                else saveOrder({ pay: false, ID: orderID });
-                await sendNotificationToKitchen();
-              } else {
-                Alert.alert(
-                  "El carrito está vacío",
-                  selection.length > 0
-                    ? "No hay productos nuevos seleccionado para mandarlo a cocina"
-                    : "Precisa adicionar un producto al carrito para poder guardarlo"
-                );
-              }
-            }}
+            onPress={async () => sendToKitchen()}
           >
-            <TextStyle smallParagraph color={light.main2}>
-              Guardar pedido
+            <TextStyle verySmall color={light.main2}>
+              Enviar a cocina
             </TextStyle>
           </ButtonStyle>
         </View>
@@ -494,9 +495,11 @@ const CreateOrderScreen = ({ route, navigation }) => {
               navigation.push("PreviewOrder", {
                 selection,
                 setSelection,
+                setNewSelection,
+                newSelection,
                 saveOrder,
                 updateOrder,
-                setPending,
+                sendToKitchen,
                 editing: information.editing,
               });
           }}

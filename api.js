@@ -17,7 +17,7 @@ export const connect = async ({ data = {}, url }) => {
   } catch (e) {
     const error = { error: true, details: "api", type: e.message };
 
-    if (url === "/user" || url === "/rule") return error;
+    if (url === "/user" || url === "/user/add" || url === "/rule") return error;
 
     const r = await readFile({ name: "data.json" });
     const value = !r.error ? r : [];

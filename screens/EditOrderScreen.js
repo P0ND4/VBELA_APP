@@ -17,12 +17,27 @@ const EditOrderScreen = ({ route, navigation }) => {
   const id = route.params.id;
   const setSelection = route.params.setSelection;
   const selection = route.params.selection;
+  const newSelection = route.params.newSelection;
+  const setNewSelection = route.params.setNewSelection;
 
-  const [amount, setAmount] = useState(route.params.amount ? thousandsSystem(route.params.amount) : '');
-  const [price, setPrice] = useState(route.params.price ? thousandsSystem(route.params.price) : '');
-  const [count, setCount] = useState(route.params.count ? thousandsSystem(route.params.count) : '');
-  const [tip, setTip] = useState(route.params.tip ? thousandsSystem(route.params.tip) : '');
-  const [tax, setTax] = useState(route.params.tax ? thousandsSystem(route.params.tax) : '');
+  const [amount, setAmount] = useState(
+    route.params.amount ? thousandsSystem(route.params.amount) : ""
+  );
+  const [price, setPrice] = useState(
+    route.params.price ? thousandsSystem(route.params.price) : ""
+  );
+  const [count, setCount] = useState(
+    route.params.count ? thousandsSystem(route.params.count) : ""
+  );
+  const [tip, setTip] = useState(
+    route.params.tip ? thousandsSystem(route.params.tip) : ""
+  );
+  const [tax, setTax] = useState(
+    route.params.tax ? thousandsSystem(route.params.tax) : ""
+  );
+  const [observation, setObservation] = useState(
+    route.params.observation ? thousandsSystem(route.params.observation) : ""
+  );
 
   useEffect(() => {
     navigation.setOptions({
@@ -31,9 +46,86 @@ const EditOrderScreen = ({ route, navigation }) => {
           ? "Precio unitario"
           : route.params.data === "tip"
           ? "Propina"
+          : route.params.data === "observation"
+          ? "Observación"
           : "Cantidad",
     });
   }, []);
+
+  if (route.params.data === "observation") {
+    return (
+      <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
+        <View />
+        <View style={{ alignItems: "center" }}>
+          <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
+            Observación
+          </TextStyle>
+          <TextStyle
+            verySmall
+            color={light.main2}
+            center
+            customStyle={{ width: "80%" }}
+          >
+            Escriba una breve observación para ser más específico con el pedido,
+            esto lo leerá cocina
+          </TextStyle>
+          <InputStyle
+            placeholder="Ejemplo: (La ensalada sin cebolla)"
+            maxLength={300}
+            value={observation}
+            onChangeText={(text) => setObservation(text)}
+            stylesContainer={{ marginVertical: 10 }}
+            multiline={true}
+            numberOfLines={4}
+            stylesInput={{ height: 140, textAlignVertical: "top" }}
+          />
+          <ButtonStyle
+            backgroundColor="transparent"
+            style={{
+              borderWidth: 2,
+              borderColor: light.main2,
+              width: "50%",
+            }}
+            onPress={() => {
+              const items = selection.map((i) => {
+                if (i.id === id) i.observation = null;
+                return i;
+              });
+              const itemsNew = newSelection.map((i) => {
+                if (i.id === id) i.observation = null;
+                return i;
+              })
+              setSelection(items);
+              setNewSelection(itemsNew);
+              navigation.pop();
+            }}
+          >
+            <TextStyle smallParagraph color={light.main2}>
+              Remover observación
+            </TextStyle>
+          </ButtonStyle>
+        </View>
+        <ButtonStyle
+          backgroundColor={light.main2}
+          onPress={() => {
+            const items = selection.map((i) => {
+              if (i.id === id) i.observation = observation;
+              return i;
+            });
+            const itemsNew = newSelection.map((i) => {
+              if (i.id === id) i.observation = observation;
+              return i;
+            });
+            setSelection(items);
+            setNewSelection(itemsNew);
+            navigation.pop();
+          }}
+        >
+          <TextStyle smallParagraph>Guardar</TextStyle>
+        </ButtonStyle>
+      </Layout>
+    );
+  }
 
   if (route.params.data === "count") {
     return (
@@ -60,7 +152,9 @@ const EditOrderScreen = ({ route, navigation }) => {
           backgroundColor={light.main2}
           onPress={() => {
             route.params.setCount(
-              count === "" || count === '0' ? 1 : parseInt(count.replace(/[^0-9]/g, ""))
+              count === "" || count === "0"
+                ? 1
+                : parseInt(count.replace(/[^0-9]/g, ""))
             );
             navigation.pop();
           }}

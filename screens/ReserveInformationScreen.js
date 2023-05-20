@@ -270,7 +270,8 @@ const StatisticScreen = ({ route, navigation }) => {
                         activeGroup,
                         user,
                         "Reservación eliminada",
-                        `Una reservación ha sido eliminada por ${user.email}`
+                        `Una reservación ha sido eliminada por ${user.email}`,
+                        'accessToReservations'
                       );
                     },
                   },
