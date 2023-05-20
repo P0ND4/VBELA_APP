@@ -28,7 +28,7 @@
     "android": {
       "package": "com.app.vbela",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 26,
+      "versionCode": 27,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
