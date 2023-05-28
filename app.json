@@ -2,7 +2,7 @@
   "expo": {
     "name": "VBELA",
     "slug": "VBELA",
-    "version": "2.3.2",
+    "version": "2.3.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -28,7 +28,7 @@
     "android": {
       "package": "com.app.vbela",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 27,
+      "versionCode": 28,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
