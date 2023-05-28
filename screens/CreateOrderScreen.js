@@ -175,8 +175,8 @@ const CreateOrderScreen = ({ route, navigation }) => {
 
       dispatch(addK(obj));
 
-      if (information.editing) updateOrder({ pay: false });
-      else saveOrder({ pay: false, ID: orderID });
+      if (information.editing) await updateOrder({ pay: false });
+      else await saveOrder({ pay: false, ID: orderID });
       await addKitchen({
         email: activeGroup.active ? activeGroup.email : user.email,
         kitchen: obj,
@@ -236,16 +236,16 @@ const CreateOrderScreen = ({ route, navigation }) => {
       {
         text: "Si",
         onPress: async () => {
-          removeManyKitchen({
+          dispatch(removeManyK({ ref: route.params.id }));
+          dispatch(remove({ id: information.id }));
+          navigation.pop();
+          await removeManyKitchen({
             email: activeGroup.active ? activeGroup.email : user.email,
             ref: route.params.id,
             groups: activeGroup.active
               ? [activeGroup.id]
               : user.helpers.map((h) => h.id),
           });
-          dispatch(removeManyK({ ref: route.params.id }));
-          dispatch(remove({ id: information.id }));
-          navigation.pop();
           await removeOrder({
             email: activeGroup.active ? activeGroup.email : user.email,
             id: information.id,
@@ -405,9 +405,14 @@ const CreateOrderScreen = ({ route, navigation }) => {
                     };
 
                     if (index !== -1) {
-                      selection[index].count += count;
-                      selection[index].total += item.price * count;
-                      setSelection([...selection]);
+                      let selected = { ...selection[index] };
+                      selected.count += count;
+                      selected.total += item.price * count;
+                      const changed = selection.map(s => {
+                        if (s.id === selected.id) return selected;
+                        return s;
+                      })
+                      setSelection(changed);
                     } else setSelection([...selection, object]);
                   } else {
                     navigation.push("CreateProduct", {

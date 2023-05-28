@@ -341,7 +341,7 @@ const CreateGroup = ({ navigation, route }) => {
                 <View style={{ marginTop: 10 }}>
                   <View style={styles.toggles}>
                     <TextStyle smallParagraph color={light.main2}>
-                      Acceso a VENTAS DIARIAS
+                      VENTAS DIARIAS
                     </TextStyle>
                     <Switch
                       trackColor={{ false: dark.main2, true: light.main2 }}
@@ -356,7 +356,7 @@ const CreateGroup = ({ navigation, route }) => {
                   </View>
                   <View style={styles.toggles}>
                     <TextStyle smallParagraph color={light.main2}>
-                      Acceso a RESERVACIONES
+                      RESERVACIONES
                     </TextStyle>
                     <Switch
                       trackColor={{ false: dark.main2, true: light.main2 }}
@@ -371,7 +371,7 @@ const CreateGroup = ({ navigation, route }) => {
                   </View>
                   <View style={styles.toggles}>
                     <TextStyle smallParagraph color={light.main2}>
-                      Acceso a ESTADÍSTICAS
+                      ESTADÍSTICAS
                     </TextStyle>
                     <Switch
                       trackColor={{ false: dark.main2, true: light.main2 }}
@@ -386,7 +386,7 @@ const CreateGroup = ({ navigation, route }) => {
                   </View>
                   <View style={styles.toggles}>
                     <TextStyle smallParagraph color={light.main2}>
-                      Acceso a COMPRA y GASTO
+                      COMPRA y GASTO
                     </TextStyle>
                     <Switch
                       trackColor={{ false: dark.main2, true: light.main2 }}
@@ -401,7 +401,7 @@ const CreateGroup = ({ navigation, route }) => {
                   </View>
                   <View style={styles.toggles}>
                     <TextStyle smallParagraph color={light.main2}>
-                      Acceso a NÓMINA
+                      NÓMINA
                     </TextStyle>
                     <Switch
                       trackColor={{ false: dark.main2, true: light.main2 }}
@@ -416,7 +416,7 @@ const CreateGroup = ({ navigation, route }) => {
                   </View>
                   <View style={styles.toggles}>
                     <TextStyle smallParagraph color={light.main2}>
-                      Acceso a COCINA
+                      COCINA
                     </TextStyle>
                     <Switch
                       trackColor={{ false: dark.main2, true: light.main2 }}
@@ -431,7 +431,7 @@ const CreateGroup = ({ navigation, route }) => {
                   </View>
                   <View style={styles.toggles}>
                     <TextStyle smallParagraph color={light.main2}>
-                      Acceso a MESA (lo que sale de producción)
+                      MESA (lo que sale de producción)
                     </TextStyle>
                     <Switch
                       trackColor={{ false: dark.main2, true: light.main2 }}

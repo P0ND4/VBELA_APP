@@ -1,5 +1,10 @@
 import sendNotification from "./sendNotification";
 
+// OPCION 1 EL SOCKETIO DEL ANDMIN/ESCLAVO NO SE ESTA GUARDANDO EN HELPER
+// OPCION 2 HAY UN PROBLEMA CON LA SELECCION DE DISPOSITIVOS
+// OPCION 3 CUANDO HAY UN CAMBIO EN EL TIPO DE USUARIO NO SE SINCRONIZAN
+// LA LOGICA FALLA EN ESTA PORCION DE CODIGO O EN EL ENVIO DE LA NOTIFICACION
+
 export default helperNotification = async (activeGroup, user, title, body, access) => {
   if (activeGroup.active) {
     const devices = activeGroup.expoID.filter(

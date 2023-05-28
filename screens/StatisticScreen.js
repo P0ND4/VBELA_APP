@@ -136,7 +136,7 @@ const StatisticScreen = ({ navigation }) => {
     setRo(ro);
     setAccountsPayable(accountsPayable);
     setAccountsPayableAmount(accountsPayableAmount);
-    setAverageUtility(sales - expense - purchase - ro)
+    setAverageUtility(sales - expense - purchase - ro);
 
     setTimeout(() => {
       setIsLoading(false);
@@ -575,6 +575,7 @@ const StatisticScreen = ({ navigation }) => {
                           navigation.push("CreateEconomy", {
                             editing: true,
                             item,
+                            pay: true,
                           })
                         }
                       >
@@ -610,10 +611,7 @@ const StatisticScreen = ({ navigation }) => {
               name="HUÉSPEDES ALOJADOS"
               value={thousandsSystem(people)}
             />
-            <Information
-              name="ALOJAMIENTO"
-              value={thousandsSystem(amount)}
-            />
+            <Information name="ALOJAMIENTO" value={thousandsSystem(amount)} />
 
             <View>
               <ProgressChart

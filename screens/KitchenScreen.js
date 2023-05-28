@@ -24,7 +24,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 const light = theme.colors.light;
 const dark = theme.colors.dark;
 
-const { width: SCREEN_WIDTH } = Dimensions.get("screen");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const KitchenScreen = () => {
   const kitchen = useSelector((state) => state.kitchen);
@@ -62,12 +62,18 @@ const KitchenScreen = () => {
           </TextStyle>
           {item.observation && (
             <TouchableOpacity onPress={() => isOpen(!open)}>
-              <Ionicons color={light.main2} name={open ? "eye-off" : "eye"} size={22} />
+              <Ionicons
+                color={light.main2}
+                name={open ? "eye-off" : "eye"}
+                size={22}
+              />
             </TouchableOpacity>
           )}
         </View>
         {open && (
-          <TextStyle verySmall color={light.main2}>{item.observation}</TextStyle>
+          <TextStyle verySmall color={light.main2}>
+            {item.observation}
+          </TextStyle>
         )}
       </View>
     );
@@ -116,7 +122,7 @@ const KitchenScreen = () => {
           },
           {
             text: "Si",
-            onPress: () => {
+            onPress: async () => {
               const kit = { ...kitchen.find((k) => k.id === id) };
               kit.finished = true;
               kit.modificationDate = new Date();
@@ -129,6 +135,15 @@ const KitchenScreen = () => {
                   ? [activeGroup.id]
                   : user.helpers.map((h) => h.id),
               });
+              await helperNotification(
+                activeGroup,
+                user,
+                "Pedido finalizado",
+                `El pedido esta en espera de retiro en ${
+                  order.reservation ? order.reservation : `la mesa`
+                } ${order.table}`,
+                "accessToTable"
+              );
             },
           },
         ]
@@ -163,7 +178,7 @@ const KitchenScreen = () => {
           <View style={styles.card}>
             <View style={[styles.center, styles.chronometer]}>
               <TextStyle
-                paragrahp
+                smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
                 {minutes}:{seconds}
@@ -175,7 +190,7 @@ const KitchenScreen = () => {
               backgroundColor={mode === "light" ? light.main5 : dark.main2}
             >
               <TextStyle
-                paragrahp
+                smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
                 {order.reservation ? order.reservation : "Mesa"} {order.table}
@@ -184,22 +199,12 @@ const KitchenScreen = () => {
             <ButtonStyle
               style={{ width: SCREEN_WIDTH / 4.2, margin: 0 }}
               onPress={async () => {
-                if (type === "kitchen") {
-                  finished({ id: order.id });
-                  await helperNotification(
-                    activeGroup,
-                    user,
-                    "Pedido finalizado",
-                    `El pedido esta en espera de retiro en ${
-                      order.reservation ? order.reservation : `la mesa`
-                    } ${order.table}`,
-                    "accessToTable"
-                  );
-                } else received({ id: order.id });
+                if (type === "kitchen") await finished({ id: order.id })
+                else await received({ id: order.id });
               }}
               backgroundColor={light.main2}
             >
-              <TextStyle paragrahp>
+              <TextStyle smallParagraph>
                 {type === "kitchen" ? "Enviar" : "Recibido"}
               </TextStyle>
             </ButtonStyle>
@@ -234,40 +239,38 @@ const KitchenScreen = () => {
           No hay pedidos
         </TextStyle>
       )}
-      {orders.length > 0 &&
-        (!activeGroup.active || activeGroup.accessToKitchen) && (
-          <View>
-            <TextStyle
-              smallSubtitle
-              customStyle={{ marginVertical: 10 }}
-              color={light.main2}
-            >
-              En cocina
-            </TextStyle>
-            <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} style={{ height: SCREEN_HEIGHT / 1.1 }}>
+        {orders.length > 0 &&
+          (!activeGroup.active || activeGroup.accessToKitchen) && (
+            <View>
+              <TextStyle
+                smallSubtitle
+                customStyle={{ marginVertical: 10 }}
+                color={light.main2}
+              >
+                En cocina
+              </TextStyle>
               {orders?.map((order) => {
                 return <Main order={order} key={order.id} type="kitchen" />;
               })}
-            </ScrollView>
-          </View>
-        )}
-      {ordersFinished.length > 0 &&
-        (!activeGroup.active || activeGroup.accessToTable) && (
-          <View>
-            <TextStyle
-              smallSubtitle
-              customStyle={{ marginVertical: 10 }}
-              color={light.main2}
-            >
-              Ordenes finalizado
-            </TextStyle>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            </View>
+          )}
+        {ordersFinished.length > 0 &&
+          (!activeGroup.active || activeGroup.accessToTable) && (
+            <View>
+              <TextStyle
+                smallSubtitle
+                customStyle={{ marginVertical: 10 }}
+                color={light.main2}
+              >
+                Ordenes finalizado
+              </TextStyle>
               {ordersFinished?.map((order) => {
                 return <Main order={order} key={order.id} type="finished" />;
               })}
-            </ScrollView>
-          </View>
-        )}
+            </View>
+          )}
+      </ScrollView>
     </Layout>
   );
 };

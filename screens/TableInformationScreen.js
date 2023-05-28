@@ -41,8 +41,7 @@ const TableInformation = ({ route, navigation }) => {
     const ordersFilter = ors.filter((o) => o.ref === route.params.id);
 
     for (let order of ordersFilter) {
-      console.log(order);
-      amount += order?.buy?.reduce((a, b) => a + b.total, 0);
+      amount += order?.selection?.reduce((a, b) => a + b.total, 0);
     }
 
     setTotalMoney(thousandsSystem(amount));

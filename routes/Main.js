@@ -167,16 +167,6 @@ const Main = () => {
           : "Los cambios que se hicieron fuera de línea han sido sincronizados"
       );
 
-      const userChanged = await getUser({
-        email: activeGroup.active ? activeGroup.email : user?.email,
-      });
-
-      if (!activeGroup.active) {
-        dispatch(changeUser(userChanged));
-        dispatch(changeHelpers(userChanged.helpers));
-      }
-
-      changeGeneralInformation(dispatch, userChanged);
       return true;
     } else return false;
   };

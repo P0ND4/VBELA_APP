@@ -1,4 +1,4 @@
-import { Text, StyleSheet } from 'react-native'
+import { Text, StyleSheet, Dimensions } from 'react-native'
 import theme from '../theme';
 
 const light = theme.colors.light;
@@ -9,6 +9,8 @@ const styles = StyleSheet.create({
     color: light.textDark
   }
 });
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const TextStyle = ({
   color,

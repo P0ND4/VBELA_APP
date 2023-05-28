@@ -30,6 +30,8 @@ export default sendNotification = async ({ title, body, to, array = [] }) => {
       array.length > 0 ? messages : schema
     );
   
+    console.log(res.data)
+
     return res.data;
   } catch (e) { return { error: true, type: e.message } }
 };

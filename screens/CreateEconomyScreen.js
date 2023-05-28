@@ -36,18 +36,19 @@ const CreateEconomy = ({ route, navigation }) => {
 
   const data = route.params?.item;
   const editing = route.params?.editing;
+  const pay = route.params?.pay;
 
   const [name, setName] = useState(editing ? data.name : "");
   const [amount, setAmount] = useState(
-    editing ? thousandsSystem(data.amount) : ""
+    pay ? thousandsSystem(data.amount - data.payment) : editing ? thousandsSystem(data.amount) : ""
   );
   const [payment, setPayment] = useState(
-    editing ? thousandsSystem(data.amount) : ""
+    pay ? thousandsSystem(data.amount - data.payment) : editing ? thousandsSystem(data.payment) : ""
   );
 
   useEffect(() => {
     setPayment(amount);
-    setValue("payment", amount.replace(/[^0-9]/g, ""));
+    setValue("payment", parseInt(amount.replace(/[^0-9]/g, "")));
   }, [amount]);
 
   const dispatch = useDispatch();
@@ -68,6 +69,10 @@ const CreateEconomy = ({ route, navigation }) => {
     Keyboard.dismiss();
     d.ref = data.ref;
     d.type = data.type;
+    if (pay) {
+      d.amount = parseInt(data.amount);
+      d.payment = parseInt(data.payment) + parseInt(d.payment);
+    }
     d.creationDate = data.creationDate;
     d.modificationDate = new Date().getTime();
     dispatch(edit({ ref: data.ref, data: d }));
@@ -88,7 +93,7 @@ const CreateEconomy = ({ route, navigation }) => {
           ? "Un gasto ha sido editado"
           : "Una compra ha sido editada"
       } por ${user.email}`,
-      'accessToEconomy'
+      "accessToEconomy"
     );
   };
 
@@ -120,7 +125,7 @@ const CreateEconomy = ({ route, navigation }) => {
           ? "Un gasto ha sido creado"
           : "Una compra ha sido creada"
       } por ${user.email}`,
-      'accessToEconomy'
+      "accessToEconomy"
     );
   };
 
@@ -159,7 +164,7 @@ const CreateEconomy = ({ route, navigation }) => {
                   ? "Un gasto ha sido eliminado"
                   : "Una compra ha sido eliminada"
               } por ${user.email}`,
-              'accessToEconomy'
+              "accessToEconomy"
             );
           },
         },
@@ -199,9 +204,21 @@ const CreateEconomy = ({ route, navigation }) => {
                 Crear {route.params.type === "expense" ? "Gasto" : "Compra"}
               </TextStyle>
             </View>
+            {editing && pay && (
+              <View style={{ marginVertical: 10 }}>
+                <TextStyle color={light.main2}>
+                  Total: {thousandsSystem(data.amount)}
+                </TextStyle>
+                <TextStyle color={light.main2}>
+                  Deuda: {thousandsSystem(data.amount - data.payment)}
+                </TextStyle>
+              </View>
+            )}
             <View style={{ marginVertical: 10 }}>
               <InputStyle
                 value={name}
+                editable={!editing || !pay}
+                stylesContainer={{ opacity: editing && pay ? 0.5 : 1 }}
                 placeholder="Nombre"
                 right={
                   name
@@ -222,6 +239,8 @@ const CreateEconomy = ({ route, navigation }) => {
               <InputStyle
                 value={amount}
                 placeholder="Valor Total"
+                editable={!editing || !pay}
+                stylesContainer={{ opacity: editing && pay ? 0.5 : 1 }}
                 right={
                   amount
                     ? () => <TextStyle color={light.main2}>Valor</TextStyle>
@@ -230,7 +249,7 @@ const CreateEconomy = ({ route, navigation }) => {
                 maxLength={10}
                 keyboardType="numeric"
                 onChangeText={(text) => {
-                  setValue("amount", text.replace(/[^0-9]/g, ""));
+                  setValue("amount", parseInt(text.replace(/[^0-9]/g, "")));
                   setAmount(thousandsSystem(text.replace(/[^0-9]/g, "")));
                 }}
               />
@@ -264,7 +283,7 @@ const CreateEconomy = ({ route, navigation }) => {
                 backgroundColor={light.main2}
                 style={{ width: "40%" }}
               >
-                {editing ? "Guardar" : "Pagado"}
+                {editing ? "Pagar" : "Pagado"}
               </ButtonStyle>
               <InputStyle
                 value={payment}
@@ -281,7 +300,7 @@ const CreateEconomy = ({ route, navigation }) => {
                   const num = text.replace(/[^0-9]/g, "");
                   if (parseInt(num) > parseInt(amount.replace(/[^0-9]/g, "")))
                     return;
-                  setValue("payment", num);
+                  setValue("payment", parseInt(num));
                   setPayment(thousandsSystem(num));
                 }}
               />
