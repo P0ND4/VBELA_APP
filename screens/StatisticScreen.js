@@ -112,7 +112,8 @@ const StatisticScreen = ({ navigation }) => {
       if (data.type === "purchase") {
         purchase += parseInt(data.amount);
         purchases.push(data);
-      } else {
+      }
+      if (data.type === "expense") {
         expense += parseInt(data.amount);
         expenses.push(data);
       }

@@ -22,7 +22,15 @@ export const connect = async ({ data = {}, url }) => {
     const r = await readFile({ name: "data.json" });
     const value = !r.error ? r : [];
     const info = { url, data, creationDate: new Date().getTime() };
-    const options = ["helper", "nomenclature", "table", "menu", "kitchen"];
+    const options = [
+      "helper",
+      "nomenclature",
+      "table",
+      "menu",
+      "kitchen",
+      "people",
+      "economy",
+    ];
     const typeOfData = url.slice(1).split("/")[0];
     const identification = options.includes(typeOfData) ? "id" : "ref";
 
@@ -135,6 +143,9 @@ export const editEconomy = async (data) =>
 export const removeEconomy = async (data) =>
   await connect({ data, url: "/economy/remove" });
 
+export const removeManyEconomy = async (data) =>
+  await connect({ data, url: "/economy/remove/many" });
+
 export const getRule = async () => await connect({ url: "/rule" });
 
 export const addMenu = async (data) =>
@@ -154,11 +165,11 @@ export const editKitchen = async (data) =>
 
 export const removeKitchen = async (data) =>
   await connect({ data, url: "/kitchen/remove" });
-  
+
 export const removeManyKitchen = async (data) =>
   await connect({ data, url: "/kitchen/remove/many" });
 
-  export const addRoster = async (data) =>
+export const addRoster = async (data) =>
   await connect({ data, url: "/roster/add" });
 
 export const editRoster = async (data) =>
@@ -166,3 +177,12 @@ export const editRoster = async (data) =>
 
 export const removeRoster = async (data) =>
   await connect({ data, url: "/roster/remove" });
+
+export const addPerson = async (data) =>
+  await connect({ data, url: "/people/add" });
+
+export const editPerson = async (data) =>
+  await connect({ data, url: "/people/edit" });
+
+export const removePerson = async (data) =>
+  await connect({ data, url: "/people/remove" });

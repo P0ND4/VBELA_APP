@@ -18,6 +18,14 @@ export const ordersSlice = createSlice({
         state.splice(index, 1);
       }
     },
+    removeManyByOwner: (state, action) => {
+      const { ref } = action.payload;
+      const orders = state.filter((o) => o.ref === ref);
+      for (let o of orders) {
+        const index = state.findIndex((curr) => curr.ref === o.ref);
+        state.splice(index, 1);
+      }
+    },
     edit: (state, action) => {
       const { id, data } = action.payload;
       const index = state.findIndex((o) => o.id === id);
@@ -28,5 +36,5 @@ export const ordersSlice = createSlice({
   }
 });
 
-export const { change, clean, add, remove, removeMany, edit } = ordersSlice.actions;
+export const { change, clean, add, remove, removeMany, edit, removeManyByOwner } = ordersSlice.actions;
 export default ordersSlice.reducer;

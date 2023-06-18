@@ -1,13 +1,29 @@
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import {
-  View,
-  StyleSheet,
   Keyboard,
   KeyboardAvoidingView,
   ScrollView,
+  StyleSheet,
+  View,
 } from "react-native";
-import { useForm } from "react-hook-form";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  addEconomy,
+  addReservation,
+  editReservation,
+  editEconomy,
+} from "../api";
+import ButtonStyle from "../components/ButtonStyle";
+import InputStyle from "../components/InputStyle";
+import Layout from "../components/Layout";
+import TextStyle from "../components/TextStyle";
+import { add as addE, edit as editE } from "../features/function/economySlice";
+import {
+  add as addR,
+  edit as editR,
+} from "../features/groups/reservationsSlice";
+import helperNotification from "../helpers/helperNotification";
 import {
   addDays,
   changeDate,
@@ -15,14 +31,7 @@ import {
   random,
   thousandsSystem,
 } from "../helpers/libs";
-import { add, edit } from "../features/groups/reservationsSlice";
-import { addReservation, editReservation } from "../api";
-import Layout from "../components/Layout";
-import TextStyle from "../components/TextStyle";
-import InputStyle from "../components/InputStyle";
-import ButtonStyle from "../components/ButtonStyle";
 import theme from "../theme";
-import helperNotification from "../helpers/helperNotification";
 
 const light = theme.colors.light;
 const dark = theme.colors.dark;
@@ -45,8 +54,11 @@ const ReserveScreen = ({ route, navigation }) => {
   const reserve = useSelector((state) =>
     state.reservations.find((r) => r.ref === route.params.ref)
   );
+  const economy = useSelector((state) => state.economy);
+  const folk = useSelector((state) => state.people);
   const activeGroup = useSelector((state) => state.activeGroup);
   const editing = route.params.editing;
+  const owner = route.params?.owner;
 
   const [fullName, setFullName] = useState(editing ? reserve.fullName : "");
   const [identification, setIdentification] = useState(
@@ -131,6 +143,55 @@ const ReserveScreen = ({ route, navigation }) => {
     });
   }, []);
 
+  const manageEconomy = async ({ editing }) => {
+    const foundEconomy = economy.find((e) => e.ref === owner);
+
+    if (!foundEconomy) {
+      const id = random(20);
+      const person = folk.find((p) => p.id === owner);
+
+      const newEconomy = {
+        id,
+        ref: owner,
+        owner: {
+          identification: person.identification,
+          name: person.name,
+        },
+        type: "debt",
+        amount: discount ? amountWithDiscount : amount,
+        name: `Deuda ${person.name}`,
+        payment: 0,
+        creationDate: new Date().getTime(),
+        modificationDate: new Date().getTime(),
+      };
+
+      dispatch(addE(newEconomy));
+      await addEconomy({
+        email: activeGroup.active ? activeGroup.email : user.email,
+        economy: newEconomy,
+        groups: activeGroup.active
+          ? [activeGroup.id]
+          : user.helpers.map((h) => h.id),
+      });
+    } else {
+      const currentEconomy = { ...foundEconomy };
+      if (editing) {
+        currentEconomy.amount -= reserve.discount
+          ? reserve.amountWithDiscount
+          : reserve.amount;
+      }
+      currentEconomy.amount += discount ? amountWithDiscount : amount;
+      dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
+      await editEconomy({
+        email: activeGroup.active ? activeGroup.email : user.email,
+        economy: currentEconomy,
+        groups: activeGroup.active
+          ? [activeGroup.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
+  };
+
   const onSubmitEdit = async (data) => {
     Keyboard.dismiss();
     const date = new Date(reserve.start);
@@ -140,6 +201,7 @@ const ReserveScreen = ({ route, navigation }) => {
 
     const end = addDays(new Date(year, month, day), parseInt(data.days - 1));
 
+    data.owner = reserve.owner;
     data.ref = reserve.ref;
     data.start = reserve.start;
     data.id = reserve.id;
@@ -148,8 +210,9 @@ const ReserveScreen = ({ route, navigation }) => {
     data.creationDate = reserve.creationDate;
     data.modificationDate = new Date().getTime();
 
-    dispatch(edit({ ref: reserve.ref, data }));
+    dispatch(editR({ ref: reserve.ref, data }));
     navigation.pop();
+    if (owner) await manageEconomy({ editing: true });
     await editReservation({
       email: activeGroup.active ? activeGroup.email : user.email,
       reservation: data,
@@ -163,8 +226,10 @@ const ReserveScreen = ({ route, navigation }) => {
       "Reservación editada",
       `Una reservación ha sido editada por ${days} días, por el usuario ${
         user.email
-      }, desde ${changeDate(new Date(data.start))} hasta ${changeDate(new Date(data.end))}`,
-      'accessToReservations'
+      }, desde ${changeDate(new Date(data.start))} hasta ${changeDate(
+        new Date(data.end)
+      )}`,
+      "accessToReservations"
     );
   };
 
@@ -183,12 +248,14 @@ const ReserveScreen = ({ route, navigation }) => {
     data.start = new Date(year, month, day).getTime();
     data.end = end.getTime();
     data.amount = amount;
+    data.owner = owner;
     data.id = route.params.id;
     data.ref = ref;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
-    dispatch(add(data));
+    dispatch(addR(data));
     navigation.pop();
+    if (owner) await manageEconomy({ editing: false });
     await addReservation({
       email: activeGroup.active ? activeGroup.email : user.email,
       reservation: data,
@@ -202,8 +269,10 @@ const ReserveScreen = ({ route, navigation }) => {
       "Reservación creada",
       `Una reservación de ${days} días ha sido creada por ${
         user.email
-      } desde ${changeDate(new Date(data.start))} hasta ${changeDate(new Date(data.end))}`,
-      'accessToReservations'
+      } desde ${changeDate(new Date(data.start))} hasta ${changeDate(
+        new Date(data.end)
+      )}`,
+      "accessToReservations"
     );
   };
 

@@ -290,39 +290,31 @@ const HomeScreen = ({ navigation }) => {
               <Image source={Premium} style={styles.premium} />
             </View>
           )}
-          {(!activeGroup.active || activeGroup.accessToEconomy) && (
+          {(!activeGroup.active || activeGroup.accessToCustomer) && (
             <View>
               <ButtonStyle
-                onPress={() =>
-                  navigation.push("CreateEconomy", {
-                    type: "purchase",
-                  })
-                }
+                onPress={() => navigation.push("People", { type: "customer" })}
                 backgroundColor={mode === "light" ? light.main5 : dark.main2}
               >
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
-                  Compra/Costos
+                  Cliente
                 </TextStyle>
               </ButtonStyle>
               <Image source={Premium} style={styles.premium} />
             </View>
           )}
-          {(!activeGroup.active || activeGroup.accessToEconomy) && (
+          {(!activeGroup.active || activeGroup.accessToSupplier) && (
             <View>
               <ButtonStyle
-                onPress={() =>
-                  navigation.push("CreateEconomy", {
-                    type: "expense",
-                  })
-                }
+                onPress={() => navigation.push("People", { type: "supplier" })}
                 backgroundColor={mode === "light" ? light.main5 : dark.main2}
               >
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
-                  Gasto/Inversión
+                  Proveedor
                 </TextStyle>
               </ButtonStyle>
               <Image source={Premium} style={styles.premium} />

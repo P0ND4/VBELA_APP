@@ -43,6 +43,8 @@ const PlaceScreen = ({ route, navigation }) => {
     return reservations;
   });
 
+  const owner = route.params?.owner;
+
   const [activeFilter, setActiveFilter] = useState(false);
   const [filter, setFilter] = useState("");
   const [filterResult, setFilterResult] = useState([]);
@@ -55,10 +57,12 @@ const PlaceScreen = ({ route, navigation }) => {
         guest.fullName?.includes(filter) ||
         guest.email?.includes(filter) ||
         guest.identification?.includes(filter) ||
+        thousandsSystem(guest.identification)?.includes(filter) ||
         guest.phoneNumber?.includes(filter) ||
         guest.people?.includes(filter) ||
         guest.days?.includes(filter) ||
-        guest.amount?.toString().includes(filter)
+        guest.amount?.toString().includes(filter) ||
+        thousandsSystem(guest.amount?.toString()).includes(filter)
       )
         guests.push(guest);
     }
@@ -141,6 +145,7 @@ const PlaceScreen = ({ route, navigation }) => {
                   if (!disable) {
                     if (!dayTaken) {
                       navigation.push("CreateReserve", {
+                        owner: owner ? owner : null,
                         capability: place.capability,
                         name: params.name,
                         year: params.year,
@@ -241,25 +246,37 @@ const PlaceScreen = ({ route, navigation }) => {
                 alignItems: "center",
               }}
             >
-              <TextStyle color={mode === 'light' ? light.textDark : dark.textWhite} smallParagraph>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+                smallParagraph
+              >
                 Nombre:{" "}
                 <TextStyle smallParagraph color={light.main2}>
                   {guest.fullName.slice(0, 15)}
                 </TextStyle>
               </TextStyle>
-              <TextStyle color={mode === 'light' ? light.textDark : dark.textWhite} smallParagraph>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+                smallParagraph
+              >
                 Dias:{" "}
                 <TextStyle smallParagraph color={light.main2}>
                   {guest.days}
                 </TextStyle>
               </TextStyle>
-              <TextStyle color={mode === 'light' ? light.textDark : dark.textWhite} smallParagraph>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+                smallParagraph
+              >
                 Personas:{" "}
                 <TextStyle smallParagraph color={light.main2}>
                   {guest.people}
                 </TextStyle>
               </TextStyle>
-              <TextStyle color={mode === 'light' ? light.textDark : dark.textWhite} smallParagraph>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+                smallParagraph
+              >
                 Total:{" "}
                 <TextStyle smallParagraph color={light.main2}>
                   {thousandsSystem(guest.amount)}

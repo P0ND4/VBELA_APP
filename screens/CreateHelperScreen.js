@@ -51,8 +51,11 @@ const CreateGroup = ({ navigation, route }) => {
   const [accessToStatistics, setAccessToStatistics] = useState(
     route.params.data === "Edit" ? item.accessToStatistics : false
   );
-  const [accessToEconomy, setAccessToEconomy] = useState(
-    route.params.data === "Edit" ? item.accessToEconomy : false
+  const [accessToSupplier, setAccessToSupplier] = useState(
+    route.params.data === "Edit" ? item.accessToSupplier : false
+  );
+  const [accessToCustomer, setAccessToCustomer] = useState(
+    route.params.data === "Edit" ? item.accessToCustomer : false
   );
   const [accessToRoster, setAccessToRoster] = useState(
     route.params.data === "Edit" ? item.accessToRoster : false
@@ -108,8 +111,11 @@ const CreateGroup = ({ navigation, route }) => {
     register("accessToStatistics", {
       value: route.params.data === "Edit" ? item.accessToStatistics : false,
     });
-    register("accessToEconomy", {
-      value: route.params.data === "Edit" ? item.accessToEconomy : false,
+    register("accessToSupplier", {
+      value: route.params.data === "Edit" ? item.accessToSupplier : false,
+    });
+    register("accessToCustomer", {
+      value: route.params.data === "Edit" ? item.accessToCustomer : false,
     });
     register("accessToRoster", {
       value: route.params.data === "Edit" ? item.accessToRoster : false,
@@ -126,10 +132,11 @@ const CreateGroup = ({ navigation, route }) => {
     if (!data.accessToTables &&
       !data.accessToReservations &&
       !data.accessToStatistics &&
-      !data.accessToEconomy &&
+      !data.accessToSupplier &&
       !data.accessToRoster &&
       !data.accessToKitchen &&
-      !data.accessToTable) return true
+      !data.accessToTable &&
+      !data.accessToCustomer) return true
     else return false;
   }
 
@@ -386,17 +393,32 @@ const CreateGroup = ({ navigation, route }) => {
                   </View>
                   <View style={styles.toggles}>
                     <TextStyle smallParagraph color={light.main2}>
-                      COMPRA y GASTO
+                      Proveedor
                     </TextStyle>
                     <Switch
                       trackColor={{ false: dark.main2, true: light.main2 }}
                       thumbColor={light.main4}
                       ios_backgroundColor="#3e3e3e"
                       onValueChange={() => {
-                        setAccessToEconomy(!accessToEconomy);
-                        setValue("accessToEconomy", !accessToEconomy);
+                        setAccessToSupplier(!accessToSupplier);
+                        setValue("accessToSupplier", !accessToSupplier);
                       }}
-                      value={accessToEconomy}
+                      value={accessToSupplier}
+                    />
+                  </View>
+                  <View style={styles.toggles}>
+                    <TextStyle smallParagraph color={light.main2}>
+                      Cliente
+                    </TextStyle>
+                    <Switch
+                      trackColor={{ false: dark.main2, true: light.main2 }}
+                      thumbColor={light.main4}
+                      ios_backgroundColor="#3e3e3e"
+                      onValueChange={() => {
+                        setAccessToCustomer(!accessToCustomer);
+                        setValue("accessToCustomer", !accessToCustomer);
+                      }}
+                      value={accessToCustomer}
                     />
                   </View>
                   <View style={styles.toggles}>

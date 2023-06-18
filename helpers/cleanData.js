@@ -11,6 +11,7 @@ import { clean as cleanEconomy } from "../features/function/economySlice";
 import { inactive as inactiveSession } from "../features/user/sessionSlice";
 import { inactive as inactiveGroup } from "../features/function/informationSlice";
 import { clean as cleanRoster } from "../features/function/rosterSlice";
+import { clean as cleanPeople } from "../features/function/peopleSlice";
 
 export default cleanData = (dispatch) => {
   dispatch(inactiveSession());
@@ -26,4 +27,5 @@ export default cleanData = (dispatch) => {
   dispatch(cleanMenu());
   dispatch(cleanKitchen());
   dispatch(cleanRoster());
+  dispatch(cleanPeople());
 };

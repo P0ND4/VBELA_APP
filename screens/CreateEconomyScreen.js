@@ -31,19 +31,29 @@ const CreateEconomy = ({ route, navigation }) => {
   } = useForm();
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
-  const groups = useSelector((state) => state.groups);
+  const economy = useSelector((state) => state.economy);
   const activeGroup = useSelector((state) => state.activeGroup);
 
+  const ref = route.params?.ref;
+  const owner = route.params?.owner;
   const data = route.params?.item;
   const editing = route.params?.editing;
   const pay = route.params?.pay;
 
   const [name, setName] = useState(editing ? data.name : "");
   const [amount, setAmount] = useState(
-    pay ? thousandsSystem(data.amount - data.payment) : editing ? thousandsSystem(data.amount) : ""
+    pay
+      ? thousandsSystem(data.amount - data.payment)
+      : editing
+      ? thousandsSystem(data.amount)
+      : ""
   );
   const [payment, setPayment] = useState(
-    pay ? thousandsSystem(data.amount - data.payment) : editing ? thousandsSystem(data.payment) : ""
+    pay
+      ? thousandsSystem(data.amount - data.payment)
+      : editing
+      ? thousandsSystem(data.payment)
+      : ""
   );
 
   useEffect(() => {
@@ -55,8 +65,23 @@ const CreateEconomy = ({ route, navigation }) => {
 
   useEffect(() => {
     if (route.params.type === "expense")
-      navigation.setOptions({ title: "Crear gasto" });
-    else navigation.setOptions({ title: "Crear compra" });
+      navigation.setOptions({
+        title: `${
+          editing && pay ? "Abonar" : editing ? "Editar" : "Crear"
+        } gasto`,
+      });
+
+    if (route.params.type === "purchase")
+      navigation.setOptions({
+        title: `${
+          editing && pay ? "Abonar" : editing ? "Editar" : "Crear"
+        } compra`,
+      });
+
+    if (route.params.type === "debt")
+      navigation.setOptions({
+        title: "Abonar Deuda",
+      });
   }, []);
 
   useEffect(() => {
@@ -67,15 +92,17 @@ const CreateEconomy = ({ route, navigation }) => {
 
   const onSubmitEdit = async (d) => {
     Keyboard.dismiss();
-    d.ref = data.ref;
+    d.id = data.id;
     d.type = data.type;
+    d.ref = data.ref;
+    d.owner = data.owner;
     if (pay) {
       d.amount = parseInt(data.amount);
       d.payment = parseInt(data.payment) + parseInt(d.payment);
     }
     d.creationDate = data.creationDate;
     d.modificationDate = new Date().getTime();
-    dispatch(edit({ ref: data.ref, data: d }));
+    dispatch(edit({ id: data.id, data: d }));
     navigation.pop();
     await editEconomy({
       email: activeGroup.active ? activeGroup.email : user.email,
@@ -84,25 +111,29 @@ const CreateEconomy = ({ route, navigation }) => {
         ? [activeGroup.id]
         : user.helpers.map((h) => h.id),
     });
-    await helperNotification(
-      activeGroup,
-      user,
-      route.params.type === "expense" ? "Gasto editado" : "Compra editada",
-      `${
-        route.params.type === "expense"
-          ? "Un gasto ha sido editado"
-          : "Una compra ha sido editada"
-      } por ${user.email}`,
-      "accessToEconomy"
-    );
+    if (route.params.type !== "debt") {
+      await helperNotification(
+        activeGroup,
+        user,
+        route.params.type === "expense" ? "Gasto editado" : "Compra editada",
+        `${
+          route.params.type === "expense"
+            ? "Un gasto ha sido editado"
+            : "Una compra ha sido editada"
+        } por ${user.email}`,
+        "accessToSupplier"
+      );
+    }
   };
 
   const onSubmitCreate = async (data) => {
     Keyboard.dismiss();
-    const ref = random(20);
-    if (groups.find((group) => group.ref === ref)) onSubmitCreate(data);
+    const id = random(20);
+    if (economy.find((group) => group.id === id)) onSubmitCreate(data);
 
+    data.id = id;
     data.ref = ref;
+    data.owner = owner;
     data.type = route.params.type;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
@@ -116,17 +147,19 @@ const CreateEconomy = ({ route, navigation }) => {
         : user.helpers.map((h) => h.id),
     });
 
-    await helperNotification(
-      activeGroup,
-      user,
-      route.params.type === "expense" ? "Gasto creado" : "Compra creada",
-      `${
-        route.params.type === "expense"
-          ? "Un gasto ha sido creado"
-          : "Una compra ha sido creada"
-      } por ${user.email}`,
-      "accessToEconomy"
-    );
+    if (route.params.type !== "debt") {
+      await helperNotification(
+        activeGroup,
+        user,
+        route.params.type === "expense" ? "Gasto creado" : "Compra creada",
+        `${
+          route.params.type === "expense"
+            ? "Un gasto ha sido creado"
+            : "Una compra ha sido creada"
+        } por ${user.email}`,
+        "accessToSupplier"
+      );
+    }
   };
 
   const deleteEconomy = () => {
@@ -144,11 +177,11 @@ const CreateEconomy = ({ route, navigation }) => {
         {
           text: "Si",
           onPress: async () => {
-            dispatch(remove({ ref: data.ref }));
+            dispatch(remove({ id: data.id }));
             navigation.pop();
             await removeEconomy({
               email: activeGroup.active ? activeGroup.email : user.email,
-              ref: data.ref,
+              id: data.id,
               groups: activeGroup.active
                 ? [activeGroup.id]
                 : user.helpers.map((h) => h.id),
@@ -164,7 +197,7 @@ const CreateEconomy = ({ route, navigation }) => {
                   ? "Un gasto ha sido eliminado"
                   : "Una compra ha sido eliminada"
               } por ${user.email}`,
-              "accessToEconomy"
+              "accessToSupplier"
             );
           },
         },
@@ -201,7 +234,12 @@ const CreateEconomy = ({ route, navigation }) => {
                 center
                 color={mode === "light" ? null : dark.textWhite}
               >
-                Crear {route.params.type === "expense" ? "Gasto" : "Compra"}
+                {editing && pay ? "Abonar" : editing ? "Editar" : "Crear"}{" "}
+                {route.params.type === "expense"
+                  ? "Gasto"
+                  : route.params.type === "purchase"
+                  ? "Compra"
+                  : "Deuda"}
               </TextStyle>
             </View>
             {editing && pay && (
@@ -215,22 +253,24 @@ const CreateEconomy = ({ route, navigation }) => {
               </View>
             )}
             <View style={{ marginVertical: 10 }}>
-              <InputStyle
-                value={name}
-                editable={!editing || !pay}
-                stylesContainer={{ opacity: editing && pay ? 0.5 : 1 }}
-                placeholder="Nombre"
-                right={
-                  name
-                    ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
-                    : null
-                }
-                maxLength={20}
-                onChangeText={(text) => {
-                  setValue("name", text);
-                  setName(text);
-                }}
-              />
+              {route.params.type !== "debt" && (
+                <InputStyle
+                  value={name}
+                  editable={!editing || !pay}
+                  stylesContainer={{ opacity: editing && pay ? 0.5 : 1 }}
+                  placeholder="Nombre"
+                  right={
+                    name
+                      ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
+                      : null
+                  }
+                  maxLength={20}
+                  onChangeText={(text) => {
+                    setValue("name", text);
+                    setName(text);
+                  }}
+                />
+              )}
               {errors.name?.type && (
                 <TextStyle verySmall color={light.main2}>
                   El nombre es obligatorio
@@ -259,7 +299,7 @@ const CreateEconomy = ({ route, navigation }) => {
                 </TextStyle>
               )}
             </View>
-            {editing && (
+            {editing && route.params.type !== "debt" && (
               <ButtonStyle
                 onPress={() => deleteEconomy()}
                 backgroundColor={mode === "light" ? light.main5 : dark.main2}
@@ -283,7 +323,7 @@ const CreateEconomy = ({ route, navigation }) => {
                 backgroundColor={light.main2}
                 style={{ width: "40%" }}
               >
-                {editing ? "Pagar" : "Pagado"}
+                {editing && pay ? "Pagar" : editing ? "Guardar" : "Pagado"}
               </ButtonStyle>
               <InputStyle
                 value={payment}

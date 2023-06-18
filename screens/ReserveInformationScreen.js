@@ -199,10 +199,10 @@ const StatisticScreen = ({ route, navigation }) => {
                 navigation.push("CreateOrder", {
                   editing: OF ? true : false,
                   id: OF ? OF.id : undefined,
-                  ref: route.params.ref,
+                  ref: reserve?.owner ? reserve.owner : route.params.ref,
                   table: nomenclature.nomenclature,
                   selection: OF ? OF.selection : [],
-                  reservation: group.name
+                  reservation: reserve?.owner ? "Cliente" : group.name
                 });
               }}
             >

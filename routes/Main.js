@@ -1,48 +1,51 @@
-import { useEffect, useRef, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import NetInfo from "@react-native-community/netinfo";
 import { createStackNavigator } from "@react-navigation/stack";
+import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getRule, getUser } from "../api";
 import { active, inactive } from "../features/function/informationSlice";
 import { change as changeHelpers } from "../features/helpers/informationSlice";
 import { change as changeUser } from "../features/user/informationSlice";
-import { socket } from "../socket";
-import { getRule, getUser } from "../api";
-import { readFile, removeFile, writeFile } from "../helpers/offline";
-import NetInfo from "@react-native-community/netinfo";
-import SignIn from "../screens/SignInScreen";
-import Home from "../screens/HomeScreen";
-import Statistic from "../screens/StatisticScreen";
-import Place from "../screens/PlaceScreen";
-import CreatePlace from "../screens/CreatePlaceScreen";
-import CreateReserve from "../screens/CreateReserveScreen";
-import ReserveInformation from "../screens/ReserveInformationScreen";
-import theme from "../theme";
-import PlaceInformation from "../screens/PlaceInformationScreen";
-import CreateZoneScreen from "../screens/CreateZoneScreen";
-import Helper from "../screens/HelperScreen";
-import CreateHelper from "../screens/CreateHelperScreen";
-import Tables from "../screens/TablesScreen";
-import CreateTable from "../screens/CreateTableScreen";
-import TableInformation from "../screens/TableInformationScreen";
 import changeGeneralInformation from "../helpers/changeGeneralInformation";
-import CreateEconomy from "../screens/CreateEconomyScreen";
-import CreateProduct from "../screens/CreateProductScreen";
-import version from "../version.json";
-import Event from "../screens/EventScreen";
-import CreateOrder from "../screens/CreateOrderScreen";
-import PreviewOrder from "../screens/PreviewOrderScreen";
-import OrderCompletion from "../screens/OrderCompletionScreen";
 import cleanData from "../helpers/cleanData";
+import { readFile, removeFile, writeFile } from "../helpers/offline";
+import CreateEconomy from "../screens/CreateEconomyScreen";
+import CreateHelper from "../screens/CreateHelperScreen";
+import CreateOrder from "../screens/CreateOrderScreen";
 import CreatePercentage from "../screens/CreatePercentageScreen";
-import EditOrder from "../screens/EditOrderScreen";
-import Invoice from "../screens/InvoiceScreen";
-import InvoiceByEmail from "../screens/InvoiceByEmailScreen";
-import EditInvoice from "../screens/EditInvoiceScreen";
-import Kitchen from "../screens/KitchenScreen";
+import CreatePerson from "../screens/CreatePersonScreen";
+import CreatePlace from "../screens/CreatePlaceScreen";
+import CreateProduct from "../screens/CreateProductScreen";
+import CreateReserve from "../screens/CreateReserveScreen";
 import CreateRoster from "../screens/CreateRosterScreen";
+import CreateTable from "../screens/CreateTableScreen";
+import CreateZoneScreen from "../screens/CreateZoneScreen";
+import EditInvoice from "../screens/EditInvoiceScreen";
+import EditOrder from "../screens/EditOrderScreen";
+import Event from "../screens/EventScreen";
+import Helper from "../screens/HelperScreen";
+import Home from "../screens/HomeScreen";
+import InvoiceByEmail from "../screens/InvoiceByEmailScreen";
+import Invoice from "../screens/InvoiceScreen";
+import Kitchen from "../screens/KitchenScreen";
+import OrderCompletion from "../screens/OrderCompletionScreen";
+import PeopleInformation from "../screens/PeopleInformationScreen";
+import People from "../screens/PeopleScreen";
+import PlaceInformation from "../screens/PlaceInformationScreen";
+import Place from "../screens/PlaceScreen";
+import PreviewOrder from "../screens/PreviewOrderScreen";
+import ReserveInformation from "../screens/ReserveInformationScreen";
+import SignIn from "../screens/SignInScreen";
+import Statistic from "../screens/StatisticScreen";
+import TableInformation from "../screens/TableInformationScreen";
+import Tables from "../screens/TablesScreen";
+import { socket } from "../socket";
+import theme from "../theme";
+import version from "../version.json";
 
 import * as BackgroundFetch from "expo-background-fetch";
-import * as TaskManager from "expo-task-manager";
 import * as Notifications from "expo-notifications";
+import * as TaskManager from "expo-task-manager";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -448,6 +451,13 @@ const Main = () => {
           name="CreateRoster"
           component={CreateRoster}
           options={{ title: "Nómina" }}
+        />
+        <Stack.Screen name="CreatePerson" component={CreatePerson} />
+        <Stack.Screen name="People" component={People} />
+        <Stack.Screen
+          name="PeopleInformation"
+          component={PeopleInformation}
+          options={{ title: "Detalles" }}
         />
       </Stack.Group>
       <Stack.Screen

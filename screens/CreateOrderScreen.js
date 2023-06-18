@@ -17,8 +17,16 @@ import {
   add as addK,
   removeMany as removeManyK,
 } from "../features/tables/kitchenSlice";
+import { add as addE, edit as editE } from "../features/function/economySlice";
 import helperNotification from "../helpers/helperNotification";
-import { addOrder, editOrder, addKitchen, removeManyKitchen } from "../api";
+import {
+  addOrder,
+  editOrder,
+  addKitchen,
+  removeManyKitchen,
+  addEconomy,
+  editEconomy,
+} from "../api";
 import Layout from "../components/Layout";
 import TextStyle from "../components/TextStyle";
 import ButtonStyle from "../components/ButtonStyle";
@@ -38,6 +46,8 @@ const CreateOrderScreen = ({ route, navigation }) => {
   const orders = useSelector((state) => state.orders);
   const menu = useSelector((state) => state.menu);
   const mode = useSelector((state) => state.mode);
+  const economy = useSelector((state) => state.economy);
+  const folk = useSelector((state) => state.people);
 
   const [products, setProducts] = useState([]);
   const [selection, setSelection] = useState(route.params.selection);
@@ -81,19 +91,66 @@ const CreateOrderScreen = ({ route, navigation }) => {
         tax;
 
   const extractObject = (d) => {
-    return { 
-      pay: d.pay, 
+    return {
+      pay: d.pay,
       discount: !d.discount ? null : d.discount,
       tax: !d.tax ? null : d.tax,
       tip: !d.tip ? null : d.tip,
       method: !d.method ? null : d.method,
-      ID: !d.ID ? null : d.ID
+      ID: !d.ID ? null : d.ID,
     };
+  };
+
+  const manageEconomy = async ({ editing, lastTotal, total }) => {
+    const foundEconomy = economy.find((e) => e.ref === route.params.ref);
+
+    if (!foundEconomy) {
+      const id = random(20);
+      const person = folk.find((p) => p.id === route.params.ref);
+
+      const newEconomy = {
+        id,
+        ref: person.id,
+        owner: {
+          identification: person.identification,
+          name: person.name,
+        },
+        type: "debt",
+        amount: total,
+        name: `Deuda ${person.name}`,
+        payment: 0,
+        creationDate: new Date().getTime(),
+        modificationDate: new Date().getTime(),
+      };
+
+      dispatch(addE(newEconomy));
+      await addEconomy({
+        email: activeGroup.active ? activeGroup.email : user.email,
+        economy: newEconomy,
+        groups: activeGroup.active
+          ? [activeGroup.id]
+          : user.helpers.map((h) => h.id),
+      });
+    } else {
+      const currentEconomy = { ...foundEconomy };
+      if (editing) currentEconomy.amount -= lastTotal;
+      currentEconomy.amount += total;
+      dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
+      await editEconomy({
+        email: activeGroup.active ? activeGroup.email : user.email,
+        economy: currentEconomy,
+        groups: activeGroup.active
+          ? [activeGroup.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
   };
 
   const saveOrder = async (dat) => {
     const d = extractObject(dat);
     const id = d.ID ? d.ID : random(20);
+
+    const person = folk.find(p => p.id === route.params.ref);
 
     if (orders.find((order) => order.id === id)) return saveOrder(dat);
     const data = {};
@@ -115,6 +172,7 @@ const CreateOrderScreen = ({ route, navigation }) => {
     dispatch(add(data));
     if (d.pay) navigation.pop();
     navigation.replace("OrderCompletion", { data, total });
+    if (person) manageEconomy({ editing: false, total });
     await addOrder({
       email: activeGroup.active ? activeGroup.email : user.email,
       order: data,
@@ -128,6 +186,8 @@ const CreateOrderScreen = ({ route, navigation }) => {
     const data = {};
     const d = extractObject(dat);
     const total = getTotal(d.discount, selection, d.tip, d.tax);
+    const person = folk.find(p => p.id === route.params.ref);
+    const currentOrder = orders.find(o => o.id === route.params.id);
 
     data.id = route.params.id;
     data.ref = route.params.ref;
@@ -145,6 +205,7 @@ const CreateOrderScreen = ({ route, navigation }) => {
     dispatch(edit({ id: information.id, data }));
     if (d.pay) navigation.pop();
     navigation.replace("OrderCompletion", { data, total });
+    if (person) manageEconomy({ editing: false, total, lastTotal: currentOrder.total });
     await editOrder({
       email: activeGroup.active ? activeGroup.email : user.email,
       order: data,
@@ -158,9 +219,7 @@ const CreateOrderScreen = ({ route, navigation }) => {
     if (newSelection.length > 0) {
       const orderID = route.params.id ? route.params.id : random(20);
       const kitchenID = random(20);
-      const orderToKitchen = route.params.id
-        ? newSelection
-        : selection;
+      const orderToKitchen = route.params.id ? newSelection : selection;
 
       const obj = {
         id: kitchenID,
@@ -188,9 +247,9 @@ const CreateOrderScreen = ({ route, navigation }) => {
         activeGroup,
         user,
         "Nuevo pedido pendiente",
-        `Una orden ha sido pedida en ${
-          reservation ? reservation : `la mesa`
-        } ${route.params.table}`,
+        `Una orden ha sido pedida en ${reservation ? reservation : `la mesa`} ${
+          route.params.table
+        }`,
         "accessToKitchen"
       );
     } else {
@@ -201,7 +260,7 @@ const CreateOrderScreen = ({ route, navigation }) => {
           : "Precisa adicionar un producto al carrito para poder guardarlo"
       );
     }
-  }
+  };
 
   const dispatch = useDispatch();
 
@@ -408,10 +467,10 @@ const CreateOrderScreen = ({ route, navigation }) => {
                       let selected = { ...selection[index] };
                       selected.count += count;
                       selected.total += item.price * count;
-                      const changed = selection.map(s => {
+                      const changed = selection.map((s) => {
                         if (s.id === selected.id) return selected;
                         return s;
-                      })
+                      });
                       setSelection(changed);
                     } else setSelection([...selection, object]);
                   } else {

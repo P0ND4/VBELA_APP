@@ -17,6 +17,7 @@ import sectionSlice from '../features/tables/sectionSlice';
 import invoiceSlice from "../features/tables/invoiceSlice";
 import kitchenSlice from "../features/tables/kitchenSlice";
 import rosterSlice from "../features/function/rosterSlice";
+import peopleSlice from "../features/function/peopleSlice";
 
 const reducers = combineReducers({
   mode: modeSlice, // Mode light and dark
@@ -34,7 +35,8 @@ const reducers = combineReducers({
   section: sectionSlice,
   invoice: invoiceSlice,
   kitchen: kitchenSlice,
-  roster: rosterSlice
+  roster: rosterSlice,
+  people: peopleSlice
 });
 
 const persistConfig = {
