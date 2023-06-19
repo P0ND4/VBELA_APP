@@ -946,7 +946,7 @@ const People = ({ navigation, route }) => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={{ marginHorizontal: 4 }}
-                    onPress={() => navigation.push("CreatePerson", { type })}
+                    onPress={() => navigation.push("CreatePerson", { type: userType })}
                   >
                     <Ionicons name="add-circle" size={35} color={light.main2} />
                   </TouchableOpacity>
