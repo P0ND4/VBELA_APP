@@ -148,7 +148,6 @@ const CreateGroup = ({ navigation, route }) => {
     dispatch(push(data));
     navigation.pop();
     socket.emit("connected", { groups: [data.id] });
-    console.log(data);
     await addHelper({
       email: user.email,
       helper: data,
@@ -215,7 +214,6 @@ const CreateGroup = ({ navigation, route }) => {
     dispatch(editData({ id: item.id, data }));
     navigation.pop();
 
-    console.log(helpers)
     await editHelper({
       email: user.email,
       helper: data,
