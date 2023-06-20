@@ -24,6 +24,7 @@ const dark = theme.colors.dark;
 
 const CreateEconomy = ({ route, navigation }) => {
   const {
+    watch,
     register,
     setValue,
     formState: { errors },
@@ -58,7 +59,7 @@ const CreateEconomy = ({ route, navigation }) => {
 
   useEffect(() => {
     setPayment(amount);
-    setValue("payment", parseInt(amount.replace(/[^0-9]/g, "")));
+    if (amount.length > 0) setValue("payment", parseInt(amount.replace(/[^0-9]/g, "")));
   }, [amount]);
 
   const dispatch = useDispatch();
@@ -89,6 +90,8 @@ const CreateEconomy = ({ route, navigation }) => {
     register("amount", { value: editing ? data.amount : "", required: true });
     register("payment", { value: editing ? data.payment : "", required: true });
   }, []);
+
+  useEffect(() => console.log(watch()));
 
   const onSubmitEdit = async (d) => {
     Keyboard.dismiss();
@@ -340,7 +343,7 @@ const CreateEconomy = ({ route, navigation }) => {
                   const num = text.replace(/[^0-9]/g, "");
                   if (parseInt(num) > parseInt(amount.replace(/[^0-9]/g, "")))
                     return;
-                  setValue("payment", parseInt(num));
+                  setValue("payment", num.length > 0 ? parseInt(num) : '');
                   setPayment(thousandsSystem(num));
                 }}
               />

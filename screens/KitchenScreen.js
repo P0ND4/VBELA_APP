@@ -199,7 +199,7 @@ const KitchenScreen = () => {
             <ButtonStyle
               style={{ width: SCREEN_WIDTH / 4.2, margin: 0 }}
               onPress={async () => {
-                if (type === "kitchen") await finished({ id: order.id })
+                if (type === "kitchen") await finished({ id: order.id });
                 else await received({ id: order.id });
               }}
               backgroundColor={light.main2}
@@ -239,7 +239,10 @@ const KitchenScreen = () => {
           No hay pedidos
         </TextStyle>
       )}
-      <ScrollView showsVerticalScrollIndicator={false} style={{ height: SCREEN_HEIGHT / 1.1 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={{ height: SCREEN_HEIGHT / 1.1 }}
+      >
         {orders.length > 0 &&
           (!activeGroup.active || activeGroup.accessToKitchen) && (
             <View>
@@ -255,8 +258,18 @@ const KitchenScreen = () => {
               })}
             </View>
           )}
+        {orders.length === 0 && (
+          <TextStyle
+            center
+            subtitle
+            customStyle={{ marginTop: 10 }}
+            color={light.main2}
+          >
+            No hay ordenes en concina
+          </TextStyle>
+        )}
         {ordersFinished.length > 0 &&
-          (!activeGroup.active || activeGroup.accessToTable) && (
+          (!activeGroup.active || activeGroup.accessToTables) && (
             <View>
               <TextStyle
                 smallSubtitle
@@ -270,6 +283,16 @@ const KitchenScreen = () => {
               })}
             </View>
           )}
+        {ordersFinished.length === 0 && (
+          <TextStyle
+            center
+            subtitle
+            customStyle={{ marginTop: 10 }}
+            color={light.main2}
+          >
+            No hay ordenes finalizados
+          </TextStyle>
+        )}
       </ScrollView>
     </Layout>
   );

@@ -9,6 +9,7 @@ import { change as changeUser } from "../features/user/informationSlice";
 import changeGeneralInformation from "../helpers/changeGeneralInformation";
 import cleanData from "../helpers/cleanData";
 import { readFile, removeFile, writeFile } from "../helpers/offline";
+import { inactive as inactiveGroup } from "../features/function/informationSlice";
 import CreateEconomy from "../screens/CreateEconomyScreen";
 import CreateHelper from "../screens/CreateHelperScreen";
 import CreateOrder from "../screens/CreateOrderScreen";
@@ -140,9 +141,9 @@ const Main = () => {
   };
 
   const dataNotUploadedInformation = async (res) => {
+    const check = checkUser(res);
     const data = await readFile({ name: "data.json" });
     if (!data.error) {
-      const check = checkUser(res);
       const file = data;
 
       if (!check.error) await sendSync(data);
@@ -308,7 +309,13 @@ const Main = () => {
   });
 
   useEffect(() => {
-    const leave = (groups) => socket.emit("leave", { groups });
+    const leave = async (g) => {
+      socket.emit("leave", { groups: g });
+      const groups = user?.helpers?.map((h) => h.id);
+      if (groups.length > 0) socket.emit("connected", { groups });
+      changeGeneralInformation(dispatch, user);
+      dispatch(inactiveGroup());
+    };
     socket.on("close_room", leave);
     return () => socket.off("close_room", leave);
   }, []);

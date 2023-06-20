@@ -31,7 +31,9 @@ const StatisticScreen = ({ route, navigation }) => {
   const nomenclature = useSelector((state) =>
     state.nomenclatures.find((n) => n.id === route.params.id)
   );
-  const group = useSelector(state => state.groups.find(g => g.ref === nomenclature.ref));
+  const group = useSelector((state) =>
+    state.groups.find((g) => g.ref === nomenclature.ref)
+  );
 
   const activeGroup = useSelector((state) => state.activeGroup);
   const user = useSelector((state) => state.user);
@@ -70,30 +72,32 @@ const StatisticScreen = ({ route, navigation }) => {
             >
               Reservación
             </TextStyle>
-            <TouchableOpacity
-              onPress={() => {
-                const date = new Date(reserve.start);
-                const day = date.getDate();
-                const month = months[date.getMonth()];
-                const year = date.getFullYear();
+            {(!activeGroup.active || activeGroup.accessToReservations) && (
+              <TouchableOpacity
+                onPress={() => {
+                  const date = new Date(reserve.start);
+                  const day = date.getDate();
+                  const month = months[date.getMonth()];
+                  const year = date.getFullYear();
 
-                navigation.push("CreateReserve", {
-                  name: nomenclature.name
-                    ? nomenclature.name
-                    : nomenclature.nomenclature,
-                  capability: nomenclature.capability,
-                  ref: route.params.ref,
-                  id: route.params.id,
-                  day,
-                  days: route.params.days,
-                  month,
-                  year,
-                  editing: true,
-                });
-              }}
-            >
-              <Ionicons name="create-outline" size={38} color={light.main2} />
-            </TouchableOpacity>
+                  navigation.push("CreateReserve", {
+                    name: nomenclature.name
+                      ? nomenclature.name
+                      : nomenclature.nomenclature,
+                    capability: nomenclature.capability,
+                    ref: route.params.ref,
+                    id: route.params.id,
+                    day,
+                    days: route.params.days,
+                    month,
+                    year,
+                    editing: true,
+                  });
+                }}
+              >
+                <Ionicons name="create-outline" size={38} color={light.main2} />
+              </TouchableOpacity>
+            )}
           </View>
           <TextStyle smallSubtitle color={light.main2}>
             <TextStyle
@@ -202,7 +206,7 @@ const StatisticScreen = ({ route, navigation }) => {
                   ref: reserve?.owner ? reserve.owner : route.params.ref,
                   table: nomenclature.nomenclature,
                   selection: OF ? OF.selection : [],
-                  reservation: reserve?.owner ? "Cliente" : group.name
+                  reservation: reserve?.owner ? "Cliente" : group.name,
                 });
               }}
             >
@@ -241,47 +245,49 @@ const StatisticScreen = ({ route, navigation }) => {
               }
             />
           </View>
-          <ButtonStyle
-            backgroundColor={light.main2}
-            onPress={() => {
-              Alert.alert(
-                "¿Estás seguro?",
-                "Se eliminarán todos los datos de esta reserva",
-                [
-                  {
-                    text: "No estoy seguro",
-                    style: "cancel",
-                  },
-                  {
-                    text: "Estoy seguro",
-                    onPress: async () => {
-                      dispatch(remove({ ref: route.params.ref }));
-                      navigation.pop();
-                      await removeReservation({
-                        email: activeGroup.active
-                          ? activeGroup.email
-                          : user.email,
-                        ref: route.params.ref,
-                        groups: activeGroup.active
-                          ? [activeGroup.id]
-                          : user.helpers.map((h) => h.id),
-                      });
-                      await helperNotification(
-                        activeGroup,
-                        user,
-                        "Reservación eliminada",
-                        `Una reservación ha sido eliminada por ${user.email}`,
-                        'accessToReservations'
-                      );
+          {(!activeGroup.active || activeGroup.accessToReservations) && (
+            <ButtonStyle
+              backgroundColor={light.main2}
+              onPress={() => {
+                Alert.alert(
+                  "¿Estás seguro?",
+                  "Se eliminarán todos los datos de esta reserva",
+                  [
+                    {
+                      text: "No estoy seguro",
+                      style: "cancel",
                     },
-                  },
-                ],
-                { cancelable: true }
-              );
-            }}
-          >
-            Eliminar reservación
-          </ButtonStyle>
+                    {
+                      text: "Estoy seguro",
+                      onPress: async () => {
+                        dispatch(remove({ ref: route.params.ref }));
+                        navigation.pop();
+                        await removeReservation({
+                          email: activeGroup.active
+                            ? activeGroup.email
+                            : user.email,
+                          ref: route.params.ref,
+                          groups: activeGroup.active
+                            ? [activeGroup.id]
+                            : user.helpers.map((h) => h.id),
+                        });
+                        await helperNotification(
+                          activeGroup,
+                          user,
+                          "Reservación eliminada",
+                          `Una reservación ha sido eliminada por ${user.email}`,
+                          "accessToReservations"
+                        );
+                      },
+                    },
+                  ],
+                  { cancelable: true }
+                );
+              }}
+            >
+              Eliminar reservación
+            </ButtonStyle>
+          )}
         </ScrollView>
       </View>
     </Layout>

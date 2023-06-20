@@ -293,7 +293,9 @@ const PeopleInformation = ({ route, navigation }) => {
                     ? "Un gasto ha sido eliminado"
                     : "Una compra ha sido eliminada"
                 } por ${user.email}`,
-                economy.type === "debt" ? 'accessToCustomer' : "accessToSupplier"
+                economy.type === "debt"
+                  ? "accessToCustomer"
+                  : "accessToSupplier"
               );
             },
           },
@@ -517,8 +519,8 @@ const PeopleInformation = ({ route, navigation }) => {
                 change: {
                   economy:
                     userType === "supplier"
-                      ? economy.filter((e) => e.type !== "debt")
-                      : economy.filter((e) => e.type === "debt"),
+                      ? economy.filter((e) => e.type !== "expense" || e.type !== "purchase")
+                      : economy.filter((e) => e.type !== "debt"),
                 },
                 groups: activeGroup.active
                   ? [activeGroup.id]
@@ -545,11 +547,12 @@ const PeopleInformation = ({ route, navigation }) => {
   };
 
   useEffect(() => {
-    setTextSupplier("");
-    const text = registers.reduce((a, item) => {
-      return (
-        a +
-        `<table style="width: 100%; border: 1px solid #444444; padding: 8px; border-radius: 8px; margin: 20px 0;">
+    if (userType === "supplier") {
+      setTextSupplier("");
+      const text = registers.reduce((a, item) => {
+        return (
+          a +
+          `<table style="width: 100%; border: 1px solid #444444; padding: 8px; border-radius: 8px; margin: 20px 0;">
         <tr>
           <td style="text-align: left;">
             <p style="font-size: 22px; font-weight: 600;">${
@@ -607,17 +610,17 @@ const PeopleInformation = ({ route, navigation }) => {
           </td>
         </tr>
       </table>`
-      );
-    }, "");
-    setTextSupplier(text);
-  }, [registers]);
+        );
+      }, "");
+      setTextSupplier(text);
+    }
 
-  useEffect(() => {
-    setTextCustomer("");
-    const text = registers.reduce((a, item) => {
-      return (
-        a +
-        `<table style="width: 100%; border: 1px solid #444444; padding: 8px; border-radius: 8px; margin: 20px 0;">
+    if (userType === "customer") {
+      setTextCustomer("");
+      const text = registers.reduce((a, item) => {
+        return (
+          a +
+          `<table style="width: 100%; border: 1px solid #444444; padding: 8px; border-radius: 8px; margin: 20px 0;">
         <tr>
           <td style="text-align: left;">
             <p style="font-size: 22px; font-weight: 600;">${
@@ -715,9 +718,10 @@ const PeopleInformation = ({ route, navigation }) => {
           </td>
         </tr>
       </table>`
-      );
-    }, "");
-    setTextCustomer(text);
+        );
+      }, "");
+      setTextCustomer(text);
+    }
   }, [registers]);
 
   const htmlSupplier = `

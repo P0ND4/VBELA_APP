@@ -251,7 +251,7 @@ const HomeScreen = ({ navigation }) => {
           <TextStyle title color={light.main2}>
             VBELA
           </TextStyle>
-          {(!activeGroup.active || activeGroup.accessToReservations) && (
+          {(!activeGroup.active || activeGroup.accessToReservations || activeGroup.accessToTables) && (
             <>
               <Picker
                 ref={pickerYearRef}
@@ -279,7 +279,7 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.content}>
           {(!activeGroup.active ||
             activeGroup.accessToKitchen ||
-            activeGroup.accessToTable) && (
+            activeGroup.accessToTables) && (
             <View>
               <ButtonStyle
                 onPress={() => navigation.push("Kitchen")}
@@ -290,7 +290,9 @@ const HomeScreen = ({ navigation }) => {
               <Image source={Premium} style={styles.premium} />
             </View>
           )}
-          {(!activeGroup.active || activeGroup.accessToCustomer) && (
+          {(!activeGroup.active ||
+            activeGroup.accessToCustomer ||
+            activeGroup.accessToTables) && (
             <View>
               <ButtonStyle
                 onPress={() => navigation.push("People", { type: "customer" })}
@@ -342,7 +344,9 @@ const HomeScreen = ({ navigation }) => {
               <Image source={Premium} style={styles.premium} />
             </View>
           )}
-          {(!activeGroup.active || activeGroup.accessToReservations) && (
+          {(!activeGroup.active ||
+            activeGroup.accessToReservations ||
+            activeGroup.accessToTables) && (
             <View style={styles.divider}>
               <TextStyle color={mode === "light" ? null : dark.main4}>
                 Control De Reservas
@@ -369,7 +373,9 @@ const HomeScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           )}
-          {(!activeGroup.active || activeGroup.accessToReservations) && (
+          {(!activeGroup.active ||
+            activeGroup.accessToReservations ||
+            activeGroup.accessToTables) && (
             <View style={styles.places}>
               <FlatList
                 data={groups}

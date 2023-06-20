@@ -23,6 +23,7 @@ const width = Dimensions.get("screen").width;
 
 const PlaceScreen = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
+  const activeGroup = useSelector((state) => state.activeGroup);
   const group = useSelector((state) =>
     state.groups.find((group) => group.ref === route.params.ref)
   );
@@ -85,13 +86,14 @@ const PlaceScreen = ({ route, navigation }) => {
         style={styles.reservationDate}
       >
         <TouchableOpacity
-          onPress={() =>
+          onPress={() => {
+            if (activeGroup.active && !activeGroup.accessToReservations) return
             navigation.push("PlaceInformation", {
               ref: route.params.ref,
               id: place.id,
               type: "Nomenclatura",
             })
-          }
+          }}
         >
           <TextStyle
             color={light.main2}
@@ -142,25 +144,24 @@ const PlaceScreen = ({ route, navigation }) => {
                 onPress={() => {
                   const params = route.params;
 
-                  if (!disable) {
-                    if (!dayTaken) {
-                      navigation.push("CreateReserve", {
-                        owner: owner ? owner : null,
-                        capability: place.capability,
-                        name: params.name,
-                        year: params.year,
-                        day: item,
-                        month: params.month,
-                        days: params.days,
-                        id: place.id,
-                      });
-                    } else {
-                      navigation.push("ReserveInformation", {
-                        ref: information.ref,
-                        days: params.days,
-                        id: place.id,
-                      });
-                    }
+                  if (disable || (!activeGroup.accessToReservations && activeGroup.active)) return;
+                  if (!dayTaken) {
+                    navigation.push("CreateReserve", {
+                      owner: owner ? owner : null,
+                      capability: place.capability,
+                      name: params.name,
+                      year: params.year,
+                      day: item,
+                      month: params.month,
+                      days: params.days,
+                      id: place.id,
+                    });
+                  } else {
+                    navigation.push("ReserveInformation", {
+                      ref: information.ref,
+                      days: params.days,
+                      id: place.id,
+                    });
                   }
                 }}
               >
@@ -335,37 +336,41 @@ const PlaceScreen = ({ route, navigation }) => {
               </TextStyle>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              {nomenclatures?.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => setActiveFilter(!activeFilter)}
-                >
-                  <Ionicons name="search" size={38} color={light.main2} />
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.push("PlaceInformation", {
-                    ref: route.params.ref,
-                    name: group?.name,
-                    type: "General",
-                  })
-                }
-              >
-                <Ionicons
-                  name="information-circle-outline"
-                  size={38}
-                  color={light.main2}
-                />
-              </TouchableOpacity>
-              {nomenclatures?.length > 0 && (
+              {nomenclatures?.length > 0 &&
+                (!activeGroup.active || activeGroup.accessToReservations) && (
+                  <TouchableOpacity
+                    onPress={() => setActiveFilter(!activeFilter)}
+                  >
+                    <Ionicons name="search" size={38} color={light.main2} />
+                  </TouchableOpacity>
+                )}
+              {(!activeGroup.active || activeGroup.accessToReservations) && (
                 <TouchableOpacity
                   onPress={() =>
-                    navigation.push("CreatePlace", { ref: route.params.ref })
+                    navigation.push("PlaceInformation", {
+                      ref: route.params.ref,
+                      name: group?.name,
+                      type: "General",
+                    })
                   }
                 >
-                  <Ionicons name="add-circle" size={40} color={light.main2} />
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={38}
+                    color={light.main2}
+                  />
                 </TouchableOpacity>
               )}
+              {nomenclatures?.length > 0 &&
+                (!activeGroup.active || activeGroup.accessToReservations) && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.push("CreatePlace", { ref: route.params.ref })
+                    }
+                  >
+                    <Ionicons name="add-circle" size={40} color={light.main2} />
+                  </TouchableOpacity>
+                )}
             </View>
           </View>
         )}
@@ -391,16 +396,24 @@ const PlaceScreen = ({ route, navigation }) => {
         <ScrollView style={{ maxHeight: height / 1.5 }}>
           {activeFilter ? <GuestCard /> : <DayOfTheMonth />}
         </ScrollView>
-        {nomenclatures?.length === 0 && (
-          <ButtonStyle
-            onPress={() =>
-              navigation.push("CreatePlace", { ref: route.params.ref })
-            }
-            backgroundColor={light.main2}
-          >
-            Agregar subcategoría
-          </ButtonStyle>
-        )}
+        {nomenclatures?.length === 0 &&
+          (!activeGroup.active || activeGroup.accessToReservations) && (
+            <ButtonStyle
+              onPress={() =>
+                navigation.push("CreatePlace", { ref: route.params.ref })
+              }
+              backgroundColor={light.main2}
+            >
+              Agregar subcategoría
+            </ButtonStyle>
+          )}
+        {nomenclatures?.length === 0 &&
+          activeGroup.active &&
+          !activeGroup.accessToReservations && (
+            <TextStyle center smallParagraph color={light.main2}>
+              NO HAY NOMENCLATURAS
+            </TextStyle>
+          )}
       </View>
     </Layout>
   );

@@ -39,6 +39,8 @@ const StatisticScreen = ({ navigation }) => {
   const [purchase, setPurchase] = useState(0);
   const [expense, setExpense] = useState(0);
   const [sales, setSales] = useState(0);
+  const [charge, setCharge] = useState(0);
+  const [charges, setCharges] = useState([]);
 
   const [people, setPeople] = useState(0);
   const [amount, setAmount] = useState(0);
@@ -53,6 +55,8 @@ const StatisticScreen = ({ navigation }) => {
   const [ro, setRo] = useState(0);
   const [ros, setRos] = useState([]);
 
+  const [receivable, setReceivable] = useState([]);
+  const [receivables, setReceivables] = useState([]);
   const [accountsPayable, setAccountsPayable] = useState([]);
   const [accountsPayableAmount, setAccountsPayableAmount] = useState(0);
 
@@ -82,6 +86,10 @@ const StatisticScreen = ({ navigation }) => {
     let purchase = 0;
     let expense = 0;
     let accountsPayableAmount = 0;
+    let receivable = 0;
+    let receivables = [];
+    let charge = 0;
+    let charges = [];
     let ro = 0;
     let purchases = [];
     let expenses = [];
@@ -106,8 +114,15 @@ const StatisticScreen = ({ navigation }) => {
       const date = new Date(data.creationDate);
       if (dateValidation(date)) continue;
       if (data.amount !== data.payment) {
-        accountsPayableAmount += parseInt(data.amount - data.payment);
-        accountsPayable.push(data);
+        if (data.type !== "debt") {
+          accountsPayableAmount += parseInt(data.amount - data.payment);
+          accountsPayable.push(data);
+        }
+
+        if (data.type === "debt") {
+          receivable += parseInt(data.amount - data.payment);
+          receivables.push(data);
+        }
       }
       if (data.type === "purchase") {
         purchase += parseInt(data.amount);
@@ -116,6 +131,10 @@ const StatisticScreen = ({ navigation }) => {
       if (data.type === "expense") {
         expense += parseInt(data.amount);
         expenses.push(data);
+      }
+      if (data.type === "debt") {
+        charge += parseInt(data.amount);
+        charges.push(data);
       }
     }
 
@@ -137,7 +156,11 @@ const StatisticScreen = ({ navigation }) => {
     setRo(ro);
     setAccountsPayable(accountsPayable);
     setAccountsPayableAmount(accountsPayableAmount);
-    setAverageUtility(sales - expense - purchase - ro);
+    setReceivable(receivable);
+    setReceivables(receivables);
+    setCharge(charge);
+    setCharges(charges);
+    setAverageUtility(sales - expense + purchase - ro + charge);
 
     setTimeout(() => {
       setIsLoading(false);
@@ -201,12 +224,18 @@ const StatisticScreen = ({ navigation }) => {
             backgroundColor: mode === "light" ? light.main5 : dark.main2,
           },
         ]}
-        onPress={() =>
-          navigation.push("CreateEconomy", {
-            editing: true,
-            item,
-          })
-        }
+        onPress={() => {
+          if (item.type === "debt")
+            navigation.push("PeopleInformation", {
+              type: "general",
+              userType: "customer",
+            });
+          else
+            navigation.push("CreateEconomy", {
+              editing: true,
+              item,
+            });
+        }}
       >
         <TextStyle
           color={mode === "light" ? light.textDark : dark.textWhite}
@@ -215,7 +244,8 @@ const StatisticScreen = ({ navigation }) => {
           {item.name}
         </TextStyle>
         <TextStyle color={light.main2} verySmall>
-          {item.type === "expense" && "-"} {thousandsSystem(item.amount)}
+          {item.type === "expense" ? "-" : item.type === "debt" ? "+" : ""}{" "}
+          {thousandsSystem(item.amount)}
         </TextStyle>
       </TouchableOpacity>
     );
@@ -462,7 +492,7 @@ const StatisticScreen = ({ navigation }) => {
                     style={{ marginVertical: 15 }}
                     horizontal={true}
                     showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item.ref + item.modificationDate}
+                    keyExtractor={(item) => item.id + item.modificationDate}
                     renderItem={(item) => <Economy {...item} />}
                   />
                 ) : (
@@ -486,7 +516,7 @@ const StatisticScreen = ({ navigation }) => {
                     style={{ marginVertical: 15 }}
                     horizontal={true}
                     showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item.ref + item.modificationDate}
+                    keyExtractor={(item) => item.id + item.modificationDate}
                     renderItem={(item) => <Economy {...item} />}
                   />
                 ) : (
@@ -496,6 +526,30 @@ const StatisticScreen = ({ navigation }) => {
                     customStyle={{ margin: 5 }}
                   >
                     No hay gatos o inversiones realizados
+                  </TextStyle>
+                )
+              }
+            />
+            <Information
+              name="COBROS"
+              value={thousandsSystem(charge)}
+              onPress={() =>
+                charges.length !== 0 ? (
+                  <FlatList
+                    data={charges}
+                    style={{ marginVertical: 15 }}
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item) => item.id + item.modificationDate}
+                    renderItem={(item) => <Economy {...item} />}
+                  />
+                ) : (
+                  <TextStyle
+                    verySmall
+                    color={light.main2}
+                    customStyle={{ margin: 5 }}
+                  >
+                    No hay cobros realizados
                   </TextStyle>
                 )
               }
@@ -562,7 +616,7 @@ const StatisticScreen = ({ navigation }) => {
                     style={{ marginVertical: 15 }}
                     horizontal={true}
                     showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item.ref + item.modificationDate}
+                    keyExtractor={(item) => item.id + item.modificationDate}
                     renderItem={({ item }) => (
                       <TouchableOpacity
                         style={[
@@ -601,6 +655,60 @@ const StatisticScreen = ({ navigation }) => {
                     customStyle={{ margin: 5 }}
                   >
                     No hay cuentas por pagar
+                  </TextStyle>
+                )
+              }
+            />
+            <Information
+              name="CUENTAS POR COBRAR"
+              value={thousandsSystem(receivable)}
+              onPress={() =>
+                receivables.length !== 0 ? (
+                  <FlatList
+                    data={receivables}
+                    style={{ marginVertical: 15 }}
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item) => item.id + item.modificationDate}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={[
+                          styles.card,
+                          {
+                            backgroundColor:
+                              mode === "light" ? light.main5 : dark.main2,
+                          },
+                        ]}
+                        onPress={() =>
+                          navigation.push("CreateEconomy", {
+                            type: item.type,
+                            editing: true,
+                            item,
+                            pay: true,
+                          })
+                        }
+                      >
+                        <TextStyle
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                          verySmall
+                        >
+                          {item.name?.slice(0,8) + item.name?.length > 8 ? '...' : ''}
+                        </TextStyle>
+                        <TextStyle color={light.main2} verySmall>
+                          Deuda {thousandsSystem(item.amount - item.payment)}
+                        </TextStyle>
+                      </TouchableOpacity>
+                    )}
+                  />
+                ) : (
+                  <TextStyle
+                    verySmall
+                    color={light.main2}
+                    customStyle={{ margin: 5 }}
+                  >
+                    No hay cuentas por cobrar
                   </TextStyle>
                 )
               }

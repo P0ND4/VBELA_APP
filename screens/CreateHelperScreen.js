@@ -33,18 +33,15 @@ const CreateGroup = ({ navigation, route }) => {
     formState: { errors },
     handleSubmit,
   } = useForm();
-
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
+  const helpers = useSelector(state => state.helpers);
 
   const item = route.params.item;
 
   const [errorEmail, setErrorEmail] = useState(false);
   const [errorUser, setErrorUser] = useState(false);
   const [errorAccess, setErrorAccess] = useState(false);
-  const [accessToTables, setAccessToTables] = useState(
-    route.params.data === "Edit" ? item.accessToTables : false
-  );
   const [accessToReservations, setAccessToReservations] = useState(
     route.params.data === "Edit" ? item.accessToReservations : false
   );
@@ -63,8 +60,8 @@ const CreateGroup = ({ navigation, route }) => {
   const [accessToKitchen, setAccessToKitchen] = useState(
     route.params.data === "Edit" ? item.accessToKitchen : false
   );
-  const [accessToTable, setAccessToTable] = useState(
-    route.params.data === "Edit" ? item.accessToTable : false
+  const [accessToTables, setAccessToTables] = useState(
+    route.params.data === "Edit" ? item.accessToTables : false
   );
 
   const [inputUser, setInputUser] = useState(
@@ -102,9 +99,6 @@ const CreateGroup = ({ navigation, route }) => {
       value: route.params.data === "Edit" ? item.password : "",
       required: true,
     });
-    register("accessToTables", {
-      value: route.params.data === "Edit" ? item.accessToTables : false,
-    });
     register("accessToReservations", {
       value: route.params.data === "Edit" ? item.accessToReservations : false,
     });
@@ -123,22 +117,24 @@ const CreateGroup = ({ navigation, route }) => {
     register("accessToKitchen", {
       value: route.params.data === "Edit" ? item.accessToKitchen : false,
     });
-    register("accessToTable", {
-      value: route.params.data === "Edit" ? item.accessToTable : false,
+    register("accessToTables", {
+      value: route.params.data === "Edit" ? item.accessToTables : false,
     });
   }, []);
 
   const permissionValidation = (data) => {
-    if (!data.accessToTables &&
+    if (
+      !data.accessToTables &&
       !data.accessToReservations &&
       !data.accessToStatistics &&
       !data.accessToSupplier &&
       !data.accessToRoster &&
       !data.accessToKitchen &&
-      !data.accessToTable &&
-      !data.accessToCustomer) return true
+      !data.accessToCustomer
+    )
+      return true;
     else return false;
-  }
+  };
 
   const onSubmitCreate = async (data) => {
     Keyboard.dismiss();
@@ -152,6 +148,7 @@ const CreateGroup = ({ navigation, route }) => {
     dispatch(push(data));
     navigation.pop();
     socket.emit("connected", { groups: [data.id] });
+    console.log(data);
     await addHelper({
       email: user.email,
       helper: data,
@@ -218,10 +215,11 @@ const CreateGroup = ({ navigation, route }) => {
     dispatch(editData({ id: item.id, data }));
     navigation.pop();
 
+    console.log(helpers)
     await editHelper({
       email: user.email,
       helper: data,
-      groups: user.helpers.map((h) => h.id),
+      groups: helpers.map((h) => h.id),
     });
   };
 
@@ -244,7 +242,7 @@ const CreateGroup = ({ navigation, route }) => {
             await removeHelper({
               email: user.email,
               id: item.id,
-              groups: user.helpers.map((h) => h.id),
+              groups: helpers.map((h) => h.id),
             });
           },
         },
@@ -316,7 +314,11 @@ const CreateGroup = ({ navigation, route }) => {
               <InputStyle
                 value={inputUser}
                 placeholder="Usuario"
-                right={inputUser ? () => <TextStyle color={light.main2}>Usuario</TextStyle> : null}
+                right={
+                  inputUser
+                    ? () => <TextStyle color={light.main2}>Usuario</TextStyle>
+                    : null
+                }
                 maxLength={15}
                 onChangeText={(text) => {
                   setValue("user", text.trim());
@@ -393,7 +395,7 @@ const CreateGroup = ({ navigation, route }) => {
                   </View>
                   <View style={styles.toggles}>
                     <TextStyle smallParagraph color={light.main2}>
-                      Proveedor
+                      PROVEEDOR
                     </TextStyle>
                     <Switch
                       trackColor={{ false: dark.main2, true: light.main2 }}
@@ -408,7 +410,7 @@ const CreateGroup = ({ navigation, route }) => {
                   </View>
                   <View style={styles.toggles}>
                     <TextStyle smallParagraph color={light.main2}>
-                      Cliente
+                      CLIENTE
                     </TextStyle>
                     <Switch
                       trackColor={{ false: dark.main2, true: light.main2 }}
@@ -449,21 +451,6 @@ const CreateGroup = ({ navigation, route }) => {
                         setValue("accessToKitchen", !accessToKitchen);
                       }}
                       value={accessToKitchen}
-                    />
-                  </View>
-                  <View style={styles.toggles}>
-                    <TextStyle smallParagraph color={light.main2}>
-                      MESA (lo que sale de producción)
-                    </TextStyle>
-                    <Switch
-                      trackColor={{ false: dark.main2, true: light.main2 }}
-                      thumbColor={light.main4}
-                      ios_backgroundColor="#3e3e3e"
-                      onValueChange={() => {
-                        setAccessToTable(!accessToTable);
-                        setValue("accessToTable", !accessToTable);
-                      }}
-                      value={accessToTable}
                     />
                   </View>
                 </View>
@@ -513,7 +500,7 @@ const styles = StyleSheet.create({
   toggles: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "center",
   },
 });
 

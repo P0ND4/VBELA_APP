@@ -262,7 +262,7 @@ const People = ({ navigation, route }) => {
                             ? `Los gastos del proveedor ${item.name} han sido eliminados`
                             : `Las compras del proveedor ${item.name} han sido eliminadas`
                         } por ${user.email}`,
-                        userTypee === "supplier"
+                        userType === "supplier"
                           ? "accessToSupplier"
                           : "accessToCustomer"
                       );
@@ -446,99 +446,107 @@ const People = ({ navigation, route }) => {
         return (
           <>
             <View style={[styles.row, { width: "100%" }]}>
-              <ButtonStyle
-                backgroundColor={
-                  userType === "customer"
-                    ? !OF
+              {(!activeGroup.active ||
+                (userType === "customer" && activeGroup.accessToTables) ||
+                (userType === "supplier" && activeGroup.accessToSupplier)) && (
+                <ButtonStyle
+                  backgroundColor={
+                    userType === "customer"
+                      ? !OF
+                        ? light.main2
+                        : mode === "light"
+                        ? dark.main2
+                        : light.main4
+                      : mode === "light"
+                      ? dark.main2
+                      : light.main5
+                  }
+                  style={{ width: SCREEN_WIDTH / 2.5 }}
+                  onPress={() => {
+                    if (userType === "supplier") {
+                      navigation.push("CreateEconomy", {
+                        type: "purchase",
+                        ref: item.id,
+                        owner: {
+                          identification: item.identification,
+                          name: item.name,
+                        },
+                      });
+                    }
+
+                    if (userType === "customer") {
+                      navigation.push("CreateOrder", {
+                        editing: OF ? true : false,
+                        id: OF ? OF.id : undefined,
+                        ref: item.id,
+                        table: item.name,
+                        selection: OF ? OF.selection : [],
+                        reservation: "Cliente",
+                      });
+                    }
+                  }}
+                >
+                  <TextStyle
+                    paragrahp
+                    color={
+                      userType === "customer"
+                        ? !OF
+                          ? dark.textWhite
+                          : mode === "light"
+                          ? dark.textWhite
+                          : light.textDark
+                        : mode === "light"
+                        ? dark.textWhite
+                        : light.textDark
+                    }
+                  >
+                    {userType === "supplier" ? "Compra / Costos" : "Menú"}
+                  </TextStyle>
+                </ButtonStyle>
+              )}
+              {(!activeGroup.active ||
+                (userType === "customer" && activeGroup.accessToTables) ||
+                (userType === "supplier" && activeGroup.accessToSupplier)) && (
+                <ButtonStyle
+                  style={{ width: SCREEN_WIDTH / 2.5 }}
+                  backgroundColor={
+                    userType === "customer"
                       ? light.main2
                       : mode === "light"
                       ? dark.main2
-                      : light.main4
-                    : mode === "light"
-                    ? dark.main2
-                    : light.main5
-                }
-                style={{ width: SCREEN_WIDTH / 2.5 }}
-                onPress={() => {
-                  if (userType === "supplier") {
-                    navigation.push("CreateEconomy", {
-                      type: "purchase",
-                      ref: item.id,
-                      owner: {
-                        identification: item.identification,
-                        name: item.name,
-                      },
-                    });
+                      : light.main5
                   }
+                  onPress={() => {
+                    if (userType === "supplier") {
+                      navigation.push("CreateEconomy", {
+                        type: "expense",
+                        ref: item.id,
+                        owner: {
+                          identification: item.identification,
+                          name: item.name,
+                        },
+                      });
+                    }
 
-                  if (userType === "customer") {
-                    navigation.push("CreateOrder", {
-                      editing: OF ? true : false,
-                      id: OF ? OF.id : undefined,
-                      ref: item.id,
-                      table: item.name,
-                      selection: OF ? OF.selection : [],
-                      reservation: "Cliente",
-                    });
-                  }
-                }}
-              >
-                <TextStyle
-                  paragrahp
-                  color={
-                    userType === "customer"
-                      ? !OF
+                    if (userType === "customer") zoneRef.current.focus();
+                  }}
+                >
+                  <TextStyle
+                    paragrahp
+                    color={
+                      userType === "customer"
                         ? dark.textWhite
                         : mode === "light"
                         ? dark.textWhite
                         : light.textDark
-                      : mode === "light"
-                      ? dark.textWhite
-                      : light.textDark
-                  }
-                >
-                  {userType === "supplier" ? "Compra / Costos" : "Menú"}
-                </TextStyle>
-              </ButtonStyle>
-              <ButtonStyle
-                style={{ width: SCREEN_WIDTH / 2.5 }}
-                backgroundColor={
-                  userType === "customer"
-                    ? light.main2
-                    : mode === "light"
-                    ? dark.main2
-                    : light.main5
-                }
-                onPress={() => {
-                  if (userType === "supplier") {
-                    navigation.push("CreateEconomy", {
-                      type: "expense",
-                      ref: item.id,
-                      owner: {
-                        identification: item.identification,
-                        name: item.name,
-                      },
-                    });
-                  }
-
-                  if (userType === "customer") zoneRef.current.focus();
-                }}
-              >
-                <TextStyle
-                  paragrahp
-                  color={
-                    userType === "customer"
-                      ? dark.textWhite
-                      : mode === "light"
-                      ? dark.textWhite
-                      : light.textDark
-                  }
-                >
-                  {userType === "supplier"
-                    ? "Gasto / Inversión"
-                    : "Alojamiento"}
-                </TextStyle>
-              </ButtonStyle>
+                    }
+                  >
+                    {userType === "supplier"
+                      ? "Gasto / Inversión"
+                      : "Alojamiento"}
+                  </TextStyle>
+                </ButtonStyle>
+              )}
               <Picker
                 ref={zoneRef}
                 style={{ display: "none" }}
@@ -789,29 +797,33 @@ const People = ({ navigation, route }) => {
                 />
               </TouchableOpacity>
             )}
-            {open && item.type !== "debt" && (
-              <TouchableOpacity
-                style={{ marginHorizontal: 5 }}
-                onPress={() => {
-                  if (type === "General")
-                    navigation.push("CreatePerson", {
-                      person: item,
-                      editing: true,
-                    });
-                  else
-                    navigation.push("CreateEconomy", {
-                      item,
-                      editing: true,
-                    });
-                }}
-              >
-                <Ionicons
-                  name="create"
-                  size={26}
-                  color={mode === "light" ? dark.main2 : light.main5}
-                />
-              </TouchableOpacity>
-            )}
+            {open &&
+              item.type !== "debt" &&
+              (!activeGroup.active ||
+                (userType === "customer" && activeGroup.accessToTables) ||
+                (userType === "supplier" && activeGroup.accessToSupplier)) && (
+                <TouchableOpacity
+                  style={{ marginHorizontal: 5 }}
+                  onPress={() => {
+                    if (type === "General")
+                      navigation.push("CreatePerson", {
+                        person: item,
+                        editing: true,
+                      });
+                    else
+                      navigation.push("CreateEconomy", {
+                        item,
+                        editing: true,
+                      });
+                  }}
+                >
+                  <Ionicons
+                    name="create"
+                    size={26}
+                    color={mode === "light" ? dark.main2 : light.main5}
+                  />
+                </TouchableOpacity>
+              )}
           </View>
         </TouchableOpacity>
         {open && (
@@ -946,7 +958,9 @@ const People = ({ navigation, route }) => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={{ marginHorizontal: 4 }}
-                    onPress={() => navigation.push("CreatePerson", { type: userType })}
+                    onPress={() =>
+                      navigation.push("CreatePerson", { type: userType })
+                    }
                   >
                     <Ionicons name="add-circle" size={35} color={light.main2} />
                   </TouchableOpacity>
