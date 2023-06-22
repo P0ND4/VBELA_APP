@@ -77,9 +77,9 @@ const PeopleInformation = ({ route, navigation }) => {
             const day = new Date(o.creationDate).getDate();
             const month = new Date(o.creationDate).getMonth() + 1;
             return {
-              quantity: o.selection.reduce((a, b) => a + b.count, 0),
+              quantity: o.selection.reduce((a, b) => a + parseInt(b.count), 0),
               date: `${("0" + day).slice(-2)}-${("0" + month).slice(-2)}`,
-              total: o.selection.reduce((a, b) => a + b.total, 0),
+              total: o.selection.reduce((a, b) => a + parseInt(b.total), 0),
               type: "orders",
             };
           });
@@ -114,9 +114,9 @@ const PeopleInformation = ({ route, navigation }) => {
           const sorted = details.sort((a, b) => a.date > b.date);
           eco.details = sorted;
           eco.people = reser.reduce((a, b) => a + parseInt(b.people), 0);
-          eco.orders = details.reduce((a, b) => a + b.orders?.total, 0);
+          eco.orders = details.reduce((a, b) => a + parseInt(b.orders?.total), 0);
           eco.reservations = details.reduce(
-            (a, b) => (a + b.reservations ? b.reservations?.total : 0),
+            (a, b) => (a + b.reservations ? parseInt(b.reservations?.total) : 0),
             0
           );
           eco.ordersFinished = ord.length;
@@ -757,7 +757,7 @@ const PeopleInformation = ({ route, navigation }) => {
       ${textSupplier}
     </view>
     <p style="text-align: center; font-weight: 600; margin-top: 20px; font-size: 25px; font-weight: 600;">Total:
-      ${thousandsSystem(registers.reduce((a, b) => (a += b.amount), 0))}</p>
+      ${thousandsSystem(registers.reduce((a, b) => (a += parseInt(b.amount)), 0))}</p>
     <p style="text-align: center; font-size: 25px; font-weight: 600;">${changeDate(
       new Date()
     )} ${new Date().getHours()}:${new Date().getMinutes()}</p>
@@ -800,7 +800,7 @@ const PeopleInformation = ({ route, navigation }) => {
     ${textCustomer}
   </view>
   <p style="text-align: center; font-weight: 600; margin-top: 20px; font-size: 25px; font-weight: 600;">Total:
-    ${thousandsSystem(registers.reduce((a, b) => (a += b.amount), 0))}</p>
+    ${thousandsSystem(registers.reduce((a, b) => (a += parseInt(b.amount)), 0))}</p>
   <p style="text-align: center; font-size: 25px; font-weight: 600;">${changeDate(
     new Date()
   )} ${new Date().getHours()}:${new Date().getMinutes()}</p>

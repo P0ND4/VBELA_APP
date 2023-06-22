@@ -101,6 +101,7 @@ const Main = () => {
 
   const dispatch = useDispatch();
   const navigation = useRef();
+  const realTimeManager = useRef();
 
   const [status, setStatus] = useState(null);
 
@@ -191,7 +192,7 @@ const Main = () => {
 
         const convertToNumber = (string) => {
           try {
-            parseInt(string.split(".").join(""));
+            return parseInt(string.split(".").join(""));
           } catch (e) {
             return 0;
           }
@@ -253,12 +254,24 @@ const Main = () => {
   }, []);
 
   useEffect(() => {
+    clearInterval(realTimeManager.current);
+    const refresh = () => {
+      if (connected && session) {
+        const groups = user?.helpers?.map((h) => h.id);
+        if (user && activeGroup.active)
+          socket.emit("connected", { groups: [activeGroup.id] });
+        else if (user && user?.helpers?.length > 0)
+          socket.emit("connected", { groups });
+      }
+    };
+
+    realTimeManager.current = setInterval(() => refresh(), 600000);
+    refresh();
+  }, [connected, session]);
+
+  useEffect(() => {
     const getInformation = async () => {
       const groups = user?.helpers?.map((h) => h.id);
-      if (user && activeGroup.active)
-        socket.emit("connected", { groups: [activeGroup.id] });
-      else if (user && user?.helpers?.length > 0)
-        socket.emit("connected", { groups });
       await writeFile({
         name: "work.json",
         value: {

@@ -40,7 +40,6 @@ const StatisticScreen = ({ navigation }) => {
   const [expense, setExpense] = useState(0);
   const [sales, setSales] = useState(0);
   const [charge, setCharge] = useState(0);
-  const [charges, setCharges] = useState([]);
 
   const [people, setPeople] = useState(0);
   const [amount, setAmount] = useState(0);
@@ -89,7 +88,6 @@ const StatisticScreen = ({ navigation }) => {
     let receivable = 0;
     let receivables = [];
     let charge = 0;
-    let charges = [];
     let ro = 0;
     let purchases = [];
     let expenses = [];
@@ -134,7 +132,6 @@ const StatisticScreen = ({ navigation }) => {
       }
       if (data.type === "debt") {
         charge += parseInt(data.amount);
-        charges.push(data);
       }
     }
 
@@ -159,7 +156,6 @@ const StatisticScreen = ({ navigation }) => {
     setReceivable(receivable);
     setReceivables(receivables);
     setCharge(charge);
-    setCharges(charges);
     setAverageUtility(sales - expense + purchase - ro + charge);
 
     setTimeout(() => {
@@ -531,30 +527,6 @@ const StatisticScreen = ({ navigation }) => {
               }
             />
             <Information
-              name="COBROS"
-              value={thousandsSystem(charge)}
-              onPress={() =>
-                charges.length !== 0 ? (
-                  <FlatList
-                    data={charges}
-                    style={{ marginVertical: 15 }}
-                    horizontal={true}
-                    showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item.id + item.modificationDate}
-                    renderItem={(item) => <Economy {...item} />}
-                  />
-                ) : (
-                  <TextStyle
-                    verySmall
-                    color={light.main2}
-                    customStyle={{ margin: 5 }}
-                  >
-                    No hay cobros realizados
-                  </TextStyle>
-                )
-              }
-            />
-            <Information
               name="PAGOS DE NÓMINA"
               value={thousandsSystem(ro)}
               onPress={() =>
@@ -608,7 +580,9 @@ const StatisticScreen = ({ navigation }) => {
             />
             <Information
               name="CUENTAS POR PAGAR"
-              value={thousandsSystem(accountsPayableAmount)}
+              value={`${thousandsSystem(expense + purchase)}/${thousandsSystem(
+                expense + purchase - accountsPayableAmount
+              )}`}
               onPress={() =>
                 accountsPayable.length !== 0 ? (
                   <FlatList
@@ -661,7 +635,9 @@ const StatisticScreen = ({ navigation }) => {
             />
             <Information
               name="CUENTAS POR COBRAR"
-              value={thousandsSystem(receivable)}
+              value={`${thousandsSystem(charge)}/${thousandsSystem(
+                charge - receivable
+              )}`}
               onPress={() =>
                 receivables.length !== 0 ? (
                   <FlatList
@@ -694,7 +670,9 @@ const StatisticScreen = ({ navigation }) => {
                           }
                           verySmall
                         >
-                          {item.name?.slice(0,8) + item.name?.length > 8 ? '...' : ''}
+                          {item.owner?.name?.slice(0, 8)}{item.owner?.name?.length > 8
+                            ? "..."
+                            : ""}
                         </TextStyle>
                         <TextStyle color={light.main2} verySmall>
                           Deuda {thousandsSystem(item.amount - item.payment)}
@@ -713,15 +691,12 @@ const StatisticScreen = ({ navigation }) => {
                 )
               }
             />
-
             <Information name="VENTAS DIARIAS" value={thousandsSystem(sales)} />
-
             <Information
               name="HUÉSPEDES ALOJADOS"
               value={thousandsSystem(people)}
             />
             <Information name="ALOJAMIENTO" value={thousandsSystem(amount)} />
-
             <View>
               <ProgressChart
                 style={{ marginTop: 20 }}

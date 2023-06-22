@@ -135,6 +135,7 @@ const CreateOrderScreen = ({ route, navigation }) => {
       const currentEconomy = { ...foundEconomy };
       if (editing) currentEconomy.amount -= lastTotal;
       currentEconomy.amount += total;
+      currentEconomy.modificationDate = new Date().getTime();
       dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
       await editEconomy({
         email: activeGroup.active ? activeGroup.email : user.email,

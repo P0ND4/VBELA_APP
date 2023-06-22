@@ -133,9 +133,9 @@ const People = ({ navigation, route }) => {
                 const day = new Date(o.creationDate).getDate();
                 const month = new Date(o.creationDate).getMonth() + 1;
                 return {
-                  quantity: o.selection.reduce((a, b) => a + b.count, 0),
+                  quantity: o.selection.reduce((a, b) => a + parseInt(b.count), 0),
                   date: `${("0" + day).slice(-2)}-${("0" + month).slice(-2)}`,
-                  total: o.selection.reduce((a, b) => a + b.total, 0),
+                  total: o.selection.reduce((a, b) => a + parseInt(b.total), 0),
                   type: "orders",
                 };
               });

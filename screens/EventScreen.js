@@ -31,7 +31,7 @@ const EventScreen = ({ route, navigation }) => {
 
       if (!res.error) {
         if (res.block) return setM("blocked");
-        if (res.version.detail !== version.detail && res.version.required)
+        if (res.version.detail !== version.detail)
           return setM("update");
 
         navigation.replace(!session ? "SignIn" : "Home");

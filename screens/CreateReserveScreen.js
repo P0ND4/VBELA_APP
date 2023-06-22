@@ -181,6 +181,7 @@ const ReserveScreen = ({ route, navigation }) => {
           : reserve.amount;
       }
       currentEconomy.amount += discount ? amountWithDiscount : amount;
+      currentEconomy.modificationDate = new Date().getTime();
       dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
       await editEconomy({
         email: activeGroup.active ? activeGroup.email : user.email,

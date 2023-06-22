@@ -24,7 +24,6 @@ const dark = theme.colors.dark;
 
 const CreateEconomy = ({ route, navigation }) => {
   const {
-    watch,
     register,
     setValue,
     formState: { errors },
@@ -59,7 +58,8 @@ const CreateEconomy = ({ route, navigation }) => {
 
   useEffect(() => {
     setPayment(amount);
-    if (amount.length > 0) setValue("payment", parseInt(amount.replace(/[^0-9]/g, "")));
+    if (amount.length > 0)
+      setValue("payment", parseInt(amount.replace(/[^0-9]/g, "")));
   }, [amount]);
 
   const dispatch = useDispatch();
@@ -90,8 +90,6 @@ const CreateEconomy = ({ route, navigation }) => {
     register("amount", { value: editing ? data.amount : "", required: true });
     register("payment", { value: editing ? data.payment : "", required: true });
   }, []);
-
-  useEffect(() => console.log(watch()));
 
   const onSubmitEdit = async (d) => {
     Keyboard.dismiss();
@@ -245,14 +243,22 @@ const CreateEconomy = ({ route, navigation }) => {
                   : "Deuda"}
               </TextStyle>
             </View>
-            {editing && pay && (
+            {editing && (
               <View style={{ marginVertical: 10 }}>
                 <TextStyle color={light.main2}>
-                  Total: {thousandsSystem(data.amount)}
+                  {route.params.type === "debt" ? "Cliente" : "Proveedor"}:{" "}
+                  {data.owner?.name}
                 </TextStyle>
-                <TextStyle color={light.main2}>
-                  Deuda: {thousandsSystem(data.amount - data.payment)}
-                </TextStyle>
+                {pay && (
+                  <TextStyle color={light.main2}>
+                    Total: {thousandsSystem(data.amount)}
+                  </TextStyle>
+                )}
+                {pay && (
+                  <TextStyle color={light.main2}>
+                    Deuda: {thousandsSystem(data.amount - data.payment)}
+                  </TextStyle>
+                )}
               </View>
             )}
             <View style={{ marginVertical: 10 }}>
@@ -343,7 +349,7 @@ const CreateEconomy = ({ route, navigation }) => {
                   const num = text.replace(/[^0-9]/g, "");
                   if (parseInt(num) > parseInt(amount.replace(/[^0-9]/g, "")))
                     return;
-                  setValue("payment", num.length > 0 ? parseInt(num) : '');
+                  setValue("payment", num.length > 0 ? parseInt(num) : "");
                   setPayment(thousandsSystem(num));
                 }}
               />
