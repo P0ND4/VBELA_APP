@@ -195,6 +195,7 @@ const ReserveScreen = ({ route, navigation }) => {
 
   const onSubmitEdit = async (data) => {
     Keyboard.dismiss();
+
     const date = new Date(reserve.start);
     const day = date.getDate();
     const month = date.getMonth();
@@ -438,7 +439,7 @@ const ReserveScreen = ({ route, navigation }) => {
                   const value = text.replace(/[^0-9]/g, "");
 
                   if (value > amount) return;
-                  setValue("discount");
+                  setValue("discount", value);
                   setDiscount(thousandsSystem(value));
                 }}
               />

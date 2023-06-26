@@ -169,7 +169,8 @@ const CreateGroup = ({ navigation, route }) => {
         if (!userFound.expoID.includes(user.expoID)) {
           if (user.expoID)
             userFound.expoID = [...userFound.expoID, user.expoID];
-          await editHelper({ email: u.email, helper: userFound });
+          const mainUser = await editHelper({ email: u.email, helper: userFound });
+          socket.emit("change", { data: mainUser, groups: [userFound.id], confidential: true });
         }
         const groups = user.helpers.map((h) => h.id);
 

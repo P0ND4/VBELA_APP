@@ -133,7 +133,10 @@ const People = ({ navigation, route }) => {
                 const day = new Date(o.creationDate).getDate();
                 const month = new Date(o.creationDate).getMonth() + 1;
                 return {
-                  quantity: o.selection.reduce((a, b) => a + parseInt(b.count), 0),
+                  quantity: o.selection.reduce(
+                    (a, b) => a + parseInt(b.count),
+                    0
+                  ),
                   date: `${("0" + day).slice(-2)}-${("0" + month).slice(-2)}`,
                   total: o.selection.reduce((a, b) => a + parseInt(b.total), 0),
                   type: "orders",
@@ -349,11 +352,20 @@ const People = ({ navigation, route }) => {
     const [name, setName] = useState(true);
     const [OF, setOF] = useState(null);
     const [openDatails, setOpenDatails] = useState(false);
+    const [total, setTotal] = useState(0);
+    const [paid, setPaid] = useState(0);
 
     useEffect(() => {
       if (userType === "customer") {
         setOF(orders.find((o) => o.ref === item.id && !o.pay));
       }
+
+      const array = economy.filter(
+        (e) => e.ref === item.id && e.payment !== e.amount
+      );
+
+      setTotal(array.reduce((a, b) => a + b.amount, 0));
+      setPaid(array.reduce((a, b) => a + b.payment, 0));
     }, [userType, orders]);
 
     const Details = () => {
@@ -765,13 +777,18 @@ const People = ({ navigation, route }) => {
         >
           <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
             {name
-              ? chooseNameAndIdentification()?.name?.slice(0, 20) +
+              ? chooseNameAndIdentification()?.name?.slice(0, 15) +
                 `${
-                  chooseNameAndIdentification()?.name?.length >= 20 ? "..." : ""
+                  chooseNameAndIdentification()?.name?.length >= 15 ? "..." : ""
                 }`
               : thousandsSystem(chooseNameAndIdentification()?.identification)}
           </TextStyle>
           <View style={styles.events}>
+            {section !== "debt" && (
+              <TextStyle color={light.main2} paragrahp>
+                {total}/{paid}
+              </TextStyle>
+            )}
             <TouchableOpacity
               onPress={() => setName(!name)}
               style={{ marginHorizontal: 5 }}

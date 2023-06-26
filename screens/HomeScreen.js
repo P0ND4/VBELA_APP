@@ -102,6 +102,7 @@ const HomeScreen = ({ navigation }) => {
       cleanData(dispatch);
       if (active.active) {
         socket.emit("leave", { groups: [active.id] });
+        socket.disconnect();
         await helperCameOut(active, user);
       }
     }, 300);
@@ -220,6 +221,7 @@ const HomeScreen = ({ navigation }) => {
                         const groups = user.helpers?.map((h) => h.id);
                         if (groups.length > 0)
                           socket.emit("connected", { groups });
+                        else socket.disconnect();
                         changeGeneralInformation(dispatch, user);
                         dispatch(inactiveGroup());
                         await helperCameOut(active, user);

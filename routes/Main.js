@@ -6,6 +6,7 @@ import { getRule, getUser } from "../api";
 import { active, inactive } from "../features/function/informationSlice";
 import { change as changeHelpers } from "../features/helpers/informationSlice";
 import { change as changeUser } from "../features/user/informationSlice";
+import { change as changeHelper } from "../features/helpers/informationSlice";
 import changeGeneralInformation from "../helpers/changeGeneralInformation";
 import cleanData from "../helpers/cleanData";
 import { readFile, removeFile, writeFile } from "../helpers/offline";
@@ -101,7 +102,6 @@ const Main = () => {
 
   const dispatch = useDispatch();
   const navigation = useRef();
-  const realTimeManager = useRef();
 
   const [status, setStatus] = useState(null);
 
@@ -254,24 +254,12 @@ const Main = () => {
   }, []);
 
   useEffect(() => {
-    clearInterval(realTimeManager.current);
-    const refresh = () => {
-      if (connected && session) {
-        const groups = user?.helpers?.map((h) => h.id);
-        if (user && activeGroup.active)
-          socket.emit("connected", { groups: [activeGroup.id] });
-        else if (user && user?.helpers?.length > 0)
-          socket.emit("connected", { groups });
-      }
-    };
-
-    realTimeManager.current = setInterval(() => refresh(), 600000);
-    refresh();
-  }, [connected, session]);
-
-  useEffect(() => {
     const getInformation = async () => {
       const groups = user?.helpers?.map((h) => h.id);
+      if (user && activeGroup.active)
+        socket.emit("connected", { groups: [activeGroup.id] });
+      else if (user && user?.helpers?.length > 0)
+        socket.emit("connected", { groups });
       await writeFile({
         name: "work.json",
         value: {
@@ -334,12 +322,16 @@ const Main = () => {
   }, []);
 
   useEffect(() => {
-    const change = (information) => {
+    const change = ({ data, confidential }) => {
+      if (confidential && !activeGroup.active) {
+        dispatch(changeUser(data));
+        dispatch(changeHelper(data.helpers));
+      }
       if (activeGroup.active) {
-        const user = checkUser(information);
+        const user = checkUser(data);
         if (user.error) return;
       }
-      changeGeneralInformation(dispatch, information);
+      changeGeneralInformation(dispatch, data);
     };
 
     socket.on("change", change);

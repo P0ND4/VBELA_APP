@@ -11,7 +11,7 @@ export const connect = async ({ data = {}, url }) => {
     const result = await axios.post(`${API}${url}`, data, { timeout: 3000 });
 
     if (data?.groups?.length > 0)
-      socket.emit("change", { data: result.data, groups: data.groups });
+      socket.emit("change", { data: result.data, groups: data.groups, confidential: false });
 
     return await result.data;
   } catch (e) {

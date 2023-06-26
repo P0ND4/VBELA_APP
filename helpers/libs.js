@@ -1,3 +1,7 @@
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system";
+
 export const random = (repeat = 10, options = {}) => {
   let possible = "";
   if (Object.keys(options).length === 0) {
@@ -66,4 +70,60 @@ export const reduce = (value) => {
   return Math.round(value / Math.pow(1000, i), 2) + " " + sizes[i];
 };
 
-export const randomColor = () => "#" + (((1 << 24) * Math.random()) | 0).toString(16).padStart(6, "0");
+export const randomColor = () =>
+  "#" + (((1 << 24) * Math.random()) | 0).toString(16).padStart(6, "0");
+
+export const generatePDF = async ({
+  html,
+  code = random(6, { number: true }),
+}) => {
+  try {
+    const { uri } = await Print.printToFileAsync({
+      // VAMOS A SUPUESTAMENTE A IMPRIMIR PARA CONSEGUIR EL PDF
+      html, // HTML A UTILIZAR
+      width: 340, // TAMANO DEL PDF (WIDTH)
+      height: 520, // TAMANO DEL PDF (HEIGHT)
+      base64: true, // USAREMOVE BASE64
+    });
+
+    if (Platform.OS === "ios") {
+      await Sharing.shareAsync(uri);
+    } else {
+      const base64 = FileSystem.EncodingType.Base64; // CODIFICAMOS A BASE 64
+      const storageAccess = FileSystem.StorageAccessFramework; // COLOCAMOS EL ACCESO AL ALMACENAMIENTO
+
+      const fileString = await FileSystem.readAsStringAsync(uri, {
+        // LEEMOS EL PDF
+        encoding: base64, // USAMOS EL CODIFICADOR DE BASE64
+      });
+
+      const permissions =
+        await storageAccess.requestDirectoryPermissionsAsync(); // PEDIMOS PERMISO PARA ACCEDER A SUS ARCHIVOS
+
+      if (!permissions.granted) return; // SI NO NOS DA PERMISO RETORNAMOS
+
+      await storageAccess
+        .createFileAsync(permissions.directoryUri, code, "application/pdf") // CREAMOS EL ARCHIVO DONDE EL USUARIO NOS DIO ACCESO A LA CARPETA
+        .then(async (uri) => {
+          await FileSystem.writeAsStringAsync(uri, fileString, {
+            // AGARRAMOS LA URI OBTENIDA Y ESCRIBIMOS EL ARCHIVO ANTES LEIDO
+            encoding: base64, // CODIFICAMOS A BAse 64
+          });
+          alert("PDF Guardado satisfactoriamente"); // AVISAMOS QUE SE GUARDO EL ARCHIVO
+        })
+        .catch((e) => console.log(e.message));
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+export const print = async ({ html }) => {
+  const { uri } = await Print.printToFileAsync({
+    html,
+    width: 400,
+    height: 520,
+    base64: true,
+  });
+  await Sharing.shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
+};

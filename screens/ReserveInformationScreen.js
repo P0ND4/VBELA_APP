@@ -7,7 +7,14 @@ import {
   ScrollView,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { changeDate, months, thousandsSystem } from "../helpers/libs";
+import {
+  changeDate,
+  months,
+  thousandsSystem,
+  print,
+  generatePDF,
+  random,
+} from "../helpers/libs";
 import { remove } from "../features/groups/reservationsSlice";
 import { removeReservation } from "../api";
 import helperNotification from "../helpers/helperNotification";
@@ -47,6 +54,157 @@ const StatisticScreen = ({ route, navigation }) => {
 
   const dispatch = useDispatch();
 
+  const html = `
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document</title>
+<style type="text/css">
+  * {
+    padding: 0;
+    margin: 0;
+    box-sizing: 'border-box';
+    font-family: sans-serif;
+    color: #444444
+  }
+
+  @page { margin: 20px; } 
+</style>
+</head>
+
+<body>
+<view style="padding: 20px; width: 500px; display: block; margin: 20px auto; background-color: #FFFFFF;">
+    <view style="margin: 10px;">
+      <h2 style="text-align: center; color: #444444; font-size: 50px; font-weight: 800;">
+        RESERVACIÓN
+      </h2>
+      <p style="text-align: center; color: #444444; font-size: 38px; font-weight: 800;">
+      ${reserve?.fullName ? reserve?.fullName : ""}
+      </p>
+    </view>
+    <view>
+      <table style="width: 100%; margin-top: 30px;">
+        ${
+          reserve?.email
+            ? `<tr>
+        <td style="text-align: left;">
+          <p style="font-size: 28px; font-weight: 600;">Correo</p>
+        </td>
+        <td style="text-align: right;">
+          <p style="font-size: 28px; font-weight: 600;">
+           ${reserve?.email}
+          </p>
+        </td>
+      </tr>`
+            : ""
+        }
+        ${
+          reserve?.phoneNumber
+            ? `<tr>
+        <td style="text-align: left;">
+          <p style="font-size: 28px; font-weight: 600;">Teléfono</p>
+        </td>
+        <td style="text-align: right;">
+          <p style="font-size: 28px; font-weight: 600;">
+           ${reserve?.phoneNumber}
+          </p>
+        </td>
+      </tr>`
+            : ""
+        }
+        ${
+          reserve?.identification
+            ? `<tr>
+        <td style="text-align: left;">
+          <p style="font-size: 28px; font-weight: 600;">Cédula</p>
+        </td>
+        <td style="text-align: right;">
+          <p style="font-size: 28px; font-weight: 600;">
+           ${reserve?.identification}
+          </p>
+        </td>
+      </tr>`
+            : ""
+        }
+      <tr>
+        <td style="text-align: left;">
+          <p style="font-size: 28px; font-weight: 600;">Alojados</p>
+        </td>
+        <td style="text-align: right;">
+          <p style="font-size: 28px; font-weight: 600;">
+           ${reserve?.people}
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="text-align: left;">
+          <p style="font-size: 28px; font-weight: 600;">Días reservado</p>
+        </td>
+        <td style="text-align: right;">
+          <p style="font-size: 28px; font-weight: 600;">
+           ${reserve?.days}
+          </p>
+        </td>
+      </tr>
+      ${
+        reserve?.discount
+          ? `<tr>
+      <td style="text-align: left;">
+        <p style="font-size: 28px; font-weight: 600;">Descuento</p>
+      </td>
+      <td style="text-align: right;">
+        <p style="font-size: 28px; font-weight: 600;">
+         ${thousandsSystem(reserve?.discount)}
+        </p>
+      </td>
+    </tr>`
+          : ""
+      }
+      <tr>
+        <td style="text-align: left;">
+          <p style="font-size: 28px; font-weight: 600;">Registro</p>
+        </td>
+        <td style="text-align: right;">
+          <p style="font-size: 28px; font-weight: 600;">
+           ${changeDate(new Date(reserve?.start))}
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="text-align: left;">
+          <p style="font-size: 28px; font-weight: 600;">Finalización</p>
+        </td>
+        <td style="text-align: right;">
+          <p style="font-size: 28px; font-weight: 600;">
+           ${changeDate(new Date(reserve?.end))}
+          </p>
+        </td>
+      </tr>
+      </table>
+          
+      <p style="text-align: center; font-size: 30px; font-weight: 600; margin-top: 30px;">Total: ${
+        reserve?.amount
+          ? reserve.discount
+            ? thousandsSystem(reserve?.amount - reserve?.discount)
+            : thousandsSystem(reserve?.amount)
+          : "0"
+      }</p>
+      
+    </view>
+    <p style="text-align: center; font-size: 30px; font-weight: 600;">${changeDate(
+      new Date()
+    )} ${("0" + new Date().getHours()).slice(-2)}:${(
+    "0" + new Date().getMinutes()
+  ).slice(-2)}</p>
+  </view>
+</body>
+
+</html>
+`;
+
   return (
     <Layout style={{ padding: 0, marginTop: 0 }}>
       <View style={{ padding: 30 }}>
@@ -73,30 +231,62 @@ const StatisticScreen = ({ route, navigation }) => {
               Reservación
             </TextStyle>
             {(!activeGroup.active || activeGroup.accessToReservations) && (
-              <TouchableOpacity
-                onPress={() => {
-                  const date = new Date(reserve.start);
-                  const day = date.getDate();
-                  const month = months[date.getMonth()];
-                  const year = date.getFullYear();
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <TouchableOpacity onPress={() => print({ html })}>
+                  <Ionicons
+                    name="print"
+                    size={35}
+                    color={light.main2}
+                    style={{ marginHorizontal: 5 }}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() =>
+                    generatePDF({
+                      html,
+                      code: reserve?.fullName
+                        ? reserve?.fullName
+                        : random(6, { number: true }),
+                    })
+                  }
+                >
+                  <Ionicons
+                    name="document-attach"
+                    size={35}
+                    color={light.main2}
+                    style={{ marginHorizontal: 5 }}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    const date = new Date(reserve.start);
+                    const day = date.getDate();
+                    const month = months[date.getMonth()];
+                    const year = date.getFullYear();
 
-                  navigation.push("CreateReserve", {
-                    name: nomenclature.name
-                      ? nomenclature.name
-                      : nomenclature.nomenclature,
-                    capability: nomenclature.capability,
-                    ref: route.params.ref,
-                    id: route.params.id,
-                    day,
-                    days: route.params.days,
-                    month,
-                    year,
-                    editing: true,
-                  });
-                }}
-              >
-                <Ionicons name="create-outline" size={38} color={light.main2} />
-              </TouchableOpacity>
+                    navigation.push("CreateReserve", {
+                      name: nomenclature.name
+                        ? nomenclature.name
+                        : nomenclature.nomenclature,
+                      capability: nomenclature.capability,
+                      ref: route.params.ref,
+                      id: route.params.id,
+                      day,
+                      days: route.params.days,
+                      month,
+                      year,
+                      editing: true,
+                    });
+                  }}
+                  style={{ marginHorizontal: 5 }}
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={38}
+                    color={light.main2}
+                  />
+                </TouchableOpacity>
+              </View>
             )}
           </View>
           <TextStyle smallSubtitle color={light.main2}>
@@ -142,13 +332,17 @@ const StatisticScreen = ({ route, navigation }) => {
             >
               Dinero pagado:{" "}
               <TextStyle color={light.main2}>
-                {reserve?.amount ? thousandsSystem(reserve?.amount) : "0"}
+                {reserve?.amount
+                  ? reserve.discount
+                    ? thousandsSystem(reserve?.amount - reserve?.discount)
+                    : thousandsSystem(reserve?.amount)
+                  : "0"}
               </TextStyle>
             </TextStyle>
             <TextStyle
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
-              Personas reservadas:{" "}
+              Personas alojadas:{" "}
               <TextStyle color={light.main2}>
                 {reserve?.people ? thousandsSystem(reserve?.people) : "0"}
               </TextStyle>
@@ -166,7 +360,9 @@ const StatisticScreen = ({ route, navigation }) => {
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
                 Descuento:{" "}
-                <TextStyle color={light.main2}>{reserve?.discount}%</TextStyle>
+                <TextStyle color={light.main2}>
+                  {thousandsSystem(reserve?.discount)}
+                </TextStyle>
               </TextStyle>
             )}
             <TextStyle

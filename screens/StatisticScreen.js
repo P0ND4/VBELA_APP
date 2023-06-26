@@ -106,6 +106,7 @@ const StatisticScreen = ({ navigation }) => {
       if (dateValidation(date)) continue;
       people += parseInt(reservation.people);
       amount += reservation.amount;
+      sales += reservation.amount;
     }
 
     for (let data of economy) {
@@ -156,7 +157,7 @@ const StatisticScreen = ({ navigation }) => {
     setReceivable(receivable);
     setReceivables(receivables);
     setCharge(charge);
-    setAverageUtility(sales - expense + purchase - ro + charge);
+    setAverageUtility(sales + purchase + ro + charge + (expense + purchase) - expense);
 
     setTimeout(() => {
       setIsLoading(false);

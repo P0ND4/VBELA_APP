@@ -21,12 +21,13 @@ import {
 import { removeManyByOwner as removeMBOR } from "../features/groups/reservationsSlice";
 import { removeManyByOwner as removeMBOO } from "../features/tables/ordersSlice";
 import { removeEconomy, editUser, removeManyEconomy } from "../api";
-import { changeDate, random, thousandsSystem } from "../helpers/libs";
+import {
+  changeDate,
+  thousandsSystem,
+  print,
+  generatePDF,
+} from "../helpers/libs";
 import helperNotification from "../helpers/helperNotification";
-
-import * as Print from "expo-print";
-import * as Sharing from "expo-sharing";
-import * as FileSystem from "expo-file-system";
 
 import theme from "../theme";
 
@@ -114,9 +115,13 @@ const PeopleInformation = ({ route, navigation }) => {
           const sorted = details.sort((a, b) => a.date > b.date);
           eco.details = sorted;
           eco.people = reser.reduce((a, b) => a + parseInt(b.people), 0);
-          eco.orders = details.reduce((a, b) => a + parseInt(b.orders?.total), 0);
+          eco.orders = details.reduce(
+            (a, b) => a + parseInt(b.orders?.total),
+            0
+          );
           eco.reservations = details.reduce(
-            (a, b) => (a + b.reservations ? parseInt(b.reservations?.total) : 0),
+            (a, b) =>
+              a + b.reservations ? parseInt(b.reservations?.total) : 0,
             0
           );
           eco.ordersFinished = ord.length;
@@ -312,83 +317,107 @@ const PeopleInformation = ({ route, navigation }) => {
               {item?.name?.toUpperCase()}
             </TextStyle>
           )}
-          <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-            Creación:{" "}
+          <View style={styles.row}>
+            <TextStyle
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              Creación:
+            </TextStyle>
             <TextStyle color={light.main2}>
               {changeDate(new Date(item?.creationDate))}
             </TextStyle>
-          </TextStyle>
-          <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-            Modificación:{" "}
+          </View>
+          <View style={styles.row}>
+            <TextStyle
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              Modificación:
+            </TextStyle>
             <TextStyle color={light.main2}>
               {changeDate(new Date(item?.modificationDate))}
             </TextStyle>
-          </TextStyle>
+          </View>
           {item.type === "debt" && (
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Comida:{" "}
+            <View style={styles.row}>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Comida:
+              </TextStyle>
               <TextStyle color={light.main2}>
                 {thousandsSystem(item.orders)}
               </TextStyle>
-            </TextStyle>
+            </View>
           )}
           {item.type === "debt" && (
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Alojamiento:{" "}
+            <View style={styles.row}>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Alojamiento:
+              </TextStyle>
               <TextStyle color={light.main2}>
                 {thousandsSystem(item.reservations)}
               </TextStyle>
-            </TextStyle>
+            </View>
           )}
           {item.type === "debt" && (
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Personas alojadas:{" "}
+            <View style={styles.row}>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Personas alojadas:
+              </TextStyle>
               <TextStyle color={light.main2}>
                 {thousandsSystem(item.people)}
               </TextStyle>
-            </TextStyle>
+            </View>
           )}
           {item.type === "debt" && (
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Pedidos realizados:{" "}
+            <View style={styles.row}>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Pedidos realizados:
+              </TextStyle>
               <TextStyle color={light.main2}>
                 {thousandsSystem(item.ordersFinished)}
               </TextStyle>
-            </TextStyle>
+            </View>
           )}
-          <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-            Total:{" "}
+          <View style={styles.row}>
+            <TextStyle
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              Total:
+            </TextStyle>
             <TextStyle color={light.main2}>
               {thousandsSystem(item.amount)}
             </TextStyle>
-          </TextStyle>
+          </View>
           {item.amount !== item.payment && (
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Deuda:{" "}
+            <View style={styles.row}>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Deuda:
+              </TextStyle>
               <TextStyle color={light.main2}>
                 {thousandsSystem(item.amount - item.payment)}
               </TextStyle>
-            </TextStyle>
+            </View>
           )}
           {item.amount !== item.payment && (
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Pagado:{" "}
+            <View style={styles.row}>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Pagado:
+              </TextStyle>
               <TextStyle color={light.main2}>
                 {thousandsSystem(item.payment)}
               </TextStyle>
-            </TextStyle>
+            </View>
           )}
           <View>
             {openDatails && <Details />}
@@ -519,7 +548,9 @@ const PeopleInformation = ({ route, navigation }) => {
                 change: {
                   economy:
                     userType === "supplier"
-                      ? economy.filter((e) => e.type !== "expense" || e.type !== "purchase")
+                      ? economy.filter(
+                          (e) => e.type !== "expense" || e.type !== "purchase"
+                        )
                       : economy.filter((e) => e.type !== "debt"),
                 },
                 groups: activeGroup.active
@@ -757,7 +788,9 @@ const PeopleInformation = ({ route, navigation }) => {
       ${textSupplier}
     </view>
     <p style="text-align: center; font-weight: 600; margin-top: 20px; font-size: 25px; font-weight: 600;">Total:
-      ${thousandsSystem(registers.reduce((a, b) => (a += parseInt(b.amount)), 0))}</p>
+      ${thousandsSystem(
+        registers.reduce((a, b) => (a += parseInt(b.amount)), 0)
+      )}</p>
     <p style="text-align: center; font-size: 25px; font-weight: 600;">${changeDate(
       new Date()
     )} ${new Date().getHours()}:${new Date().getMinutes()}</p>
@@ -800,7 +833,9 @@ const PeopleInformation = ({ route, navigation }) => {
     ${textCustomer}
   </view>
   <p style="text-align: center; font-weight: 600; margin-top: 20px; font-size: 25px; font-weight: 600;">Total:
-    ${thousandsSystem(registers.reduce((a, b) => (a += parseInt(b.amount)), 0))}</p>
+    ${thousandsSystem(
+      registers.reduce((a, b) => (a += parseInt(b.amount)), 0)
+    )}</p>
   <p style="text-align: center; font-size: 25px; font-weight: 600;">${changeDate(
     new Date()
   )} ${new Date().getHours()}:${new Date().getMinutes()}</p>
@@ -809,60 +844,6 @@ const PeopleInformation = ({ route, navigation }) => {
 
 </html>
 `;
-
-  const generatePDF = async () => {
-    try {
-      const { uri } = await Print.printToFileAsync({
-        // VAMOS A SUPUESTAMENTE A IMPRIMIR PARA CONSEGUIR EL PDF
-        html: userType === "supplier" ? htmlSupplier : htmlCustomer, // HTML A UTILIZAR
-        width: 340, // TAMANO DEL PDF (WIDTH)
-        height: 520, // TAMANO DEL PDF (HEIGHT)
-        base64: true, // USAREMOVE BASE64
-      });
-
-      const code = random(6, { number: true });
-
-      if (Platform.OS === "ios") {
-        await Sharing.shareAsync(uri);
-      } else {
-        const base64 = FileSystem.EncodingType.Base64; // CODIFICAMOS A BASE 64
-        const storageAccess = FileSystem.StorageAccessFramework; // COLOCAMOS EL ACCESO AL ALMACENAMIENTO
-
-        const fileString = await FileSystem.readAsStringAsync(uri, {
-          // LEEMOS EL PDF
-          encoding: base64, // USAMOS EL CODIFICADOR DE BASE64
-        });
-
-        const permissions =
-          await storageAccess.requestDirectoryPermissionsAsync(); // PEDIMOS PERMISO PARA ACCEDER A SUS ARCHIVOS
-
-        if (!permissions.granted) return; // SI NO NOS DA PERMISO RETORNAMOS
-
-        await storageAccess
-          .createFileAsync(permissions.directoryUri, code, "application/pdf") // CREAMOS EL ARCHIVO DONDE EL USUARIO NOS DIO ACCESO A LA CARPETA
-          .then(async (uri) => {
-            await FileSystem.writeAsStringAsync(uri, fileString, {
-              // AGARRAMOS LA URI OBTENIDA Y ESCRIBIMOS EL ARCHIVO ANTES LEIDO
-              encoding: base64, // CODIFICAMOS A BAse 64
-            });
-            alert("PDF Guardado satisfactoriamente"); // AVISAMOS QUE SE GUARDO EL ARCHIVO
-          })
-          .catch((e) => console.log(e.message));
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const print = async () => {
-    const { uri } = await Print.printToFileAsync({
-      html: userType === "supplier" ? htmlSupplier : htmlCustomer,
-      width: 400,
-      height: 520,
-      base64: true,
-    });
-    await Sharing.shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
-  };
 
   return (
     <Layout style={{ marginTop: 0 }}>
@@ -885,7 +866,13 @@ const PeopleInformation = ({ route, navigation }) => {
             </TouchableOpacity>
           )}
           {registers.length > 0 && (
-            <TouchableOpacity onPress={() => print()}>
+            <TouchableOpacity
+              onPress={() =>
+                print({
+                  html: userType === "supplier" ? htmlSupplier : htmlCustomer,
+                })
+              }
+            >
               <Ionicons
                 name="print"
                 size={35}
@@ -895,7 +882,13 @@ const PeopleInformation = ({ route, navigation }) => {
             </TouchableOpacity>
           )}
           {registers.length > 0 && (
-            <TouchableOpacity onPress={() => generatePDF()}>
+            <TouchableOpacity
+              onPress={() =>
+                generatePDF({
+                  html: userType === "supplier" ? htmlSupplier : htmlCustomer,
+                })
+              }
+            >
               <Ionicons
                 name="document-attach"
                 size={35}

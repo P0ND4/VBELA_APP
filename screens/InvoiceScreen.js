@@ -4,19 +4,22 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  Platform,
   ScrollView,
 } from "react-native";
 import { useSelector } from "react-redux";
 import TextStyle from "../components/TextStyle";
 import Layout from "../components/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { thousandsSystem, random, changeDate } from "../helpers/libs";
+import {
+  thousandsSystem,
+  random,
+  changeDate,
+  generatePDF,
+  print,
+} from "../helpers/libs";
 
 import ViewShot from "react-native-view-shot";
-import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
-import * as FileSystem from "expo-file-system";
 
 import theme from "../theme";
 
@@ -48,9 +51,9 @@ const InvoiceScreen = ({ route, navigation }) => {
         a +
         `<tr>
             <td style="text-align: left;">
-              <p style="font-size: 28px; font-weight: 600;">${thousandsSystem(item.count)}x ${
-                item.name
-              }</p>
+              <p style="font-size: 28px; font-weight: 600;">${thousandsSystem(
+                item.count
+              )}x ${item.name}</p>
             </td>
             <td style="text-align: right;">
               <p style="font-size: 28px; font-weight: 600;">
@@ -103,10 +106,10 @@ const InvoiceScreen = ({ route, navigation }) => {
         ${invoice?.name ? invoice?.name : "Sin nombre"}
       </p>
       <p style="font-size: 32px; font-weight: 600;">
-        ${invoice?.name ? invoice?.name : ''} ${
-    invoice?.address ? `- ${invoice?.address}` : ''
-  } ${invoice?.number ? `- ${invoice?.number}` : ''} ${
-    invoice?.complement ? `- ${invoice?.complement}` : ''
+        ${invoice?.name ? invoice?.name : ""} ${
+    invoice?.address ? `- ${invoice?.address}` : ""
+  } ${invoice?.number ? `- ${invoice?.number}` : ""} ${
+    invoice?.complement ? `- ${invoice?.complement}` : ""
   }
       </p>
     </view>
@@ -124,67 +127,15 @@ const InvoiceScreen = ({ route, navigation }) => {
       )}</p>
       
     </view>
-    <p style="text-align: center; font-size: 30px; font-weight: 600;">${changeDate(date)} ${(
-    "0" + date.getHours()
-  ).slice(-2)}:
+    <p style="text-align: center; font-size: 30px; font-weight: 600;">${changeDate(
+      date
+    )} ${("0" + date.getHours()).slice(-2)}:
     ${("0" + date.getMinutes()).slice(-2)}</p>
   </view>
 </body>
 
 </html>
 `;
-
-  const generatePDF = async () => {
-    try {
-      const { uri } = await Print.printToFileAsync({
-        // VAMOS A SUPUESTAMENTE A IMPRIMIR PARA CONSEGUIR EL PDF
-        html, // HTML A UTILIZAR
-        width: 340, // TAMANO DEL PDF (WIDTH)
-        height: 520, // TAMANO DEL PDF (HEIGHT)
-        base64: true, // USAREMOVE BASE64
-      });
-
-      if (Platform.OS === "ios") {
-        await Sharing.shareAsync(uri);
-      } else {
-        const base64 = FileSystem.EncodingType.Base64; // CODIFICAMOS A BASE 64
-        const storageAccess = FileSystem.StorageAccessFramework; // COLOCAMOS EL ACCESO AL ALMACENAMIENTO
-
-        const fileString = await FileSystem.readAsStringAsync(uri, {
-          // LEEMOS EL PDF
-          encoding: base64, // USAMOS EL CODIFICADOR DE BASE64
-        });
-
-        const permissions =
-          await storageAccess.requestDirectoryPermissionsAsync(); // PEDIMOS PERMISO PARA ACCEDER A SUS ARCHIVOS
-
-        if (!permissions.granted) return; // SI NO NOS DA PERMISO RETORNAMOS
-
-        await storageAccess
-          .createFileAsync(permissions.directoryUri, code, "application/pdf") // CREAMOS EL ARCHIVO DONDE EL USUARIO NOS DIO ACCESO A LA CARPETA
-          .then(async (uri) => {
-            await FileSystem.writeAsStringAsync(uri, fileString, {
-              // AGARRAMOS LA URI OBTENIDA Y ESCRIBIMOS EL ARCHIVO ANTES LEIDO
-              encoding: base64, // CODIFICAMOS A BAse 64
-            });
-            alert("PDF Guardado satisfactoriamente"); // AVISAMOS QUE SE GUARDO EL ARCHIVO
-          })
-          .catch((e) => console.log(e.message));
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const print = async () => {
-    const { uri } = await Print.printToFileAsync({
-      html,
-      width: 400,
-      height: 520,
-      base64: true,
-    });
-    await Sharing.shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
-  };
 
   const share = async () => {
     const imageURI = await viewShotRef.current.capture();
@@ -312,7 +263,7 @@ const InvoiceScreen = ({ route, navigation }) => {
       <View style={{ flexDirection: "row" }}>
         <TouchableOpacity
           style={[styles.button, backgroundButton()]}
-          onPress={() => generatePDF()}
+          onPress={() => generatePDF({ html, code })}
         >
           <Ionicons
             name="document-text-outline"
@@ -346,7 +297,7 @@ const InvoiceScreen = ({ route, navigation }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, backgroundButton()]}
-          onPress={() => print()}
+          onPress={() => print({ html })}
         >
           <Ionicons
             name="print-outline"
