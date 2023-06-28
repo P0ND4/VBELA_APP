@@ -345,7 +345,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 Comida:
               </TextStyle>
               <TextStyle color={light.main2}>
-                {thousandsSystem(item.orders)}
+                {item.orders ? thousandsSystem(item.orders) : '0'}
               </TextStyle>
             </View>
           )}
@@ -357,7 +357,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 Alojamiento:
               </TextStyle>
               <TextStyle color={light.main2}>
-                {thousandsSystem(item.reservations)}
+                {item.reservations ? thousandsSystem(item.reservations) : '0'}
               </TextStyle>
             </View>
           )}
@@ -369,7 +369,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 Personas alojadas:
               </TextStyle>
               <TextStyle color={light.main2}>
-                {thousandsSystem(item.people)}
+                {item.people ? thousandsSystem(item.people) : '0'}
               </TextStyle>
             </View>
           )}
@@ -381,7 +381,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 Pedidos realizados:
               </TextStyle>
               <TextStyle color={light.main2}>
-                {thousandsSystem(item.ordersFinished)}
+                {item.ordersFinished ? thousandsSystem(item.ordersFinished) : '0'}
               </TextStyle>
             </View>
           )}
@@ -502,9 +502,11 @@ const PeopleInformation = ({ route, navigation }) => {
                 />
               </TouchableOpacity>
             )}
-            <TextStyle color={light.main2} bigParagraph>
-              {changeDate(new Date(item.modificationDate))}
-            </TextStyle>
+            {!open && (
+              <TextStyle color={light.main2} bigParagraph>
+                {changeDate(new Date(item.modificationDate))}
+              </TextStyle>
+            )}
           </View>
         </TouchableOpacity>
         {open && (

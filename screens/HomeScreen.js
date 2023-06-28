@@ -102,7 +102,7 @@ const HomeScreen = ({ navigation }) => {
       cleanData(dispatch);
       if (active.active) {
         socket.emit("leave", { groups: [active.id] });
-        socket.disconnect();
+        if (socket.connect) socket.disconnect();
         await helperCameOut(active, user);
       }
     }, 300);
@@ -220,8 +220,8 @@ const HomeScreen = ({ navigation }) => {
                         socket.emit("leave", { groups: [active.id] });
                         const groups = user.helpers?.map((h) => h.id);
                         if (groups.length > 0)
-                          socket.emit("connected", { groups });
-                        else socket.disconnect();
+                          socket.emit("enter_room", { groups });
+                        else if (socket.connect) socket.disconnect();
                         changeGeneralInformation(dispatch, user);
                         dispatch(inactiveGroup());
                         await helperCameOut(active, user);
@@ -330,7 +330,7 @@ const HomeScreen = ({ navigation }) => {
                 onPress={() => navigation.push("CreateRoster")}
                 backgroundColor={light.main2}
               >
-                <TextStyle color={light.textDark}>Pagos De Nomina</TextStyle>
+                <TextStyle color={light.textDark}>Pagos De Nómina</TextStyle>
               </ButtonStyle>
               <Image source={Premium} style={styles.premium} />
             </View>
@@ -341,7 +341,7 @@ const HomeScreen = ({ navigation }) => {
                 onPress={() => navigation.push("Tables")}
                 backgroundColor={light.main2}
               >
-                Ventas Diarias
+                <TextStyle color={light.textDark}>Pagos De Nómina</TextStyle>
               </ButtonStyle>
               <Image source={Premium} style={styles.premium} />
             </View>

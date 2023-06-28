@@ -786,7 +786,7 @@ const People = ({ navigation, route }) => {
           <View style={styles.events}>
             {section !== "debt" && (
               <TextStyle color={light.main2} paragrahp>
-                {total}/{paid}
+                {thousandsSystem(total)}/{thousandsSystem(paid)}
               </TextStyle>
             )}
             <TouchableOpacity

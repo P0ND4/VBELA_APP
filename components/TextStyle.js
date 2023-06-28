@@ -10,8 +10,6 @@ const styles = StyleSheet.create({
   }
 });
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
 const TextStyle = ({
   color,
   customStyle,
@@ -29,6 +27,7 @@ const TextStyle = ({
   justify,
   right,
   children,
+  bold
 }) => {
   const stylesTaken = [
     styles.default,
@@ -46,6 +45,7 @@ const TextStyle = ({
     center && { textAlign: 'center' },
     justify && { textAlign: 'justify' },
     right && { textAlign: 'right' },
+    bold && { fontWeight: 'bold' },
     customStyle
   ]
 

@@ -1,6 +1,7 @@
 import NetInfo from "@react-native-community/netinfo";
 import { createStackNavigator } from "@react-navigation/stack";
 import { useEffect, useRef, useState } from "react";
+import { AppState } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { getRule, getUser } from "../api";
 import { active, inactive } from "../features/function/informationSlice";
@@ -99,6 +100,7 @@ const Main = () => {
   const activeGroup = useSelector((state) => state.activeGroup);
 
   const [connected, setConnected] = useState(false);
+  const [isTheAppOpen, setIsTheAppOpen] = useState(true);
 
   const dispatch = useDispatch();
   const navigation = useRef();
@@ -257,9 +259,9 @@ const Main = () => {
     const getInformation = async () => {
       const groups = user?.helpers?.map((h) => h.id);
       if (user && activeGroup.active)
-        socket.emit("connected", { groups: [activeGroup.id] });
+        socket.emit("enter_room", { groups: [activeGroup.id] });
       else if (user && user?.helpers?.length > 0)
-        socket.emit("connected", { groups });
+        socket.emit("enter_room", { groups });
       await writeFile({
         name: "work.json",
         value: {
@@ -296,7 +298,22 @@ const Main = () => {
       }
     };
 
+    // Maneja el cambio de estado de la aplicación
+    const handleAppStateChange = (nextAppState) => {
+      if (nextAppState === "active") {
+        if (connected && session) getInformation();
+      };
+    };
+    // Registra el oyente de cambio de estado de la aplicación
+    const appStateListener = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+
     if (connected && session) getInformation();
+
+    // Limpia el oyente al desmontar el componente
+    return () => appStateListener.remove();
   }, [connected, session]);
 
   useEffect(() => {
@@ -313,7 +330,7 @@ const Main = () => {
     const leave = async (g) => {
       socket.emit("leave", { groups: g });
       const groups = user?.helpers?.map((h) => h.id);
-      if (groups.length > 0) socket.emit("connected", { groups });
+      if (groups.length > 0) socket.emit("enter_room", { groups });
       changeGeneralInformation(dispatch, user);
       dispatch(inactiveGroup());
     };
@@ -326,6 +343,7 @@ const Main = () => {
       if (confidential && !activeGroup.active) {
         dispatch(changeUser(data));
         dispatch(changeHelper(data.helpers));
+        console.log(data.helpers);
       }
       if (activeGroup.active) {
         const user = checkUser(data);

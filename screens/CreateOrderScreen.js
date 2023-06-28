@@ -328,7 +328,7 @@ const CreateOrderScreen = ({ route, navigation }) => {
           >
             {reservation ? reservation : "Mesa"}:{" "}
             <TextStyle smallSubtitle color={light.main2}>
-              {information.table}
+              {information.table.slice(0,10)}{information.table.length > 10 ? '...' : ''}
             </TextStyle>
           </TextStyle>
           <ButtonStyle

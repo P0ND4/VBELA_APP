@@ -39,7 +39,7 @@ const StatisticScreen = ({ navigation }) => {
   const [purchase, setPurchase] = useState(0);
   const [expense, setExpense] = useState(0);
   const [sales, setSales] = useState(0);
-  const [charge, setCharge] = useState(0);
+  const [food, setFood] = useState(0);
 
   const [people, setPeople] = useState(0);
   const [amount, setAmount] = useState(0);
@@ -54,12 +54,18 @@ const StatisticScreen = ({ navigation }) => {
   const [ro, setRo] = useState(0);
   const [ros, setRos] = useState([]);
 
-  const [receivable, setReceivable] = useState([]);
+  const [receivable, setReceivable] = useState(0);
+  const [receivableTotal, setReceivableTotal] = useState(0);
   const [receivables, setReceivables] = useState([]);
+
   const [accountsPayable, setAccountsPayable] = useState([]);
   const [accountsPayableAmount, setAccountsPayableAmount] = useState(0);
+  const [accountsPayableAmountTotal, setAccountsPayableAmountTotal] =
+    useState(0);
 
   const [averageUtility, setAverageUtility] = useState(0);
+  const [discharge, setDischarge] = useState(0);
+  const [income, setIncome] = useState(0);
 
   const dateValidation = (date) => {
     let error = false;
@@ -84,10 +90,14 @@ const StatisticScreen = ({ navigation }) => {
     let amount = 0;
     let purchase = 0;
     let expense = 0;
+    let food = 0;
     let accountsPayableAmount = 0;
+    let accountsPayableAmountTotal = 0;
+    let expenseAndInvestmentAccountPayable = 0;
+    let purchaseAndCostAccountPayable = 0;
     let receivable = 0;
+    let receivableTotal = 0;
     let receivables = [];
-    let charge = 0;
     let ro = 0;
     let purchases = [];
     let expenses = [];
@@ -106,6 +116,8 @@ const StatisticScreen = ({ navigation }) => {
       if (dateValidation(date)) continue;
       people += parseInt(reservation.people);
       amount += reservation.amount;
+      const eco = economy.find((e) => e.ref === reservation.owner);
+      if (eco && eco.amount !== eco.payment) continue;
       sales += reservation.amount;
     }
 
@@ -115,32 +127,39 @@ const StatisticScreen = ({ navigation }) => {
       if (data.amount !== data.payment) {
         if (data.type !== "debt") {
           accountsPayableAmount += parseInt(data.amount - data.payment);
+          accountsPayableAmountTotal += parseInt(data.amount);
           accountsPayable.push(data);
         }
 
+        if (data.type === "expense")
+          expenseAndInvestmentAccountPayable += parseInt(data.amount);
+        if (data.type === "purchase")
+          purchaseAndCostAccountPayable += parseInt(data.amount);
+
         if (data.type === "debt") {
           receivable += parseInt(data.amount - data.payment);
+          receivableTotal += parseInt(data.amount);
           receivables.push(data);
         }
-      }
-      if (data.type === "purchase") {
-        purchase += parseInt(data.amount);
-        purchases.push(data);
-      }
-      if (data.type === "expense") {
-        expense += parseInt(data.amount);
-        expenses.push(data);
-      }
-      if (data.type === "debt") {
-        charge += parseInt(data.amount);
+      } else {
+        if (data.type === "purchase") {
+          purchase += parseInt(data.amount);
+          purchases.push(data);
+        }
+        if (data.type === "expense") {
+          expense += parseInt(data.amount);
+          expenses.push(data);
+        }
       }
     }
 
     for (let order of orders) {
       const date = new Date(order.creationDate);
       if (dateValidation(date) || !order.pay) continue;
-
+      const eco = economy.find((e) => e.ref === order.ref);
+      if (eco && eco.amount !== eco.payment) continue;
       sales += order.total;
+      food += order.total;
     }
 
     setSales(sales);
@@ -150,14 +169,27 @@ const StatisticScreen = ({ navigation }) => {
     setExpense(expense);
     setPurchases(purchases);
     setExpenses(expenses);
+    setFood(food);
     setRos(ros);
     setRo(ro);
     setAccountsPayable(accountsPayable);
     setAccountsPayableAmount(accountsPayableAmount);
+    setAccountsPayableAmountTotal(accountsPayableAmountTotal);
     setReceivable(receivable);
+    setReceivableTotal(receivableTotal);
     setReceivables(receivables);
-    setCharge(charge);
-    setAverageUtility(sales + purchase + ro + charge + (expense + purchase) - expense);
+    setAverageUtility(
+      sales +
+        purchase +
+        ro +
+        receivableTotal -
+        expense -
+        expenseAndInvestmentAccountPayable
+    );
+    setDischarge(expense + expenseAndInvestmentAccountPayable);
+    setIncome(
+      sales + purchase + ro + receivableTotal + purchaseAndCostAccountPayable
+    );
 
     setTimeout(() => {
       setIsLoading(false);
@@ -475,9 +507,52 @@ const StatisticScreen = ({ navigation }) => {
             showsVerticalScrollIndicator={false}
             style={{ marginTop: 20, height: height / 1.25 }}
           >
+            <View
+              style={[
+                styles.container,
+                { borderColor: mode === "light" ? light.main5 : dark.main2 },
+              ]}
+            >
+              <TextStyle
+                bold
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                VENTAS DIARIAS
+              </TextStyle>
+              <View style={{ maxWidth: width / 2.5 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator>
+                  <TextStyle bold smallParagraph color={light.main2}>
+                    {thousandsSystem(sales)}
+                  </TextStyle>
+                </ScrollView>
+              </View>
+            </View>
+            <Information name="COMIDA" value={thousandsSystem(food)} />
+            <Information name="ALOJAMIENTO" value={thousandsSystem(amount)} />
             <Information
-              name="UTILIDAD PROMEDIO"
-              value={thousandsSystem(averageUtility)}
+              name="GASTOS/INVERSIÓN"
+              value={thousandsSystem(expense)}
+              onPress={() =>
+                expenses.length !== 0 ? (
+                  <FlatList
+                    data={expenses}
+                    style={{ marginVertical: 15 }}
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item) => item.id + item.modificationDate}
+                    renderItem={(item) => <Economy {...item} />}
+                  />
+                ) : (
+                  <TextStyle
+                    verySmall
+                    color={light.main2}
+                    customStyle={{ margin: 5 }}
+                  >
+                    No hay gatos o inversiones realizados
+                  </TextStyle>
+                )
+              }
             />
             <Information
               name="COMPRAS/COSTOS"
@@ -499,30 +574,6 @@ const StatisticScreen = ({ navigation }) => {
                     customStyle={{ margin: 5 }}
                   >
                     No hay compras o costos realizados
-                  </TextStyle>
-                )
-              }
-            />
-            <Information
-              name="GASTOS/INVERSIÓN"
-              value={thousandsSystem(expense)}
-              onPress={() =>
-                expenses.length !== 0 ? (
-                  <FlatList
-                    data={expenses}
-                    style={{ marginVertical: 15 }}
-                    horizontal={true}
-                    showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item.id + item.modificationDate}
-                    renderItem={(item) => <Economy {...item} />}
-                  />
-                ) : (
-                  <TextStyle
-                    verySmall
-                    color={light.main2}
-                    customStyle={{ margin: 5 }}
-                  >
-                    No hay gatos o inversiones realizados
                   </TextStyle>
                 )
               }
@@ -581,8 +632,10 @@ const StatisticScreen = ({ navigation }) => {
             />
             <Information
               name="CUENTAS POR PAGAR"
-              value={`${thousandsSystem(expense + purchase)}/${thousandsSystem(
-                expense + purchase - accountsPayableAmount
+              value={`${thousandsSystem(
+                accountsPayableAmountTotal
+              )}/${thousandsSystem(
+                accountsPayableAmountTotal - accountsPayableAmount
               )}`}
               onPress={() =>
                 accountsPayable.length !== 0 ? (
@@ -636,8 +689,8 @@ const StatisticScreen = ({ navigation }) => {
             />
             <Information
               name="CUENTAS POR COBRAR"
-              value={`${thousandsSystem(charge)}/${thousandsSystem(
-                charge - receivable
+              value={`${thousandsSystem(receivableTotal)}/${thousandsSystem(
+                receivableTotal - receivable
               )}`}
               onPress={() =>
                 receivables.length !== 0 ? (
@@ -671,9 +724,8 @@ const StatisticScreen = ({ navigation }) => {
                           }
                           verySmall
                         >
-                          {item.owner?.name?.slice(0, 8)}{item.owner?.name?.length > 8
-                            ? "..."
-                            : ""}
+                          {item.owner?.name?.slice(0, 8)}
+                          {item.owner?.name?.length > 8 ? "..." : ""}
                         </TextStyle>
                         <TextStyle color={light.main2} verySmall>
                           Deuda {thousandsSystem(item.amount - item.payment)}
@@ -692,12 +744,36 @@ const StatisticScreen = ({ navigation }) => {
                 )
               }
             />
-            <Information name="VENTAS DIARIAS" value={thousandsSystem(sales)} />
+            <Information name="HUÉSPEDES" value={thousandsSystem(people)} />
             <Information
-              name="HUÉSPEDES ALOJADOS"
-              value={thousandsSystem(people)}
+              name="UTILIDAD PROMEDIO"
+              value={thousandsSystem(averageUtility)}
             />
-            <Information name="ALOJAMIENTO" value={thousandsSystem(amount)} />
+            <Information
+              name="TOTAL EGRESO"
+              value={thousandsSystem(discharge)}
+            />
+            <View
+              style={[
+                styles.container,
+                { borderColor: mode === "light" ? light.main5 : dark.main2 },
+              ]}
+            >
+              <TextStyle
+                bold
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                TOTAL INGRESO
+              </TextStyle>
+              <View style={{ maxWidth: width / 2.5 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator>
+                  <TextStyle bold smallParagraph color={light.main2}>
+                    {thousandsSystem(income)}
+                  </TextStyle>
+                </ScrollView>
+              </View>
+            </View>
             <View>
               <ProgressChart
                 style={{ marginTop: 20 }}
