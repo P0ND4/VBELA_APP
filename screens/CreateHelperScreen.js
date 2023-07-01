@@ -147,11 +147,11 @@ const CreateGroup = ({ navigation, route }) => {
     data.modificationDate = new Date().getTime();
     dispatch(push(data));
     navigation.pop();
-    socket.emit("connected", { groups: [data.id] });
+    socket.emit("enter_room", { groups: [data.id] });
     await addHelper({
       email: user.email,
       helper: data,
-      groups: user.helpers.map((h) => h.id),
+      groups: helpers.map((h) => h.id),
     });
   };
 
@@ -166,16 +166,15 @@ const CreateGroup = ({ navigation, route }) => {
       const userFound = u.helpers.find((helper) => helper.user === data.user);
 
       if (userFound && userFound.password === data.password) {
-        const groups = user.helpers.map((h) => h.id);
+        const groups = helpers.map((h) => h.id);
 
         if (groups.length > 0) socket.emit("leave", { groups });
-        socket.emit("connected", { groups: [userFound.id] });
+        socket.emit("enter_room", { groups: [userFound.id] });
 
         if (!userFound.expoID.includes(user.expoID)) {
           if (user.expoID)
             userFound.expoID = [...userFound.expoID, user.expoID];
-          const mainUser = await editHelper({ email: u.email, helper: userFound });
-          socket.emit("change", { data: mainUser, groups: [userFound.id], confidential: true });
+          await editHelper({ email: u.email, helper: userFound, groups: [userFound.id] });
         };
 
         dispatch(

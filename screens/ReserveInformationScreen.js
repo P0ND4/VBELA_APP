@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   TouchableOpacity,
@@ -32,21 +32,24 @@ const height = Dimensions.get("screen").height;
 
 const StatisticScreen = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
-  const reserve = useSelector((state) =>
-    state.reservations.find((r) => r.ref === route.params.ref)
-  );
-  const nomenclature = useSelector((state) =>
-    state.nomenclatures.find((n) => n.id === route.params.id)
-  );
-  const group = useSelector((state) =>
-    state.groups.find((g) => g.ref === nomenclature.ref)
-  );
-
+  const reserveState = useSelector((state) => state.reservations);
+  const nomenclatureState = useSelector((state) => state.nomenclatures);
+  const groupState = useSelector((state) => state.groups);
   const activeGroup = useSelector((state) => state.activeGroup);
   const user = useSelector((state) => state.user);
   const orders = useSelector((state) => state.orders);
 
-  const OF = orders.find((o) => o.ref === route.params.ref && o.pay === false);
+  const [OF, setOF] = useState(null);
+  const [reserve, setReserve] = useState(null);
+  const [nomenclature, setNomenclature] = useState({});
+  const [group, setGroup] = useState(null);
+
+  useEffect(() => {
+    setReserve(reserveState.find((r) => r.ref === route.params.ref));
+    setNomenclature(nomenclatureState.find((n) => n.id === route.params.id));
+    setGroup(groupState.find((g) => g.ref === nomenclature.ref));
+    setOF(orders.find((o) => o.ref === route.params.ref && o.pay === false))
+  },[reserveState, nomenclatureState, groupState, orders]);
 
   useEffect(() => {
     navigation.setOptions({ title: reserve?.fullName });

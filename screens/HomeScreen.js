@@ -41,6 +41,7 @@ const HomeScreen = ({ navigation }) => {
   const mode = useSelector((state) => state.mode);
   const groups = useSelector((state) => state.groups);
   const user = useSelector((state) => state.user);
+  const helpers = useSelector((state) => state.helpers);
 
   const [month, setMonth] = useState(0);
   const [year, setYear] = useState(2023);
@@ -91,18 +92,19 @@ const HomeScreen = ({ navigation }) => {
     navigation.replace("SignIn");
     setTimeout(async () => {
       const active = activeGroup;
-      if (user.helpers.length > 0) {
-        const helpers = user.helpers?.map((helper) => ({
+      if (helpers.length > 0) {
+        const helpers = helpers?.map((helper) => ({
           ...helper,
           expoID: helper.expoID.filter((e) => e !== user.expoID),
         }));
 
         await editUser({ email: user.email, change: { helpers } });
       }
+      const groups = helpers?.map((h) => h.id);
+      if (groups.length > 0) socket.emit("leave", { groups });
       cleanData(dispatch);
       if (active.active) {
         socket.emit("leave", { groups: [active.id] });
-        if (socket.connect) socket.disconnect();
         await helperCameOut(active, user);
       }
     }, 300);
@@ -217,11 +219,10 @@ const HomeScreen = ({ navigation }) => {
                       text: "Ok",
                       onPress: async () => {
                         const active = activeGroup;
-                        socket.emit("leave", { groups: [active.id] });
-                        const groups = user.helpers?.map((h) => h.id);
+                        socket.emit("leave", { groups: [activeGroup.id] });
+                        const groups = helpers?.map((h) => h.id);
                         if (groups.length > 0)
                           socket.emit("enter_room", { groups });
-                        else if (socket.connect) socket.disconnect();
                         changeGeneralInformation(dispatch, user);
                         dispatch(inactiveGroup());
                         await helperCameOut(active, user);
@@ -253,7 +254,9 @@ const HomeScreen = ({ navigation }) => {
           <TextStyle title color={light.main2}>
             VBELA
           </TextStyle>
-          {(!activeGroup.active || activeGroup.accessToReservations || activeGroup.accessToTables) && (
+          {(!activeGroup.active ||
+            activeGroup.accessToReservations ||
+            activeGroup.accessToTables) && (
             <>
               <Picker
                 ref={pickerYearRef}
@@ -341,7 +344,7 @@ const HomeScreen = ({ navigation }) => {
                 onPress={() => navigation.push("Tables")}
                 backgroundColor={light.main2}
               >
-                <TextStyle color={light.textDark}>Pagos De Nómina</TextStyle>
+                <TextStyle color={light.textDark}>Menú</TextStyle>
               </ButtonStyle>
               <Image source={Premium} style={styles.premium} />
             </View>

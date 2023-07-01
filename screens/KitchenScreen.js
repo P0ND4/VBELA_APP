@@ -128,7 +128,7 @@ const KitchenScreen = () => {
               kit.modificationDate = new Date();
 
               dispatch(editK({ id, data: kit }));
-              editKitchen({
+              await editKitchen({
                 email: activeGroup.active ? activeGroup.email : user.email,
                 kitchen: kit,
                 groups: activeGroup.active
@@ -158,9 +158,9 @@ const KitchenScreen = () => {
         },
         {
           text: "Si",
-          onPress: () => {
+          onPress: async () => {
             dispatch(removeK({ id }));
-            removeKitchen({
+            await removeKitchen({
               email: activeGroup.active ? activeGroup.email : user.email,
               id,
               groups: activeGroup.active

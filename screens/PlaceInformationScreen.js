@@ -21,24 +21,28 @@ const dark = theme.colors.dark;
 
 const PlaceInformation = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
-  const group = useSelector((state) =>
-    state.groups.find((group) => group.ref === route.params.ref)
-  );
+  const groupState = useSelector((state) => state.groups);
   const user = useSelector((state) => state.user);
-  const nomenclatures = useSelector((state) =>
-    state.nomenclatures.filter((n) => n.ref === route.params.ref)
-  );
-  const nomenclature = useSelector((state) =>
-    state.nomenclatures.find((n) => n.id === route.params.id)
-  );
+  const nomenclaturesState = useSelector((state) => state.nomenclatures);
+  const nomenclatureState = useSelector((state) => state.nomenclatures);
   const activeGroup = useSelector((state) => state.activeGroup);
   const reservations = useSelector((state) => state.reservations);
+
+  const [group, setGroup] = useState(null);
+  const [nomenclatures, setNomenclatures] = useState([]);
+  const [nomenclature, setNomenclature] = useState(null);
   const [totalMoney, setTotalMoney] = useState(null);
   const [totalPeople, setTotalPeople] = useState(null);
   const [totalDays, setTotalDays] = useState(null);
 
   const dispatch = useDispatch();
   const params = route.params;
+
+  useEffect(() => {
+    setNomenclatures(nomenclaturesState.filter((n) => n.ref === route.params.ref));
+    setNomenclature(nomenclatureState.find((n) => n.id === route.params.id));
+    setGroup(groupState.find((group) => group.ref === route.params.ref))
+  },[groupState, nomenclatureState, nomenclaturesState]);
 
   useEffect(() => {
     if (params.type === "General")

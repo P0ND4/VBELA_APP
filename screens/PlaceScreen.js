@@ -24,31 +24,36 @@ const width = Dimensions.get("screen").width;
 const PlaceScreen = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const activeGroup = useSelector((state) => state.activeGroup);
-  const group = useSelector((state) =>
-    state.groups.find((group) => group.ref === route.params.ref)
-  );
+  const groupState = useSelector((state) => state.groups);
+  const nomenclaturesState = useSelector((state) => state.nomenclatures);
+  const reservationsState = useSelector((state) => state.reservations);
 
-  const nomenclatures = useSelector((state) =>
-    state.nomenclatures.filter((n) => n.ref === route.params.ref)
-  );
-  const reservations = useSelector((state) => {
-    const reservations = [];
+  const owner = route.params?.owner;
+
+  const [group, setGroup] = useState([]);
+  const [reservations, setReservation] = useState([]);
+  const [nomenclatures, setNomenclatures] = useState([]);
+  const [activeFilter, setActiveFilter] = useState(false);
+  const [filter, setFilter] = useState("");
+  const [filterResult, setFilterResult] = useState([]);
+
+  useEffect(() => {
+    let reservations = []
 
     for (let n of nomenclatures) {
-      const found = state.reservations.filter((r) => r.id === n.id);
+      const found = reservationsState.filter((r) => r.id === n.id);
       for (let r of found) {
         reservations.push(r);
       }
     }
 
-    return reservations;
-  });
+    setReservation(reservations)
+  },[nomenclatures, reservationsState]);
 
-  const owner = route.params?.owner;
-
-  const [activeFilter, setActiveFilter] = useState(false);
-  const [filter, setFilter] = useState("");
-  const [filterResult, setFilterResult] = useState([]);
+  useEffect(() => {
+    setGroup(groupState.find((group) => group.ref === route.params.ref))
+    setNomenclatures(nomenclaturesState.filter((n) => n.ref === route.params.ref));
+  },[groupState, nomenclaturesState]);
 
   useEffect(() => {
     const guests = [];
@@ -128,7 +133,7 @@ const PlaceScreen = ({ route, navigation }) => {
             const belongingReservations = reservations.filter(
               (r) => r.id === place.id
             );
-
+            
             for (let reserve of belongingReservations) {
               const start = new Date(reserve.start).getTime();
               const end = new Date(reserve.end).getTime();

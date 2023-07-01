@@ -8,6 +8,10 @@ import { active, inactive } from "../features/function/informationSlice";
 import { change as changeHelpers } from "../features/helpers/informationSlice";
 import { change as changeUser } from "../features/user/informationSlice";
 import { change as changeHelper } from "../features/helpers/informationSlice";
+import {
+  change as changeSynchronization,
+  clean as cleanSynchronization,
+} from "../features/user/synchronizationSlice";
 import changeGeneralInformation from "../helpers/changeGeneralInformation";
 import cleanData from "../helpers/cleanData";
 import { readFile, removeFile, writeFile } from "../helpers/offline";
@@ -96,14 +100,16 @@ async function unregisterBackgroundFetchAsync() {
 const Main = () => {
   const mode = useSelector((state) => state.mode);
   const user = useSelector((state) => state.user);
+  const helpers = useSelector((state) => state.helpers);
   const session = useSelector((state) => state.session);
   const activeGroup = useSelector((state) => state.activeGroup);
+  const synchronization = useSelector((state) => state.synchronization);
 
   const [connected, setConnected] = useState(false);
-  const [isTheAppOpen, setIsTheAppOpen] = useState(true);
 
   const dispatch = useDispatch();
   const navigation = useRef();
+  const pingRef = useRef();
 
   const [status, setStatus] = useState(null);
 
@@ -215,7 +221,7 @@ const Main = () => {
           navigation.current.replace(!session ? "SignIn" : "Home");
       }
     };
-    getAppInformation();
+    if (connected) getAppInformation();
   }, [connected]);
 
   useEffect(() => {
@@ -256,21 +262,35 @@ const Main = () => {
   }, []);
 
   useEffect(() => {
-    const getInformation = async () => {
-      const groups = user?.helpers?.map((h) => h.id);
-      if (user && activeGroup.active)
-        socket.emit("enter_room", { groups: [activeGroup.id] });
-      else if (user && user?.helpers?.length > 0)
-        socket.emit("enter_room", { groups });
-      await writeFile({
-        name: "work.json",
-        value: {
-          groups: activeGroup.id ? [activeGroup.id] : [],
-          helpers: groups,
-          email: user?.email,
-        },
-      });
+    const sendSocket = () => {
+      if (connected && session) {
+        const groups = helpers.map((h) => h.id);
+        if (user && activeGroup.active)
+          socket.emit("enter_room", { groups: [activeGroup.id] });
+        else if (user && helpers.length > 0)
+          socket.emit("enter_room", { groups });
+      }
+    };
 
+    const handleAppStateChange = (nextAppState) => {
+      if (nextAppState === "active") {
+        if (connected && session) sendSocket();
+      }
+    };
+    // Registra el oyente de cambio de estado de la aplicación
+    const appStateListener = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+
+    if (connected && session) sendSocket();
+
+    // Limpia el oyente al desmontar el componente
+    return () => appStateListener.remove();
+  }, [connected, session, helpers, activeGroup.active]);
+
+  useEffect(() => {
+    const getInformation = async () => {
       const res = await getUser({
         email: activeGroup.active ? activeGroup.email : user?.email,
       });
@@ -296,13 +316,23 @@ const Main = () => {
         dispatch(changeUser(res));
         dispatch(changeHelpers(res.helpers));
       }
+
+      const groups = helpers.map((h) => h.id);
+      await writeFile({
+        name: "work.json",
+        value: {
+          groups: activeGroup.id ? [activeGroup.id] : [],
+          helpers: groups,
+          email: user?.email,
+        },
+      });
     };
 
     // Maneja el cambio de estado de la aplicación
     const handleAppStateChange = (nextAppState) => {
       if (nextAppState === "active") {
         if (connected && session) getInformation();
-      };
+      }
     };
     // Registra el oyente de cambio de estado de la aplicación
     const appStateListener = AppState.addEventListener(
@@ -314,7 +344,51 @@ const Main = () => {
 
     // Limpia el oyente al desmontar el componente
     return () => appStateListener.remove();
-  }, [connected, session]);
+  }, [connected, session, activeGroup.active]);
+
+  useEffect(() => {
+    socket.on("connect", () => {
+      dispatch(
+        changeSynchronization({
+          ...synchronization,
+          connected: true,
+        })
+      );
+    });
+
+    socket.on("disconnect", () => {
+      dispatch(cleanSynchronization());
+    });
+  }, []);
+
+  useEffect(() => {
+    const groups = helpers.map((h) => h.id);
+    if (connected && session && (groups.length > 0 || activeGroup.active)) {
+      let pingSend = false;
+      const interval = setInterval(() => {
+        if (!pingSend) {
+          socket.emit("ping");
+          pingRef.current = new Date().getTime();
+          pingSend = true;
+        }
+      }, 1000);
+
+      socket.on("pong", (rooms) => {
+        const endTime = new Date().getTime();
+        const duration = endTime - pingRef.current;
+        pingSend = false;
+        dispatch(
+          changeSynchronization({
+            connected: true,
+            ping: duration,
+            lastConnection: new Date().getTime(),
+            rooms,
+          })
+        );
+      });
+      return () => clearInterval(interval);
+    }
+  }, [connected, session, helpers, activeGroup.active]);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -329,21 +403,20 @@ const Main = () => {
   useEffect(() => {
     const leave = async (g) => {
       socket.emit("leave", { groups: g });
-      const groups = user?.helpers?.map((h) => h.id);
+      const groups = helpers.map((h) => h.id);
       if (groups.length > 0) socket.emit("enter_room", { groups });
       changeGeneralInformation(dispatch, user);
       dispatch(inactiveGroup());
     };
     socket.on("close_room", leave);
     return () => socket.off("close_room", leave);
-  }, []);
+  }, [helpers]);
 
   useEffect(() => {
     const change = ({ data, confidential }) => {
       if (confidential && !activeGroup.active) {
         dispatch(changeUser(data));
         dispatch(changeHelper(data.helpers));
-        console.log(data.helpers);
       }
       if (activeGroup.active) {
         const user = checkUser(data);

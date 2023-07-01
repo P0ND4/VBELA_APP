@@ -3,10 +3,14 @@ import * as FileSystem from "expo-file-system";
 const directory = FileSystem.documentDirectory;
 
 const makeDirectory = async () => {
-  const dirInfo = await FileSystem.getInfoAsync(directory + "offline");
+  try {
+    const dirInfo = await FileSystem.getInfoAsync(directory + "offline");
 
-  if (!dirInfo.exists) {
-    await FileSystem.makeDirectoryAsync(directory + "offline");
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(directory + "offline");
+    }
+  } catch (e) {
+    console.log(e.message);
   }
 };
 

@@ -21,19 +21,21 @@ import { removeMany } from "../features/tables/ordersSlice";
 const dark = theme.colors.dark;
 const light = theme.colors.light;
 
-const height = Dimensions.get("window").height;
-
 const TableInformation = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
   const activeGroup = useSelector((state) => state.activeGroup);
-  const table = useSelector((state) =>
-    state.tables.find((table) => table.id === route.params.id)
-  );
+  const tableState = useSelector((state) => state.tables);
+  const orsState = useSelector((state) => state.orders);
 
-  const ors = useSelector((state) => state.orders);
-
+  const [table, setTable] = useState(null);
+  const [ors, setOrs] = useState([]);
   const [totalMoney, setTotalMoney] = useState(0);
+
+  useEffect(() => {
+    setTable(tableState.find((table) => table.id === route.params.id));
+    setOrs(orsState);
+  }, [tableState, orsState]);
 
   useEffect(() => {
     let amount = 0;
