@@ -312,6 +312,7 @@ const HomeScreen = ({ navigation }) => {
               <Image source={Premium} style={styles.premium} />
             </View>
           )}
+
           {(!activeGroup.active || activeGroup.accessToSupplier) && (
             <View>
               <ButtonStyle
@@ -543,7 +544,7 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     display: "none",
-  },
+  }
 });
 
 export default HomeScreen;

@@ -42,14 +42,12 @@ const StatisticScreen = ({ route, navigation }) => {
   const [OF, setOF] = useState(null);
   const [reserve, setReserve] = useState(null);
   const [nomenclature, setNomenclature] = useState({});
-  const [group, setGroup] = useState(null);
 
   useEffect(() => {
     setReserve(reserveState.find((r) => r.ref === route.params.ref));
     setNomenclature(nomenclatureState.find((n) => n.id === route.params.id));
-    setGroup(groupState.find((g) => g.ref === nomenclature.ref));
     setOF(orders.find((o) => o.ref === route.params.ref && o.pay === false))
-  },[reserveState, nomenclatureState, groupState, orders]);
+  },[reserveState, nomenclatureState, orders]);
 
   useEffect(() => {
     navigation.setOptions({ title: reserve?.fullName });
@@ -399,6 +397,7 @@ const StatisticScreen = ({ route, navigation }) => {
                 !OF ? light.main2 : mode === "light" ? dark.main2 : light.main4
               }
               onPress={() => {
+                const group = groupState.find((g) => g.ref === nomenclature.ref);
                 navigation.push("CreateOrder", {
                   editing: OF ? true : false,
                   id: OF ? OF.id : undefined,

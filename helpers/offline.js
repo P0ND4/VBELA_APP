@@ -45,7 +45,7 @@ export const removeFile = async ({ name }) => {
   await makeDirectory();
 
   const fileInfo = await findFile({ name });
-
+  
   if (fileInfo.exists) {
     await FileSystem.deleteAsync(
       FileSystem.documentDirectory + `offline/${name}`

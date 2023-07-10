@@ -4,7 +4,7 @@ import { socket } from "./socket";
 
 const production = false;
 
-const API = production ? "https://vbelapp.com" : "http://192.168.230.48:5031";
+const API = production ? "https://vbelapp.com" : "http://192.168.230.22:5031";
 
 export const connect = async ({ data = {}, url }) => {
   try {

@@ -294,7 +294,7 @@ const Main = () => {
       const res = await getUser({
         email: activeGroup.active ? activeGroup.email : user?.email,
       });
-
+      if (!activeGroup.active) await writeFile({ name: 'user.json', value: res });
       if (res.error && res?.details === "api") return;
 
       if (res.error && res.type === "Username does not exist" && connected) {
@@ -317,7 +317,7 @@ const Main = () => {
         dispatch(changeHelpers(res.helpers));
       }
 
-      const groups = helpers.map((h) => h.id);
+      const groups = helpers.map((h) => h.id);      
       await writeFile({
         name: "work.json",
         value: {
