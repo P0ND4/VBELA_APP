@@ -1,24 +1,24 @@
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
 import ExpoFileSystemStorage from "redux-persist-expo-filesystem";
-import modeSlice from "../features/settings/modeSlice";
-import informationUserSlice from "../features/user/informationSlice";
-import informationGroupsSlice from "../features/groups/informationSlice";
-import sessionSlice from "../features/user/sessionSlice";
-import nomenclaturesSlice from "../features/groups/nomenclaturesSlice";
-import reservationsSlice from "../features/groups/reservationsSlice";
-import helpersSlice from "../features/helpers/informationSlice";
-import informationJobSlice from "../features/function/informationSlice";
-import informationTablesSlice from "../features/tables/informationSlice";
-import ordersSlice from "../features/tables/ordersSlice";
-import economySlice from "../features/function/economySlice";
-import menuSlice from '../features/tables/menuSlice';
-import sectionSlice from '../features/tables/sectionSlice';
-import invoiceSlice from "../features/tables/invoiceSlice";
-import kitchenSlice from "../features/tables/kitchenSlice";
-import rosterSlice from "../features/function/rosterSlice";
-import peopleSlice from "../features/function/peopleSlice";
-import synchronizationSlice from "../features/user/synchronizationSlice";
+import modeSlice from "@features/settings/modeSlice";
+import informationUserSlice from "@features/user/informationSlice";
+import informationGroupsSlice from "@features/groups/informationSlice";
+import sessionSlice from "@features/user/sessionSlice";
+import nomenclaturesSlice from "@features/groups/nomenclaturesSlice";
+import reservationsSlice from "@features/groups/reservationsSlice";
+import helpersSlice from "@features/helpers/informationSlice";
+import informationJobSlice from "@features/function/informationSlice";
+import informationTablesSlice from "@features/tables/informationSlice";
+import ordersSlice from "@features/tables/ordersSlice";
+import economySlice from "@features/function/economySlice";
+import menuSlice from '@features/tables/menuSlice';
+import sectionSlice from '@features/tables/sectionSlice';
+import invoiceSlice from "@features/tables/invoiceSlice";
+import kitchenSlice from "@features/tables/kitchenSlice";
+import rosterSlice from "@features/function/rosterSlice";
+import peopleSlice from "@features/function/peopleSlice";
+import synchronizationSlice from "@features/user/synchronizationSlice";
 
 const reducers = combineReducers({
   mode: modeSlice, // Mode light and dark
@@ -45,6 +45,7 @@ const persistConfig = {
   key: "root",
   version: 1,
   storage: ExpoFileSystemStorage,
+  timeout: null
 };
 
 const persistedReducer = persistReducer(persistConfig, reducers);

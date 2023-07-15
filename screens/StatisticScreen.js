@@ -11,14 +11,14 @@ import {
 } from "react-native";
 import { useSelector } from "react-redux";
 import { ProgressChart, LineChart } from "react-native-chart-kit";
-import Layout from "../components/Layout";
-import TextStyle from "../components/TextStyle";
-import { thousandsSystem, randomColor, months } from "../helpers/libs";
+import Layout from "@components/Layout";
+import TextStyle from "@components/TextStyle";
+import { thousandsSystem, randomColor, months } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
-import theme from "../theme";
+import theme from "@theme";
 import { TouchableOpacity } from "react-native";
 
-import Premium from "../assets/icons/premium.png";
+import Premium from "@assets/icons/premium.png";
 
 const dark = theme.colors.dark;
 const light = theme.colors.light;
@@ -26,7 +26,7 @@ const light = theme.colors.light;
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
 
-const StatisticScreen = ({ navigation }) => {
+const Statistic = ({ navigation }) => {
   const mode = useSelector((state) => state.mode);
   const economy = useSelector((state) => state.economy);
   const orders = useSelector((state) => state.orders);
@@ -859,4 +859,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default StatisticScreen;
+export default Statistic;

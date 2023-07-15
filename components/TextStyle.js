@@ -1,5 +1,5 @@
-import { Text, StyleSheet, Dimensions } from 'react-native'
-import theme from '../theme';
+import { Text, StyleSheet } from 'react-native'
+import theme from '@theme';
 
 const light = theme.colors.light;
 

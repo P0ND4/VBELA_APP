@@ -1,35 +1,46 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { View, StyleSheet, Image, Modal, Dimensions } from "react-native";
-import { change as changeMode } from "../features/settings/modeSlice";
-import { change as changeUser } from "../features/user/informationSlice";
-import { change as changeHelper } from "../features/helpers/informationSlice";
-import { active } from "../features/user/sessionSlice";
-import { addUser } from "../api";
+import {
+  View,
+  StyleSheet,
+  Image,
+  Modal,
+  Dimensions,
+  Platform,
+} from "react-native";
+import { change as changeMode } from "@features/settings/modeSlice";
+import { change as changeUser } from "@features/user/informationSlice";
+import { change as changeHelper } from "@features/helpers/informationSlice";
+import { active } from "@features/user/sessionSlice";
+import { addUser } from "@api";
 import axios from "axios";
-import TextStyle from "../components/TextStyle";
-import Layout from "../components/Layout";
-import ButtonStyle from "../components/ButtonStyle";
+import TextStyle from "@components/TextStyle";
+import Layout from "@components/Layout";
+import ButtonStyle from "@components/ButtonStyle";
 
 import * as Google from "expo-auth-session/providers/google";
 import * as Facebook from "expo-auth-session/providers/facebook";
 import * as AuthSession from "expo-auth-session";
 
+import * as WebBrowser from "expo-web-browser";
+
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 
-import FacebookIcon from "../assets/icons/facebook-light.png";
-import GoogleIcon from "../assets/icons/google-light.png";
+import FacebookIcon from "@assets/icons/facebook-light.png";
+import GoogleIcon from "@assets/icons/google-light.png";
 
-import theme from "../theme";
-import Donut from "../components/Donut";
-import changeGeneralInformation from "../helpers/changeGeneralInformation";
+import theme from "@theme";
+import Donut from "@components/Donut";
+import changeGeneralInformation from "@helpers/changeGeneralInformation";
 
 const light = theme.colors.light;
 const dark = theme.colors.dark;
 
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
+
+WebBrowser.maybeCompleteAuthSession();
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -39,30 +50,61 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const SignInScreen = ({ navigation }) => {
+async function registerForPushNotificationsAsync() {
+  let token;
+
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "default",
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#EEEEEE",
+    });
+  }
+
+  if (Device.isDevice) {
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== "granted") {
+      alert("Hubo un error al obtener el token de la push notifications!");
+      return;
+    }
+    token = (
+      await Notifications.getExpoPushTokenAsync({
+        projectId: "57ec25bd-df0f-4333-a8c5-d7c01a3a6d82",
+      })
+    ).data;
+    console.log(token);
+  } else {
+    alert("Debe usar un dispositivo físico para las notificaciones automáticas");
+  }
+
+  return token;
+}
+
+const SignIn = ({ navigation }) => {
   const mode = useSelector((state) => state.mode);
 
   const [percentage, setPercentage] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState("");
-  const [accessTokenFacebook, setAccessTokenFacebook] = useState(null);
-  const [, facebookResponse, facebookPromptAsync] = Facebook.useAuthRequest(
-    {
+  const [facebookRequest, facebookResponse, facebookPromptAsync] =
+    Facebook.useAuthRequest({
       clientId: "1235340873743796",
-      redirectUri: AuthSession.makeRedirectUri({ useProxy: true }),
-    },
-    { useProxy: true }
-  );
+    });
 
-  const [accessTokenGoogle, setAccessTokenGoogle] = useState(null);
-  const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
-    expoClientId:
-      "939036008047-ho0ql8cpdg2m0ju1ok48pb4fnsbcl61h.apps.googleusercontent.com",
-    iosClientId:
-      "939036008047-m8go6arfvej2qfbv1aku6c93fhmh7bqn.apps.googleusercontent.com",
-    androidClientId:
-      "939036008047-q9jbdtk7vb7m1p8ermfhugjt4nrlorvl.apps.googleusercontent.com",
-  });
+  const [googleRequest, googleResponse, googlePromptAsync] =
+    Google.useAuthRequest({
+      iosClientId:
+        "939036008047-jbhg7knqhb3moc29inolre83ggdbvg2l.apps.googleusercontent.com",
+      androidClientId:
+        "939036008047-0eiq62hbv8v9km142upli8bubojj6ib0.apps.googleusercontent.com",
+    });
 
   const dispatch = useDispatch();
 
@@ -72,77 +114,70 @@ const SignInScreen = ({ navigation }) => {
     );
   }, []);
 
-  async function registerForPushNotificationsAsync() {
-    let token;
+  useEffect(() => {
+    if (
+      facebookResponse &&
+      facebookResponse.type === "success" &&
+      facebookResponse.authentication
+    ) {
+      (async () => {
+        setModalVisible(true);
+        setPercentage(20);
+        const response = await axios.get(
+          `https://graph.facebook.com/me?access_token=${facebookResponse.authentication.accessToken}&fields=id,name,email`
+        );
 
-    if (Device.isDevice) {
-      const { status: existingStatus } =
-        await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-      if (existingStatus !== "granted") {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-      if (finalStatus !== "granted") {
-        alert("Failed to get push token for push notification!");
-        return;
-      }
-      token = (await Notifications.getExpoPushTokenAsync()).data;
-      console.log(token);
-    } else {
-      alert("Must use physical device for Push Notifications");
+        setPercentage(40);
+        sendInformation(response);
+      })();
     }
-
-    return token;
-  }
+  }, [facebookResponse]);
 
   useEffect(() => {
-    if (facebookResponse?.type === "success") {
-      setAccessTokenFacebook(facebookResponse.authentication.accessToken);
-      accessTokenFacebook && facebookRegister();
+    if (
+      googleResponse &&
+      googleResponse.type === "success" &&
+      googleResponse.authentication
+    ) {
+      (async () => {
+        setModalVisible(true);
+        setPercentage(25);
+        const response = await axios.get(
+          "https://www.googleapis.com/userinfo/v2/me",
+          {
+            headers: {
+              Authorization: `Bearer ${googleResponse.authentication.accessToken}`,
+            },
+          }
+        );
+
+        setPercentage(50);
+        sendInformation(response);
+      })();
     }
-  }, [facebookResponse, accessTokenFacebook]);
+  }, [googleResponse]);
 
-  useEffect(() => {
-    if (googleResponse?.type === "success") {
-      setAccessTokenGoogle(googleResponse.authentication.accessToken);
-
-      accessTokenGoogle && googleRegister();
+  const facebookHandlePressAsync = async () => {
+    const result = await facebookPromptAsync();
+    if (result.type !== "success") {
+      alert("Hubo un problema al iniciar sesión con Facebook");
+      return;
     }
-  }, [googleResponse, accessTokenGoogle]);
-
-  const facebookRegister = async () => {
-    setModalVisible(true);
-    setPercentage(20);
-    const response = await axios.get(
-      `https://graph.facebook.com/me?access_token=${accessTokenFacebook}&fields=id,name,email`
-    );
-
-    setPercentage(40);
-    sendInformation(response);
   };
 
-  const googleRegister = async () => {
-    setModalVisible(true);
-    setPercentage(25);
-    const response = await axios.get(
-      "https://www.googleapis.com/userinfo/v2/me",
-      {
-        headers: {
-          Authorization: `Bearer ${accessTokenGoogle}`,
-        },
-      }
-    );
-
-    setPercentage(50);
-    sendInformation(response);
+  const googleHandlePessAsync = async () => {
+    const result = await googlePromptAsync();
+    if (result.type !== "success") {
+      alert("Hubo un problema al iniciar sesión con Google");
+      return;
+    }
   };
 
   const sendInformation = async (response) => {
     const email = response.data.email;
     let data = await addUser({ email, expoID: expoPushToken });
 
-    if (data.error && data.details === 'api') {
+    if (data.error && data.details === "api") {
       setModalVisible(false);
       return setPercentage(0);
     }
@@ -172,7 +207,8 @@ const SignInScreen = ({ navigation }) => {
       </TextStyle>
       <View style={styles.buttonContainer}>
         <ButtonStyle
-          onPress={() => googlePromptAsync()}
+          disable={!googleRequest}
+          onPress={() => googleHandlePessAsync()}
           backgroundColor={mode === "dark" ? dark.main2 : light.main5}
         >
           <Image
@@ -187,7 +223,8 @@ const SignInScreen = ({ navigation }) => {
           </TextStyle>
         </ButtonStyle>
         <ButtonStyle
-          onPress={() => facebookPromptAsync()}
+          disable={!facebookRequest}
+          onPress={() => facebookHandlePressAsync()}
           backgroundColor={mode === "dark" ? dark.main2 : light.main5}
         >
           <Image
@@ -242,4 +279,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SignInScreen;
+export default SignIn;

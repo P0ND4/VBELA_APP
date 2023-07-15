@@ -1,4 +1,4 @@
-import { editHelper, getUser } from "../api";
+import { editHelper, getUser } from "@api";
 import sendNotification from "./sendNotification";
 
 export default helperCameOut = async (activeGroup, user) => {

@@ -1,7 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
 import { useSelector } from "react-redux";
-import theme from "../theme";
+import theme from "@theme";
 
 const light = theme.colors.light;
 const dark = theme.colors.dark;

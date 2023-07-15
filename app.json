@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "VBELA",
-    "slug": "VBELA",
+    "slug": "vbela",
     "version": "2.4.7",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -34,7 +34,6 @@
         "backgroundColor": "#FFFFFF"
       }
     },
-    "scheme": "com.app.vbela",
     "web": {
       "favicon": "./assets/favicon.png"
     },
@@ -55,6 +54,7 @@
     "notification": {
       "androidMode" : "default",
       "icon" : "./assets/notification-icon.png"
-    }
+    },
+    "scheme": ["vbela","fb1235340873743796"]
   }
 }

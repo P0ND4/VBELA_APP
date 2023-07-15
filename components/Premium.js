@@ -8,12 +8,12 @@ import {
   Animated,
   TouchableOpacity,
 } from "react-native";
-import Basic from "../assets/plan/Basic.png";
-import PremiumIMG from "../assets/plan/Premium.png";
-import Business from "../assets/plan/Business.png";
-import Vip from "../assets/plan/Vip.jpg";
+import Basic from "@assets/plan/Basic.png";
+import PremiumIMG from "@assets/plan/Premium.png";
+import Business from "@assets/plan/Business.png";
+import Vip from "@assets/plan/Vip.jpg";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import theme from "../theme";
+import theme from "@theme";
 import { useRef } from "react";
 import TextStyle from "./TextStyle";
 

@@ -1,17 +1,17 @@
-import { clean as cleanUser } from "../features/user/informationSlice";
-import { clean as cleanReservations } from "../features/groups/reservationsSlice";
-import { clean as cleanNomenclatures } from "../features/groups/nomenclaturesSlice";
-import { clean as cleanGroups } from "../features/groups/informationSlice";
-import { clean as cleanHelpers } from "../features/helpers/informationSlice";
-import { clean as cleanTables } from "../features/tables/informationSlice";
-import { clean as cleanOrders } from "../features/tables/ordersSlice";
-import { clean as cleanKitchen } from "../features/tables/kitchenSlice";
-import { clean as cleanMenu } from "../features/tables/menuSlice";
-import { clean as cleanEconomy } from "../features/function/economySlice";
-import { inactive as inactiveSession } from "../features/user/sessionSlice";
-import { inactive as inactiveGroup } from "../features/function/informationSlice";
-import { clean as cleanRoster } from "../features/function/rosterSlice";
-import { clean as cleanPeople } from "../features/function/peopleSlice";
+import { clean as cleanUser } from "@features/user/informationSlice";
+import { clean as cleanReservations } from "@features/groups/reservationsSlice";
+import { clean as cleanNomenclatures } from "@features/groups/nomenclaturesSlice";
+import { clean as cleanGroups } from "@features/groups/informationSlice";
+import { clean as cleanHelpers } from "@features/helpers/informationSlice";
+import { clean as cleanTables } from "@features/tables/informationSlice";
+import { clean as cleanOrders } from "@features/tables/ordersSlice";
+import { clean as cleanKitchen } from "@features/tables/kitchenSlice";
+import { clean as cleanMenu } from "@features/tables/menuSlice";
+import { clean as cleanEconomy } from "@features/function/economySlice";
+import { inactive as inactiveSession } from "@features/user/sessionSlice";
+import { inactive as inactiveGroup } from "@features/function/informationSlice";
+import { clean as cleanRoster } from "@features/function/rosterSlice";
+import { clean as cleanPeople } from "@features/function/peopleSlice";
 
 export default cleanData = (dispatch) => {
   dispatch(inactiveSession());

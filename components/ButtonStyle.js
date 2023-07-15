@@ -1,6 +1,6 @@
 import { TouchableOpacity, View, StyleSheet } from "react-native";
 import TextStyle from "./TextStyle";
-import theme from "../theme";
+import theme from "@theme";
 
 const light = theme.colors.light;
 
@@ -25,12 +25,13 @@ const ButtonStyle = ({
   right,
   left,
   centerText = true,
+  disable = false,
   style,
 }) => {
   const stylesTaken = [styles.default, { backgroundColor }, style];
 
   return (
-    <TouchableOpacity style={stylesTaken} onPress={onPress}>
+    <TouchableOpacity disabled={disable} style={stylesTaken} onPress={onPress}>
       {children && <TextStyle center={centerText}>{children}</TextStyle>}
       <View style={styles.elementsContainer}>
         {left && left()}

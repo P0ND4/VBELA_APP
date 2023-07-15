@@ -9,27 +9,28 @@ import {
   Image,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { change as changeMode } from "../features/settings/modeSlice";
-import { inactive as inactiveGroup } from "../features/function/informationSlice";
-import { change as changeUser } from "../features/user/informationSlice";
-import { editUser } from "../api";
-import { months } from "../helpers/libs";
+import { inactive as inactiveGroup } from "@features/function/informationSlice";
+import { editUser } from "@api";
+import { months } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
-import { socket } from "../socket";
-import Layout from "../components/Layout";
+import { socket } from "@socket";
+import Layout from "@components/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import theme from "../theme";
-import TextStyle from "../components/TextStyle";
-import ButtonStyle from "../components/ButtonStyle";
-import changeGeneralInformation from "../helpers/changeGeneralInformation";
-import helperCameOut from "../helpers/helperCameOut";
-import cleanData from "../helpers/cleanData";
-import Payu from "../components/Payu";
-import PremiumScreen from "../components/Premium";
+import theme from "@theme";
+import TextStyle from "@components/TextStyle";
+import ButtonStyle from "@components/ButtonStyle";
+import changeGeneralInformation from "@helpers/changeGeneralInformation";
+import helperCameOut from "@helpers/helperCameOut";
+import cleanData from "@helpers/cleanData";
+import Payu from "@components/Payu";
+//import PremiumScreen from "@components/Premium";
 
-import Premium from "../assets/icons/premium.png";
+import WIFI_FAST from "@assets/wifi/wifi-fast.png";
+import WIFI_NORMAL from "@assets/wifi/wifi-normal.png";
+import WIFI_SLOW from "@assets/wifi/wifi-slow.png";
+import NO_WIFI from "@assets/wifi/no-wifi.png";
 
-import * as WebBrowser from "expo-web-browser";
+import Premium from "@assets/icons/premium.png";
 
 const light = theme.colors.light;
 const dark = theme.colors.dark;
@@ -37,11 +38,12 @@ const dark = theme.colors.dark;
 const width = Dimensions.get("window").width;
 const height = Dimensions.get("window").height;
 
-const HomeScreen = ({ navigation }) => {
+const Home = ({ navigation }) => {
   const mode = useSelector((state) => state.mode);
   const groups = useSelector((state) => state.groups);
   const user = useSelector((state) => state.user);
   const helpers = useSelector((state) => state.helpers);
+  const synchronization = useSelector((state) => state.synchronization);
 
   const [month, setMonth] = useState(0);
   const [year, setYear] = useState(2023);
@@ -53,7 +55,6 @@ const HomeScreen = ({ navigation }) => {
 
   const pickerYearRef = useRef();
   const pickerMonthRef = useRef();
-  const timerChangeMode = useRef();
 
   useEffect(() => {
     const date = new Date();
@@ -73,20 +74,6 @@ const HomeScreen = ({ navigation }) => {
   const defineColor = () => (mode === "light" ? light.textDark : dark.main4);
 
   const dispatch = useDispatch();
-
-  const changeModeState = async () => {
-    clearTimeout(timerChangeMode.current);
-
-    const newMode = mode === "light" ? "dark" : "light";
-    dispatch(changeMode(newMode));
-
-    timerChangeMode.current = setTimeout(async () => {
-      if (user.mode !== newMode) {
-        dispatch(changeUser({ ...user, mode: newMode }));
-        await editUser({ email: user.email, change: { mode: newMode } });
-      }
-    }, 1000);
-  };
 
   const logOut = () => {
     navigation.replace("SignIn");
@@ -182,21 +169,9 @@ const HomeScreen = ({ navigation }) => {
               <Image source={Premium} style={[styles.premium, { right: -6 }]} />
             </TouchableOpacity>
           )}
-          <TouchableOpacity
-            onPress={async () =>
-              await WebBrowser.openBrowserAsync("https://wa.me/+573207623454")
-            }
-          >
+          <TouchableOpacity onPress={() => navigation.push("Setting")}>
             <Ionicons
-              name="logo-whatsapp"
-              size={38}
-              color={light.main2}
-              style={styles.icons}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => changeModeState()}>
-            <Ionicons
-              name={mode === "light" ? "moon" : "sunny"}
+              name="settings-outline"
               size={38}
               color={light.main2}
               style={styles.icons}
@@ -496,6 +471,38 @@ const HomeScreen = ({ navigation }) => {
       </View>
       {/*<PremiumScreen/> */}
       <Payu activePayment={false} />
+      {activeGroup.active ||
+        (helpers.length > 0 && (
+          <View style={{ position: "relative", bottom: 20 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                position: "absolute",
+              }}
+            >
+              <Image
+                source={
+                  synchronization.connected === false
+                    ? NO_WIFI
+                    : synchronization.ping <= 200
+                    ? WIFI_FAST
+                    : synchronization.ping <= 500
+                    ? WIFI_NORMAL
+                    : WIFI_SLOW
+                }
+                style={{ width: 20, height: 20 }}
+              />
+              <TextStyle
+                customStyle={{ marginLeft: 6 }}
+                color={mode === "light" ? light.textDark : dark.textWhite}
+                verySmall
+              >
+                {synchronization.connected ? `${synchronization.ping} ms` : 'OFFlINE'} 
+              </TextStyle>
+            </View>
+          </View>
+        ))}
     </Layout>
   );
 };
@@ -544,7 +551,7 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     display: "none",
-  }
+  },
 });
 
-export default HomeScreen;
+export default Home;

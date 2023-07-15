@@ -3,52 +3,55 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { getRule, getUser } from "../api";
-import { active, inactive } from "../features/function/informationSlice";
-import { change as changeHelpers } from "../features/helpers/informationSlice";
-import { change as changeUser } from "../features/user/informationSlice";
-import { change as changeHelper } from "../features/helpers/informationSlice";
+import { getRule, getUser } from "@api";
+import { active, inactive, inactive as inactiveGroup } from "@features/function/informationSlice";
+import { change as changeHelper, change as changeHelpers } from "@features/helpers/informationSlice";
+import { change as changeUser } from "@features/user/informationSlice";
 import {
   change as changeSynchronization,
   clean as cleanSynchronization,
-} from "../features/user/synchronizationSlice";
-import changeGeneralInformation from "../helpers/changeGeneralInformation";
-import cleanData from "../helpers/cleanData";
-import { readFile, removeFile, writeFile } from "../helpers/offline";
-import { inactive as inactiveGroup } from "../features/function/informationSlice";
-import CreateEconomy from "../screens/CreateEconomyScreen";
-import CreateHelper from "../screens/CreateHelperScreen";
-import CreateOrder from "../screens/CreateOrderScreen";
-import CreatePercentage from "../screens/CreatePercentageScreen";
-import CreatePerson from "../screens/CreatePersonScreen";
-import CreatePlace from "../screens/CreatePlaceScreen";
-import CreateProduct from "../screens/CreateProductScreen";
-import CreateReserve from "../screens/CreateReserveScreen";
-import CreateRoster from "../screens/CreateRosterScreen";
-import CreateTable from "../screens/CreateTableScreen";
-import CreateZoneScreen from "../screens/CreateZoneScreen";
-import EditInvoice from "../screens/EditInvoiceScreen";
-import EditOrder from "../screens/EditOrderScreen";
-import Event from "../screens/EventScreen";
-import Helper from "../screens/HelperScreen";
-import Home from "../screens/HomeScreen";
-import InvoiceByEmail from "../screens/InvoiceByEmailScreen";
-import Invoice from "../screens/InvoiceScreen";
-import Kitchen from "../screens/KitchenScreen";
-import OrderCompletion from "../screens/OrderCompletionScreen";
-import PeopleInformation from "../screens/PeopleInformationScreen";
-import People from "../screens/PeopleScreen";
-import PlaceInformation from "../screens/PlaceInformationScreen";
-import Place from "../screens/PlaceScreen";
-import PreviewOrder from "../screens/PreviewOrderScreen";
-import ReserveInformation from "../screens/ReserveInformationScreen";
-import SignIn from "../screens/SignInScreen";
-import Statistic from "../screens/StatisticScreen";
-import TableInformation from "../screens/TableInformationScreen";
-import Tables from "../screens/TablesScreen";
-import { socket } from "../socket";
-import theme from "../theme";
-import version from "../version.json";
+} from "@features/user/synchronizationSlice";
+import changeGeneralInformation from "@helpers/changeGeneralInformation";
+import cleanData from "@helpers/cleanData";
+import { readFile, removeFile, writeFile } from "@helpers/offline";
+import Home from "@screens/HomeScreen";
+import SignIn from "@screens/SignInScreen";
+import Statistic from "@screens/StatisticScreen";
+import CreateEconomy from "@screens/event/CreateEconomyScreen";
+import CreateRoster from "@screens/event/CreateRosterScreen";
+import Event from "@screens/event/EventScreen";
+import CreateHelper from "@screens/helper/CreateHelperScreen";
+import Helper from "@screens/helper/HelperScreen";
+import Inventory from "@screens/inventory/InventoryScreen";
+import RecipeCost from "@screens/inventory/RecipeCostScreen";
+import RecipeInformation from "@screens/inventory/RecipeInformationScreen";
+import Recipe from "@screens/inventory/RecipeScreen";
+import CreatePerson from "@screens/people/CreatePersonScreen";
+import PeopleInformation from "@screens/people/PeopleInformationScreen";
+import People from "@screens/people/PeopleScreen";
+import CreatePlace from "@screens/reservation/CreatePlaceScreen";
+import CreateReserve from "@screens/reservation/CreateReserveScreen";
+import CreateZone from "@screens/reservation/CreateZoneScreen";
+import PlaceInformation from "@screens/reservation/PlaceInformationScreen";
+import Place from "@screens/reservation/PlaceScreen";
+import ReserveInformation from "@screens/reservation/ReserveInformationScreen";
+import Setting from "@screens/setting/SettingScreen";
+import CreateOrder from "@screens/table/CreateOrderScreen";
+import CreatePercentage from "@screens/table/CreatePercentageScreen";
+import CreateProduct from "@screens/table/CreateProductScreen";
+import CreateTable from "@screens/table/CreateTableScreen";
+import EditInvoice from "@screens/table/EditInvoiceScreen";
+import EditOrder from "@screens/table/EditOrderScreen";
+import InvoiceByEmail from "@screens/table/InvoiceByEmailScreen";
+import Invoice from "@screens/table/InvoiceScreen";
+import Kitchen from "@screens/table/KitchenScreen";
+import OrderCompletion from "@screens/table/OrderCompletionScreen";
+import PreviewOrder from "@screens/table/PreviewOrderScreen";
+import TableInformation from "@screens/table/TableInformationScreen";
+import Tables from "@screens/table/TablesScreen";
+import { socket } from "@socket";
+import theme from "@theme";
+import version from "@version.json";
 
 import * as BackgroundFetch from "expo-background-fetch";
 import * as Notifications from "expo-notifications";
@@ -294,7 +297,8 @@ const Main = () => {
       const res = await getUser({
         email: activeGroup.active ? activeGroup.email : user?.email,
       });
-      if (!activeGroup.active) await writeFile({ name: 'user.json', value: res });
+      if (!activeGroup.active)
+        await writeFile({ name: "user.json", value: res });
       if (res.error && res?.details === "api") return;
 
       if (res.error && res.type === "Username does not exist" && connected) {
@@ -317,7 +321,7 @@ const Main = () => {
         dispatch(changeHelpers(res.helpers));
       }
 
-      const groups = helpers.map((h) => h.id);      
+      const groups = helpers.map((h) => h.id);
       await writeFile({
         name: "work.json",
         value: {
@@ -352,6 +356,7 @@ const Main = () => {
         changeSynchronization({
           ...synchronization,
           connected: true,
+          ping: 100
         })
       );
     });
@@ -363,7 +368,12 @@ const Main = () => {
 
   useEffect(() => {
     const groups = helpers.map((h) => h.id);
-    if (connected && session && (groups.length > 0 || activeGroup.active)) {
+    if (
+      connected &&
+      session &&
+      (groups.length > 0 || activeGroup.active) &&
+      synchronization.connected
+    ) {
       let pingSend = false;
       const interval = setInterval(() => {
         if (!pingSend) {
@@ -371,7 +381,7 @@ const Main = () => {
           pingRef.current = new Date().getTime();
           pingSend = true;
         }
-      }, 1000);
+      }, 2000);
 
       socket.on("pong", (rooms) => {
         const endTime = new Date().getTime();
@@ -388,7 +398,13 @@ const Main = () => {
       });
       return () => clearInterval(interval);
     }
-  }, [connected, session, helpers, activeGroup.active]);
+  }, [
+    connected,
+    session,
+    helpers,
+    activeGroup.active,
+    synchronization.connected,
+  ]);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -461,6 +477,11 @@ const Main = () => {
           component={Statistic}
           options={{ title: "Estadísticas" }}
         />
+        <Stack.Screen
+          name="Setting"
+          component={Setting}
+          options={{ title: "Preferencias" }}
+        />
         <Stack.Screen name="Place" component={Place} />
         <Stack.Screen name="PlaceInformation" component={PlaceInformation} />
         <Stack.Screen
@@ -470,7 +491,7 @@ const Main = () => {
         />
         <Stack.Screen
           name="CreateZone"
-          component={CreateZoneScreen}
+          component={CreateZone}
           options={{ title: "Creación de zona" }}
         />
         <Stack.Screen
@@ -562,6 +583,18 @@ const Main = () => {
           component={PeopleInformation}
           options={{ title: "Detalles" }}
         />
+        <Stack.Screen
+          name="Inventory"
+          component={Inventory}
+          options={{ title: "Inventario" }}
+        />
+        <Stack.Screen
+          name="Recipe"
+          component={Recipe}
+          options={{ title: "Recetas" }}
+        />
+        <Stack.Screen name="RecipeInformation" component={RecipeInformation} />
+        <Stack.Screen name="RecipeCost" component={RecipeCost} />
       </Stack.Group>
       <Stack.Screen
         name="Event"

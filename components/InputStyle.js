@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
-import theme from "../theme";
+import theme from "@theme";
 
 const light = theme.colors.light;
 const dark = theme.colors.dark;
@@ -49,7 +49,7 @@ const InputStyle = ({
     styles.defaultInput,
     { color: mode === "light" ? light.textDark : dark.textWhite },
     left ? { paddingLeft: 0 } : { paddingLeft: 12 },
-    right ? { paddingRigh: 0, maxWidth: "70%" } : { paddingRight: 12 },
+    right ? { paddingRight: 0, maxWidth: "70%" } : { paddingRight: 12 },
   ];
 
   const stylesTakenContainer = [styles.defaultContainer];
