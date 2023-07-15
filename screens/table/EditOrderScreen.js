@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 import { thousandsSystem } from "@helpers/libs";
 import TextStyle from "@components/TextStyle";
 import InputStyle from "@components/InputStyle";
@@ -19,7 +19,7 @@ const EditOrder = ({ route, navigation }) => {
   const selection = route.params.selection;
   const newSelection = route.params.newSelection;
   const setNewSelection = route.params.setNewSelection;
-  const editing = route.params.editing;
+  const setNewSelectionFromPreviewOrder = route.params.setNewSelectionFromPreviewOrder;
 
   const [amount, setAmount] = useState(
     route.params.amount ? thousandsSystem(route.params.amount) : ""
@@ -100,6 +100,7 @@ const EditOrder = ({ route, navigation }) => {
               })
               setSelection(items);
               setNewSelection(itemsNew);
+              setNewSelectionFromPreviewOrder(itemsNew);
               navigation.pop();
             }}
           >
@@ -123,6 +124,7 @@ const EditOrder = ({ route, navigation }) => {
             });
             setSelection(items);
             setNewSelection(itemsNew);
+            setNewSelectionFromPreviewOrder(itemsNew);
             navigation.pop();
           }}
         >

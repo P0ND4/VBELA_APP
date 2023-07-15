@@ -28,6 +28,7 @@ const PreviewOrder = ({ route, navigation }) => {
   const sendToKitchen = route.params.sendToKitchen;
   const editing = route.params.editing;
 
+  const [newSelection, setNewSelection] = useState(route.params.newSelection);
   const [selection, setSelection] = useState(mainSelection);
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [openEditOrder, setOpenEditOrder] = useState(null);
@@ -138,9 +139,9 @@ const PreviewOrder = ({ route, navigation }) => {
                           data: "observation",
                           id: item.id,
                           observation: item.observation,
-                          editing,
                           setSelection,
                           selection,
+                          setNewSelectionFromPreviewOrder: setNewSelection,
                           newSelection: route.params.newSelection,
                           setNewSelection: route.params.setNewSelection
                         })
@@ -504,7 +505,7 @@ const PreviewOrder = ({ route, navigation }) => {
               borderColor: light.main2,
               width: SCREEN_WIDTH / 2.8,
             }}
-            onPress={() => sendToKitchen()}
+            onPress={() => sendToKitchen(selection, newSelection)}
           >
             <TextStyle verySmall color={light.main2}>
               Enviar a cocina
@@ -525,8 +526,8 @@ const PreviewOrder = ({ route, navigation }) => {
                 tip,
                 method: paymentMethod,
               };
-              if (editing) updateOrder(obj);
-              else saveOrder(obj);
+              if (editing) updateOrder(obj, selection);
+              else saveOrder(obj, selection);
             }}
           >
             <TextStyle verySmall color={light.main2}>

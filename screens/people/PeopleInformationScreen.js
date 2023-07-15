@@ -66,7 +66,7 @@ const PeopleInformation = ({ route, navigation }) => {
             const month = new Date(r.creationDate).getMonth() + 1;
 
             return {
-              quantity: r.people,
+              quantity: parseInt(r.people),
               date: `${("0" + day).slice(-2)}-${("0" + month).slice(-2)}`,
               total: r.discount ? r.amountWithDiscount : r.amount,
               type: "reservations",

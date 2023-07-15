@@ -152,13 +152,13 @@ const CreateOrder = ({ route, navigation }) => {
     }
   };
 
-  const saveOrder = async (dat) => {
+  const saveOrder = async (dat, selection) => {
     const d = extractObject(dat);
     const id = d.ID ? d.ID : random(20);
 
     const person = folk.find((p) => p.id === route.params.ref);
 
-    if (orders.find((order) => order.id === id)) return saveOrder(dat);
+    if (orders.find((order) => order.id === id)) return saveOrder(dat, selection);
     const data = {};
     const total = getTotal(d.discount, selection, d.tip, d.tax);
 
@@ -189,7 +189,7 @@ const CreateOrder = ({ route, navigation }) => {
     });
   };
 
-  const updateOrder = async (dat) => {
+  const updateOrder = async (dat, selection) => {
     const data = {};
     const d = extractObject(dat);
     const total = getTotal(d.discount, selection, d.tip, d.tax);
@@ -228,7 +228,7 @@ const CreateOrder = ({ route, navigation }) => {
     });
   };
 
-  const sendToKitchen = async () => {
+  const sendToKitchen = async (selection, newSelection) => {
     if (newSelection.length > 0) {
       const orderID = route.params.id ? route.params.id : random(20);
       const kitchenID = random(20);
@@ -248,8 +248,8 @@ const CreateOrder = ({ route, navigation }) => {
       dispatch(addK(obj));
 
       if (information.editing)
-        await updateOrder({ pay: false, isSendtoKitchen: true });
-      else await saveOrder({ pay: false, ID: orderID, isSendtoKitchen: true });
+        await updateOrder({ pay: false, isSendtoKitchen: true }, selection);
+      else await saveOrder({ pay: false, ID: orderID, isSendtoKitchen: true }, selection);
       await addKitchen({
         email: activeGroup.active ? activeGroup.email : user.email,
         kitchen: obj,
@@ -381,7 +381,7 @@ const CreateOrder = ({ route, navigation }) => {
               borderColor: light.main2,
               width: "40%",
             }}
-            onPress={async () => sendToKitchen()}
+            onPress={async () => sendToKitchen(selection, newSelection)}
           >
             <TextStyle verySmall color={light.main2}>
               Enviar a cocina
