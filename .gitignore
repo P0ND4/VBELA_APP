@@ -9,7 +9,11 @@ npm-debug.*
 *.mobileprovision
 *.orig.*
 web-build/
- 
+.env
+.env.production
+google-services.json
+package-lock.json
+android
+
 # macOS
 .DS_Store
-android

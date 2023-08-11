@@ -2,22 +2,24 @@ import axios from "axios";
 import { writeFile, readFile } from "./helpers/offline";
 import { socket } from "./socket";
 
-const production = false;
+const API = process.env.EXPO_PUBLIC_API_URL;
 
-const API = production ? "https://vbelapp.com" : "http://192.168.230.22:5031";
-
-export const connect = async ({ data = {}, url }) => {
+export const connect = async ({ data = {}, url, returnData = true }) => {
   try {
     const result = await axios.post(`${API}${url}`, data, { timeout: 3000 });
 
     if (data?.groups?.length > 0)
-      socket.emit("change", { data: result.data, groups: data.groups, confidential: url === '/helper/edit' });
+      socket.emit("change", {
+        data: result.data,
+        groups: data.groups,
+        confidential: url === "/helper/edit",
+      });
 
     return await result.data;
   } catch (e) {
     const error = { error: true, details: "api", type: e.message };
 
-    if (url === "/user" || url === "/user/add" || url === "/rule") return error;
+    if (!returnData) return error;
 
     const r = await readFile({ name: "data.json" });
     const value = !r.error ? r : [];
@@ -69,10 +71,11 @@ export const connect = async ({ data = {}, url }) => {
   }
 };
 
-export const getUser = async (data) => await connect({ data, url: "/user" });
+export const getUser = async (data) =>
+  await connect({ data, url: "/user", returnData: false });
 
 export const addUser = async (data) =>
-  await connect({ data, url: "/user/add" });
+  await connect({ data, url: "/user/add", returnData: false });
 
 export const editUser = async (data) =>
   await connect({ data, url: "/user/edit" });
@@ -146,7 +149,8 @@ export const removeEconomy = async (data) =>
 export const removeManyEconomy = async (data) =>
   await connect({ data, url: "/economy/remove/many" });
 
-export const getRule = async () => await connect({ url: "/rule" });
+export const getRule = async () =>
+  await connect({ url: "/rule", returnData: false });
 
 export const addMenu = async (data) =>
   await connect({ data, url: "/menu/add" });
@@ -186,3 +190,15 @@ export const editPerson = async (data) =>
 
 export const removePerson = async (data) =>
   await connect({ data, url: "/people/remove" });
+
+export const verifyPhoneNumber = async ({ phoneNumber, channel }) =>
+  await connect({
+    url: `/verify/phone/${phoneNumber}/${channel}`,
+    returnData: false,
+  });
+
+export const checkPhoneNumberVerification = async ({ phoneNumber, code }) =>
+  await connect({
+    url: `/check/phone/${phoneNumber}/${code}`,
+    returnData: false,
+  });

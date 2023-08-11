@@ -4,14 +4,6 @@ import { NavigationContainer } from "@react-navigation/native";
 import { Provider } from "react-redux";
 import { store, persistor } from "./app/store";
 import Main from "./routes/Main";
-import { GoogleSignin } from "react-native-google-signin";
-
-GoogleSignin.configure({
-  androidClientId:
-    "939036008047-q9jbdtk7vb7m1p8ermfhugjt4nrlorvl.apps.googleusercontent.com",
-  iosClientId:
-    "939036008047-m8go6arfvej2qfbv1aku6c93fhmh7bqn.apps.googleusercontent.com",
-});
 
 export default function App() {
   LogBox.ignoreLogs([

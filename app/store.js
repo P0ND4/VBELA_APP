@@ -19,6 +19,8 @@ import kitchenSlice from "@features/tables/kitchenSlice";
 import rosterSlice from "@features/function/rosterSlice";
 import peopleSlice from "@features/function/peopleSlice";
 import synchronizationSlice from "@features/user/synchronizationSlice";
+import languageSlice from "@features/settings/languageSlice";
+import settingsSlice from "@features/settings/settingsSlice";
 
 const reducers = combineReducers({
   mode: modeSlice, // Mode light and dark
@@ -38,7 +40,9 @@ const reducers = combineReducers({
   kitchen: kitchenSlice,
   roster: rosterSlice,
   people: peopleSlice,
-  synchronization: synchronizationSlice
+  synchronization: synchronizationSlice,
+  language: languageSlice,
+  settings: settingsSlice
 });
 
 const persistConfig = {

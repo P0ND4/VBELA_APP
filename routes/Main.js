@@ -1,11 +1,16 @@
-import NetInfo from "@react-native-community/netinfo";
-import { createStackNavigator } from "@react-navigation/stack";
-import { useEffect, useRef, useState } from "react";
-import { AppState } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
-import { getRule, getUser } from "@api";
-import { active, inactive, inactive as inactiveGroup } from "@features/function/informationSlice";
-import { change as changeHelper, change as changeHelpers } from "@features/helpers/informationSlice";
+import { editUser, getRule, getUser } from "@api";
+import {
+  active,
+  inactive,
+  inactive as inactiveGroup,
+} from "@features/function/informationSlice";
+import {
+  change as changeHelper,
+  change as changeHelpers,
+} from "@features/helpers/informationSlice";
+import { change as changeLanguage } from "@features/settings/languageSlice";
+import { change as changeMode } from "@features/settings/modeSlice";
+import { change as changeSettings } from "@features/settings/settingsSlice";
 import { change as changeUser } from "@features/user/informationSlice";
 import {
   change as changeSynchronization,
@@ -14,48 +19,54 @@ import {
 import changeGeneralInformation from "@helpers/changeGeneralInformation";
 import cleanData from "@helpers/cleanData";
 import { readFile, removeFile, writeFile } from "@helpers/offline";
-import Home from "@screens/HomeScreen";
-import SignIn from "@screens/SignInScreen";
-import Statistic from "@screens/StatisticScreen";
-import CreateEconomy from "@screens/event/CreateEconomyScreen";
-import CreateRoster from "@screens/event/CreateRosterScreen";
-import Event from "@screens/event/EventScreen";
-import CreateHelper from "@screens/helper/CreateHelperScreen";
-import Helper from "@screens/helper/HelperScreen";
-import Inventory from "@screens/inventory/InventoryScreen";
-import RecipeCost from "@screens/inventory/RecipeCostScreen";
-import RecipeInformation from "@screens/inventory/RecipeInformationScreen";
-import Recipe from "@screens/inventory/RecipeScreen";
-import CreatePerson from "@screens/people/CreatePersonScreen";
-import PeopleInformation from "@screens/people/PeopleInformationScreen";
-import People from "@screens/people/PeopleScreen";
-import CreatePlace from "@screens/reservation/CreatePlaceScreen";
-import CreateReserve from "@screens/reservation/CreateReserveScreen";
-import CreateZone from "@screens/reservation/CreateZoneScreen";
-import PlaceInformation from "@screens/reservation/PlaceInformationScreen";
-import Place from "@screens/reservation/PlaceScreen";
-import ReserveInformation from "@screens/reservation/ReserveInformationScreen";
-import Setting from "@screens/setting/SettingScreen";
-import CreateOrder from "@screens/table/CreateOrderScreen";
-import CreatePercentage from "@screens/table/CreatePercentageScreen";
-import CreateProduct from "@screens/table/CreateProductScreen";
-import CreateTable from "@screens/table/CreateTableScreen";
-import EditInvoice from "@screens/table/EditInvoiceScreen";
-import EditOrder from "@screens/table/EditOrderScreen";
-import InvoiceByEmail from "@screens/table/InvoiceByEmailScreen";
-import Invoice from "@screens/table/InvoiceScreen";
-import Kitchen from "@screens/table/KitchenScreen";
-import OrderCompletion from "@screens/table/OrderCompletionScreen";
-import PreviewOrder from "@screens/table/PreviewOrderScreen";
-import TableInformation from "@screens/table/TableInformationScreen";
-import Tables from "@screens/table/TablesScreen";
+import NetInfo from "@react-native-community/netinfo";
+import {
+  CardStyleInterpolators,
+  createStackNavigator,
+} from "@react-navigation/stack";
+import SignIn from "@screens/SignIn";
+import CreateEconomy from "@screens/event/CreateEconomy";
+import Event from "@screens/event/Event";
+import CreateHelper from "@screens/helper/CreateHelper";
+import Recipe from "@screens/inventory/Recipe";
+import RecipeCost from "@screens/inventory/RecipeCost";
+import RecipeInformation from "@screens/inventory/RecipeInformation";
+import CreatePerson from "@screens/people/CreatePerson";
+import PeopleInformation from "@screens/people/PeopleInformation";
+import CreatePlace from "@screens/reservation/CreatePlace";
+import CreateReserve from "@screens/reservation/CreateReserve";
+import CreateZone from "@screens/reservation/CreateZone";
+import Place from "@screens/reservation/Place";
+import PlaceInformation from "@screens/reservation/PlaceInformation";
+import ReserveInformation from "@screens/reservation/ReserveInformation";
+import CreateOrder from "@screens/table/CreateOrder";
+import CreatePercentage from "@screens/table/CreatePercentage";
+import CreateProduct from "@screens/table/CreateProduct";
+import CreateTable from "@screens/table/CreateTable";
+import EditInvoice from "@screens/table/EditInvoice";
+import EditOrder from "@screens/table/EditOrder";
+import Invoice from "@screens/table/Invoice";
+import InvoiceByEmail from "@screens/table/InvoiceByEmail";
+import OrderCompletion from "@screens/table/OrderCompletion";
+import PreviewOrder from "@screens/table/PreviewOrder";
+import TableInformation from "@screens/table/TableInformation";
 import { socket } from "@socket";
 import theme from "@theme";
-import version from "@version.json";
+import { useEffect, useRef, useState } from "react";
+import { AppState, Easing } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 
+import Wifi from "@screens/setting/Wifi";
 import * as BackgroundFetch from "expo-background-fetch";
+import * as localization from "expo-localization";
 import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
+
+import EmailAndPhone from "@screens/register/EmailAndPhone";
+import ClientSupplier from "@screens/setting/ClientSupplier";
+import App from "./App";
+import Verification from "@screens/register/Verification";
+import Selection from "@screens/register/Selection";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -107,6 +118,7 @@ const Main = () => {
   const session = useSelector((state) => state.session);
   const activeGroup = useSelector((state) => state.activeGroup);
   const synchronization = useSelector((state) => state.synchronization);
+  const language = useSelector((state) => state.language);
 
   const [connected, setConnected] = useState(false);
 
@@ -210,7 +222,8 @@ const Main = () => {
         };
 
         if (
-          convertToNumber(version.detail) < convertToNumber(res.version.detail)
+          convertToNumber(process.env.EXPO_PUBLIC_VERSION) <
+          convertToNumber(res.version.detail)
         ) {
           if (name !== "Event")
             navigation.current.replace("Event", {
@@ -318,6 +331,9 @@ const Main = () => {
 
       if (!activeGroup.active && !res.error) {
         dispatch(changeUser(res));
+        dispatch(changeLanguage(res?.settings?.language));
+        dispatch(changeMode(res.mode));
+        dispatch(changeSettings(res.settings));
         dispatch(changeHelpers(res.helpers));
       }
 
@@ -356,7 +372,7 @@ const Main = () => {
         changeSynchronization({
           ...synchronization,
           connected: true,
-          ping: 100
+          ping: 100,
         })
       );
     });
@@ -381,7 +397,7 @@ const Main = () => {
           pingRef.current = new Date().getTime();
           pingSend = true;
         }
-      }, 2000);
+      }, 3000);
 
       socket.on("pong", (rooms) => {
         const endTime = new Date().getTime();
@@ -445,9 +461,62 @@ const Main = () => {
     return () => socket.off("change", change);
   }, [activeGroup]);
 
+  useEffect(() => {
+    (async () => {
+      const foundLanguage = localization.getLocales()[0].languageCode;
+      const available = [
+        "ar",
+        "bn",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "hi",
+        "it",
+        "ja",
+        "ko",
+        "pt",
+        "ru",
+        "sw",
+        "tr",
+        "zh",
+      ];
+
+      const lang = available.includes(foundLanguage) ? foundLanguage : "en";
+      if (!language) dispatch(changeLanguage(lang));
+      if (user?.settings?.language || !user) return;
+      const settings = {
+        ...user.settings,
+        language: lang,
+      };
+      dispatch(changeSettings(settings));
+      await editUser({ email: user.email, change: { settings } });
+    })();
+  }, [user?.settings]);
+
+  const config = {
+    animation: "spring",
+    config: {
+      stiffness: 1000,
+      damping: 50,
+      mass: 3,
+      overshootClamping: false,
+      restDisplacementThreshold: 0.01,
+      restSpeedThreshold: 0.01,
+    },
+  };
+
+  const closeConfig = {
+    animation: "timing",
+    config: {
+      duration: 200,
+      easing: Easing.linear,
+    },
+  };
+
   return (
     <Stack.Navigator
-      initialRouteName={!session ? "SignIn" : "Home"}
+      initialRouteName={!session ? "SignIn" : "App"}
       screenOptions={({ navigation: nav }) => {
         navigation.current = nav;
 
@@ -456,32 +525,52 @@ const Main = () => {
           headerStyle: {
             backgroundColor: mode === "dark" ? dark.main1 : "#FFFFFF",
           },
+          gestureEnabled: true,
+          transitionSpec: {
+            open: config,
+            close: closeConfig,
+          },
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+          headerMode: "float",
         };
       }}
     >
-      <Stack.Screen
-        name="SignIn"
-        component={SignIn}
-        options={{
-          headerShown: false,
-        }}
-      />
       <Stack.Group>
         <Stack.Screen
-          name="Home"
-          component={Home}
+          name="SignIn"
+          component={SignIn}
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="EmailAndPhone" component={EmailAndPhone} />
         <Stack.Screen
-          name="Statistic"
-          component={Statistic}
-          options={{ title: "Estadísticas" }}
+          name="Verification"
+          component={Verification}
+          options={{ title: "Código de verificación" }}
         />
         <Stack.Screen
-          name="Setting"
-          component={Setting}
-          options={{ title: "Preferencias" }}
+          name="Selection"
+          component={Selection}
+          options={{ title: "Selecciona el tipo de cuenta", gestureEnabled: false }}
         />
+      </Stack.Group>
+      <Stack.Screen
+        name="App"
+        component={App}
+        options={{ headerShown: false }}
+      />
+      <Stack.Group>
+        <Stack.Group>
+          <Stack.Screen
+            name="Wifi"
+            component={Wifi}
+            options={{ title: "WIFI" }}
+          />
+          <Stack.Screen
+            name="ClientSupplier"
+            component={ClientSupplier}
+            options={{ title: "Cliente y proveedor" }}
+          />
+        </Stack.Group>
         <Stack.Screen name="Place" component={Place} />
         <Stack.Screen name="PlaceInformation" component={PlaceInformation} />
         <Stack.Screen
@@ -504,19 +593,9 @@ const Main = () => {
           component={ReserveInformation}
         />
         <Stack.Screen
-          name="Helper"
-          component={Helper}
-          options={{ title: "Grupos" }}
-        />
-        <Stack.Screen
           name="CreateHelper"
           component={CreateHelper}
           options={{ title: "Creación de grupo" }}
-        />
-        <Stack.Screen
-          name="Tables"
-          component={Tables}
-          options={{ title: "Ventas" }}
         />
         <Stack.Screen
           name="CreateTable"
@@ -566,27 +645,11 @@ const Main = () => {
           component={EditInvoice}
           options={{ title: "Configurar mi recibo" }}
         />
-        <Stack.Screen
-          name="Kitchen"
-          component={Kitchen}
-          options={{ title: "Cocina" }}
-        />
-        <Stack.Screen
-          name="CreateRoster"
-          component={CreateRoster}
-          options={{ title: "Nómina" }}
-        />
         <Stack.Screen name="CreatePerson" component={CreatePerson} />
-        <Stack.Screen name="People" component={People} />
         <Stack.Screen
           name="PeopleInformation"
           component={PeopleInformation}
           options={{ title: "Detalles" }}
-        />
-        <Stack.Screen
-          name="Inventory"
-          component={Inventory}
-          options={{ title: "Inventario" }}
         />
         <Stack.Screen
           name="Recipe"

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "VBELA",
-    "slug": "VBELA",
+    "slug": "vbela",
     "version": "2.5.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -27,7 +27,6 @@
     },
     "android": {
       "package": "com.app.vbela",
-      "googleServicesFile": "./google-services.json",
       "versionCode": 39,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -37,11 +36,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "57ec25bd-df0f-4333-a8c5-d7c01a3a6d82"
-      }
-    },
     "plugins": [
       [
         "expo-notifications",
@@ -49,12 +43,16 @@
           "icon": "./assets/notification-icon.png",
           "color": "#222831"
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "notification": {
-      "androidMode" : "default",
-      "icon" : "./assets/notification-icon.png"
+      "androidMode": "default",
+      "icon": "./assets/notification-icon.png"
     },
-    "scheme": ["vbela","fb1235340873743796"]
+    "scheme": [
+      "vbela",
+      "fb1235340873743796"
+    ]
   }
 }

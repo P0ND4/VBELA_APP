@@ -1,7 +1,5 @@
 import io from "socket.io-client";
 
-const production = false;
-
-const API = production ? "https://vbelapp.com" : "http://192.168.230.22:5031";
+const API = process.env.EXPO_PUBLIC_API_URL;
 
 export const socket = io(API, { transports: ["websocket"] });

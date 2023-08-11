@@ -27,7 +27,8 @@ const TextStyle = ({
   justify,
   right,
   children,
-  bold
+  bold,
+  onPress
 }) => {
   const stylesTaken = [
     styles.default,
@@ -49,7 +50,7 @@ const TextStyle = ({
     customStyle
   ]
 
-  return <Text style={stylesTaken}>{children}</Text>
+  return <Text onPress={onPress} style={stylesTaken}>{children}</Text>
 }
 
 export default TextStyle

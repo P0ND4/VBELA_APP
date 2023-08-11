@@ -32,7 +32,7 @@ const ButtonStyle = ({
 
   return (
     <TouchableOpacity disabled={disable} style={stylesTaken} onPress={onPress}>
-      {children && <TextStyle center={centerText}>{children}</TextStyle>}
+      {children && children}
       <View style={styles.elementsContainer}>
         {left && left()}
         {right && right()}
