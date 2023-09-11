@@ -46,7 +46,7 @@ const Setting = ({ navigation }) => {
     timerChangeMode.current = setTimeout(async () => {
       if (user.mode !== newMode) {
         dispatch(changeUser({ ...user, mode: newMode }));
-        await editUser({ email: user.email, change: { mode: newMode } });
+        await editUser({ identifier: user.identifier, change: { mode: newMode } });
       }
     }, 1000);
   };
@@ -93,7 +93,7 @@ const Setting = ({ navigation }) => {
             </TextStyle>
           )}
         />
-        <Card
+        {/*<Card
           onPress={() => navigation.navigate("Wifi")}
           left={() => <Ionicons name="wifi" size={35} color={light.main2} />}
           right={() => (
@@ -112,8 +112,8 @@ const Setting = ({ navigation }) => {
               />
             </View>
           )}
-        />
-        <Card
+          />*/}
+        {/*<Card
           onPress={() => navigation.navigate("ClientSupplier")}
           left={() => <Ionicons name="people" size={35} color={light.main2} />}
           right={() => (
@@ -132,8 +132,8 @@ const Setting = ({ navigation }) => {
               />
             </View>
           )}
-        />
-        <Card
+          />*/}
+        {/*<Card
           onPress={() => {}}
           left={() => <Ionicons name="shield" size={35} color={light.main2} />}
           right={() => (
@@ -152,8 +152,8 @@ const Setting = ({ navigation }) => {
               />
             </View>
           )}
-        />
-        <Card
+        />*/}
+        {/*<Card
           onPress={() => {}}
           left={() => <Ionicons name="globe" size={35} color={light.main2} />}
           right={() => (
@@ -162,11 +162,11 @@ const Setting = ({ navigation }) => {
               customStyle={{ marginRight: 10 }}
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
-              Idioma ({languageCodes.find((l) => l.code === language).name})
+              Idioma ({languageCodes.find((l) => l.code === language)?.name})
             </TextStyle>
           )}
-        />
-        <Card
+          />*/}
+        {/*<Card
           onPress={() => {}}
           left={() => (
             <Ionicons name="color-palette" size={35} color={light.main2} />
@@ -180,7 +180,7 @@ const Setting = ({ navigation }) => {
               Temas
             </TextStyle>
           )}
-        />
+        />*/}
         <Card
           onPress={async () =>
             await WebBrowser.openBrowserAsync(
@@ -238,7 +238,7 @@ const Setting = ({ navigation }) => {
             </TextStyle>
           )}
         />
-        <Card
+        {/*<Card
           onPress={async () => {}}
           left={() => (
             <Ionicons name="chatbubbles" size={35} color={light.main2} />
@@ -251,8 +251,8 @@ const Setting = ({ navigation }) => {
               Contacto
             </TextStyle>
           )}
-        />
-        <Card
+        />*/}
+        {/*<Card
           onPress={async () => {}}
           left={() => <Ionicons name="heart" size={35} color={light.main2} />}
           right={() => (
@@ -263,8 +263,8 @@ const Setting = ({ navigation }) => {
               Donación
             </TextStyle>
           )}
-        />
-        <Card
+          />*/}
+        {/*<Card
           onPress={async () => {}}
           left={() => (
             <Ionicons name="alert-circle" size={35} color={light.main2} />
@@ -277,7 +277,7 @@ const Setting = ({ navigation }) => {
               Información de la aplicación
             </TextStyle>
           )}
-        />
+          />*/}
       </ScrollView>
     </Layout>
   );

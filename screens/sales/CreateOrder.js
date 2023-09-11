@@ -8,10 +8,12 @@ import {
   Dimensions,
   Alert,
   TouchableOpacity,
+  Modal,
+  TouchableWithoutFeedback,
 } from "react-native";
-import { remove } from "@features/tables/ordersSlice";
-import { thousandsSystem, random } from "@helpers/libs";
-import { add, edit } from "@features/tables/ordersSlice";
+import { Picker } from "@react-native-picker/picker";
+import { thousandsSystem, random, months } from "@helpers/libs";
+import { add, edit, remove } from "@features/tables/ordersSlice";
 import {
   add as addK,
   removeMany as removeManyK,
@@ -54,13 +56,52 @@ const CreateOrder = ({ route, navigation }) => {
   const economy = useSelector((state) => state.economy);
   const folk = useSelector((state) => state.people);
 
+  const initialState = {
+    active: false,
+    minValue: "",
+    maxValue: "",
+    year: "all",
+    month: "all",
+    day: "all",
+  };
+
   const [products, setProducts] = useState([]);
   const [selection, setSelection] = useState(route.params.selection);
   const [newSelection, setNewSelection] = useState([]);
-  const [search, setSearch] = useState(false);
+  const [activeSearch, setActiveSearch] = useState(false);
   const [count, setCount] = useState(1);
-  const [filter, setFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState(false);
+  const [filters, setFilters] = useState(initialState);
   const [order, setOrder] = useState("");
+
+  const [days, setDays] = useState([]);
+  const [years, setYears] = useState([]);
+
+  useEffect(() => {
+    const date = new Date();
+    let years = [date.getFullYear()];
+
+    for (let i = 5; i >= 0; i--) {
+      years.push(years[years.length - 1] - 1);
+    }
+
+    setYears(years);
+  }, []);
+
+  useEffect(() => {
+    const date = new Date();
+    const days = new Date(
+      filters.year === "all" ? date.getFullYear() : filters.year,
+      filters.month === "all" ? 1 : filters.month + 1,
+      0
+    ).getDate();
+    const monthDays = [];
+    for (let day = 0; day < days; day++) {
+      monthDays.push(day + 1);
+    }
+    setDays(monthDays);
+  }, [filters.year, filters.month]);
 
   const searchRef = useRef();
 
@@ -132,7 +173,9 @@ const CreateOrder = ({ route, navigation }) => {
 
       dispatch(addE(newEconomy));
       await addEconomy({
-        email: activeGroup.active ? activeGroup.email : user.email,
+        identifier: activeGroup.active
+          ? activeGroup.identifier
+          : user.identifier,
         economy: newEconomy,
         groups: activeGroup.active
           ? [activeGroup.id]
@@ -145,7 +188,9 @@ const CreateOrder = ({ route, navigation }) => {
       currentEconomy.modificationDate = new Date().getTime();
       dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
       await editEconomy({
-        email: activeGroup.active ? activeGroup.email : user.email,
+        identifier: activeGroup.active
+          ? activeGroup.identifier
+          : user.identifier,
         economy: currentEconomy,
         groups: activeGroup.active
           ? [activeGroup.id]
@@ -184,7 +229,7 @@ const CreateOrder = ({ route, navigation }) => {
     if (person)
       manageEconomy({ editing: d.pay, total, kitchen: dat.isSendtoKitchen });
     await addOrder({
-      email: activeGroup.active ? activeGroup.email : user.email,
+      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       order: data,
       groups: activeGroup.active
         ? [activeGroup.id]
@@ -223,7 +268,7 @@ const CreateOrder = ({ route, navigation }) => {
         kitchen: dat.isSendtoKitchen,
       });
     await editOrder({
-      email: activeGroup.active ? activeGroup.email : user.email,
+      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       order: data,
       groups: activeGroup.active
         ? [activeGroup.id]
@@ -258,7 +303,9 @@ const CreateOrder = ({ route, navigation }) => {
           selection
         );
       await addKitchen({
-        email: activeGroup.active ? activeGroup.email : user.email,
+        identifier: activeGroup.active
+          ? activeGroup.identifier
+          : user.identifier,
         kitchen: obj,
         groups: activeGroup.active
           ? [activeGroup.id]
@@ -285,6 +332,16 @@ const CreateOrder = ({ route, navigation }) => {
 
   const dispatch = useDispatch();
 
+  const dateValidation = (date) => {
+    let error = false;
+    if (filters.day !== "all" && date.getDate() !== filters.day) error = true;
+    if (filters.month !== "all" && date.getMonth() + 1 !== filters.month)
+      error = true;
+    if (filters.year !== "all" && date.getFullYear() !== filters.year)
+      error = true;
+    return error;
+  };
+
   useEffect(() => {
     let m = menu.sort((a, b) => {
       const nameA = a.name.toUpperCase();
@@ -294,10 +351,33 @@ const CreateOrder = ({ route, navigation }) => {
       return 0;
     });
 
-    if (filter.length > 0) {
+    if (search || filters.active) {
       m = m.filter((p) => {
-        if (p.name.includes(filter) || p.price.toString().includes(filter))
+        const text = search.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (
+          p.name
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .includes(text.toLowerCase()) ||
+          p.price.toString().includes(text.toLowerCase())
+        ) {
+          if (!filters.active) return p;
+
+          if (dateValidation(new Date(p.creationDate))) return;
+          if (
+            filters.minValue &&
+            p.price < parseInt(filters.minValue.replace(/\D/g, ""))
+          )
+            return;
+          if (
+            filters.maxValue &&
+            p.price > parseInt(filters.maxValue.replace(/\D/g, ""))
+          )
+            return;
+
           return p;
+        }
       });
     }
 
@@ -311,7 +391,7 @@ const CreateOrder = ({ route, navigation }) => {
       }
       setProducts(added);
     }
-  }, [menu, filter]);
+  }, [menu, search, filters]);
 
   const removeO = async () => {
     Alert.alert("Eliminar", "¿Desea eliminar la orden?", [
@@ -336,7 +416,9 @@ const CreateOrder = ({ route, navigation }) => {
             if (currentEconomy.amount === 0) {
               dispatch(removeE({ id: currentEconomy.id }));
               await removeEconomy({
-                email: activeGroup.active ? activeGroup.email : user.email,
+                identifier: activeGroup.active
+                  ? activeGroup.identifier
+                  : user.identifier,
                 id: currentEconomy.id,
                 groups: activeGroup.active
                   ? [activeGroup.id]
@@ -346,7 +428,9 @@ const CreateOrder = ({ route, navigation }) => {
               currentEconomy.modificationDate = new Date().getTime();
               dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
               await editEconomy({
-                email: activeGroup.active ? activeGroup.email : user.email,
+                identifier: activeGroup.active
+                  ? activeGroup.identifier
+                  : user.identifier,
                 economy: currentEconomy,
                 groups: activeGroup.active
                   ? [activeGroup.id]
@@ -355,14 +439,18 @@ const CreateOrder = ({ route, navigation }) => {
             }
           }
           await removeManyKitchen({
-            email: activeGroup.active ? activeGroup.email : user.email,
+            identifier: activeGroup.active
+              ? activeGroup.identifier
+              : user.identifier,
             ref: route.params.id,
             groups: activeGroup.active
               ? [activeGroup.id]
               : user.helpers.map((h) => h.id),
           });
           await removeOrder({
-            email: activeGroup.active ? activeGroup.email : user.email,
+            identifier: activeGroup.active
+              ? activeGroup.identifier
+              : user.identifier,
             id: information.id,
             groups: activeGroup.active
               ? [activeGroup.id]
@@ -403,10 +491,10 @@ const CreateOrder = ({ route, navigation }) => {
         </View>
       </View>
       <View style={styles.secondHeader}>
-        {!search && (
+        {!activeSearch && (
           <TouchableOpacity
             onPress={() => {
-              setSearch(true);
+              setActiveSearch(true);
               setTimeout(() => searchRef.current.focus());
             }}
           >
@@ -417,7 +505,7 @@ const CreateOrder = ({ route, navigation }) => {
             />
           </TouchableOpacity>
         )}
-        {search && (
+        {activeSearch && (
           <View
             style={{
               flexDirection: "row",
@@ -428,8 +516,9 @@ const CreateOrder = ({ route, navigation }) => {
           >
             <TouchableOpacity
               onPress={() => {
-                setFilter("");
-                setSearch(false);
+                setSearch("");
+                setActiveSearch(false);
+                setFilters(initialState);
               }}
             >
               <Ionicons
@@ -441,18 +530,21 @@ const CreateOrder = ({ route, navigation }) => {
             <InputStyle
               innerRef={searchRef}
               placeholder="Product, valor"
-              value={filter}
-              onChangeText={(text) => setFilter(text)}
-              stylesContainer={{ width: "86%", marginVertical: 0 }}
+              value={search}
+              onChangeText={(text) => setSearch(text)}
+              stylesContainer={{ width: "78%", marginVertical: 0 }}
               stylesInput={{
                 paddingHorizontal: 6,
                 paddingVertical: 5,
                 fontSize: 18,
               }}
             />
+            <TouchableOpacity onPress={() => setActiveFilter(!activeFilter)}>
+              <Ionicons name="filter" size={30} color={light.main2} />
+            </TouchableOpacity>
           </View>
         )}
-        {!search && (
+        {!activeSearch && (
           <TouchableOpacity
             style={{
               borderWidth: 1,
@@ -537,10 +629,7 @@ const CreateOrder = ({ route, navigation }) => {
                       setSelection(changed);
                     } else setSelection([...selection, object]);
                   } else {
-                    navigation.navigate("CreateProduct", {
-                      setSelection,
-                      selection,
-                    });
+                    navigation.navigate("CreateProduct");
                   }
                 }}
               >
@@ -603,7 +692,9 @@ const CreateOrder = ({ route, navigation }) => {
       <View>
         {information.editing && (
           <ButtonStyle backgroundColor={light.main2} onPress={() => removeO()}>
-            <TextStyle center smallParagraph>Eliminar pedido</TextStyle>
+            <TextStyle center smallParagraph>
+              Eliminar pedido
+            </TextStyle>
           </ButtonStyle>
         )}
         <ButtonStyle
@@ -642,6 +733,309 @@ const CreateOrder = ({ route, navigation }) => {
           </TextStyle>
         </ButtonStyle>
       </View>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={activeFilter}
+        onRequestClose={() => {
+          setActiveFilter(!activeFilter);
+          setFilters(initialState);
+        }}
+      >
+        <TouchableWithoutFeedback
+          onPress={() => setActiveFilter(!activeFilter)}
+        >
+          <View style={{ backgroundColor: "#0005", height: "100%" }} />
+        </TouchableWithoutFeedback>
+        <View
+          style={[
+            StyleSheet.absoluteFillObject,
+            {
+              justifyContent: "center",
+              alignItems: "center",
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: mode === "light" ? light.main4 : dark.main1,
+              },
+            ]}
+          >
+            <View>
+              <View style={styles.header}>
+                <TextStyle bigSubtitle color={light.main2} bold>
+                  FILTRA
+                </TextStyle>
+                <TouchableOpacity
+                  onPress={() => {
+                    setActiveFilter(false);
+                    setFilters(initialState);
+                  }}
+                >
+                  <Ionicons
+                    name="close"
+                    size={30}
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  />
+                </TouchableOpacity>
+              </View>
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Para una búsqueda más precisa
+              </TextStyle>
+            </View>
+            <View style={{ marginTop: 6 }}>
+              <View style={[styles.header, { marginTop: 15 }]}>
+                <View style={{ width: "48%" }}>
+                  <TextStyle
+                    smallParagraph
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Valor MIN
+                  </TextStyle>
+                  <InputStyle
+                    value={filters.minValue}
+                    onChangeText={(text) => {
+                      const value = thousandsSystem(
+                        text.replace(/[^0-9]/g, "")
+                      );
+                      setFilters({ ...filters, minValue: value });
+                    }}
+                    placeholder="MIN"
+                    keyboardType="numeric"
+                    maxLength={11}
+                  />
+                </View>
+                <View style={{ width: "48%" }}>
+                  <TextStyle
+                    smallParagraph
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Valor MAX
+                  </TextStyle>
+                  <InputStyle
+                    value={filters.maxValue}
+                    onChangeText={(text) => {
+                      const value = thousandsSystem(
+                        text.replace(/[^0-9]/g, "")
+                      );
+                      setFilters({ ...filters, maxValue: value });
+                    }}
+                    placeholder="MAX"
+                    keyboardType="numeric"
+                    maxLength={11}
+                  />
+                </View>
+              </View>
+              <View style={[styles.header, { marginTop: 15 }]}>
+                <View
+                  style={[
+                    styles.cardPicker,
+                    {
+                      backgroundColor:
+                        mode === "light" ? light.main5 : dark.main2,
+                    },
+                  ]}
+                >
+                  <Picker
+                    mode="dropdown"
+                    selectedValue={filters.day}
+                    dropdownIconColor={
+                      mode === "light" ? light.textDark : dark.textWhite
+                    }
+                    onValueChange={(itemValue) =>
+                      setFilters({ ...filters, day: itemValue })
+                    }
+                    style={{
+                      width: SCREEN_WIDTH / 4.3,
+                      backgroundColor:
+                        mode === "light" ? light.main5 : dark.main2,
+                      color: mode === "light" ? light.textDark : dark.textWhite,
+                      fontSize: 20,
+                    }}
+                  >
+                    <Picker.Item
+                      label="Día"
+                      value="all"
+                      style={{
+                        backgroundColor:
+                          mode === "light" ? light.main5 : dark.main2,
+                      }}
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    />
+                    {days.map((day) => (
+                      <Picker.Item
+                        key={day}
+                        label={`${day}`}
+                        value={day}
+                        style={{
+                          backgroundColor:
+                            mode === "light" ? light.main5 : dark.main2,
+                        }}
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      />
+                    ))}
+                  </Picker>
+                </View>
+                <View
+                  style={[
+                    styles.cardPicker,
+                    {
+                      backgroundColor:
+                        mode === "light" ? light.main5 : dark.main2,
+                    },
+                  ]}
+                >
+                  <Picker
+                    mode="dropdown"
+                    selectedValue={filters.month}
+                    onValueChange={(itemValue) =>
+                      setFilters({ ...filters, month: itemValue })
+                    }
+                    dropdownIconColor={
+                      mode === "light" ? light.textDark : dark.textWhite
+                    }
+                    style={{
+                      width: SCREEN_WIDTH / 4.3,
+                      backgroundColor:
+                        mode === "light" ? light.main5 : dark.main2,
+                      color: mode === "light" ? light.textDark : dark.textWhite,
+                      fontSize: 20,
+                    }}
+                  >
+                    <Picker.Item
+                      label="Mes"
+                      value="all"
+                      style={{
+                        backgroundColor:
+                          mode === "light" ? light.main5 : dark.main2,
+                      }}
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    />
+                    {months.map((month, index) => (
+                      <Picker.Item
+                        key={month}
+                        label={month}
+                        value={index + 1}
+                        style={{
+                          backgroundColor:
+                            mode === "light" ? light.main5 : dark.main2,
+                        }}
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      />
+                    ))}
+                  </Picker>
+                </View>
+                <View
+                  style={[
+                    styles.cardPicker,
+                    {
+                      backgroundColor:
+                        mode === "light" ? light.main5 : dark.main2,
+                    },
+                  ]}
+                >
+                  <Picker
+                    mode="dropdown"
+                    selectedValue={filters.year}
+                    onValueChange={(itemValue) =>
+                      setFilters({ ...filters, year: itemValue })
+                    }
+                    dropdownIconColor={
+                      mode === "light" ? light.textDark : dark.textWhite
+                    }
+                    style={{
+                      width: SCREEN_WIDTH / 4.3,
+                      backgroundColor:
+                        mode === "light" ? light.main5 : dark.main2,
+                      color: mode === "light" ? light.textDark : dark.textWhite,
+                      fontSize: 20,
+                    }}
+                  >
+                    <Picker.Item
+                      label="Año"
+                      value="all"
+                      style={{
+                        backgroundColor:
+                          mode === "light" ? light.main5 : dark.main2,
+                      }}
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    />
+                    {years.map((year, index) => (
+                      <Picker.Item
+                        key={year}
+                        label={`${year}`}
+                        value={year}
+                        style={{
+                          backgroundColor:
+                            mode === "light" ? light.main5 : dark.main2,
+                        }}
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 20,
+              }}
+            >
+              {filters.active && (
+                <ButtonStyle
+                  style={{ width: "35%" }}
+                  backgroundColor={mode === "light" ? light.main5 : dark.main2}
+                  onPress={() => {
+                    setActiveFilter(false);
+                    setFilters(initialState);
+                  }}
+                >
+                  <TextStyle
+                    center
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Remover
+                  </TextStyle>
+                </ButtonStyle>
+              )}
+              <ButtonStyle
+                onPress={() => {
+                  setActiveFilter(!activeFilter);
+                  const compare = { ...filters, active: false };
+
+                  if (
+                    JSON.stringify(compare) === JSON.stringify(initialState)
+                  ) {
+                    setFilters(initialState);
+                    return;
+                  }
+                  setFilters({ ...filters, active: true });
+                }}
+                backgroundColor={light.main2}
+                style={{
+                  width: filters.active ? "60%" : "99%",
+                }}
+              >
+                <TextStyle center>Buscar</TextStyle>
+              </ButtonStyle>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Layout>
   );
 };
@@ -685,6 +1079,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  card: {
+    width: "90%",
+    borderRadius: 8,
+    padding: 30,
+  },
+  cardPicker: {
+    padding: 2,
+    borderRadius: 8,
   },
 });
 

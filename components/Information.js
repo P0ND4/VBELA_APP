@@ -2,8 +2,7 @@ import {
   Modal,
   StyleSheet,
   View,
-  Text,
-  Pressable,
+  TouchableWithoutFeedback,
   StatusBar,
 } from "react-native";
 import { useSelector } from "react-redux";
@@ -33,8 +32,16 @@ const Information = ({
         setModalVisible(!modalVisible);
       }}
     >
+      <TouchableWithoutFeedback onPress={() => setModalVisible(!modalVisible)}>
+        <View style={[{ backgroundColor: "#0004" }, StyleSheet.absoluteFillObject]} />
+      </TouchableWithoutFeedback>
       <View style={styles.centeredView}>
-        <View style={[styles.modalView, { backgroundColor: mode === 'light' ? light.main4 : dark.main2 }]}>
+        <View
+          style={[
+            styles.modalView,
+            { backgroundColor: mode === "light" ? light.main4 : dark.main2 },
+          ]}
+        >
           <View style={{ marginBottom: 5 }}>
             <TextStyle center paragraph color={light.main2}>
               {title}
@@ -51,7 +58,9 @@ const Information = ({
             backgroundColor={light.main2}
             onPress={() => setModalVisible(!modalVisible)}
           >
-            <TextStyle verySmall>{buttonText}</TextStyle>
+            <TextStyle verySmall center>
+              {buttonText}
+            </TextStyle>
           </ButtonStyle>
         </View>
       </View>
@@ -64,8 +73,7 @@ const styles = StyleSheet.create({
   centeredView: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#0004",
+    alignItems: "center"
   },
   modalView: {
     margin: 20,

@@ -65,7 +65,7 @@ const CreateTable = ({ navigation, route }) => {
     dispatch(edit({ id: tableEditing.id, data }));
     navigation.pop();
     await editTable({
-      email: activeGroup.active ? activeGroup.email : user.email,
+      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       table: data,
       groups: activeGroup.active
         ? [activeGroup.id]
@@ -84,7 +84,7 @@ const CreateTable = ({ navigation, route }) => {
       dispatch(add(data));
       navigation.pop();
       await addTable({
-        email: activeGroup.active ? activeGroup.email : user.email,
+        identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
         table: data,
         groups: activeGroup.active
           ? [activeGroup.id]

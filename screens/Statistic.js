@@ -32,6 +32,7 @@ const Statistic = ({ navigation }) => {
   const orders = useSelector((state) => state.orders);
   const reservations = useSelector((state) => state.reservations);
   const roster = useSelector((state) => state.roster);
+  const salesProductsAndServices = useSelector((state) => state.sales);
 
   const [isLoading, setIsLoading] = useState(true);
   const [purchases, setPurchases] = useState([]);
@@ -40,6 +41,7 @@ const Statistic = ({ navigation }) => {
   const [expense, setExpense] = useState(0);
   const [sales, setSales] = useState(0);
   const [food, setFood] = useState(0);
+  const [productsAndServices, setProductsAndServices] = useState(0);
 
   const [people, setPeople] = useState(0);
   const [amount, setAmount] = useState(0);
@@ -103,6 +105,7 @@ const Statistic = ({ navigation }) => {
     let expenses = [];
     let ros = [];
     let accountsPayable = [];
+    let productsAndServices = 0;
 
     for (let data of roster) {
       const date = new Date(data.creationDate);
@@ -113,12 +116,21 @@ const Statistic = ({ navigation }) => {
 
     for (let reservation of reservations) {
       const date = new Date(reservation.creationDate);
+      const calculatedAmount =
+        reservation.discount > 0
+          ? reservation.amount - reservation.discount
+          : reservation.amount;
       if (dateValidation(date)) continue;
-      people += parseInt(reservation.people);
-      amount += reservation.amount;
-      const eco = economy.find((e) => e.ref === reservation.owner);
-      if (eco && eco.amount !== eco.payment) continue;
-      sales += reservation.amount;
+      people += reservation.hosted.length;
+      amount += calculatedAmount;
+
+      const ids = reservation.hosted.filter((h) => h.owner).map((h) => h.owner);
+
+      for (let id of ids) {
+        const eco = economy.find((e) => e.ref === id);
+        if (eco && eco.amount !== eco.payment) continue;
+        sales += amountTotal;
+      }
     }
 
     for (let data of economy) {
@@ -162,6 +174,13 @@ const Statistic = ({ navigation }) => {
       food += order.total;
     }
 
+    for (let sales of salesProductsAndServices) {
+      const date = new Date(sales.creationDate);
+      if (dateValidation(date)) continue;
+      productsAndServices += sales.total;
+    }
+
+    setProductsAndServices(productsAndServices);
     setSales(sales);
     setPeople(people);
     setAmount(amount);
@@ -184,11 +203,12 @@ const Statistic = ({ navigation }) => {
         ro +
         receivableTotal -
         expense -
-        expenseAndInvestmentAccountPayable
+        expenseAndInvestmentAccountPayable +
+        productsAndServices
     );
     setDischarge(expense + expenseAndInvestmentAccountPayable);
     setIncome(
-      sales + purchase + ro + receivableTotal + purchaseAndCostAccountPayable
+      sales + purchase + ro + receivableTotal + purchaseAndCostAccountPayable + productsAndServices
     );
 
     setTimeout(() => {
@@ -353,12 +373,16 @@ const Statistic = ({ navigation }) => {
     const start = new Date(reservation.start);
 
     if (creation.getFullYear() === currentDate.getFullYear())
-      DPeople[creation.getMonth()] += parseInt(reservation.people);
+      DPeople[creation.getMonth()] += parseInt(reservation.hosted.length);
     if (start.getFullYear() === currentDate.getFullYear())
-      DReservations[start.getMonth()] += parseInt(reservation.people);
+      DReservations[start.getMonth()] += parseInt(reservation.hosted.length);
 
     if (dateValidation(creation)) continue;
-    amountTotal += reservation.amount;
+    const calculatedAmount =
+      reservation.discount > 0
+        ? reservation.amount - reservation.discount
+        : reservation.amount;
+    amountTotal += calculatedAmount;
   }
 
   dataD[0] = parseFloat(getPercentage(expense));
@@ -439,9 +463,26 @@ const Statistic = ({ navigation }) => {
                   fontSize: 20,
                 }}
               >
-                <Picker.Item label="Día" value="all" />
+                <Picker.Item
+                  label="Día"
+                  value="all"
+                  style={{
+                    backgroundColor:
+                      mode === "light" ? light.main5 : dark.main2,
+                  }}
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                />
                 {days.map((day) => (
-                  <Picker.Item key={day} label={`${day}`} value={day} />
+                  <Picker.Item
+                    key={day}
+                    label={`${day}`}
+                    value={day}
+                    style={{
+                      backgroundColor:
+                        mode === "light" ? light.main5 : dark.main2,
+                    }}
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  />
                 ))}
               </Picker>
             </View>
@@ -467,9 +508,26 @@ const Statistic = ({ navigation }) => {
                   fontSize: 20,
                 }}
               >
-                <Picker.Item label="Mes" value="all" />
+                <Picker.Item
+                  label="Mes"
+                  value="all"
+                  style={{
+                    backgroundColor:
+                      mode === "light" ? light.main5 : dark.main2,
+                  }}
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                />
                 {months.map((month, index) => (
-                  <Picker.Item key={month} label={month} value={index + 1} />
+                  <Picker.Item
+                    key={month}
+                    label={month}
+                    value={index + 1}
+                    style={{
+                      backgroundColor:
+                        mode === "light" ? light.main5 : dark.main2,
+                    }}
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  />
                 ))}
               </Picker>
             </View>
@@ -495,9 +553,26 @@ const Statistic = ({ navigation }) => {
                   fontSize: 20,
                 }}
               >
-                <Picker.Item label="Año" value="all" />
+                <Picker.Item
+                  label="Año"
+                  value="all"
+                  style={{
+                    backgroundColor:
+                      mode === "light" ? light.main5 : dark.main2,
+                  }}
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                />
                 {years.map((year, index) => (
-                  <Picker.Item key={year} label={`${year}`} value={year} />
+                  <Picker.Item
+                    key={year}
+                    label={`${year}`}
+                    value={year}
+                    style={{
+                      backgroundColor:
+                        mode === "light" ? light.main5 : dark.main2,
+                    }}
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  />
                 ))}
               </Picker>
             </View>
@@ -518,7 +593,7 @@ const Statistic = ({ navigation }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                VENTAS DIARIAS
+                VENTAS DIARIAS (MENÚ)
               </TextStyle>
               <View style={{ maxWidth: width / 2.5 }}>
                 <ScrollView horizontal showsHorizontalScrollIndicator>
@@ -529,6 +604,10 @@ const Statistic = ({ navigation }) => {
               </View>
             </View>
             <Information name="COMIDA" value={thousandsSystem(food)} />
+            <Information
+              name="PRODUCTOS Y SERVICIOS"
+              value={thousandsSystem(productsAndServices)}
+            />
             <Information name="ALOJAMIENTO" value={thousandsSystem(amount)} />
             <Information
               name="GASTOS/INVERSIÓN"

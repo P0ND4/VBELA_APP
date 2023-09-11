@@ -120,7 +120,7 @@ const TableInformation = ({ route, navigation }) => {
                   dispatch(removeMany({ ref: route.params.id }));
                   navigation.pop();
                   await removeTable({
-                    email: activeGroup.active ? activeGroup.email : user.email,
+                    identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
                     id: route.params.id,
                     groups: activeGroup.active
                       ? [activeGroup.id]

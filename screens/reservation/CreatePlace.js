@@ -1,13 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  View,
-  Keyboard,
-  KeyboardAvoidingView,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  TouchableOpacity,
-} from "react-native";
+import { View, Keyboard, KeyboardAvoidingView, ScrollView } from "react-native";
 import { useForm } from "react-hook-form";
 import { useSelector, useDispatch } from "react-redux";
 import { add, edit } from "@features/groups/nomenclaturesSlice";
@@ -17,7 +9,6 @@ import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
 import Information from "@components/Information";
 
@@ -39,6 +30,7 @@ const CreatePlace = ({ route, navigation }) => {
   const place = route.params?.item;
   const editing = route.params?.editing;
 
+  const [loading, setLoading] = useState(false);
   const [nomenclatures, setNomenclatures] = useState([]);
   const [name, setName] = useState(editing ? place.name : "");
   const [amount, setAmount] = useState(
@@ -47,7 +39,6 @@ const CreatePlace = ({ route, navigation }) => {
   const [nomenclature, setNomenclature] = useState(
     editing ? place.nomenclature : ""
   );
-  const [multiple, setMultiple] = useState(editing ? place.multiple : false);
 
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -78,12 +69,12 @@ const CreatePlace = ({ route, navigation }) => {
     });
     register("name", { value: editing ? place.name : "" });
     register("value", { value: editing ? place.value : "", required: true });
-    register("multiple", { value: editing ? place.multiple : false });
   }, []);
 
   const dispatch = useDispatch();
 
   const onSubmitEdit = async (data) => {
+    setLoading(true);
     Keyboard.dismiss();
     data.modificationDate = new Date().getTime();
     data.ref = place.ref;
@@ -93,7 +84,7 @@ const CreatePlace = ({ route, navigation }) => {
     dispatch(edit({ id: place.id, data }));
     navigation.pop();
     await editNomenclature({
-      email: activeGroup.active ? activeGroup.email : user.email,
+      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       nomenclature: data,
       groups: activeGroup.active
         ? [activeGroup.id]
@@ -102,6 +93,7 @@ const CreatePlace = ({ route, navigation }) => {
   };
 
   const onSubmitCreate = async (data) => {
+    setLoading(true);
     Keyboard.dismiss();
     const id = random(20);
     const exists = nomenclatures.find((n) => n.id === id);
@@ -114,7 +106,7 @@ const CreatePlace = ({ route, navigation }) => {
     dispatch(add(data));
     navigation.pop();
     await addNomenclature({
-      email: activeGroup.active ? activeGroup.email : user.email,
+      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       nomenclature: data,
       groups: activeGroup.active
         ? [activeGroup.id]
@@ -212,37 +204,13 @@ const CreatePlace = ({ route, navigation }) => {
                   Valor obligatorio
                 </TextStyle>
               )}
-              <View style={styles.toggles}>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <TextStyle smallParagraph color={light.main2}>
-                    Clientes multiple
-                  </TextStyle>
-                  <TouchableOpacity
-                    onPress={() => setModalVisible(!modalVisible)}
-                  >
-                    <Ionicons
-                      name="help-circle-outline"
-                      size={25}
-                      color={light.main2}
-                      style={{ marginLeft: 5 }}
-                    />
-                  </TouchableOpacity>
-                </View>
-                <Switch
-                  trackColor={{ false: dark.main2, true: light.main2 }}
-                  thumbColor={light.main4}
-                  ios_backgroundColor="#3e3e3e"
-                  onValueChange={() => {
-                    setMultiple(!multiple);
-                    setValue("multiple", !multiple);
-                  }}
-                  value={multiple}
-                />
-              </View>
             </View>
             <ButtonStyle
               backgroundColor={light.main2}
-              onPress={handleSubmit(editing ? onSubmitEdit : onSubmitCreate)}
+              onPress={handleSubmit((data) => {
+                if (loading) return;
+                editing ? onSubmitEdit(data) : onSubmitCreate(data);
+              })}
             >
               <TextStyle center>{editing ? "Guardar" : "Crear"}</TextStyle>
             </ButtonStyle>
@@ -259,14 +227,5 @@ const CreatePlace = ({ route, navigation }) => {
     </Layout>
   );
 };
-
-const styles = StyleSheet.create({
-  toggles: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 15,
-  },
-});
 
 export default CreatePlace;

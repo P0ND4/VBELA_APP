@@ -6,15 +6,19 @@ import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
+import { useNavigation } from "@react-navigation/native";
 
 const light = theme.colors.light;
 const dark = theme.colors.dark;
 
-const OrderCompletion = ({ route, navigation }) => {
+const OrderCompletion = ({ route }) => {
   const mode = useSelector((state) => state.mode);
 
   const data = route.params.data;
   const total = route.params.total;
+  const sales = route.params.sales;
+
+  const navigation = useNavigation();
 
   return (
     <Layout>
@@ -69,7 +73,9 @@ const OrderCompletion = ({ route, navigation }) => {
             }}
             onPress={() => navigation.pop()}
           >
-            <TextStyle color={light.main2} center>Buscar otra mesa</TextStyle>
+            <TextStyle color={light.main2} center>
+              {sales ? "Vender más servicios/productos" : "Buscar otra mesa"}
+            </TextStyle>
           </ButtonStyle>
         </View>
       </View>

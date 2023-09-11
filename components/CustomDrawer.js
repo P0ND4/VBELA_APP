@@ -12,6 +12,8 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { socket } from "@socket";
 import { useEffect, useState } from "react";
+import { inactive as inactiveGroup } from "@features/function/informationSlice";
+import changeGeneralInformation from "@helpers/changeGeneralInformation";
 import {
   Alert,
   Image,
@@ -22,7 +24,7 @@ import {
   Share,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { readFile } from "../helpers/offline";
+import { readFile } from "@helpers/offline";
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
@@ -66,7 +68,6 @@ const CustomDrawer = (props) => {
   const logOut = () => {
     navigation.replace("SignIn");
     setTimeout(async () => {
-      const active = activeGroup;
       if (helpers.length > 0) {
         const helpers = helpers?.map((helper) => ({
           ...helper,
@@ -78,10 +79,6 @@ const CustomDrawer = (props) => {
       const groups = helpers?.map((h) => h.id);
       if (groups.length > 0) socket.emit("leave", { groups });
       cleanData(dispatch);
-      if (active.active) {
-        socket.emit("leave", { groups: [active.id] });
-        await helperCameOut(active, user);
-      }
     }, 300);
   };
 
@@ -103,10 +100,10 @@ const CustomDrawer = (props) => {
             }}
           />
           <TextStyle smallParagraph color="#FFFFFF">
-            {user?.email}
+            {user?.identifier}
           </TextStyle>
           <TextStyle verySmall color="#FFFFFF">
-            {isItInSync ? 'Sincronizado' : 'No Sincronizado'}
+            {isItInSync ? "Sincronizado" : "No Sincronizado"}
           </TextStyle>
         </ImageBackground>
         <View
@@ -161,7 +158,36 @@ const CustomDrawer = (props) => {
                 },
                 {
                   text: translate.affirmation,
-                  onPress: () => logOut(),
+                  onPress: () => {
+                    if (activeGroup.active) {
+                      Alert.alert(
+                        "Vas a regresar a tus datos",
+                        "Los datos estan guardados, no se perderán",
+                        [
+                          {
+                            text: "Cancelar",
+                            style: "cancel",
+                          },
+                          {
+                            text: "Ok",
+                            onPress: async () => {
+                              const active = activeGroup;
+                              socket.emit("leave", {
+                                groups: [activeGroup.id],
+                              });
+                              const groups = helpers?.map((h) => h.id);
+                              if (groups.length > 0)
+                                socket.emit("enter_room", { groups });
+                              changeGeneralInformation(dispatch, user);
+                              dispatch(inactiveGroup());
+                              await helperCameOut(active, user);
+                            },
+                          },
+                        ],
+                        { cancelable: true }
+                      );
+                    } else logOut();
+                  },
                 },
               ],
               { cancelable: true }
@@ -183,7 +209,7 @@ const CustomDrawer = (props) => {
             customStyle={{ fontFamily: "Roboto-Medium", marginLeft: 5 }}
             color={mode === "dark" ? dark.textWhite : light.textDark}
           >
-            Cerrar sesión
+            {activeGroup.active ? "Salir del grupo" : "Cerrar sesión"}
           </TextStyle>
         </TouchableOpacity>
       </View>

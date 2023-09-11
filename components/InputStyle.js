@@ -41,6 +41,7 @@ const InputStyle = ({
   onBlur,
   left,
   right,
+  defaultValue
 }) => {
   const mode = useSelector((state) => state.mode);
   const [isShow, setShow] = useState(false);
@@ -83,6 +84,7 @@ const InputStyle = ({
         placeholderTextColor="#888888"
         onFocus={onFocus}
         onBlur={onBlur}
+        defaultValue={defaultValue}
       />
       {secureTextEntry && (
         <TouchableOpacity

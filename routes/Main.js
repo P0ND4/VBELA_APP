@@ -28,9 +28,8 @@ import SignIn from "@screens/SignIn";
 import CreateEconomy from "@screens/event/CreateEconomy";
 import Event from "@screens/event/Event";
 import CreateHelper from "@screens/helper/CreateHelper";
-import Recipe from "@screens/inventory/Recipe";
-import RecipeCost from "@screens/inventory/RecipeCost";
-import RecipeInformation from "@screens/inventory/RecipeInformation";
+import CreateElement from "@screens/inventory/CreateElement";
+import CreateEntryOutput from "@screens/inventory/CreateEntryOutput";
 import CreatePerson from "@screens/people/CreatePerson";
 import PeopleInformation from "@screens/people/PeopleInformation";
 import CreatePlace from "@screens/reservation/CreatePlace";
@@ -39,17 +38,17 @@ import CreateZone from "@screens/reservation/CreateZone";
 import Place from "@screens/reservation/Place";
 import PlaceInformation from "@screens/reservation/PlaceInformation";
 import ReserveInformation from "@screens/reservation/ReserveInformation";
-import CreateOrder from "@screens/table/CreateOrder";
-import CreatePercentage from "@screens/table/CreatePercentage";
-import CreateProduct from "@screens/table/CreateProduct";
-import CreateTable from "@screens/table/CreateTable";
-import EditInvoice from "@screens/table/EditInvoice";
-import EditOrder from "@screens/table/EditOrder";
-import Invoice from "@screens/table/Invoice";
-import InvoiceByEmail from "@screens/table/InvoiceByEmail";
-import OrderCompletion from "@screens/table/OrderCompletion";
-import PreviewOrder from "@screens/table/PreviewOrder";
-import TableInformation from "@screens/table/TableInformation";
+import CreateOrder from "@screens/sales/CreateOrder";
+import CreatePercentage from "@screens/sales/CreatePercentage";
+import CreateProduct from "@screens/sales/CreateProduct";
+import CreateTable from "@screens/sales/CreateTable";
+import EditInvoice from "@screens/sales/EditInvoice";
+import EditOrder from "@screens/sales/EditOrder";
+import Invoice from "@screens/sales/Invoice";
+import InvoiceByEmail from "@screens/sales/InvoiceByEmail";
+import OrderCompletion from "@screens/sales/OrderCompletion";
+import PreviewOrder from "@screens/sales/PreviewOrder";
+import TableInformation from "@screens/sales/TableInformation";
 import { socket } from "@socket";
 import theme from "@theme";
 import { useEffect, useRef, useState } from "react";
@@ -63,10 +62,12 @@ import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
 
 import EmailAndPhone from "@screens/register/EmailAndPhone";
-import ClientSupplier from "@screens/setting/ClientSupplier";
-import App from "./App";
-import Verification from "@screens/register/Verification";
 import Selection from "@screens/register/Selection";
+import Verification from "@screens/register/Verification";
+import ClientSupplier from "@screens/setting/ClientSupplier";
+import EntryOutputInformation from "@screens/inventory/EntryOutputInformation";
+import App from "./App";
+import InventoryInformation from "@screens/inventory/InventoryInformation";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -134,7 +135,7 @@ const Main = () => {
       data,
       groups: activeGroup.id ? [activeGroup.id] : [],
       helpers: groups,
-      email: user?.email,
+      identifier: user?.identifier,
     });
     await removeFile({ name: "data.json" });
   };
@@ -154,7 +155,7 @@ const Main = () => {
         if (!information.error) changeGeneralInformation(dispatch, information);
         return { error: true, type: "User or password changed" };
       } else {
-        dispatch(active({ ...userFound, email: activeGroup.email }));
+        dispatch(active({ ...userFound, identifier: activeGroup.identifier }));
         return { error: false, type: null, userFound };
       }
     } else {
@@ -174,7 +175,7 @@ const Main = () => {
       else {
         if (check.type === "Helper not found") {
           for (let i = 0; i < file?.length; i++) {
-            if (file[i].email !== user?.email) file.splice(i, 1);
+            if (file[i].identifier !== user?.identifier) file.splice(i, 1);
           }
           await sendSync(file);
         } else {
@@ -189,7 +190,7 @@ const Main = () => {
       await helperNotification(
         activeGroup,
         user,
-        `${user?.email} ha recuperado la conexión`,
+        `${user?.identifier} ha recuperado la conexión`,
         check.error
           ? "Algunos cambios hechos por el usuario antes del cambio fueron sincronizados"
           : "Los cambios que se hicieron fuera de línea han sido sincronizados"
@@ -234,7 +235,7 @@ const Main = () => {
         }
 
         if (name === "Event")
-          navigation.current.replace(!session ? "SignIn" : "Home");
+          navigation.current.replace(!session ? "SignIn" : "App");
       }
     };
     if (connected) getAppInformation();
@@ -308,7 +309,9 @@ const Main = () => {
   useEffect(() => {
     const getInformation = async () => {
       const res = await getUser({
-        email: activeGroup.active ? activeGroup.email : user?.email,
+        identifier: activeGroup.active
+          ? activeGroup.identifier
+          : user?.identifier,
       });
       if (!activeGroup.active)
         await writeFile({ name: "user.json", value: res });
@@ -343,7 +346,7 @@ const Main = () => {
         value: {
           groups: activeGroup.id ? [activeGroup.id] : [],
           helpers: groups,
-          email: user?.email,
+          identifier: user?.identifier,
         },
       });
     };
@@ -490,7 +493,7 @@ const Main = () => {
         language: lang,
       };
       dispatch(changeSettings(settings));
-      await editUser({ email: user.email, change: { settings } });
+      await editUser({ identifier: user.identifier, change: { settings } });
     })();
   }, [user?.settings]);
 
@@ -525,7 +528,6 @@ const Main = () => {
           headerStyle: {
             backgroundColor: mode === "dark" ? dark.main1 : "#FFFFFF",
           },
-          gestureEnabled: true,
           transitionSpec: {
             open: config,
             close: closeConfig,
@@ -550,7 +552,10 @@ const Main = () => {
         <Stack.Screen
           name="Selection"
           component={Selection}
-          options={{ title: "Selecciona el tipo de cuenta", gestureEnabled: false }}
+          options={{
+            title: "Selecciona el tipo de cuenta",
+            gestureEnabled: false,
+          }}
         />
       </Stack.Group>
       <Stack.Screen
@@ -591,6 +596,7 @@ const Main = () => {
         <Stack.Screen
           name="ReserveInformation"
           component={ReserveInformation}
+          options={{ title: "Información de reservación" }}
         />
         <Stack.Screen
           name="CreateHelper"
@@ -612,7 +618,6 @@ const Main = () => {
         <Stack.Screen
           name="CreateProduct"
           component={CreateProduct}
-          options={{ title: "Nuevo producto" }}
         />
         <Stack.Screen
           name="PreviewOrder"
@@ -652,12 +657,23 @@ const Main = () => {
           options={{ title: "Detalles" }}
         />
         <Stack.Screen
-          name="Recipe"
-          component={Recipe}
-          options={{ title: "Recetas" }}
+          name="CreateElement"
+          component={CreateElement}
+          options={{ title: "Crear elemento" }}
         />
-        <Stack.Screen name="RecipeInformation" component={RecipeInformation} />
-        <Stack.Screen name="RecipeCost" component={RecipeCost} />
+        <Stack.Screen
+          name="CreateEntryOutput"
+          component={CreateEntryOutput}
+        />
+        <Stack.Screen
+          name="EntryOutputInformation"
+          component={EntryOutputInformation}
+        />
+        <Stack.Screen
+          name="InventoryInformation"
+          component={InventoryInformation}
+          options={{ title: 'Información de inventario' }}
+        />
       </Stack.Group>
       <Stack.Screen
         name="Event"

@@ -1,6 +1,9 @@
+import { Platform } from "react-native";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
 
 export const random = (repeat = 10, options = {}) => {
   let possible = "";
@@ -146,3 +149,42 @@ export const print = async ({ html }) => {
   });
   await Sharing.shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
 };
+
+export const getExpoID = async () =>  {
+  let token;
+
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "default",
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#EEEEEE",
+    });
+  }
+
+  if (Device.isDevice) {
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== "granted") {
+      alert("Hubo un error al obtener el token de la push notifications!");
+      return;
+    }
+    token = (
+      await Notifications.getExpoPushTokenAsync({
+        projectId: "0dd838a6-95db-4883-9a7f-7e6112496cd0",
+      })
+    ).data;
+    console.log(token);
+  } else {
+    alert(
+      "Debe usar un dispositivo físico para las notificaciones automáticas"
+    );
+  }
+
+  return token;
+}

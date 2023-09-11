@@ -12,7 +12,7 @@ import {
   Alert,
   Keyboard,
 } from "react-native";
-import { verifyPhoneNumber } from "@api";
+import { verifyPhoneNumber, verifyEmail } from "@api";
 import TextStyle from "@components/TextStyle";
 import InputStyle from "@components/InputStyle";
 import Layout from "@components/Layout";
@@ -53,7 +53,6 @@ const EmailAndPhone = ({ route, navigation }) => {
       });
   }, []);
 
-  //TODO Terminar registro de telefono y correo
   //TODO Controlar el uso excesivo de mensajes y llamadas una variable en redux para manejar el whatsapp, msm y llamadas
 
   useEffect(() => {
@@ -90,27 +89,31 @@ const EmailAndPhone = ({ route, navigation }) => {
             : dark.main2
         }
         onPress={async () => {
+          if (loading.state) return;
           Keyboard.dismiss();
-          if (
-            /^[0-9]{7,20}$/.test(value) &&
-            (!loading.state || loading.button === channel)
-          ) {
+          if (/^[0-9]{7,20}$/.test(value) && !loading.state) {
             const phoneNumber = `+${selection.country_phone_code}${value}`;
             setLoading({ state: true, button: channel });
-            /*const res = await verifyPhoneNumber({
+            const res = await verifyPhoneNumber({
               phoneNumber,
-              channel
-            });*/
-
-            setTimeout(() => {
-              setLoading({ state: false, button: null });
-              navigation.navigate("Verification", { value: phoneNumber, type: 'phone' });
-            }, 1000);
-            //if (res.error) return Alert.alert("Error","Hubo un fallo al enviar la verificación");
+              channel,
+            });
+            setLoading({ state: false, button: null });
+            if (res.error)
+              return Alert.alert(
+                "Error",
+                `Hubo un fallo al enviar la verificación ${
+                  res.message ? `de tipo: ${res.message}` : ""
+                }`
+              );
+            navigation.navigate("Verification", {
+              value: phoneNumber,
+              type: "phone",
+            });
           }
         }}
         style={[
-          styles.phoneNumberButton,
+          styles.button,
           {
             opacity:
               /^[0-9]{7,20}$/.test(value) &&
@@ -300,6 +303,57 @@ const EmailAndPhone = ({ route, navigation }) => {
       {type === "phone" && (
         <PhoneButton name="Llamada" icon="call-outline" channel="call" />
       )}
+      {type === "email" && (
+        <ButtonStyle
+          backgroundColor={light.main2}
+          onPress={async () => {
+            Keyboard.dismiss();
+            if (
+              /^([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$/.test(
+                value
+              ) &&
+              !loading.state
+            ) {
+              setLoading({ state: true, button: "email" });
+              const res = await verifyEmail({ email: value });
+              setLoading({ state: false, button: null });
+              if (res.error)
+                return Alert.alert(
+                  "Error",
+                  "Hubo un fallo al enviar la verificación"
+                );
+              navigation.navigate("Verification", { value, type: "email" });
+            }
+          }}
+          style={[
+            styles.button,
+            {
+              opacity:
+                /^([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$/.test(
+                  value
+                ) &&
+                (!loading.state || loading.button === "email")
+                  ? 1
+                  : 0.6,
+            },
+          ]}
+        >
+          {loading.state && loading.button === "email" && (
+            <ActivityIndicator size="small" color={light.textDark} />
+          )}
+          {(!loading.state || loading.button !== "email") && (
+            <TextStyle>Verificar</TextStyle>
+          )}
+          {(!loading.state || loading.button !== "email") && (
+            <Ionicons
+              name="mail"
+              color={light.textDark}
+              size={20}
+              style={{ marginLeft: 10 }}
+            />
+          )}
+        </ButtonStyle>
+      )}
       <Modal
         animationType="fade"
         transparent={true}
@@ -405,7 +459,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     width: "30%",
   },
-  phoneNumberButton: {
+  button: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",

@@ -12,8 +12,8 @@ import informationJobSlice from "@features/function/informationSlice";
 import informationTablesSlice from "@features/tables/informationSlice";
 import ordersSlice from "@features/tables/ordersSlice";
 import economySlice from "@features/function/economySlice";
-import menuSlice from '@features/tables/menuSlice';
-import sectionSlice from '@features/tables/sectionSlice';
+import menuSlice from "@features/tables/menuSlice";
+import sectionSlice from "@features/tables/sectionSlice";
 import invoiceSlice from "@features/tables/invoiceSlice";
 import kitchenSlice from "@features/tables/kitchenSlice";
 import rosterSlice from "@features/function/rosterSlice";
@@ -21,6 +21,11 @@ import peopleSlice from "@features/function/peopleSlice";
 import synchronizationSlice from "@features/user/synchronizationSlice";
 import languageSlice from "@features/settings/languageSlice";
 import settingsSlice from "@features/settings/settingsSlice";
+import informationInventorySlice from "@features/inventory/informationSlice";
+import salesSlice from "@features/sales/salesSlice";
+import productsSlice from "@features/sales/productsSlice";
+import informationStorageSlice from "@features/groups/informationStorageSlice";
+import accommodationSlice from "@features/groups/accommodationsSlice";
 
 const reducers = combineReducers({
   mode: modeSlice, // Mode light and dark
@@ -42,14 +47,19 @@ const reducers = combineReducers({
   people: peopleSlice,
   synchronization: synchronizationSlice,
   language: languageSlice,
-  settings: settingsSlice
+  settings: settingsSlice,
+  inventory: informationInventorySlice,
+  products: productsSlice, // PRODUCTOS O SERVICIOS DE VENTAS
+  sales: salesSlice, // VENTAS REALIZADAS DE SERVICIOS O VENTAS
+  informationStorage: informationStorageSlice,
+  accommodation: accommodationSlice, // GRUPOS DE ACOMODACION DE RESERVACIONES
 });
 
 const persistConfig = {
   key: "root",
   version: 1,
   storage: ExpoFileSystemStorage,
-  timeout: null
+  timeout: null,
 };
 
 const persistedReducer = persistReducer(persistConfig, reducers);

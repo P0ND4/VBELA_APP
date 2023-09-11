@@ -29,6 +29,7 @@ const CreateZone = ({ route, navigation }) => {
   const zone = route.params?.item;
   const editing = route.params?.editing;
 
+  const [loading, setLoading] = useState(false);
   const [name, setName] = useState(editing ? zone.name : "");
   const [description, setDescription] = useState(
     editing ? zone.description : ""
@@ -44,6 +45,7 @@ const CreateZone = ({ route, navigation }) => {
   }, []);
 
   const onSubmitEdit = async (data) => {
+    setLoading(true);
     Keyboard.dismiss();
     data.modificationDate = new Date().getTime();
     data.ref = zone.ref;
@@ -51,7 +53,7 @@ const CreateZone = ({ route, navigation }) => {
     dispatch(edit({ ref: zone.ref, data }));
     navigation.pop();
     await editGroup({
-      email: activeGroup.active ? activeGroup.email : user.email,
+      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       group: data,
       groups: activeGroup.active
         ? [activeGroup.id]
@@ -60,6 +62,7 @@ const CreateZone = ({ route, navigation }) => {
   };
 
   const onSubmitCreate = async (data) => {
+    setLoading(true);
     Keyboard.dismiss();
     const ref = random(20);
     if (groups.find((group) => group.ref === ref)) onSubmitCreate(data);
@@ -68,9 +71,11 @@ const CreateZone = ({ route, navigation }) => {
       data.creationDate = new Date().getTime();
       data.modificationDate = new Date().getTime();
       dispatch(add(data));
-      navigation.pop();
+      navigation.replace("CreatePlace", { ref });
       await addGroup({
-        email: activeGroup.active ? activeGroup.email : user.email,
+        identifier: activeGroup.active
+          ? activeGroup.identifier
+          : user.identifier,
         group: data,
         groups: activeGroup.active
           ? [activeGroup.id]
@@ -107,13 +112,17 @@ const CreateZone = ({ route, navigation }) => {
                 center
                 color={mode === "light" ? null : dark.textWhite}
               >
-                Creación de categoría
+                Creación de zona
               </TextStyle>
             </View>
             <View style={{ marginVertical: 30 }}>
               <InputStyle
                 value={name}
-                right={name ? () => <TextStyle color={light.main2}>Nombre</TextStyle> : null}
+                right={
+                  name
+                    ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
+                    : null
+                }
                 placeholder="Nombre"
                 maxLength={20}
                 onChangeText={(text) => {
@@ -128,7 +137,13 @@ const CreateZone = ({ route, navigation }) => {
               )}
               <InputStyle
                 value={description}
-                right={description ? () => <TextStyle color={light.main2}>Descripción</TextStyle> : null}
+                right={
+                  description
+                    ? () => (
+                        <TextStyle color={light.main2}>Descripción</TextStyle>
+                      )
+                    : null
+                }
                 placeholder="Descripción"
                 maxLength={100}
                 onChangeText={(text) => {
@@ -138,7 +153,11 @@ const CreateZone = ({ route, navigation }) => {
               />
               <InputStyle
                 value={location}
-                right={location ? () => <TextStyle color={light.main2}>Ubicación</TextStyle> : null}
+                right={
+                  location
+                    ? () => <TextStyle color={light.main2}>Ubicación</TextStyle>
+                    : null
+                }
                 placeholder="Ubicación"
                 maxLength={50}
                 onChangeText={(text) => {
@@ -148,7 +167,10 @@ const CreateZone = ({ route, navigation }) => {
               />
             </View>
             <ButtonStyle
-              onPress={handleSubmit(editing ? onSubmitEdit : onSubmitCreate)}
+              onPress={handleSubmit((data) => {
+                if (loading) return;
+                editing ? onSubmitEdit(data) : onSubmitCreate(data);
+              })}
               backgroundColor={light.main2}
             >
               <TextStyle center>{editing ? "Guardar" : "Crear"}</TextStyle>

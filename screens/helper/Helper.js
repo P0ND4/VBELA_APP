@@ -31,6 +31,8 @@ const GroupScreen = () => {
         <TextStyle
           customStyle={{ marginTop: 18 }}
           color={mode === "light" ? light.textDark : dark.textWhite}
+          smallParagraph
+          justify
         >
           Puedes trabajar junto a un equipo de administración notificando en
           tiempo real los cambios hechos en la VBELA

@@ -21,12 +21,7 @@ import {
 import { removeManyByOwner as removeMBOR } from "@features/groups/reservationsSlice";
 import { removeManyByOwner as removeMBOO } from "@features/tables/ordersSlice";
 import { removeEconomy, editUser, removeManyEconomy } from "@api";
-import {
-  changeDate,
-  thousandsSystem,
-  print,
-  generatePDF,
-} from "@helpers/libs";
+import { changeDate, thousandsSystem, print, generatePDF } from "@helpers/libs";
 import helperNotification from "@helpers/helperNotification";
 
 import theme from "@theme";
@@ -59,36 +54,50 @@ const PeopleInformation = ({ route, navigation }) => {
       [
         ...filter.map((e) => {
           const eco = { ...e };
-          const details = [];
-          const reser = reservations.filter((r) => r.owner === e.ref);
-          const reservationsSorted = reser.map((r) => {
-            const day = new Date(r.creationDate).getDate();
-            const month = new Date(r.creationDate).getMonth() + 1;
+          const reser = reservations.filter(({ hosted }) =>
+            hosted.some(({ owner }) => owner === e.ref)
+          );
+          const reservationsSorted = reser.map(({ creationDate, hosted }) => {
+            const day = new Date(creationDate).getDate();
+            const month = new Date(creationDate).getMonth() + 1;
+            const client = hosted.find((h) => h.owner === e.ref);
 
             return {
-              quantity: parseInt(r.people),
+              quantity: hosted.length,
               date: `${("0" + day).slice(-2)}-${("0" + month).slice(-2)}`,
-              total: r.discount ? r.amountWithDiscount : r.amount,
+              total:
+                client.payment === 0
+                  ? "EN ESPERA"
+                  : client.payment === "business"
+                  ? "POR EMPRESA"
+                  : client.payment,
               type: "reservations",
             };
           });
 
-          const ord = orders.filter((o) => o.ref === e.ref);
-          const ordersSorted = ord.map((o) => {
-            const day = new Date(o.creationDate).getDate();
-            const month = new Date(o.creationDate).getMonth() + 1;
-            return {
-              quantity: o.selection.reduce((a, b) => a + parseInt(b.count), 0),
-              date: `${("0" + day).slice(-2)}-${("0" + month).slice(-2)}`,
-              total: o.selection.reduce((a, b) => a + parseInt(b.total), 0),
-              type: "orders",
-            };
-          });
+          const ordersSorted = orders
+            .filter((o) => o.ref === eco.ref)
+            .map(({ creationDate, selection }) => {
+              const day = new Date(creationDate).getDate();
+              const month = new Date(creationDate).getMonth() + 1;
+              return {
+                quantity: selection.reduce(
+                  (a, { count }) => a + parseInt(count),
+                  0
+                ),
+                date: `${("0" + day).slice(-2)}-${("0" + month).slice(-2)}`,
+                total: selection.reduce(
+                  (a, { total }) => a + parseInt(total),
+                  0
+                ),
+                type: "orders",
+              };
+            });
 
-          const union = reservationsSorted.concat(ordersSorted);
+          const union = [...reservationsSorted, ...ordersSorted];
 
-          for (let item of union) {
-            const found = details.findIndex((d) => d.date === item.date);
+          const details = union.reduce((acc, item) => {
+            const found = acc.findIndex((d) => d.date === item.date);
 
             if (found === -1) {
               const data = {
@@ -98,11 +107,11 @@ const PeopleInformation = ({ route, navigation }) => {
                   total: item.total,
                 },
               };
-              details.push(data);
+              acc.push(data);
             } else {
-              const type = details[found][item.type];
-              details[found] = {
-                ...details[found],
+              const type = acc[found][item.type];
+              acc[found] = {
+                ...acc[found],
                 [item.type]: {
                   quantity: type
                     ? type.quantity + item.quantity
@@ -111,20 +120,17 @@ const PeopleInformation = ({ route, navigation }) => {
                 },
               };
             }
-          }
-          const sorted = details.sort((a, b) => a.date > b.date);
-          eco.details = sorted;
-          eco.people = reser.reduce((a, b) => a + parseInt(b.people), 0);
+            return acc;
+          }, []);
+
+          eco.details = details.sort((a, b) => a.date > b.date);
+          eco.people = reser.reduce((a, b) => a + b.hosted.length, 0);
           eco.orders = details.reduce(
             (a, b) => a + parseInt(b.orders?.total),
             0
           );
-          eco.reservations = details.reduce(
-            (a, b) =>
-              a + b.reservations ? parseInt(b.reservations?.total) : 0,
-            0
-          );
-          eco.ordersFinished = ord.length;
+          eco.reservations = reservationsSorted.length;
+          eco.ordersFinished = ordersSorted.length;
 
           return eco;
         }),
@@ -156,7 +162,7 @@ const PeopleInformation = ({ route, navigation }) => {
     dispatch(removeMBOR({ owner: person.id }));
     dispatch(removeMBOO({ ref: person.id }));
     await editUser({
-      email: activeGroup.active ? activeGroup.email : user.email,
+      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       change: {
         reservations: reservations.filter((r) => r.owner !== person.id),
         orders: orders.filter((o) => o.ref !== person.id),
@@ -281,7 +287,9 @@ const PeopleInformation = ({ route, navigation }) => {
               dispatch(remove({ id: economy.id }));
               if (economy.type === "debt") customerDataRemove(economy);
               await removeEconomy({
-                email: activeGroup.active ? activeGroup.email : user.email,
+                identifier: activeGroup.active
+                  ? activeGroup.identifier
+                  : user.identifier,
                 id: economy.id,
                 groups: activeGroup.active
                   ? [activeGroup.id]
@@ -297,7 +305,7 @@ const PeopleInformation = ({ route, navigation }) => {
                   economy.type === "expense"
                     ? "Un gasto ha sido eliminado"
                     : "Una compra ha sido eliminada"
-                } por ${user.email}`,
+                } por ${user.identifier}`,
                 economy.type === "debt"
                   ? "accessToCustomer"
                   : "accessToSupplier"
@@ -345,7 +353,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 Comida:
               </TextStyle>
               <TextStyle color={light.main2}>
-                {item.orders ? thousandsSystem(item.orders) : '0'}
+                {item.orders ? thousandsSystem(item.orders) : "0"}
               </TextStyle>
             </View>
           )}
@@ -357,7 +365,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 Alojamiento:
               </TextStyle>
               <TextStyle color={light.main2}>
-                {item.reservations ? thousandsSystem(item.reservations) : '0'}
+                {item.reservations ? thousandsSystem(item.reservations) : "0"}
               </TextStyle>
             </View>
           )}
@@ -369,7 +377,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 Personas alojadas:
               </TextStyle>
               <TextStyle color={light.main2}>
-                {item.people ? thousandsSystem(item.people) : '0'}
+                {item.people ? thousandsSystem(item.people) : "0"}
               </TextStyle>
             </View>
           )}
@@ -381,7 +389,9 @@ const PeopleInformation = ({ route, navigation }) => {
                 Pedidos realizados:
               </TextStyle>
               <TextStyle color={light.main2}>
-                {item.ordersFinished ? thousandsSystem(item.ordersFinished) : '0'}
+                {item.ordersFinished
+                  ? thousandsSystem(item.ordersFinished)
+                  : "0"}
               </TextStyle>
             </View>
           )}
@@ -547,7 +557,9 @@ const PeopleInformation = ({ route, navigation }) => {
                 dispatch(removeByEvent({ event: (e) => e.type !== "debt" }));
               else dispatch(removeByEvent({ event: (e) => e.type === "debt" }));
               await editUser({
-                email: activeGroup.active ? activeGroup.email : user.email,
+                identifier: activeGroup.active
+                  ? activeGroup.identifier
+                  : user.identifier,
                 change: {
                   economy:
                     userType === "supplier"
@@ -566,7 +578,9 @@ const PeopleInformation = ({ route, navigation }) => {
               dispatch(removeMany({ ref }));
               if (userType === "customer") customerDataRemove(economy);
               await removeManyEconomy({
-                email: activeGroup.active ? activeGroup.email : user.email,
+                identifier: activeGroup.active
+                  ? activeGroup.identifier
+                  : user.identifier,
                 ref,
                 groups: activeGroup.active
                   ? [activeGroup.id]

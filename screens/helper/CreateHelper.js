@@ -39,7 +39,8 @@ const CreateHelper = ({ navigation, route }) => {
 
   const item = route.params.item;
 
-  const [errorEmail, setErrorEmail] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorIdentifier, setErrorIdentifier] = useState(false);
   const [errorUser, setErrorUser] = useState(false);
   const [errorAccess, setErrorAccess] = useState(false);
   const [accessToReservations, setAccessToReservations] = useState(
@@ -63,6 +64,14 @@ const CreateHelper = ({ navigation, route }) => {
   const [accessToTables, setAccessToTables] = useState(
     route.params.data === "Edit" ? item.accessToTables : false
   );
+  const [accessToInventory, setAccessToInventory] = useState(
+    route.params.data === "Edit" ? item.accessToInventory : false
+  );
+
+  const [accessToProductsAndServices, setAccessToProductsAndServices] =
+    useState(
+      route.params.data === "Edit" ? item.accessToProductsAndServices : false
+    );
 
   const [inputUser, setInputUser] = useState(
     route.params.data === "Edit" ? item.user : ""
@@ -83,12 +92,11 @@ const CreateHelper = ({ navigation, route }) => {
 
   useEffect(() => {
     if (route.params.data !== "Create" && route.params.data !== "Edit")
-      register("email", {
+      register("identifier", {
         value: "",
         required: true,
-        pattern: /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+$/,
         validate: (text) =>
-          text !== user.email || "No puede ingresar a su propio perfil.",
+          text !== user.identifier || "No puede ingresar a su propio perfil.",
       });
 
     register("user", {
@@ -120,6 +128,13 @@ const CreateHelper = ({ navigation, route }) => {
     register("accessToTables", {
       value: route.params.data === "Edit" ? item.accessToTables : false,
     });
+    register("accessToInventory", {
+      value: route.params.data === "Edit" ? item.accessToInventory : false,
+    });
+    register("accessToProductsAndServices", {
+      value:
+        route.params.data === "Edit" ? item.accessToProductsAndServices : false,
+    });
   }, []);
 
   const permissionValidation = (data) => {
@@ -130,13 +145,15 @@ const CreateHelper = ({ navigation, route }) => {
       !data.accessToSupplier &&
       !data.accessToRoster &&
       !data.accessToKitchen &&
-      !data.accessToCustomer
+      !data.accessToCustomer &&
+      !data.accessToInventory
     )
       return true;
     else return false;
   };
 
   const onSubmitCreate = async (data) => {
+    setLoading(true);
     Keyboard.dismiss();
     setErrorAccess(false);
     if (permissionValidation(data)) return setErrorAccess(true);
@@ -149,18 +166,19 @@ const CreateHelper = ({ navigation, route }) => {
     navigation.pop();
     socket.emit("enter_room", { groups: [data.id] });
     await addHelper({
-      email: user.email,
+      identifier: user.identifier,
       helper: data,
       groups: helpers.map((h) => h.id),
     });
   };
 
   const onSubmitSingIn = async (data) => {
+    setLoading(true);
     Keyboard.dismiss();
-    setErrorEmail(false);
+    setErrorIdentifier(false);
     setErrorUser(false);
 
-    const u = await getUser({ email: data.email });
+    const u = await getUser({ identifier: data.identifier });
 
     if (!u.error) {
       const userFound = u.helpers.find((helper) => helper.user === data.user);
@@ -175,7 +193,7 @@ const CreateHelper = ({ navigation, route }) => {
           if (user.expoID)
             userFound.expoID = [...userFound.expoID, user.expoID];
           await editHelper({
-            email: u.email,
+            identifier: u.identifier,
             helper: userFound,
             groups: [userFound.id],
           });
@@ -184,7 +202,7 @@ const CreateHelper = ({ navigation, route }) => {
         dispatch(
           active({
             ...userFound,
-            email: data.email,
+            identifier: data.identifier,
           })
         );
 
@@ -198,15 +216,16 @@ const CreateHelper = ({ navigation, route }) => {
         if (devices.length !== 0) {
           await sendNotification({
             title: `Un usuario ingreso a ${data.user}`,
-            body: `Correo ingresado ${user.email}`,
+            body: `Usuario ingresado ${user.identifier}`,
             array: devices,
           });
         }
       } else setErrorUser(true);
-    } else setErrorEmail(true);
+    } else setErrorIdentifier(true);
   };
 
   const onSubmitEdit = async (data) => {
+    setLoading(true);
     Keyboard.dismiss();
     setErrorAccess(false);
     if (permissionValidation(data)) return setErrorAccess(true);
@@ -220,7 +239,7 @@ const CreateHelper = ({ navigation, route }) => {
     navigation.pop();
 
     await editHelper({
-      email: user.email,
+      identifier: user.identifier,
       helper: data,
       groups: helpers.map((h) => h.id),
     });
@@ -239,11 +258,12 @@ const CreateHelper = ({ navigation, route }) => {
         {
           text: "Si",
           onPress: async () => {
+            setLoading(true);
             socket.emit("close_room", { groups: [item.id] });
             dispatch(remove({ id: item.id }));
             navigation.pop();
             await removeHelper({
-              email: user.email,
+              identifier: user.identifier,
               id: item.id,
               groups: helpers.map((h) => h.id),
             });
@@ -293,24 +313,21 @@ const CreateHelper = ({ navigation, route }) => {
               {route.params.data !== "Create" &&
                 route.params.data !== "Edit" && (
                   <InputStyle
-                    placeholder="Correo al ingresar"
+                    placeholder="Identificador al ingresar"
                     maxLength={40}
-                    keyboardType="email-address"
                     onChangeText={(text) => {
-                      setValue("email", text);
+                      setValue("identifier", text.trim());
                     }}
                   />
                 )}
-              {(errors.email?.type || errorEmail) && (
+              {(errors.identifier?.type || errorIdentifier) && (
                 <TextStyle verySmall color={light.main2}>
-                  {errors.email?.type === "required"
-                    ? "El correo es requerido"
-                    : errors.email?.type === "pattern"
-                    ? "El correo es invalido"
-                    : errors.email?.type === "validate"
-                    ? errors.email?.message
-                    : errorEmail
-                    ? "El correo no existe"
+                  {errors.identifier?.type === "required"
+                    ? "El identificador de la cuenta es requerido"
+                    : errors.identifier?.type === "validate"
+                    ? errors.identifier?.message
+                    : errorIdentifier
+                    ? "El identificador de la cuenta no existe"
                     : ""}
                 </TextStyle>
               )}
@@ -364,6 +381,26 @@ const CreateHelper = ({ navigation, route }) => {
                         setValue("accessToTables", !accessToTables);
                       }}
                       value={accessToTables}
+                    />
+                  </View>
+                  <View style={styles.toggles}>
+                    <TextStyle smallParagraph color={light.main2}>
+                      PRODUCTOS Y SERVICIOS
+                    </TextStyle>
+                    <Switch
+                      trackColor={{ false: dark.main2, true: light.main2 }}
+                      thumbColor={light.main4}
+                      ios_backgroundColor="#3e3e3e"
+                      onValueChange={() => {
+                        setAccessToProductsAndServices(
+                          !accessToProductsAndServices
+                        );
+                        setValue(
+                          "accessToProductsAndServices",
+                          !accessToProductsAndServices
+                        );
+                      }}
+                      value={accessToProductsAndServices}
                     />
                   </View>
                   <View style={styles.toggles}>
@@ -456,6 +493,21 @@ const CreateHelper = ({ navigation, route }) => {
                       value={accessToKitchen}
                     />
                   </View>
+                  <View style={styles.toggles}>
+                    <TextStyle smallParagraph color={light.main2}>
+                      INVENTARIO
+                    </TextStyle>
+                    <Switch
+                      trackColor={{ false: dark.main2, true: light.main2 }}
+                      thumbColor={light.main4}
+                      ios_backgroundColor="#3e3e3e"
+                      onValueChange={() => {
+                        setAccessToInventory(!accessToInventory);
+                        setValue("accessToInventory", !accessToInventory);
+                      }}
+                      value={accessToInventory}
+                    />
+                  </View>
                 </View>
               )}
             </View>
@@ -471,19 +523,25 @@ const CreateHelper = ({ navigation, route }) => {
                 </TextStyle>
               )}
               {route.params.data === "Edit" && (
-                <ButtonStyle onPress={() => deleteUser()}>
+                <ButtonStyle
+                  onPress={() => {
+                    if (loading) return;
+                    deleteUser();
+                  }}
+                >
                   <TextStyle center>Eliminar usuario</TextStyle>
                 </ButtonStyle>
               )}
               <ButtonStyle
                 backgroundColor={light.main2}
-                onPress={handleSubmit(
+                onPress={handleSubmit((data) => {
+                  if (loading) return;
                   route.params.data === "Create"
-                    ? onSubmitCreate
+                    ? onSubmitCreate(data)
                     : route.params.data === "Session"
-                    ? onSubmitSingIn
-                    : onSubmitEdit
-                )}
+                    ? onSubmitSingIn(data)
+                    : onSubmitEdit(data);
+                })}
               >
                 <TextStyle center>
                   {route.params.data === "Create"

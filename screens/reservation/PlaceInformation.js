@@ -41,8 +41,8 @@ const PlaceInformation = ({ route, navigation }) => {
   useEffect(() => {
     setNomenclatures(nomenclaturesState.filter((n) => n.ref === route.params.ref));
     setNomenclature(nomenclatureState.find((n) => n.id === route.params.id));
-    setGroup(groupState.find((group) => group.ref === route.params.ref))
-  },[groupState, nomenclatureState, nomenclaturesState]);
+    setGroup(groupState.find((group) => group.ref === route.params.ref));
+  }, [groupState, nomenclatureState, nomenclaturesState]);
 
   useEffect(() => {
     if (params.type === "General")
@@ -61,9 +61,13 @@ const PlaceInformation = ({ route, navigation }) => {
     let totalPeople = 0;
 
     const getInformation = (reservations) => {
-      totalMoney += parseInt(reservations.amount);
+      totalMoney += parseInt(
+        reservations.discount > 0
+          ? reservations.amount - reservations.discount
+          : reservations.amount
+      );
       totalDays += parseInt(reservations.days);
-      totalPeople += parseInt(reservations.people);
+      totalPeople += parseInt(reservations.hosted.length);
     };
 
     if (params.type === "General") {
@@ -90,7 +94,7 @@ const PlaceInformation = ({ route, navigation }) => {
     setTotalMoney(totalMoney);
     setTotalDays(totalDays);
     setTotalPeople(totalPeople);
-  }, []);
+  }, [nomenclatures]);
 
   return (
     <Layout
@@ -225,23 +229,27 @@ const PlaceInformation = ({ route, navigation }) => {
                     dispatch(removeZone({ ref: route.params.ref }));
                     navigation.popToTop();
                     await removeGroup({
-                      email: activeGroup.active
-                        ? activeGroup.email
-                        : user.email,
+                      identifier: activeGroup.active
+                        ? activeGroup.identifier
+                        : user.identifier,
                       ref: route.params.ref,
                       ids,
-                      groups: activeGroup.active ? [activeGroup.id] : user.helpers.map((h) => h.id)
+                      groups: activeGroup.active
+                        ? [activeGroup.id]
+                        : user.helpers.map((h) => h.id),
                     });
                   } else {
                     dispatch(remove({ id: route.params.id }));
                     dispatch(removeManyReservation({ ref: route.params.id }));
                     navigation.pop();
                     await removeNomenclature({
-                      email: activeGroup.active
-                        ? activeGroup.email
-                        : user.email,
+                      identifier: activeGroup.active
+                        ? activeGroup.identifier
+                        : user.identifier,
                       id: route.params.id,
-                      groups: activeGroup.active ? [activeGroup.id] : user.helpers.map((h) => h.id)
+                      groups: activeGroup.active
+                        ? [activeGroup.id]
+                        : user.helpers.map((h) => h.id),
                     });
                   }
 
@@ -254,7 +262,7 @@ const PlaceInformation = ({ route, navigation }) => {
                         ? `del grupo (${group.name})`
                         : `en (${group.name} | ${nomenclature.nomenclature})`
                     }`,
-                    'accessToReservations'
+                    "accessToReservations"
                   );
                 },
               },
@@ -263,7 +271,10 @@ const PlaceInformation = ({ route, navigation }) => {
           );
         }}
       >
-        <TextStyle center>Eliminar {params.type === "Nomenclatura" ? "nomenclatura" : "Categoría"}</TextStyle>
+        <TextStyle center>
+          Eliminar{" "}
+          {params.type === "Nomenclatura" ? "nomenclatura" : "Categoría"}
+        </TextStyle>
       </ButtonStyle>
     </Layout>
   );

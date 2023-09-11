@@ -55,6 +55,7 @@ const CreateEconomy = ({ route, navigation }) => {
       ? thousandsSystem(data.payment)
       : ""
   );
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setPayment(amount);
@@ -92,6 +93,7 @@ const CreateEconomy = ({ route, navigation }) => {
   }, []);
 
   const onSubmitEdit = async (d) => {
+    setLoading(true);
     Keyboard.dismiss();
     d.id = data.id;
     d.type = data.type;
@@ -106,7 +108,7 @@ const CreateEconomy = ({ route, navigation }) => {
     dispatch(edit({ id: data.id, data: d }));
     navigation.pop();
     await editEconomy({
-      email: activeGroup.active ? activeGroup.email : user.email,
+      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       economy: d,
       groups: activeGroup.active
         ? [activeGroup.id]
@@ -121,13 +123,14 @@ const CreateEconomy = ({ route, navigation }) => {
           route.params.type === "expense"
             ? "Un gasto ha sido editado"
             : "Una compra ha sido editada"
-        } por ${user.email}`,
+        } por ${user.identifier}`,
         "accessToSupplier"
       );
     }
   };
 
   const onSubmitCreate = async (data) => {
+    setLoading(true);
     Keyboard.dismiss();
     const id = random(20);
     if (economy.find((group) => group.id === id)) onSubmitCreate(data);
@@ -141,7 +144,7 @@ const CreateEconomy = ({ route, navigation }) => {
     dispatch(add(data));
     navigation.pop();
     await addEconomy({
-      email: activeGroup.active ? activeGroup.email : user.email,
+      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       economy: data,
       groups: activeGroup.active
         ? [activeGroup.id]
@@ -157,7 +160,7 @@ const CreateEconomy = ({ route, navigation }) => {
           route.params.type === "expense"
             ? "Un gasto ha sido creado"
             : "Una compra ha sido creada"
-        } por ${user.email}`,
+        } por ${user.identifier}`,
         "accessToSupplier"
       );
     }
@@ -178,10 +181,13 @@ const CreateEconomy = ({ route, navigation }) => {
         {
           text: "Si",
           onPress: async () => {
+            setLoading(true);
             dispatch(remove({ id: data.id }));
             navigation.pop();
             await removeEconomy({
-              email: activeGroup.active ? activeGroup.email : user.email,
+              identifier: activeGroup.active
+                ? activeGroup.identifier
+                : user.identifier,
               id: data.id,
               groups: activeGroup.active
                 ? [activeGroup.id]
@@ -197,7 +203,7 @@ const CreateEconomy = ({ route, navigation }) => {
                 route.params.type === "expense"
                   ? "Un gasto ha sido eliminado"
                   : "Una compra ha sido eliminada"
-              } por ${user.email}`,
+              } por ${user.identifier}`,
               "accessToSupplier"
             );
           },
@@ -310,7 +316,10 @@ const CreateEconomy = ({ route, navigation }) => {
             </View>
             {editing && route.params.type !== "debt" && (
               <ButtonStyle
-                onPress={() => deleteEconomy()}
+                onPress={() => {
+                  if (loading) return;
+                  deleteEconomy();
+                }}
                 backgroundColor={mode === "light" ? light.main5 : dark.main2}
               >
                 <TextStyle
@@ -329,11 +338,16 @@ const CreateEconomy = ({ route, navigation }) => {
               }}
             >
               <ButtonStyle
-                onPress={handleSubmit(editing ? onSubmitEdit : onSubmitCreate)}
+                onPress={handleSubmit((data) => {
+                  if (loading) return;
+                  editing ? onSubmitEdit(data) : onSubmitCreate(data);
+                })}
                 backgroundColor={light.main2}
                 style={{ width: "40%" }}
               >
-                <TextStyle center>{editing && pay ? "Pagar" : editing ? "Guardar" : "Pagado"}</TextStyle>
+                <TextStyle center>
+                  {editing && pay ? "Pagar" : editing ? "Guardar" : "Pagado"}
+                </TextStyle>
               </ButtonStyle>
               <InputStyle
                 value={payment}

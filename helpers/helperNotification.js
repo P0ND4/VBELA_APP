@@ -3,7 +3,7 @@ import sendNotification from "./sendNotification";
 export default helperNotification = async (activeGroup, user, title, body, access) => {
   if (activeGroup.active) {
     const devices = activeGroup.expoID.filter(
-      (expoID) => expoID !== user.expoID && expoID !== ""
+      (expoID) => expoID !== user.expoID && expoID
     );
 
     if (devices.length !== 0)

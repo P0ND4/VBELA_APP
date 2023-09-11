@@ -29,8 +29,6 @@ export default sendNotification = async ({ title, body, to, array = [] }) => {
       "https://exp.host/--/api/v2/push/send",
       array.length > 0 ? messages : schema
     );
-  
-    console.log(res.data)
 
     return res.data;
   } catch (e) { return { error: true, type: e.message } }

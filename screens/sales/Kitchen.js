@@ -129,7 +129,7 @@ const Kitchen = () => {
 
               dispatch(editK({ id, data: kit }));
               await editKitchen({
-                email: activeGroup.active ? activeGroup.email : user.email,
+                identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
                 kitchen: kit,
                 groups: activeGroup.active
                   ? [activeGroup.id]
@@ -161,7 +161,7 @@ const Kitchen = () => {
           onPress: async () => {
             dispatch(removeK({ id }));
             await removeKitchen({
-              email: activeGroup.active ? activeGroup.email : user.email,
+              identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
               id,
               groups: activeGroup.active
                 ? [activeGroup.id]
@@ -233,11 +233,10 @@ const Kitchen = () => {
       {orders?.length === 0 && ordersFinished?.length === 0 && (
         <TextStyle
           center
-          subtitle
           customStyle={{ marginTop: 10 }}
           color={light.main2}
         >
-          No hay pedidos
+          NO HAY PEDIDOS
         </TextStyle>
       )}
       <ScrollView
@@ -262,11 +261,10 @@ const Kitchen = () => {
         {orders.length === 0 && (
           <TextStyle
             center
-            subtitle
             customStyle={{ marginTop: 10 }}
             color={light.main2}
           >
-            No hay ordenes en concina
+            NO HAY ORDENES EN COCINA
           </TextStyle>
         )}
         {ordersFinished.length > 0 &&
@@ -287,11 +285,10 @@ const Kitchen = () => {
         {ordersFinished.length === 0 && (
           <TextStyle
             center
-            subtitle
             customStyle={{ marginTop: 10 }}
             color={light.main2}
           >
-            No hay ordenes finalizados
+            NO HAY ORDENES FINALIZADOS
           </TextStyle>
         )}
       </ScrollView>

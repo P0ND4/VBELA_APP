@@ -1,5 +1,4 @@
 import { TouchableOpacity, View, StyleSheet } from "react-native";
-import TextStyle from "./TextStyle";
 import theme from "@theme";
 
 const light = theme.colors.light;
@@ -10,7 +9,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     width: "100%",
-    margin: 4,
+    marginVertical: 4,
   },
   elementsContainer: {
     flexDirection: "row",
@@ -24,7 +23,6 @@ const ButtonStyle = ({
   onPress,
   right,
   left,
-  centerText = true,
   disable = false,
   style,
 }) => {

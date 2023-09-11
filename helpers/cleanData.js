@@ -12,6 +12,10 @@ import { inactive as inactiveSession } from "@features/user/sessionSlice";
 import { inactive as inactiveGroup } from "@features/function/informationSlice";
 import { clean as cleanRoster } from "@features/function/rosterSlice";
 import { clean as cleanPeople } from "@features/function/peopleSlice";
+import { clean as cleanInventory } from '@features/inventory/informationSlice';
+import { clean as cleanProducts } from "@features/sales/productsSlice";
+import { clean as cleanSales } from "@features/sales/salesSlice";
+import { clean as cleanAccommodations } from "@features/groups/accommodationsSlice";
 
 export default cleanData = (dispatch) => {
   dispatch(inactiveSession());
@@ -28,4 +32,8 @@ export default cleanData = (dispatch) => {
   dispatch(cleanKitchen());
   dispatch(cleanRoster());
   dispatch(cleanPeople());
+  dispatch(cleanInventory());
+  dispatch(cleanProducts());
+  dispatch(cleanSales());
+  dispatch(cleanAccommodations());
 };

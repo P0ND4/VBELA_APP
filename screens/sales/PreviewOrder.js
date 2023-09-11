@@ -27,6 +27,7 @@ const PreviewOrder = ({ route, navigation }) => {
   const updateOrder = route.params.updateOrder;
   const sendToKitchen = route.params.sendToKitchen;
   const editing = route.params.editing;
+  const sales = route.params?.sales;
 
   const [newSelection, setNewSelection] = useState(route.params.newSelection);
   const [selection, setSelection] = useState(mainSelection);
@@ -143,7 +144,7 @@ const PreviewOrder = ({ route, navigation }) => {
                           selection,
                           setNewSelectionFromPreviewOrder: setNewSelection,
                           newSelection: route.params.newSelection,
-                          setNewSelection: route.params.setNewSelection
+                          setNewSelection: route.params.setNewSelection,
                         })
                       }
                     >
@@ -487,10 +488,7 @@ const PreviewOrder = ({ route, navigation }) => {
                   },
                   {
                     text: "Si",
-                    onPress: () => {
-                      setSelection([]);
-                      navigation.pop();
-                    },
+                    onPress: () => setSelection([]),
                   },
                 ]
               );
@@ -498,25 +496,27 @@ const PreviewOrder = ({ route, navigation }) => {
           >
             <Ionicons name="trash" size={28} color={light.main2} />
           </TouchableOpacity>
+          {!sales && (
+            <ButtonStyle
+              backgroundColor="transparent"
+              style={{
+                borderWidth: 2,
+                borderColor: light.main2,
+                width: SCREEN_WIDTH / 2.8,
+              }}
+              onPress={() => sendToKitchen(selection, newSelection)}
+            >
+              <TextStyle center verySmall color={light.main2}>
+                Enviar a cocina
+              </TextStyle>
+            </ButtonStyle>
+          )}
           <ButtonStyle
             backgroundColor="transparent"
             style={{
               borderWidth: 2,
               borderColor: light.main2,
-              width: SCREEN_WIDTH / 2.8,
-            }}
-            onPress={() => sendToKitchen(selection, newSelection)}
-          >
-            <TextStyle center verySmall color={light.main2}>
-              Enviar a cocina
-            </TextStyle>
-          </ButtonStyle>
-          <ButtonStyle
-            backgroundColor="transparent"
-            style={{
-              borderWidth: 2,
-              borderColor: light.main2,
-              width: SCREEN_WIDTH / 2.8,
+              width: sales ? SCREEN_WIDTH / 1.3 : SCREEN_WIDTH / 2.8,
             }}
             onPress={() => {
               const obj = {

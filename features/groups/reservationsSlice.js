@@ -26,15 +26,26 @@ export const reservationsSlice = createSlice({
     },
     removeManyByOwner: (state, action) => {
       const { owner } = action.payload;
-      const reservations = state.filter((r) => r.owner === owner);
-      for (let r of reservations) {
-        const index = state.findIndex((curr) => curr.owner === r.owner);
-        state.splice(index, 1);
-      }
-    }, 
+
+      state.forEach((reservation, index) => {
+        reservation.hosted = reservation.hosted.filter(
+          (hosted) => hosted.owner !== owner
+        );
+
+        if (reservation.hosted.length === 0) state.splice(index, 1);
+      });
+    },
     clean: (state, action) => (state = []),
   },
 });
 
-export const { add, change, remove, edit, clean, removeMany, removeManyByOwner } = reservationsSlice.actions;
+export const {
+  add,
+  change,
+  remove,
+  edit,
+  clean,
+  removeMany,
+  removeManyByOwner,
+} = reservationsSlice.actions;
 export default reservationsSlice.reducer;

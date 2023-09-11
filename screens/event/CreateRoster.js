@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   Alert,
@@ -16,6 +16,7 @@ import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
 import { thousandsSystem } from "@helpers/libs";
 import { add, edit, remove } from "@features/function/rosterSlice";
@@ -46,8 +47,10 @@ const CreateRoster = ({ route, navigation }) => {
   const [rosterSelected, setRosterSelected] = useState(
     editing ? data.roster : ""
   );
+  const [loading, setLoading] = useState(false);
 
   const dispatch = useDispatch();
+  const pickerRef = useRef();
 
   useEffect(() => {
     register("name", { value: editing ? data.name : "", required: true });
@@ -56,6 +59,7 @@ const CreateRoster = ({ route, navigation }) => {
   }, []);
 
   const onSubmitEdit = async (d) => {
+    setLoading(true);
     Keyboard.dismiss();
     d.ref = data.ref;
     d.creationDate = data.creationDate;
@@ -63,7 +67,7 @@ const CreateRoster = ({ route, navigation }) => {
     dispatch(edit({ id: data.id, data: d }));
     navigation.pop();
     await editRoster({
-      email: activeGroup.active ? activeGroup.email : user.email,
+      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       roster: d,
       groups: activeGroup.active
         ? [activeGroup.id]
@@ -72,6 +76,7 @@ const CreateRoster = ({ route, navigation }) => {
   };
 
   const onSubmitCreate = async (data) => {
+    setLoading(true);
     Keyboard.dismiss();
     const id = random(20);
     if (roster.find((r) => r.id === id)) onSubmitCreate(data);
@@ -82,7 +87,7 @@ const CreateRoster = ({ route, navigation }) => {
     dispatch(add(data));
     navigation.pop();
     await addRoster({
-      email: activeGroup.active ? activeGroup.email : user.email,
+      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       roster: data,
       groups: activeGroup.active
         ? [activeGroup.id]
@@ -103,10 +108,13 @@ const CreateRoster = ({ route, navigation }) => {
         {
           text: "Si",
           onPress: async () => {
+            setLoading(true);
             dispatch(remove({ id: data.id }));
             navigation.pop();
             await removeRoster({
-              email: activeGroup.active ? activeGroup.email : user.email,
+              identifier: activeGroup.active
+                ? activeGroup.identifier
+                : user.identifier,
               id: data.id,
               groups: activeGroup.active
                 ? [activeGroup.id]
@@ -190,33 +198,66 @@ const CreateRoster = ({ route, navigation }) => {
                   El valor es obligatorio
                 </TextStyle>
               )}
-              <TouchableOpacity
-                style={{
-                  backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                  borderRadius: 8,
-                  marginVertical: 4,
-                }}
-              >
-                <Picker
-                  style={{
-                    color: mode === "light" ? light.textDark : dark.textWhite,
-                  }}
-                  selectedValue={rosterSelected}
-                  onValueChange={(value) => {
-                    setValue("roster", value);
-                    setRosterSelected(value);
-                  }}
+              <View style={{ marginVertical: 4 }}>
+                <ButtonStyle
+                  backgroundColor={mode === "light" ? light.main5 : dark.main2}
+                  onPress={() => pickerRef.current.focus()}
                 >
-                  <Picker.Item label="SELECCIONE EL CARGO" value="" />
-                  {helpers.map((item) => (
-                    <Picker.Item
-                      key={item.id}
-                      label={item.user}
-                      value={item.user}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <TextStyle color={rosterSelected ? "#FFFFFF" : "#AAAAAA"}>
+                      {rosterSelected || "SELECCIONE EL CARGO"}
+                    </TextStyle>
+                    <Ionicons
+                      color={rosterSelected ? "#FFFFFF" : "#AAAAAA"}
+                      size={18}
+                      name="caret-down"
                     />
-                  ))}
-                </Picker>
-              </TouchableOpacity>
+                  </View>
+                </ButtonStyle>
+                <View style={{ display: "none" }}>
+                  <Picker
+                    ref={pickerRef}
+                    style={{
+                      color: mode === "light" ? light.textDark : dark.textWhite,
+                    }}
+                    selectedValue={rosterSelected}
+                    onValueChange={(value) => {
+                      setValue("roster", value);
+                      setRosterSelected(value);
+                    }}
+                  >
+                    <Picker.Item
+                      label="SELECCIONE EL CARGO"
+                      value=""
+                      style={{
+                        backgroundColor:
+                          mode === "light" ? light.main5 : dark.main2,
+                      }}
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    />
+                    {helpers.map((item) => (
+                      <Picker.Item
+                        key={item.id}
+                        label={item.user}
+                        value={item.user}
+                        style={{
+                          backgroundColor:
+                            mode === "light" ? light.main5 : dark.main2,
+                        }}
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
               {errors.roster?.type && (
                 <TextStyle verySmall color={light.main2}>
                   Seleccione el cargo al hacer la nómina
@@ -225,7 +266,10 @@ const CreateRoster = ({ route, navigation }) => {
             </View>
             {editing && (
               <ButtonStyle
-                onPress={() => deleteRoster()}
+                onPress={() => {
+                  if (loading) return;
+                  deleteRoster();
+                }}
                 backgroundColor={mode === "light" ? light.main5 : dark.main2}
               >
                 <TextStyle
@@ -237,7 +281,10 @@ const CreateRoster = ({ route, navigation }) => {
               </ButtonStyle>
             )}
             <ButtonStyle
-              onPress={handleSubmit(editing ? onSubmitEdit : onSubmitCreate)}
+              onPress={handleSubmit((data) => {
+                if (loading) return;
+                editing ? onSubmitEdit(data) : onSubmitCreate(data);
+              })}
               backgroundColor={light.main2}
             >
               <TextStyle center>{editing ? "Guardar" : "Pagado"}</TextStyle>

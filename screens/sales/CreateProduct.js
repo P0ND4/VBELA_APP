@@ -2,8 +2,24 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSelector, useDispatch } from "react-redux";
 import { View, StyleSheet, Alert, Dimensions } from "react-native";
-import { add, edit, remove } from "@features/tables/menuSlice";
-import { addMenu, editMenu, removeMenu } from "@api";
+import {
+  add as addM,
+  edit as editM,
+  remove as removeM,
+} from "@features/tables/menuSlice";
+import {
+  add as addP,
+  edit as editP,
+  remove as removeP,
+} from "@features/sales/productsSlice";
+import {
+  addMenu,
+  editMenu,
+  removeMenu,
+  addProduct,
+  editProduct,
+  removeProduct,
+} from "@api";
 import { thousandsSystem, random } from "@helpers/libs";
 import TextStyle from "@components/TextStyle";
 import InputStyle from "@components/InputStyle";
@@ -24,8 +40,9 @@ const CreateProduct = ({ route, navigation }) => {
     handleSubmit,
   } = useForm();
 
-  const editing = route.params.editing;
-  const item = route.params.item;
+  const editing = route.params?.editing;
+  const item = route.params?.item;
+  const sales = route.params?.sales;
 
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
@@ -39,15 +56,21 @@ const CreateProduct = ({ route, navigation }) => {
 
   const dispatch = useDispatch();
 
-  const setSelection = route.params.setSelection;
-  const selection = route.params.selection;
+  const setSelection = route.params?.setSelection;
+  const selection = route.params?.selection;
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: sales ? "Nuevo producto/servicio" : "Nuevo menú",
+    });
+  }, []);
 
   useEffect(() => {
     register("name", { value: editing ? item.name : "", required: true });
     register("price", { value: editing ? item.price : "", required: true });
   }, []);
 
-  const addProduct = async (data) => {
+  const onSubmitCreate = async (data) => {
     const id = random(20);
     if (menu.find((m) => m.id === id)) return addProduct(data);
 
@@ -56,36 +79,68 @@ const CreateProduct = ({ route, navigation }) => {
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
 
-    dispatch(add(data));
-    navigation.pop();
-    await addMenu({
-      email: activeGroup.active ? activeGroup.email : user.email,
-      menu: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
-        : user.helpers.map((h) => h.id),
-    });
+    if (sales) {
+      dispatch(addP(data));
+      navigation.pop();
+      await addProduct({
+        identifier: activeGroup.active
+          ? activeGroup.identifier
+          : user.identifier,
+        product: data,
+        groups: activeGroup.active
+          ? [activeGroup.id]
+          : user.helpers.map((h) => h.id),
+      });
+    } else {
+      dispatch(addM(data));
+      navigation.pop();
+      await addMenu({
+        identifier: activeGroup.active
+          ? activeGroup.identifier
+          : user.identifier,
+        menu: data,
+        groups: activeGroup.active
+          ? [activeGroup.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
   };
 
-  const editProduct = async (data) => {
+  const onSubmitEdit = async (data) => {
     data.id = item.id;
     data.group = null;
     data.creationDate = item.creationDate;
     data.modificationDate = new Date().getTime();
 
-    dispatch(edit({ id: item.id, data }));
     setSelection(selection.filter((s) => s.id !== item.id));
-    navigation.pop();
-    await editMenu({
-      email: activeGroup.active ? activeGroup.email : user.email,
-      menu: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
-        : user.helpers.map((h) => h.id),
-    });
+    if (sales) {
+      dispatch(editP({ id: item.id, data }));
+      navigation.pop();
+      await editProduct({
+        identifier: activeGroup.active
+          ? activeGroup.identifier
+          : user.identifier,
+        product: data,
+        groups: activeGroup.active
+          ? [activeGroup.id]
+          : user.helpers.map((h) => h.id),
+      });
+    } else {
+      dispatch(editM({ id: item.id, data }));
+      navigation.pop();
+      await editMenu({
+        identifier: activeGroup.active
+          ? activeGroup.identifier
+          : user.identifier,
+        menu: data,
+        groups: activeGroup.active
+          ? [activeGroup.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
   };
 
-  const removeProduct = async () => {
+  const onSubmitRemove = async () => {
     Alert.alert("Eliminar", "¿Esta seguro que desea eliminar el producto?", [
       {
         text: "No",
@@ -94,16 +149,32 @@ const CreateProduct = ({ route, navigation }) => {
       {
         text: "Si",
         onPress: async () => {
-          dispatch(remove({ id: item.id }));
           setSelection(selection.filter((s) => s.id !== item.id));
-          navigation.pop();
-          await removeMenu({
-            email: activeGroup.active ? activeGroup.email : user.email,
-            id: item.id,
-            groups: activeGroup.active
-              ? [activeGroup.id]
-              : user.helpers.map((h) => h.id),
-          });
+          if (sales) {
+            dispatch(removeP({ id: item.id }));
+            navigation.pop();
+            await removeProduct({
+              identifier: activeGroup.active
+                ? activeGroup.identifier
+                : user.identifier,
+              id: item.id,
+              groups: activeGroup.active
+                ? [activeGroup.id]
+                : user.helpers.map((h) => h.id),
+            });
+          } else {
+            dispatch(removeM({ id: item.id }));
+            navigation.pop();
+            await removeMenu({
+              identifier: activeGroup.active
+                ? activeGroup.identifier
+                : user.identifier,
+              id: item.id,
+              groups: activeGroup.active
+                ? [activeGroup.id]
+                : user.helpers.map((h) => h.id),
+            });
+          }
         },
       },
     ]);
@@ -188,7 +259,7 @@ const CreateProduct = ({ route, navigation }) => {
               borderWidth: 2,
               borderColor: light.main2,
             }}
-            onPress={() => removeProduct()}
+            onPress={() => onSubmitRemove()}
           >
             <TextStyle center smallParagraph color={light.main2}>
               Eliminar pedido
@@ -201,7 +272,7 @@ const CreateProduct = ({ route, navigation }) => {
             borderWidth: 2,
             borderColor: light.main2,
           }}
-          onPress={handleSubmit(!editing ? addProduct : editProduct)}
+          onPress={handleSubmit(!editing ? onSubmitCreate : onSubmitEdit)}
         >
           <TextStyle center smallParagraph color={light.main2}>
             {!editing ? "Añadir producto" : "Guardar"}

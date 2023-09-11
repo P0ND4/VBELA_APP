@@ -4,7 +4,7 @@ import { socket } from "./socket";
 
 const API = process.env.EXPO_PUBLIC_API_URL;
 
-export const connect = async ({ data = {}, url, returnData = true }) => {
+export const connect = async ({ data = {}, url, syncData = true }) => {
   try {
     const result = await axios.post(`${API}${url}`, data, { timeout: 3000 });
 
@@ -19,7 +19,7 @@ export const connect = async ({ data = {}, url, returnData = true }) => {
   } catch (e) {
     const error = { error: true, details: "api", type: e.message };
 
-    if (!returnData) return error;
+    if (!syncData) return error;
 
     const r = await readFile({ name: "data.json" });
     const value = !r.error ? r : [];
@@ -32,6 +32,10 @@ export const connect = async ({ data = {}, url, returnData = true }) => {
       "kitchen",
       "people",
       "economy",
+      "inventory",
+      "sale",
+      "product",
+      "accommodation"
     ];
     const typeOfData = url.slice(1).split("/")[0];
     const identification = options.includes(typeOfData) ? "id" : "ref";
@@ -72,10 +76,10 @@ export const connect = async ({ data = {}, url, returnData = true }) => {
 };
 
 export const getUser = async (data) =>
-  await connect({ data, url: "/user", returnData: false });
+  await connect({ data, url: "/user", syncData: false });
 
 export const addUser = async (data) =>
-  await connect({ data, url: "/user/add", returnData: false });
+  await connect({ data, url: "/user/add", syncData: false });
 
 export const editUser = async (data) =>
   await connect({ data, url: "/user/edit" });
@@ -150,7 +154,7 @@ export const removeManyEconomy = async (data) =>
   await connect({ data, url: "/economy/remove/many" });
 
 export const getRule = async () =>
-  await connect({ url: "/rule", returnData: false });
+  await connect({ url: "/rule", syncData: false });
 
 export const addMenu = async (data) =>
   await connect({ data, url: "/menu/add" });
@@ -194,11 +198,53 @@ export const removePerson = async (data) =>
 export const verifyPhoneNumber = async ({ phoneNumber, channel }) =>
   await connect({
     url: `/verify/phone/${phoneNumber}/${channel}`,
-    returnData: false,
+    syncData: false,
   });
 
 export const checkPhoneNumberVerification = async ({ phoneNumber, code }) =>
   await connect({
     url: `/check/phone/${phoneNumber}/${code}`,
-    returnData: false,
+    syncData: false,
   });
+
+export const verifyEmail = async ({ email }) =>
+  await connect({ url: `/verify/email/${email}`, syncData: false });
+
+export const checkEmailVerification = async ({ email, code }) =>
+  await connect({ url: `/check/email/${email}/${code}`, syncData: false });
+
+export const addInventory = async (data) =>
+  await connect({ data, url: "/inventory/add" });
+
+export const editInventory = async (data) =>
+  await connect({ data, url: "/inventory/edit" });
+
+export const removeInventory = async (data) =>
+  await connect({ data, url: "/inventory/remove" });
+
+export const addSale = async (data) =>
+  await connect({ data, url: "/sale/add" });
+
+export const editSale = async (data) =>
+  await connect({ data, url: "/sale/edit" });
+
+export const removeSale = async (data) =>
+  await connect({ data, url: "/sale/remove" });
+
+export const addProduct = async (data) =>
+  await connect({ data, url: "/product/add" });
+
+export const editProduct = async (data) =>
+  await connect({ data, url: "/product/edit" });
+
+export const removeProduct = async (data) =>
+  await connect({ data, url: "/product/remove" });
+
+export const addAccommodation = async (data) =>
+  await connect({ data, url: "/accommodation/add" });
+
+export const editAccommodation = async (data) =>
+  await connect({ data, url: "/accommodation/edit" });
+
+export const removeAccommodation = async (data) =>
+  await connect({ data, url: "/accommodation/remove" });

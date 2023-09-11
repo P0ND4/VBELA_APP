@@ -4,9 +4,7 @@ import {
   View,
   StyleSheet,
   Image,
-  Modal,
   Dimensions,
-  Platform,
   Animated,
   TouchableOpacity,
 } from "react-native";
@@ -17,19 +15,18 @@ import { change as changeSettings } from "@features/settings/settingsSlice";
 import { change as changeLanguage } from "@features/settings/languageSlice";
 import { active } from "@features/user/sessionSlice";
 import { addUser } from "@api";
+import { getExpoID } from "@helpers/libs";
 import axios from "axios";
 import TextStyle from "@components/TextStyle";
 import Layout from "@components/Layout";
 import ButtonStyle from "@components/ButtonStyle";
+import LoadingSession from "@components/LoadingSession";
 
 import * as Google from "expo-auth-session/providers/google";
 import * as Facebook from "expo-auth-session/providers/facebook";
 import * as WebBrowser from "expo-web-browser";
-import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
 
 import theme from "@theme";
-import Donut from "@components/Donut";
 import changeGeneralInformation from "@helpers/changeGeneralInformation";
 
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -47,60 +44,12 @@ const { width, height } = Dimensions.get("screen");
 
 WebBrowser.maybeCompleteAuthSession();
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
-
-async function registerForPushNotificationsAsync() {
-  let token;
-
-  if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#EEEEEE",
-    });
-  }
-
-  if (Device.isDevice) {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== "granted") {
-      alert("Hubo un error al obtener el token de la push notifications!");
-      return;
-    }
-    token = (
-      await Notifications.getExpoPushTokenAsync({
-        projectId: "0dd838a6-95db-4883-9a7f-7e6112496cd0",
-      })
-    ).data;
-    console.log(token);
-  } else {
-    alert(
-      "Debe usar un dispositivo físico para las notificaciones automáticas"
-    );
-  }
-
-  return token;
-}
-
-
 const SignIn = ({ navigation }) => {
   const mode = useSelector((state) => state.mode);
 
   const [percentage, setPercentage] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
-  const [expoPushToken, setExpoPushToken] = useState("");
+  const [expoPushToken, setExpoPushToken] = useState(null);
   const [facebookRequest, facebookResponse, facebookPromptAsync] =
     Facebook.useAuthRequest({
       clientId: process.env.CLIENT_ID || process.env.EXPO_PUBLIC_CLIENT_ID,
@@ -108,16 +57,21 @@ const SignIn = ({ navigation }) => {
 
   const [googleRequest, googleResponse, googlePromptAsync] =
     Google.useAuthRequest({
-      iosClientId: process.env.IOS_CLIENT_ID || process.env.EXPO_PUBLIC_IOS_CLIENT_ID,
-      androidClientId: process.env.ANDROID_CLIENT_ID || process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID,
+      iosClientId:
+        process.env.IOS_CLIENT_ID || process.env.EXPO_PUBLIC_IOS_CLIENT_ID,
+      androidClientId:
+        process.env.ANDROID_CLIENT_ID ||
+        process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID,
     });
 
   const dispatch = useDispatch();
 
   useEffect(() => {
-    registerForPushNotificationsAsync().then((token) =>
-      setExpoPushToken(token)
-    );
+    (async () => {
+      const token = await getExpoID();
+      if (!token) return;
+      setExpoPushToken(token);
+    })();
   }, []);
 
   useEffect(() => {
@@ -127,13 +81,10 @@ const SignIn = ({ navigation }) => {
       facebookResponse.authentication
     ) {
       (async () => {
-        setModalVisible(true);
-        setPercentage(20);
         const response = await axios.get(
           `https://graph.facebook.com/me?access_token=${facebookResponse.authentication.accessToken}&fields=id,name,email`
         );
 
-        setPercentage(40);
         sendInformation(response);
       })();
     }
@@ -146,8 +97,6 @@ const SignIn = ({ navigation }) => {
       googleResponse.authentication
     ) {
       (async () => {
-        setModalVisible(true);
-        setPercentage(25);
         const response = await axios.get(
           "https://www.googleapis.com/userinfo/v2/me",
           {
@@ -157,7 +106,6 @@ const SignIn = ({ navigation }) => {
           }
         );
 
-        setPercentage(50);
         sendInformation(response);
       })();
     }
@@ -181,25 +129,17 @@ const SignIn = ({ navigation }) => {
 
   const sendInformation = async (response) => {
     const email = response.data.email;
-    let data = await addUser({ email, expoID: expoPushToken });
+    let data = await addUser({ identifier: email, expoID: expoPushToken });
 
-    if (data.error && data.details === "api") {
-      setModalVisible(false);
-      setPercentage(0);
-      return alert("Ha ocurrido un problema al iniciar sesión");
-    }
-
-    const error = data.error;
-    const user = data.response;
-
-    dispatch(changeMode(error ? user.mode : data.mode));
-    changeGeneralInformation(dispatch, error ? user : data);
-    dispatch(changeUser(error ? user : data));
-    dispatch(
-      changeLanguage(error ? user.settings.language : data.settings.language)
-    );
-    dispatch(changeSettings(error ? user.settings : data.settings));
-    dispatch(changeHelper(error ? user.helpers : data.helpers));
+    if (data.error) return alert("Ha ocurrido un problema al iniciar sesión");
+    if (!data.type) return navigation.navigate("Selection", { value: email });
+    setModalVisible(true);
+    dispatch(changeMode(data.mode));
+    changeGeneralInformation(dispatch, data);
+    dispatch(changeUser(data));
+    dispatch(changeLanguage(data.settings.language));
+    dispatch(changeSettings(data.settings));
+    dispatch(changeHelper(data.helpers));
 
     setPercentage(100);
     setTimeout(() => {
@@ -261,12 +201,15 @@ const SignIn = ({ navigation }) => {
           });
 
           return (
-            <TouchableOpacity onPress={() => {
-              flatListRef.current?.scrollToIndex({
-                index: i,
-                animated: true
-              })
-            }} key={`indicator-${i}`}>
+            <TouchableOpacity
+              onPress={() => {
+                flatListRef.current?.scrollToIndex({
+                  index: i,
+                  animated: true,
+                });
+              }}
+              key={`indicator-${i}`}
+            >
               <Animated.View
                 style={{
                   height: 10,
@@ -409,22 +352,23 @@ const SignIn = ({ navigation }) => {
           --------------- Inicia sesión con ---------------
         </TextStyle>
         <View style={{ flexDirection: "row", paddingBottom: 85 }}>
-          <View style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: "center" }}>
             <ButtonStyle
-              style={[styles.button, { backgroundColor: '#F7F220' }]}
+              style={[styles.button, { backgroundColor: "#F7F220" }]}
               disable={!googleRequest}
               onPress={() => googleHandlePessAsync()}
               backgroundColor={mode === "dark" ? dark.main2 : light.main5}
             >
-              <Ionicons
-                name="logo-google"
-                size={38}
-                style={styles.icons}
-              />
+              <Ionicons name="logo-google" size={38} style={styles.icons} />
             </ButtonStyle>
-            <TextStyle smallParagraph color={mode === 'light' ? light.textDark : dark.textWhite}>Google</TextStyle>
+            <TextStyle
+              smallParagraph
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              Google
+            </TextStyle>
           </View>
-          <View style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: "center" }}>
             <ButtonStyle
               style={[styles.button, { backgroundColor: "#1F7BF2" }]}
               disable={!facebookRequest}
@@ -438,12 +382,19 @@ const SignIn = ({ navigation }) => {
                 style={styles.icons}
               />
             </ButtonStyle>
-            <TextStyle smallParagraph color={mode === 'light' ? light.textDark : dark.textWhite}>Facebook</TextStyle>
+            <TextStyle
+              smallParagraph
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              Facebook
+            </TextStyle>
           </View>
-          <View style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: "center" }}>
             <ButtonStyle
-              style={[styles.button, { backgroundColor: '#22D847' }]}
-              onPress={() => navigation.navigate('EmailAndPhone', { type: 'phone' })}
+              style={[styles.button, { backgroundColor: "#22D847" }]}
+              onPress={() =>
+                navigation.navigate("EmailAndPhone", { type: "phone" })
+              }
               backgroundColor={mode === "dark" ? dark.main2 : light.main5}
             >
               <Ionicons
@@ -453,12 +404,19 @@ const SignIn = ({ navigation }) => {
                 style={styles.icons}
               />
             </ButtonStyle>
-            <TextStyle smallParagraph color={mode === 'light' ? light.textDark : dark.textWhite}>Teléfono</TextStyle>
+            <TextStyle
+              smallParagraph
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              Teléfono
+            </TextStyle>
           </View>
-          <View style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: "center" }}>
             <ButtonStyle
               style={[styles.button, { backgroundColor: "#EB493A" }]}
-              onPress={() => navigation.navigate('EmailAndPhone', { type: 'email' })}
+              onPress={() =>
+                navigation.navigate("EmailAndPhone", { type: "email" })
+              }
               backgroundColor={mode === "dark" ? dark.main2 : light.main5}
             >
               <Ionicons
@@ -468,54 +426,32 @@ const SignIn = ({ navigation }) => {
                 style={styles.icons}
               />
             </ButtonStyle>
-            <TextStyle smallParagraph color={mode === 'light' ? light.textDark : dark.textWhite}>Correo</TextStyle>
+            <TextStyle
+              smallParagraph
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              Correo
+            </TextStyle>
           </View>
         </View>
       </View>
       <Indicator scrollX={scrollX} />
-      <Modal animationType="fade" transparent={true} visible={modalVisible}>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor:
-              mode === "light" ? `${light.main4}FF` : `${dark.main1}FF`,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Donut color={light.main2} percentage={percentage} />
-          <TextStyle
-            bigParagraph
-            color={mode === "dark" ? dark.textWhite : light.textDark}
-            customStyle={{ marginTop: 15 }}
-          >
-            {percentage === 25
-              ? "ESTABLECIENDO CONEXIÓN"
-              : percentage === 50
-                ? "VALIDANDO CORREO"
-                : percentage === 100
-                  ? "INICIANDO SESIÓN"
-                  : ""}
-          </TextStyle>
-          <TextStyle smallParagraph color={light.main2}>
-            POR FAVOR ESPERE
-          </TextStyle>
-        </View>
-      </Modal>
+      <LoadingSession modalVisible={modalVisible} percentage={percentage} />
     </Layout>
   );
 };
 
 const styles = StyleSheet.create({
   button: {
-    width: 'auto',
+    width: "auto",
     width: 60,
     height: 60,
     paddingVertical: 0,
     paddingHorizontal: 0,
-    alignItems: 'center',
-    justifyContent: 'center'
-  }
+    alignItems: "center",
+    justifyContent: "center",
+    margin: 4
+  },
 });
 
 export default SignIn;

@@ -34,6 +34,7 @@ const CreatePerson = ({ route, navigation }) => {
   const editing = route.params?.editing;
   const dataP = route.params?.person;
 
+  const [loading, setLoading] = useState(false);
   const [name, setName] = useState(editing ? dataP.name : "");
   const [identification, setIdentification] = useState(
     editing ? thousandsSystem(dataP.identification) : ""
@@ -54,6 +55,7 @@ const CreatePerson = ({ route, navigation }) => {
   }, []);
 
   const onSubmitCreate = async (data) => {
+    setLoading(true);
     Keyboard.dismiss();
     const id = random(20);
     if (people.find((p) => p.id === id)) onSubmitCreate(data);
@@ -65,7 +67,9 @@ const CreatePerson = ({ route, navigation }) => {
       dispatch(add(data));
       navigation.pop();
       await addPerson({
-        email: activeGroup.active ? activeGroup.email : user.email,
+        identifier: activeGroup.active
+          ? activeGroup.identifier
+          : user.identifier,
         person: data,
         groups: activeGroup.active
           ? [activeGroup.id]
@@ -75,18 +79,23 @@ const CreatePerson = ({ route, navigation }) => {
   };
 
   const onSubmitEdit = async (data) => {
+    setLoading(true);
     Keyboard.dismiss();
     const foundEconomy = economy.find((e) => e.ref === dataP.id);
     if (foundEconomy) {
-      dispatch(editE({
-        id: foundEconomy.id,
-        data: {
-          ...foundEconomy,
-          owner: { identification: data.identification, name: data.name },
-        },
-      }));
+      dispatch(
+        editE({
+          id: foundEconomy.id,
+          data: {
+            ...foundEconomy,
+            owner: { identification: data.identification, name: data.name },
+          },
+        })
+      );
       await editEconomy({
-        email: activeGroup.active ? activeGroup.email : user.email,
+        identifier: activeGroup.active
+          ? activeGroup.identifier
+          : user.identifier,
         economy: {
           ...foundEconomy,
           owner: { identification: data.identification, name: data.name },
@@ -103,7 +112,7 @@ const CreatePerson = ({ route, navigation }) => {
     dispatch(editPeople({ id: dataP.id, data }));
     navigation.pop();
     await editPerson({
-      email: activeGroup.active ? activeGroup.email : user.email,
+      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       person: data,
       groups: activeGroup.active
         ? [activeGroup.id]
@@ -167,7 +176,10 @@ const CreatePerson = ({ route, navigation }) => {
         )}
       </View>
       <ButtonStyle
-        onPress={handleSubmit(!editing ? onSubmitCreate : onSubmitEdit)}
+        onPress={handleSubmit((data) => {
+          if (loading) return;
+          !editing ? onSubmitCreate(data) : onSubmitEdit(data);
+        })}
         backgroundColor={light.main2}
       >
         <TextStyle center>Crear</TextStyle>

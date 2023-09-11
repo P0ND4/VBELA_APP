@@ -6,8 +6,12 @@ import { change as changeOrders } from "@features/tables/ordersSlice";
 import { change as changeEconomy } from "@features/function/economySlice";
 import { change as changeMenu } from "@features/tables/menuSlice";
 import { change as changeKitchen } from "@features/tables/kitchenSlice";
-import { change as changeRoster } from '@features/function/rosterSlice';
-import { change as changePeople } from '@features/function/peopleSlice';
+import { change as changeRoster } from "@features/function/rosterSlice";
+import { change as changePeople } from "@features/function/peopleSlice";
+import { change as changeInventory } from "@features/inventory/informationSlice";
+import { change as changeProducts } from "@features/sales/productsSlice";
+import { change as changeSlice } from "@features/sales/salesSlice";
+import { change as changeAccommodations } from "@features/groups/accommodationsSlice";
 
 export default changeGeneralInformation = (dispatch, data) => {
   dispatch(changeGroups(data.groups));
@@ -20,4 +24,8 @@ export default changeGeneralInformation = (dispatch, data) => {
   dispatch(changeKitchen(data.kitchen));
   dispatch(changeRoster(data.roster));
   dispatch(changePeople(data.people));
+  dispatch(changeInventory(data.inventory));
+  dispatch(changeProducts(data.products));
+  dispatch(changeSlice(data.sales));
+  dispatch(changeAccommodations(data.accommodations));
 };
