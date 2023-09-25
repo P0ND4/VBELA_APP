@@ -10,7 +10,6 @@ import InputStyle from "@components/InputStyle";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import theme from "@theme";
-import Information from "@components/Information";
 
 const light = theme.colors.light;
 const dark = theme.colors.dark;
@@ -39,8 +38,6 @@ const CreatePlace = ({ route, navigation }) => {
   const [nomenclature, setNomenclature] = useState(
     editing ? place.nomenclature : ""
   );
-
-  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     setNomenclatures(
@@ -217,13 +214,6 @@ const CreatePlace = ({ route, navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <Information
-        modalVisible={modalVisible}
-        setModalVisible={setModalVisible}
-        title="MULTIPLE"
-        description="Se utiliza para alojar a multiples clientes a una reservación"
-        buttonText="SUPER"
-      />
     </Layout>
   );
 };

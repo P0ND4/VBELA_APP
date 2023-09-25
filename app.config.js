@@ -1,11 +1,58 @@
 export default {
-  "expo": {
-    "android": {
-      "googleServicesFile": process.env.GOOGLE_SERVICES || process.env.EXPO_PUBLIC_GOOGLE_SERVICES,
-      "package": "com.app.vbela",
-      "versionCode": 40,
+  expo: {
+    name: "VBELA",
+    slug: "vbela",
+    version: "3.1.0",
+    orientation: "portrait",
+    icon: "./assets/icon.png",
+    userInterfaceStyle: "light",
+    splash: {
+      image: "./assets/splash.png",
+      resizeMode: "contain",
+      backgroundColor: "#1D1E1F",
     },
-    "extra": { "eas": { "projectId": "0dd838a6-95db-4883-9a7f-7e6112496cd0" } },
-    "owner": "lmacml"
+    updates: {
+      fallbackToCacheTimeout: 0,
+    },
+    assetBundlePatterns: ["**/*"],
+    jsEngine: "hermes",
+    ios: {
+      supportsTablet: true,
+      bundleIdentifier: "com.app.vbela",
+      entitlements: {
+        "com.apple.developer.networking.wifi-info": true,
+      },
+    },
+    android: {
+      adaptiveIcon: {
+        foregroundImage: "./assets/adaptive-icon.png",
+        backgroundColor: "#FFFFFF",
+      },
+    },
+    web: {
+      favicon: "./assets/favicon.png",
+    },
+    plugins: [
+      [
+        "expo-notifications",
+        {
+          icon: "./assets/notification-icon.png",
+          color: "#222831",
+        },
+      ],
+      "expo-localization",
+    ],
+    notification: {
+      androidMode: "default",
+      icon: "./assets/notification-icon.png",
+    },
+    scheme: ["vbela", "fb1235340873743796"],
+    android: {
+      googleServicesFile: process.env.GOOGLE_SERVICES || process.env.EXPO_PUBLIC_GOOGLE_SERVICES,
+      package: "com.app.vbela",
+      versionCode: 42,
+    },
+    extra: { eas: { projectId: "0dd838a6-95db-4883-9a7f-7e6112496cd0" } },
+    owner: "lmacml",
   },
 };

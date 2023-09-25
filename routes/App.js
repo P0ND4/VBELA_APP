@@ -76,7 +76,7 @@ function App() {
           name="Helper"
           component={Helper}
           options={{
-            title: "Grupos",
+            title: "Equipo de trabajo",
             drawerIcon: ({ color }) => (
               <Ionicons name="recording-outline" size={22} color={color} />
             ),

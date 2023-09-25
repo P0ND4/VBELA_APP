@@ -223,13 +223,27 @@ const CreateEntryOutput = ({ route, navigation }) => {
                         justifyContent: "space-between",
                       }}
                     >
-                      <TextStyle color={element ? "#FFFFFF" : "#AAAAAA"}>
+                      <TextStyle
+                        color={
+                          element
+                            ? mode === "light"
+                              ? light.textDark
+                              : dark.textWhite
+                            : "#888888"
+                        }
+                      >
                         {element
                           ? inventory.find((u) => u.id === element)?.name
                           : "SELECCIONE EL ELEMENTO"}
                       </TextStyle>
                       <Ionicons
-                        color={element ? "#FFFFFF" : "#AAAAAA"}
+                        color={
+                          element
+                            ? mode === "light"
+                              ? light.textDark
+                              : dark.textWhite
+                            : "#888888"
+                        }
                         size={18}
                         name="caret-down"
                       />

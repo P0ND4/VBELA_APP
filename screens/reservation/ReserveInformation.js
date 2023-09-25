@@ -195,7 +195,7 @@ const ReserveInformation = ({ route, navigation }) => {
             </td>
             <td style="width: 50px; border: 1px solid #000; padding: 8px">
               <p style="font-size: 14px; font-weight: 600; word-break: break-word;">${
-                item.checkIn ? "SI" : "NO"
+                item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"
               }</p>
             </td>
             <td style="width: 50px; border: 1px solid #000; padding: 8px">
@@ -391,7 +391,12 @@ const ReserveInformation = ({ route, navigation }) => {
       });
     };
 
-    if (reserve?.hosted.some((item) => !item.checkIn)) {
+    const validation =
+      type === "unique"
+        ? !hosted[0].checkIn
+        : reserve?.hosted.some((item) => !item.checkIn);
+
+    if (validation) {
       Alert.alert(
         `NO HA${type === "general" ? "N" : ""} LLEGADO`,
         `${
@@ -474,7 +479,7 @@ const ReserveInformation = ({ route, navigation }) => {
               const nh = found
                 ? {
                     ...h,
-                    checkOut: false,
+                    checkOut: null,
                     payment: 0,
                   }
                 : h;
@@ -664,7 +669,11 @@ const ReserveInformation = ({ route, navigation }) => {
                       const newHosted = reserve?.hosted.map((i) => {
                         if (i.id === item.id) {
                           const newI = { ...i };
-                          newI.checkIn = !item.checkIn;
+                          newI.checkIn = i.checkIn
+                            ? null
+                            : new Date().getTime();
+                          newI.checkOut = null;
+                          newI.payment = 0;
                           return newI;
                         }
                         return i;
@@ -701,7 +710,7 @@ const ReserveInformation = ({ route, navigation }) => {
               smallParagraph
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
-              {item.checkIn ? "SI" : "NO"}
+              {item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"}
             </TextStyle>
           </TouchableOpacity>
           <View
@@ -738,7 +747,7 @@ const ReserveInformation = ({ route, navigation }) => {
               smallParagraph
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
-              {item.checkOut ? "SI" : "NO"}
+              {item.checkOut ? changeDate(new Date(item.checkOut)) : "NO"}
             </TextStyle>
           </TouchableOpacity>
           <View
@@ -843,7 +852,7 @@ const ReserveInformation = ({ route, navigation }) => {
                 >
                   CHECK IN:{" "}
                   <TextStyle color={light.main2}>
-                    {item.checkIn ? "SI" : "NO"}
+                    {item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"}
                   </TextStyle>
                 </TextStyle>
                 <TextStyle
@@ -859,7 +868,7 @@ const ReserveInformation = ({ route, navigation }) => {
                 >
                   CHECK OUT:{" "}
                   <TextStyle color={light.main2}>
-                    {item.checkOut ? "SI" : "NO"}
+                    {item.checkOut ? changeDate(new Date(item.checkOut)) : "NO"}
                   </TextStyle>
                 </TextStyle>
                 <TextStyle
@@ -1049,10 +1058,10 @@ const ReserveInformation = ({ route, navigation }) => {
                           !activeGroup.accessToReservations
                         )
                           return;
-                        const quantity = reserve?.hosted.reduce(
-                          (a, b) => (a + b.checkIn ? 1 : -1),
-                          0
-                        );
+                        const quantity = reserve?.hosted.reduce((a, b) => {
+                          const bc = b.checkIn ? 1 : -1;
+                          return a + bc;
+                        }, 0);
                         Alert.alert(
                           "CAMBIAR",
                           `¿Pasar a todos los huéspedes que ${
@@ -1068,7 +1077,10 @@ const ReserveInformation = ({ route, navigation }) => {
                               onPress: async () => {
                                 const newHosted = reserve?.hosted.map((i) => {
                                   const newI = { ...i };
-                                  newI.checkIn = quantity < 0;
+                                  newI.checkIn =
+                                    quantity < 0 ? new Date().getTime() : null;
+                                  newI.checkOut = null;
+                                  newI.payment = 0;
                                   return newI;
                                 });
 
@@ -1556,8 +1568,8 @@ const ReserveInformation = ({ route, navigation }) => {
                       const nh = found
                         ? {
                             ...h,
-                            checkOut: true,
-                            checkIn: true,
+                            checkOut: new Date().getTime(),
+                            checkIn: new Date().getTime(),
                             payment: businessPayment
                               ? "business"
                               : hostedChange.payment,

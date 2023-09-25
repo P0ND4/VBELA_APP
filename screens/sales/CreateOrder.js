@@ -13,7 +13,8 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { thousandsSystem, random, months } from "@helpers/libs";
-import { add, edit, remove } from "@features/tables/ordersSlice";
+import { add as addM, edit, remove } from "@features/tables/ordersSlice";
+import { change as changeM } from "@features/tables/menuSlice";
 import {
   add as addK,
   removeMany as removeManyK,
@@ -33,6 +34,7 @@ import {
   editEconomy,
   removeOrder,
   removeEconomy,
+  editUser,
 } from "@api";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
@@ -223,11 +225,34 @@ const CreateOrder = ({ route, navigation }) => {
     data.total = total;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
-    dispatch(add(data));
-    if (d.pay) navigation.pop();
+    dispatch(addM(data));
+    const newMenu = menu.map((m) => {
+      const mc = { ...m };
+      const found = selection.find((s) => s.id === m.id);
+      if (found) {
+        mc.quantity -= found.count;
+        return mc;
+      }
+      return m;
+    });
+    if (d.pay) {
+      dispatch(changeM(newMenu));
+      navigation.pop();
+    }
     navigation.replace("OrderCompletion", { data, total });
     if (person)
       manageEconomy({ editing: d.pay, total, kitchen: dat.isSendtoKitchen });
+    if (d.pay) {
+      await editUser({
+        identifier: activeGroup.active
+          ? activeGroup.identifier
+          : user.identifier,
+        change: { menu: newMenu },
+        groups: activeGroup.active
+          ? [activeGroup.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
     await addOrder({
       identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       order: data,
@@ -258,7 +283,19 @@ const CreateOrder = ({ route, navigation }) => {
     data.creationDate = order.creationDate;
     data.modificationDate = new Date().getTime();
     dispatch(edit({ id: information.id, data }));
-    if (d.pay) navigation.pop();
+    const newMenu = menu.map((m) => {
+      const mc = { ...m };
+      const found = selection.find((s) => s.id === m.id);
+      if (found) {
+        mc.quantity -= found.count;
+        return mc;
+      }
+      return m;
+    });
+    if (d.pay) {
+      dispatch(changeM(newMenu));
+      navigation.pop();
+    }
     navigation.replace("OrderCompletion", { data, total });
     if (person)
       manageEconomy({
@@ -267,6 +304,17 @@ const CreateOrder = ({ route, navigation }) => {
         lastTotal: currentOrder.total,
         kitchen: dat.isSendtoKitchen,
       });
+    if (d.pay) {
+      await editUser({
+        identifier: activeGroup.active
+          ? activeGroup.identifier
+          : user.identifier,
+        change: { menu: newMenu },
+        groups: activeGroup.active
+          ? [activeGroup.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
     await editOrder({
       identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
       order: data,
@@ -343,7 +391,7 @@ const CreateOrder = ({ route, navigation }) => {
   };
 
   useEffect(() => {
-    let m = menu.sort((a, b) => {
+    let m = [...menu].sort((a, b) => {
       const nameA = a.name.toUpperCase();
       const nameB = b.name.toUpperCase();
       if (nameA < nameB) return -1;
@@ -360,19 +408,19 @@ const CreateOrder = ({ route, navigation }) => {
             .replace(/[\u0300-\u036f]/g, "")
             .toLowerCase()
             .includes(text.toLowerCase()) ||
-          p.price.toString().includes(text.toLowerCase())
+          p.value.toString().includes(text.toLowerCase())
         ) {
           if (!filters.active) return p;
 
           if (dateValidation(new Date(p.creationDate))) return;
           if (
             filters.minValue &&
-            p.price < parseInt(filters.minValue.replace(/\D/g, ""))
+            p.value < parseInt(filters.minValue.replace(/\D/g, ""))
           )
             return;
           if (
             filters.maxValue &&
-            p.price > parseInt(filters.maxValue.replace(/\D/g, ""))
+            p.value > parseInt(filters.maxValue.replace(/\D/g, ""))
           )
             return;
 
@@ -529,7 +577,7 @@ const CreateOrder = ({ route, navigation }) => {
             </TouchableOpacity>
             <InputStyle
               innerRef={searchRef}
-              placeholder="Product, valor"
+              placeholder="Producto, valor"
               value={search}
               onChangeText={(text) => setSearch(text)}
               stylesContainer={{ width: "78%", marginVertical: 0 }}
@@ -583,7 +631,7 @@ const CreateOrder = ({ route, navigation }) => {
           {products.map((item, index) => {
             return (
               <TouchableNativeFeedback
-                key={item.id ? item.id : item}
+                key={item.id ? item.id : index}
                 onLongPress={() => {
                   if (item.id)
                     return navigation.navigate("CreateProduct", {
@@ -614,14 +662,14 @@ const CreateOrder = ({ route, navigation }) => {
                     const object = {
                       ...item,
                       count,
-                      total: item.price * count,
+                      total: item.value * count,
                       discount: 0,
                     };
 
                     if (index !== -1) {
                       let selected = { ...selection[index] };
                       selected.count += count;
-                      selected.total += item.price * count;
+                      selected.total += item.value * count;
                       const changed = selection.map((s) => {
                         if (s.id === selected.id) return selected;
                         return s;
@@ -659,6 +707,27 @@ const CreateOrder = ({ route, navigation }) => {
                         >
                           {item.name}
                         </TextStyle>
+                        <View style={{ flexDirection: "row" }}>
+                          <TextStyle
+                            verySmall
+                            color={
+                              item.quantity < item.reorder
+                                ? "#F70000"
+                                : light.main2
+                            }
+                          >
+                            {item.quantity < 0 ? "-" : ""}
+                            {thousandsSystem(Math.abs(item.quantity))}/
+                          </TextStyle>
+                          <TextStyle
+                            verySmall
+                            color={
+                              mode === "light" ? light.textDark : dark.textWhite
+                            }
+                          >
+                            {thousandsSystem(item.reorder)}
+                          </TextStyle>
+                        </View>
                       </View>
                       <View
                         style={[
@@ -670,9 +739,12 @@ const CreateOrder = ({ route, navigation }) => {
                         ]}
                       >
                         <TextStyle verySmall>{item.name}</TextStyle>
-                        <TextStyle verySmall>
-                          {thousandsSystem(item.price)}
-                        </TextStyle>
+                        <View style={[styles.header, { flexWrap: "wrap" }]}>
+                          <TextStyle verySmall>
+                            {thousandsSystem(item.value)}
+                          </TextStyle>
+                          <TextStyle verySmall>{item.unit}</TextStyle>
+                        </View>
                       </View>
                     </View>
                   )}

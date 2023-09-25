@@ -241,7 +241,7 @@ const CreateElement = ({ route, navigation }) => {
                     : errors.name.message}
                 </TextStyle>
               )}
-              <View style={{ marginVertical: 4 }}>
+              <View>
                 <ButtonStyle
                   backgroundColor={mode === "light" ? light.main5 : dark.main2}
                   onPress={() => pickerRef.current?.focus()}
@@ -253,11 +253,25 @@ const CreateElement = ({ route, navigation }) => {
                       justifyContent: "space-between",
                     }}
                   >
-                    <TextStyle color={unit ? "#FFFFFF" : "#AAAAAA"}>
+                    <TextStyle
+                      color={
+                        unit
+                          ? mode === "light"
+                            ? light.textDark
+                            : dark.textWhite
+                          : "#888888"
+                      }
+                    >
                       {unitOptions.find((u) => u.value === unit)?.label}
                     </TextStyle>
                     <Ionicons
-                      color={unit ? "#FFFFFF" : "#AAAAAA"}
+                      color={
+                        unit
+                          ? mode === "light"
+                            ? light.textDark
+                            : dark.textWhite
+                          : "#888888"
+                      }
                       size={18}
                       name="caret-down"
                     />

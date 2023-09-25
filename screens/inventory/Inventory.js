@@ -633,96 +633,98 @@ const Inventory = () => {
           style={{ alignItems: "center", marginTop: 20, height: height / 1.3 }}
         >
           {inventory.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View>
-                <View style={{ flexDirection: "row" }}>
-                  <View
-                    style={[
-                      styles.table,
-                      {
-                        borderColor:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                      },
-                    ]}
-                  >
-                    <TextStyle color={light.main2} smallParagraph>
-                      PRODUCTO
-                    </TextStyle>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View>
+                  <View style={{ flexDirection: "row" }}>
+                    <View
+                      style={[
+                        styles.table,
+                        {
+                          borderColor:
+                            mode === "light" ? light.textDark : dark.textWhite,
+                        },
+                      ]}
+                    >
+                      <TextStyle color={light.main2} smallParagraph>
+                        PRODUCTO
+                      </TextStyle>
+                    </View>
+                    <View
+                      style={[
+                        styles.table,
+                        {
+                          borderColor:
+                            mode === "light" ? light.textDark : dark.textWhite,
+                        },
+                      ]}
+                    >
+                      <TextStyle color={light.main2} smallParagraph>
+                        ENTRADA
+                      </TextStyle>
+                    </View>
+                    <View
+                      style={[
+                        styles.table,
+                        {
+                          borderColor:
+                            mode === "light" ? light.textDark : dark.textWhite,
+                        },
+                      ]}
+                    >
+                      <TextStyle color={light.main2} smallParagraph>
+                        SALIDA
+                      </TextStyle>
+                    </View>
+                    <View
+                      style={[
+                        styles.table,
+                        {
+                          borderColor:
+                            mode === "light" ? light.textDark : dark.textWhite,
+                        },
+                      ]}
+                    >
+                      <TextStyle color={light.main2} smallParagraph>
+                        STOCK
+                      </TextStyle>
+                    </View>
+                    <View
+                      style={[
+                        styles.table,
+                        {
+                          borderColor:
+                            mode === "light" ? light.textDark : dark.textWhite,
+                        },
+                      ]}
+                    >
+                      <TextStyle color={light.main2} smallParagraph>
+                        UNIDAD
+                      </TextStyle>
+                    </View>
+                    <View
+                      style={[
+                        styles.table,
+                        {
+                          borderColor:
+                            mode === "light" ? light.textDark : dark.textWhite,
+                        },
+                      ]}
+                    >
+                      <TextStyle color={light.main2} smallParagraph>
+                        VALOR
+                      </TextStyle>
+                    </View>
                   </View>
-                  <View
-                    style={[
-                      styles.table,
-                      {
-                        borderColor:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                      },
-                    ]}
-                  >
-                    <TextStyle color={light.main2} smallParagraph>
-                      ENTRADA
-                    </TextStyle>
-                  </View>
-                  <View
-                    style={[
-                      styles.table,
-                      {
-                        borderColor:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                      },
-                    ]}
-                  >
-                    <TextStyle color={light.main2} smallParagraph>
-                      SALIDA
-                    </TextStyle>
-                  </View>
-                  <View
-                    style={[
-                      styles.table,
-                      {
-                        borderColor:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                      },
-                    ]}
-                  >
-                    <TextStyle color={light.main2} smallParagraph>
-                      STOCK
-                    </TextStyle>
-                  </View>
-                  <View
-                    style={[
-                      styles.table,
-                      {
-                        borderColor:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                      },
-                    ]}
-                  >
-                    <TextStyle color={light.main2} smallParagraph>
-                      UNIDAD
-                    </TextStyle>
-                  </View>
-                  <View
-                    style={[
-                      styles.table,
-                      {
-                        borderColor:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                      },
-                    ]}
-                  >
-                    <TextStyle color={light.main2} smallParagraph>
-                      VALOR
-                    </TextStyle>
-                  </View>
+                  <FlatList
+                    data={inventory}
+                    renderItem={Table}
+                    showsVerticalScrollIndicator={false}
+                    keyExtractor={(item) => item.id}
+                    scrollEnabled={false}
+                  />
                 </View>
-                <FlatList
-                  data={inventory}
-                  renderItem={Table}
-                  showsVerticalScrollIndicator={false}
-                  keyExtractor={(item) => item.id}
-                  scrollEnabled={false}
-                />
-              </View>
+              </ScrollView>
             </ScrollView>
           )}
         </View>
@@ -1146,11 +1148,25 @@ const Inventory = () => {
                   onPress={() => unitRef.current?.focus()}
                 >
                   <View style={styles.row}>
-                    <TextStyle color={filters.unit ? "#FFFFFF" : "#AAAAAA"}>
+                    <TextStyle
+                      color={
+                        filters.unit
+                          ? mode === "light"
+                            ? light.textDark
+                            : dark.textWhite
+                          : "#888888"
+                      }
+                    >
                       {unitOptions.find((u) => u.value === filters.unit)?.label}
                     </TextStyle>
                     <Ionicons
-                      color={filters.unit ? "#FFFFFF" : "#AAAAAA"}
+                      color={
+                        filters.unit
+                          ? mode === "light"
+                            ? light.textDark
+                            : dark.textWhite
+                          : "#888888"
+                      }
                       size={18}
                       name="caret-down"
                     />

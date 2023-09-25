@@ -210,7 +210,15 @@ const CreateRoster = ({ route, navigation }) => {
                       alignItems: "center",
                     }}
                   >
-                    <TextStyle color={rosterSelected ? "#FFFFFF" : "#AAAAAA"}>
+                    <TextStyle
+                      color={
+                        rosterSelected
+                          ? mode === "light"
+                            ? light.textDark
+                            : dark.textWhite
+                          : "#888888"
+                      }
+                    >
                       {rosterSelected || "SELECCIONE EL CARGO"}
                     </TextStyle>
                     <Ionicons

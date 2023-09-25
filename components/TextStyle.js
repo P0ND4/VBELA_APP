@@ -5,7 +5,7 @@ const light = theme.colors.light;
 
 const styles = StyleSheet.create({
   default: {
-    fontSize: 20,
+    fontSize: 18,
     color: light.textDark
   }
 });
@@ -32,13 +32,13 @@ const TextStyle = ({
 }) => {
   const stylesTaken = [
     styles.default,
-    bigTitle && { fontSize: 45 },
-    title && { fontSize: 40 },
-    smallTitle && { fontSize: 35 },
-    bigSubtitle && { fontSize: 32 },
-    subtitle && { fontSize: 28 },
-    smallSubtitle && { fontSize: 25 },
-    bigParagraph && { fontSize: 21 },
+    bigTitle && { fontSize: 40 },
+    title && { fontSize: 35 },
+    smallTitle && { fontSize: 32 },
+    bigSubtitle && { fontSize: 28 },
+    subtitle && { fontSize: 26 },
+    smallSubtitle && { fontSize: 23 },
+    bigParagraph && { fontSize: 20 },
     paragrahp && { fontSize: 18 },
     smallParagraph && { fontSize: 15 },
     verySmall && { fontSize: 13 },

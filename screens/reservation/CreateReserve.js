@@ -59,18 +59,21 @@ const CreateReserve = ({ route, navigation }) => {
 
   const {
     register: hostedRegister,
+    setValue: setHostedValue,
     formState: { errors: hostedErrors },
     handleSubmit: handleHostedSubmit,
   } = useForm();
 
   const {
     register: accommodationRegister,
+    setValue: setAccommodationValue,
     formState: { errors: accommodationErrors },
     handleSubmit: handleAccommodationSubmit,
   } = useForm();
 
   const {
     register: accommodationElementRegister,
+    setValue: setAccommodationElementValueForm,
     formState: { errors: accommodationElementErrors },
     handleSubmit: handleAccommodationElementSubmit,
   } = useForm();
@@ -176,37 +179,32 @@ const CreateReserve = ({ route, navigation }) => {
   ]);
 
   useEffect(() => {
-    hostedRegister("fullName", { value: fullName || "", required: true });
-    hostedRegister("email", { value: email || "" });
-    hostedRegister("identification", {
-      value: identification.replace(/[^0-9]/g, "") || "",
-    });
-    hostedRegister("phoneNumber", { value: phoneNumber || "" });
-    hostedRegister("checkIn", { value: checkIn || false });
-  }, [fullName, email, identification, phoneNumber, checkIn]);
+    hostedRegister("fullName", { value: "", required: true });
+    hostedRegister("email", { value: "" });
+    hostedRegister("identification", { value: "" });
+    hostedRegister("phoneNumber", { value: "" });
+    hostedRegister("checkIn", { value: null });
+  }, []);
 
   useEffect(() => {
-    accommodationRegister("name", {
-      value: accommodationName || "",
-      required: true,
-    });
+    accommodationRegister("name", { value: "", required: true });
     accommodationRegister("accommodation", {
-      value: accommodation || [],
+      value: [],
       validate: (value) =>
         value.length > 0 || "Tiene que haber mínimo 1 acomodación",
     });
-  }, [accommodationName, accommodation]);
+  }, []);
 
   useEffect(() => {
     accommodationElementRegister("name", {
-      value: accommodationElementName || "",
+      value: "",
       required: true,
     });
     accommodationElementRegister("value", {
-      value: accommodationElementValue || "",
+      value: "",
       required: true,
     });
-  }, [accommodationElementName, accommodationElementValue]);
+  }, []);
 
   useEffect(() => {
     reservationRegister("hosted", {
@@ -240,11 +238,11 @@ const CreateReserve = ({ route, navigation }) => {
           const year = route.params.year;
 
           const currentReservations = editing
-            ? reservationsState.filter((r) => r.ref !== reserve.ref)
-            : reservationsState;
+            ? reservationsState.filter((r) => r.ref !== reserve.ref && r.id === route.params.id)
+            : reservationsState.filter((r) => r.id === route.params.id);
 
-          for (let i = 0; i < parseInt(num); i++) {
-            const endDay = addDays(new Date(year, month, day), parseInt(i));
+          for (let i = 0; i < num; i++) {
+            const endDay = addDays(new Date(year, month, day), i);
             for (let reserve of currentReservations) {
               const start = new Date(reserve.start);
               const end = new Date(reserve.end);
@@ -350,6 +348,12 @@ const CreateReserve = ({ route, navigation }) => {
     setIdentification("");
     setPhoneNumber("");
     setDiscount("");
+    setCheckIn(false);
+    setHostedValue("fullName", "");
+    setHostedValue("email", "");
+    setHostedValue("identification", "");
+    setHostedValue("phoneNumber", "");
+    setHostedValue("checkIn", null);
     setReservationValue("discount", "");
     setEditingHosted({ editing: false });
     setModalVisiblePeople(!modalVisiblePeople);
@@ -359,7 +363,7 @@ const CreateReserve = ({ route, navigation }) => {
     data.id = editingHosted.id;
     data.owner = editingHosted.owner;
     data.payment = editingHosted.payment;
-    data.checkOut = editing.checkOut;
+    data.checkOut = editingHosted.checkOut;
 
     const newArray = hosted.map((h) => {
       if (h.id === editingHosted.id) return data;
@@ -375,7 +379,7 @@ const CreateReserve = ({ route, navigation }) => {
     data.id = id;
     data.owner = null;
     data.payment = 0;
-    data.checkOut = false;
+    data.checkOut = null;
     setHosted([...hosted, data]);
     setReservationValue("hosted", [...hosted, data]);
     cleanDataPeople();
@@ -384,8 +388,11 @@ const CreateReserve = ({ route, navigation }) => {
   const saveAccommodationElement = (data) => {
     setAccommodationElementName("");
     setAccommodationElementValue("");
+    setAccommodationElementValueForm("name", "");
+    setAccommodationElementValueForm("value", "");
     data.id = random(20);
     setAccommodation([...accommodation, data]);
+    setAccommodationValue("accommodation", [...accommodation, data]);
   };
 
   const valueTypeOptions = [
@@ -398,6 +405,12 @@ const CreateReserve = ({ route, navigation }) => {
     setAccommodationName("");
     setAccommodationElementName("");
     setAccommodationElementValue("");
+
+    setAccommodationValue("name", "");
+    setAccommodationValue("accommodation", []);
+    setAccommodationElementValueForm("name", "");
+    setAccommodationElementValueForm("value", "");
+
     setEditingAccommodation({
       editing: false,
       item: null,
@@ -406,7 +419,6 @@ const CreateReserve = ({ route, navigation }) => {
 
   const updateAccommodation = async (data) => {
     const item = editingAccommodation.item;
-    console.log(data);
     data.id = item.id;
     data.creationDate = item.creationDate;
     data.modificationDate = new Date().getTime();
@@ -557,11 +569,21 @@ const CreateReserve = ({ route, navigation }) => {
                             setIdentification(
                               thousandsSystem(item.identification)
                             );
-                            setCheckIn(item.checkIn);
+                            setCheckIn(!!item.checkIn);
                             setEditingHosted({
                               editing: true,
                               ...item,
                             });
+
+                            setHostedValue("fullName", item.fullName);
+                            setHostedValue("email", item.email);
+                            setHostedValue(
+                              "identification",
+                              item.identification
+                            );
+                            setHostedValue("phoneNumber", item.phoneNumber);
+                            setHostedValue("checkIn", item.checkIn);
+
                             setModalVisiblePeople(!modalVisiblePeople);
                           }}
                         >
@@ -651,7 +673,7 @@ const CreateReserve = ({ route, navigation }) => {
                 value={days}
                 onChangeText={(num) => {
                   setDays(num.replace(/[^0-9]/g, ""));
-                  setReservationValue("days", num);
+                  setReservationValue("days", parseInt(num));
                   cleanDiscount();
                 }}
                 maxLength={3}
@@ -675,12 +697,26 @@ const CreateReserve = ({ route, navigation }) => {
                       justifyContent: "space-between",
                     }}
                   >
-                    <TextStyle color={valueType ? "#FFFFFF" : "#AAAAAA"}>
+                    <TextStyle
+                      color={
+                        valueType
+                          ? mode === "light"
+                            ? light.textDark
+                            : dark.textWhite
+                          : "#888888"
+                      }
+                    >
                       {valueTypeOptions.find((v) => v.value === valueType)
                         ?.label || "SELECCIONE EL TIPO DE VALOR"}
                     </TextStyle>
                     <Ionicons
-                      color={valueType ? "#FFFFFF" : "#AAAAAA"}
+                      color={
+                        valueType
+                          ? mode === "light"
+                            ? light.textDark
+                            : dark.textWhite
+                          : "#888888"
+                      }
                       size={18}
                       name="caret-down"
                     />
@@ -916,6 +952,7 @@ const CreateReserve = ({ route, navigation }) => {
                   maxLength={30}
                   onChangeText={(text) => {
                     setFullName(text);
+                    setHostedValue("fullName", text);
                   }}
                 />
                 {hostedErrors.fullName?.type && (
@@ -932,7 +969,10 @@ const CreateReserve = ({ route, navigation }) => {
                       : null
                   }
                   maxLength={40}
-                  onChangeText={(text) => setEmail(text)}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setHostedValue("email", text);
+                  }}
                 />
                 <InputStyle
                   value={identification}
@@ -948,6 +988,10 @@ const CreateReserve = ({ route, navigation }) => {
                     setIdentification(
                       thousandsSystem(text.replace(/[^0-9]/g, ""))
                     );
+                    setHostedValue(
+                      "identification",
+                      text.replace(/[^0-9]/g, "")
+                    );
                   }}
                 />
                 <InputStyle
@@ -962,7 +1006,10 @@ const CreateReserve = ({ route, navigation }) => {
                   }
                   keyboardType="numeric"
                   maxLength={15}
-                  onChangeText={(text) => setPhoneNumber(text)}
+                  onChangeText={(text) => {
+                    setPhoneNumber(text);
+                    setHostedValue("phoneNumber", text);
+                  }}
                 />
                 <View style={[styles.row, { marginTop: 10 }]}>
                   <TextStyle smallParagraph color={light.main2}>
@@ -972,7 +1019,13 @@ const CreateReserve = ({ route, navigation }) => {
                     trackColor={{ false: dark.main2, true: light.main2 }}
                     thumbColor={light.main4}
                     ios_backgroundColor="#3e3e3e"
-                    onValueChange={() => setCheckIn(!checkIn)}
+                    onValueChange={() => {
+                      setCheckIn(!checkIn);
+                      setHostedValue(
+                        "checkIn",
+                        !checkIn ? new Date().getTime() : null
+                      );
+                    }}
                     value={checkIn}
                   />
                 </View>
@@ -1339,6 +1392,11 @@ const CreateReserve = ({ route, navigation }) => {
                               setEditingAccommodation({ editing: true, item });
                               setAccommodation(item.accommodation);
                               setAccommodationName(item.name);
+                              setAccommodationValue(
+                                "accommodation",
+                                item.accommodation
+                              );
+                              setAccommodationValue("name", item.name);
                               scrollViewAccommodationRef.current?.scrollTo({
                                 x: SCREEN_WIDTH * 2,
                                 animated: true,
@@ -1436,7 +1494,10 @@ const CreateReserve = ({ route, navigation }) => {
                         : null
                     }
                     value={accommodationName}
-                    onChangeText={(text) => setAccommodationName(text)}
+                    onChangeText={(text) => {
+                      setAccommodationName(text);
+                      setAccommodationValue("name", text);
+                    }}
                     maxLength={30}
                   />
                   {accommodationErrors.name?.type && (
@@ -1501,6 +1562,10 @@ const CreateReserve = ({ route, navigation }) => {
                                           (a) => a.id !== item.id
                                         );
                                       setAccommodation(newAccommodation);
+                                      setAccommodationValue(
+                                        "accommodation",
+                                        newAccommodation
+                                      );
                                     },
                                   },
                                 ],
@@ -1528,9 +1593,10 @@ const CreateReserve = ({ route, navigation }) => {
                       <InputStyle
                         placeholder="Nombre"
                         value={accommodationElementName}
-                        onChangeText={(text) =>
-                          setAccommodationElementName(text)
-                        }
+                        onChangeText={(text) => {
+                          setAccommodationElementName(text);
+                          setAccommodationElementValueForm("name", text);
+                        }}
                         maxLength={50}
                         stylesContainer={{ width: SCREEN_WIDTH / 3.2 }}
                       />
@@ -1544,11 +1610,15 @@ const CreateReserve = ({ route, navigation }) => {
                       <InputStyle
                         placeholder="Valor"
                         value={thousandsSystem(accommodationElementValue)}
-                        onChangeText={(text) =>
+                        onChangeText={(text) => {
                           setAccommodationElementValue(
                             parseInt(text.replace(/[^0-9]/g, ""))
-                          )
-                        }
+                          );
+                          setAccommodationElementValueForm(
+                            "value",
+                            parseInt(text.replace(/[^0-9]/g, ""))
+                          );
+                        }}
                         keyboardType="numeric"
                         maxLength={11}
                         stylesContainer={{ width: SCREEN_WIDTH / 3.2 }}

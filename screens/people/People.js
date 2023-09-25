@@ -785,8 +785,6 @@ const People = ({ navigation, userType }) => {
                     color={
                       userType === "customer"
                         ? existsAccommodation.id
-                          ? light.textDark
-                          : mode === "light"
                           ? dark.textWhite
                           : light.textDark
                         : mode === "light"
@@ -1424,8 +1422,8 @@ const People = ({ navigation, userType }) => {
                       phoneNumber: "",
                       payment: 0,
                       owner: personSelected.personID,
-                      checkIn: false,
-                      checkOut: false,
+                      checkIn: null,
+                      checkOut: null,
                       id: random(20),
                     };
 
@@ -1489,12 +1487,12 @@ const People = ({ navigation, userType }) => {
                                   {
                                     text: "No",
                                     onPress: () =>
-                                      updateReservation({ checkIn: false }),
+                                      updateReservation({ checkIn: null }),
                                   },
                                   {
                                     text: "Si",
                                     onPress: () =>
-                                      updateReservation({ checkIn: true }),
+                                      updateReservation({ checkIn: new Date().getTime() }),
                                   },
                                 ],
                                 { cancelable: true }

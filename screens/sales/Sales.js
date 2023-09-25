@@ -13,8 +13,9 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { thousandsSystem, random, months } from "@helpers/libs";
-import { add } from "@features/sales/salesSlice";
-import { addSale } from "@api";
+import { add as addS } from "@features/sales/salesSlice";
+import { change as changeP } from "@features/sales/productsSlice";
+import { editUser } from "@api";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -96,7 +97,7 @@ const Sales = () => {
   };
 
   useEffect(() => {
-    let p = productsRef.sort((a, b) => {
+    let p = [...productsRef].sort((a, b) => {
       const nameA = a.name.toUpperCase();
       const nameB = b.name.toUpperCase();
       if (nameA < nameB) return -1;
@@ -113,19 +114,19 @@ const Sales = () => {
             .replace(/[\u0300-\u036f]/g, "")
             .toLowerCase()
             .includes(text.toLowerCase()) ||
-          p.price.toString().includes(text.toLowerCase())
+          p.value.toString().includes(text.toLowerCase())
         ) {
           if (!filters.active) return p;
 
           if (dateValidation(new Date(p.creationDate))) return;
           if (
             filters.minValue &&
-            p.price < parseInt(filters.minValue.replace(/\D/g, ""))
+            p.value < parseInt(filters.minValue.replace(/\D/g, ""))
           )
             return;
           if (
             filters.maxValue &&
-            p.price > parseInt(filters.maxValue.replace(/\D/g, ""))
+            p.value > parseInt(filters.maxValue.replace(/\D/g, ""))
           )
             return;
 
@@ -199,17 +200,30 @@ const Sales = () => {
     data.total = total;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
-    dispatch(add(data));
+    dispatch(addS(data));
     setSelection([]);
+    const newProducts = productsRef.map((p) => {
+      const pc = { ...p };
+      const found = selection.find((s) => s.id === p.id);
+      if (found) {
+        pc.quantity -= found.count;
+        return pc;
+      }
+      return p;
+    });
+    dispatch(changeP(newProducts));
     if (d.pay) navigation.pop();
     navigation.navigate("OrderCompletion", { data, total, sales: true });
-    await addSale({
+    await editUser({
       identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
-      sale: data,
+      change: {
+        sales: [...sales, data],
+        products: newProducts
+      },
       groups: activeGroup.active
         ? [activeGroup.id]
         : user.helpers.map((h) => h.id),
-    });
+    })
   };
 
   return (
@@ -260,7 +274,7 @@ const Sales = () => {
             </TouchableOpacity>
             <InputStyle
               innerRef={searchRef}
-              placeholder="Product, valor"
+              placeholder="Producto, valor"
               value={search}
               onChangeText={(text) => setSearch(text)}
               stylesContainer={{ width: "78%", marginVertical: 0 }}
@@ -334,14 +348,14 @@ const Sales = () => {
                     const object = {
                       ...item,
                       count,
-                      total: item.price * count,
+                      total: item.value * count,
                       discount: 0,
                     };
 
                     if (index !== -1) {
                       let selected = { ...selection[index] };
                       selected.count += count;
-                      selected.total += item.price * count;
+                      selected.total += item.value * count;
                       const changed = selection.map((s) => {
                         if (s.id === selected.id) return selected;
                         return s;
@@ -377,6 +391,27 @@ const Sales = () => {
                         >
                           {item.name}
                         </TextStyle>
+                        <View style={{ flexDirection: "row" }}>
+                          <TextStyle
+                            verySmall
+                            color={
+                              item.quantity < item.reorder
+                                ? "#F70000"
+                                : light.main2
+                            }
+                          >
+                            {item.quantity < 0 ? "-" : ""}
+                            {thousandsSystem(Math.abs(item.quantity))}/
+                          </TextStyle>
+                          <TextStyle
+                            verySmall
+                            color={
+                              mode === "light" ? light.textDark : dark.textWhite
+                            }
+                          >
+                            {thousandsSystem(item.reorder)}
+                          </TextStyle>
+                        </View>
                       </View>
                       <View
                         style={[
@@ -388,9 +423,12 @@ const Sales = () => {
                         ]}
                       >
                         <TextStyle verySmall>{item.name}</TextStyle>
-                        <TextStyle verySmall>
-                          {thousandsSystem(item.price)}
-                        </TextStyle>
+                        <View style={[styles.header, { flexWrap: "wrap" }]}>
+                          <TextStyle verySmall>
+                            {thousandsSystem(item.value)}
+                          </TextStyle>
+                          <TextStyle verySmall>{item.unit}</TextStyle>
+                        </View>
                       </View>
                     </View>
                   )}
