@@ -3,12 +3,12 @@ import { persistStore, persistReducer } from "redux-persist";
 import ExpoFileSystemStorage from "redux-persist-expo-filesystem";
 import modeSlice from "@features/settings/modeSlice";
 import informationUserSlice from "@features/user/informationSlice";
-import informationGroupsSlice from "@features/groups/informationSlice";
+import informationZonesSlice from "@features/zones/informationSlice";
 import sessionSlice from "@features/user/sessionSlice";
-import nomenclaturesSlice from "@features/groups/nomenclaturesSlice";
-import reservationsSlice from "@features/groups/reservationsSlice";
+import nomenclaturesSlice from "@features/zones/nomenclaturesSlice";
+import reservationsSlice from "@features/zones/reservationsSlice";
 import helpersSlice from "@features/helpers/informationSlice";
-import informationJobSlice from "@features/function/informationSlice";
+import helperStatusSlice from "@features/helpers/statusSlice";
 import informationTablesSlice from "@features/tables/informationSlice";
 import ordersSlice from "@features/tables/ordersSlice";
 import economySlice from "@features/function/economySlice";
@@ -24,18 +24,18 @@ import settingsSlice from "@features/settings/settingsSlice";
 import informationInventorySlice from "@features/inventory/informationSlice";
 import salesSlice from "@features/sales/salesSlice";
 import productsSlice from "@features/sales/productsSlice";
-import informationStorageSlice from "@features/groups/informationStorageSlice";
-import accommodationSlice from "@features/groups/accommodationsSlice";
+import accommodationSlice from "@features/zones/accommodationsSlice";
+import groupsSlice from "@features/sales/groupsSlice";
 
 const reducers = combineReducers({
   mode: modeSlice, // Mode light and dark
   user: informationUserSlice,
-  groups: informationGroupsSlice,
+  zones: informationZonesSlice,
   nomenclatures: nomenclaturesSlice,
   reservations: reservationsSlice,
   session: sessionSlice,
   helpers: helpersSlice,
-  activeGroup: informationJobSlice,
+  helperStatus: helperStatusSlice,
   tables: informationTablesSlice,
   orders: ordersSlice,
   economy: economySlice,
@@ -51,8 +51,8 @@ const reducers = combineReducers({
   inventory: informationInventorySlice,
   products: productsSlice, // PRODUCTOS O SERVICIOS DE VENTAS
   sales: salesSlice, // VENTAS REALIZADAS DE SERVICIOS O VENTAS
-  informationStorage: informationStorageSlice,
   accommodation: accommodationSlice, // GRUPOS DE ACOMODACION DE RESERVACIONES
+  groups: groupsSlice // GRUPOS DE DE VENTAS
 });
 
 const persistConfig = {

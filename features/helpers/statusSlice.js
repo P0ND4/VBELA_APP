@@ -1,7 +1,7 @@
 const { createSlice } = require("@reduxjs/toolkit");
 
-export const informationSlice = createSlice({
-  name: "group-information",
+export const statusSlice = createSlice({
+  name: "helper-status",
   initialState: {
     active: false,
   },
@@ -21,5 +21,5 @@ export const informationSlice = createSlice({
   },
 });
 
-export const { active, inactive } = informationSlice.actions;
-export default informationSlice.reducer;
+export const { active, inactive } = statusSlice.actions;
+export default statusSlice.reducer;

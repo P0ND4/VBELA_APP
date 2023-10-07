@@ -18,10 +18,16 @@ import {
   removeMany,
   remove,
 } from "@features/function/economySlice";
-import { removeManyByOwner as removeMBOR } from "@features/groups/reservationsSlice";
+import { removeManyByOwner as removeMBOR } from "@features/zones/reservationsSlice";
 import { removeManyByOwner as removeMBOO } from "@features/tables/ordersSlice";
 import { removeEconomy, editUser, removeManyEconomy } from "@api";
-import { changeDate, thousandsSystem, print, generatePDF } from "@helpers/libs";
+import {
+  changeDate,
+  thousandsSystem,
+  print,
+  generatePDF,
+  getFontSize,
+} from "@helpers/libs";
 import helperNotification from "@helpers/helperNotification";
 
 import theme from "@theme";
@@ -34,7 +40,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PeopleInformation = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const economy = useSelector((state) => state.economy);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const reservations = useSelector((state) => state.reservations);
   const orders = useSelector((state) => state.orders);
   const user = useSelector((state) => state.user);
@@ -162,13 +168,15 @@ const PeopleInformation = ({ route, navigation }) => {
     dispatch(removeMBOR({ owner: person.id }));
     dispatch(removeMBOO({ ref: person.id }));
     await editUser({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
       change: {
         reservations: reservations.filter((r) => r.owner !== person.id),
         orders: orders.filter((o) => o.ref !== person.id),
       },
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
   };
@@ -287,16 +295,16 @@ const PeopleInformation = ({ route, navigation }) => {
               dispatch(remove({ id: economy.id }));
               if (economy.type === "debt") customerDataRemove(economy);
               await removeEconomy({
-                identifier: activeGroup.active
-                  ? activeGroup.identifier
+                identifier: helperStatus.active
+                  ? helperStatus.identifier
                   : user.identifier,
                 id: economy.id,
-                groups: activeGroup.active
-                  ? [activeGroup.id]
+                helpers: helperStatus.active
+                  ? [helperStatus.id]
                   : user.helpers.map((h) => h.id),
               });
               await helperNotification(
-                activeGroup,
+                helperStatus,
                 user,
                 economy.type === "expense"
                   ? "Gasto eliminado"
@@ -322,7 +330,8 @@ const PeopleInformation = ({ route, navigation }) => {
         <View style={{ width: "100%" }}>
           {item.type !== "debt" && (
             <TextStyle color={light.main2}>
-              {item?.name?.toUpperCase()}
+              {item.owner.name?.toUpperCase().slice(0, 40) +
+                `${item.owner.name?.length >= 40 ? "..." : ""}`}
             </TextStyle>
           )}
           <View style={styles.row}>
@@ -467,11 +476,9 @@ const PeopleInformation = ({ route, navigation }) => {
         >
           <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
             {name
-              ? item.owner
-                ? item.owner?.name?.slice(0, 15) +
-                  `${item.owner.name?.length >= 15 ? "..." : ""}`
-                : "DESCONOCIDO"
-              : item.owner
+              ? item.name?.slice(0, 15) +
+                `${item.name?.length >= 15 ? "..." : ""}`
+              : item.name
               ? thousandsSystem(item.owner?.identification)
               : "DESCONOCIDO"}
           </TextStyle>
@@ -482,7 +489,7 @@ const PeopleInformation = ({ route, navigation }) => {
             >
               <Ionicons
                 name="git-compare"
-                size={26}
+                size={getFontSize(21)}
                 color={mode === "light" ? dark.main2 : light.main5}
               />
             </TouchableOpacity>
@@ -492,7 +499,7 @@ const PeopleInformation = ({ route, navigation }) => {
             >
               <Ionicons
                 name="trash"
-                size={26}
+                size={getFontSize(21)}
                 color={mode === "light" ? dark.main2 : light.main5}
               />
             </TouchableOpacity>
@@ -508,7 +515,7 @@ const PeopleInformation = ({ route, navigation }) => {
               >
                 <Ionicons
                   name="create"
-                  size={26}
+                  size={getFontSize(21)}
                   color={mode === "light" ? dark.main2 : light.main5}
                 />
               </TouchableOpacity>
@@ -557,8 +564,8 @@ const PeopleInformation = ({ route, navigation }) => {
                 dispatch(removeByEvent({ event: (e) => e.type !== "debt" }));
               else dispatch(removeByEvent({ event: (e) => e.type === "debt" }));
               await editUser({
-                identifier: activeGroup.active
-                  ? activeGroup.identifier
+                identifier: helperStatus.active
+                  ? helperStatus.identifier
                   : user.identifier,
                 change: {
                   economy:
@@ -568,8 +575,8 @@ const PeopleInformation = ({ route, navigation }) => {
                         )
                       : economy.filter((e) => e.type !== "debt"),
                 },
-                groups: activeGroup.active
-                  ? [activeGroup.id]
+                helpers: helperStatus.active
+                  ? [helperStatus.id]
                   : user.helpers.map((h) => h.id),
               });
             }
@@ -578,12 +585,12 @@ const PeopleInformation = ({ route, navigation }) => {
               dispatch(removeMany({ ref }));
               if (userType === "customer") customerDataRemove(economy);
               await removeManyEconomy({
-                identifier: activeGroup.active
-                  ? activeGroup.identifier
+                identifier: helperStatus.active
+                  ? helperStatus.identifier
                   : user.identifier,
                 ref,
-                groups: activeGroup.active
-                  ? [activeGroup.id]
+                helpers: helperStatus.active
+                  ? [helperStatus.id]
                   : user.helpers.map((h) => h.id),
               });
             }
@@ -876,7 +883,7 @@ const PeopleInformation = ({ route, navigation }) => {
             <TouchableOpacity onPress={() => removeEverything()}>
               <Ionicons
                 name="trash"
-                size={35}
+                size={getFontSize(28)}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -892,7 +899,7 @@ const PeopleInformation = ({ route, navigation }) => {
             >
               <Ionicons
                 name="print"
-                size={35}
+                size={getFontSize(28)}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -908,7 +915,7 @@ const PeopleInformation = ({ route, navigation }) => {
             >
               <Ionicons
                 name="document-attach"
-                size={35}
+                size={getFontSize(28)}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -918,7 +925,7 @@ const PeopleInformation = ({ route, navigation }) => {
             <TouchableOpacity>
               <Ionicons
                 name="filter"
-                size={35}
+                size={getFontSize(28)}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />

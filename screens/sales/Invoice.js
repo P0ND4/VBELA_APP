@@ -16,6 +16,7 @@ import {
   changeDate,
   generatePDF,
   print,
+  getFontSize
 } from "@helpers/libs";
 
 import ViewShot from "react-native-view-shot";
@@ -153,7 +154,7 @@ const Invoice = ({ route, navigation }) => {
             <Ionicons
               name="create-outline"
               color={mode === "light" ? light.textDark : dark.textWhite}
-              size={30}
+              size={getFontSize(24)}
               style={{ marginRight: 10 }}
             />
             <TextStyle color={color()} smallParagraph>
@@ -169,7 +170,7 @@ const Invoice = ({ route, navigation }) => {
             <Ionicons
               name="close-outline"
               color={mode === "light" ? light.textDark : dark.textWhite}
-              size={40}
+              size={getFontSize(32)}
             />
           </TouchableOpacity>
           <ViewShot ref={viewShotRef} options={{ format: "jpg", quality: 1.0 }}>
@@ -268,7 +269,7 @@ const Invoice = ({ route, navigation }) => {
           <Ionicons
             name="document-text-outline"
             color={light.main2}
-            size={30}
+            size={getFontSize(24)}
             style={{ marginBottom: 5 }}
           />
           <TextStyle color={color()} smallParagraph>
@@ -288,7 +289,7 @@ const Invoice = ({ route, navigation }) => {
           <Ionicons
             name="paper-plane-outline"
             color={light.main2}
-            size={30}
+            size={getFontSize(24)}
             style={{ marginBottom: 5 }}
           />
           <TextStyle color={color()} smallParagraph>
@@ -302,7 +303,7 @@ const Invoice = ({ route, navigation }) => {
           <Ionicons
             name="print-outline"
             color={light.main2}
-            size={30}
+            size={getFontSize(24)}
             style={{ marginBottom: 5 }}
           />
           <TextStyle color={color()} smallParagraph>
@@ -316,7 +317,7 @@ const Invoice = ({ route, navigation }) => {
           <Ionicons
             name="share-social-outline"
             color={light.main2}
-            size={30}
+            size={getFontSize(24)}
             style={{ marginBottom: 5 }}
           />
           <TextStyle color={color()} smallParagraph>

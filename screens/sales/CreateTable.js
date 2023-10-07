@@ -28,7 +28,7 @@ const CreateTable = ({ navigation, route }) => {
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
   const tables = useSelector((state) => state.tables);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
 
   const [table, setTable] = useState(editing ? tableEditing.table : "");
   const [name, setName] = useState(editing ? tableEditing.name : "");
@@ -65,10 +65,10 @@ const CreateTable = ({ navigation, route }) => {
     dispatch(edit({ id: tableEditing.id, data }));
     navigation.pop();
     await editTable({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       table: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
   };
@@ -84,10 +84,10 @@ const CreateTable = ({ navigation, route }) => {
       dispatch(add(data));
       navigation.pop();
       await addTable({
-        identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
         table: data,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     }

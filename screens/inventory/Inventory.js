@@ -17,6 +17,7 @@ import {
   generatePDF,
   print,
   months,
+  getFontSize
 } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
 import ButtonStyle from "@components/ButtonStyle";
@@ -528,7 +529,7 @@ const Inventory = () => {
               >
                 <Ionicons
                   name="information-circle"
-                  size={40}
+                  size={getFontSize(32)}
                   color={light.main2}
                 />
               </TouchableOpacity>
@@ -537,12 +538,12 @@ const Inventory = () => {
               <TouchableOpacity
                 onPress={() => generatePDF({ html, code: "INVENTARIO VBELA" })}
               >
-                <Ionicons name="document" size={40} color={light.main2} />
+                <Ionicons name="document" size={getFontSize(32)} color={light.main2} />
               </TouchableOpacity>
             )}
             {(inventory.length > 0 || activeSearch) && (
               <TouchableOpacity onPress={() => print({ html })}>
-                <Ionicons name="print" size={40} color={light.main2} />
+                <Ionicons name="print" size={getFontSize(32)} color={light.main2} />
               </TouchableOpacity>
             )}
             {(inventory.length > 0 || activeSearch) && (
@@ -553,7 +554,7 @@ const Inventory = () => {
                   if (state) setTimeout(() => searchRef.current.focus());
                 }}
               >
-                <Ionicons name="search" size={40} color={light.main2} />
+                <Ionicons name="search" size={getFontSize(32)} color={light.main2} />
               </TouchableOpacity>
             )}
             {(inventory.length > 0 || activeSearch) && (
@@ -561,7 +562,7 @@ const Inventory = () => {
                 onPress={() => navigation.navigate("CreateElement")}
                 style={{ marginHorizontal: 2 }}
               >
-                <Ionicons name="add-circle" size={40} color={light.main2} />
+                <Ionicons name="add-circle" size={getFontSize(32)} color={light.main2} />
               </TouchableOpacity>
             )}
           </View>
@@ -1167,7 +1168,7 @@ const Inventory = () => {
                             : dark.textWhite
                           : "#888888"
                       }
-                      size={18}
+                      size={getFontSize(15)}
                       name="caret-down"
                     />
                   </View>

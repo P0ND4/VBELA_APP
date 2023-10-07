@@ -12,7 +12,7 @@ import TextStyle from "@components/TextStyle";
 import InputStyle from "@components/InputStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import { Picker } from "@react-native-picker/picker";
-import { thousandsSystem, random } from "@helpers/libs";
+import { thousandsSystem, random, getFontSize } from "@helpers/libs";
 import { edit } from "@features/inventory/informationSlice";
 import { editInventory } from "@api";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -30,7 +30,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
     handleSubmit,
   } = useForm();
 
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
   const inventory = useSelector((state) => state.inventory);
@@ -92,10 +92,10 @@ const CreateEntryOutput = ({ route, navigation }) => {
     dispatch(edit({ id: editable.id, data: editable }));
     navigation.pop();
     await editInventory({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       inventory: editable,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
   };
@@ -124,12 +124,12 @@ const CreateEntryOutput = ({ route, navigation }) => {
       dispatch(edit({ id: editable.id, data: editable }));
       navigation.pop();
       await editInventory({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         inventory: editable,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     }
@@ -158,12 +158,12 @@ const CreateEntryOutput = ({ route, navigation }) => {
             dispatch(edit({ id: item.element, data: editable }));
             navigation.pop();
             await editInventory({
-              identifier: activeGroup.active
-                ? activeGroup.identifier
+              identifier: helperStatus.active
+                ? helperStatus.identifier
                 : user.identifier,
               inventory: editable,
-              groups: activeGroup.active
-                ? [activeGroup.id]
+              helpers: helperStatus.active
+                ? [helperStatus.id]
                 : user.helpers.map((h) => h.id),
             });
           },
@@ -244,7 +244,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
                               : dark.textWhite
                             : "#888888"
                         }
-                        size={18}
+                        size={getFontSize(15)}
                         name="caret-down"
                       />
                     </View>

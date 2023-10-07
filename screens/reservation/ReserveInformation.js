@@ -18,8 +18,9 @@ import {
   print,
   generatePDF,
   random,
+  getFontSize
 } from "@helpers/libs";
-import { remove as removeR } from "@features/groups/reservationsSlice";
+import { remove as removeR } from "@features/zones/reservationsSlice";
 import {
   removeReservation,
   editReservation,
@@ -27,7 +28,7 @@ import {
   addEconomy,
   removeEconomy,
 } from "@api";
-import { edit as editR } from "@features/groups/reservationsSlice";
+import { edit as editR } from "@features/zones/reservationsSlice";
 import {
   add as addE,
   edit as editE,
@@ -99,8 +100,8 @@ const ReserveInformation = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const reserveState = useSelector((state) => state.reservations);
   const nomenclatureState = useSelector((state) => state.nomenclatures);
-  const groupState = useSelector((state) => state.groups);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const zoneState = useSelector((state) => state.zones);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const user = useSelector((state) => state.user);
   const orders = useSelector((state) => state.orders);
   const economy = useSelector((state) => state.economy);
@@ -436,23 +437,23 @@ const ReserveInformation = ({ route, navigation }) => {
         if (currentEconomy.amount <= 0) {
           dispatch(removeE({ id: foundEconomy.id }));
           await removeEconomy({
-            identifier: activeGroup.active
-              ? activeGroup.identifier
+            identifier: helperStatus.active
+              ? helperStatus.identifier
               : user.identifier,
             id: foundEconomy.id,
-            groups: activeGroup.active
-              ? [activeGroup.id]
+            helpers: helperStatus.active
+              ? [helperStatus.id]
               : user.helpers.map((h) => h.id),
           });
         } else {
           dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
           await editEconomy({
-            identifier: activeGroup.active
-              ? activeGroup.identifier
+            identifier: helperStatus.active
+              ? helperStatus.identifier
               : user.identifier,
             economy: currentEconomy,
-            groups: activeGroup.active
-              ? [activeGroup.id]
+            helpers: helperStatus.active
+              ? [helperStatus.id]
               : user.helpers.map((h) => h.id),
           });
         }
@@ -499,12 +500,12 @@ const ReserveInformation = ({ route, navigation }) => {
             if (ids.length > 0) await deleteEconomy({ ids });
 
             await editReservation({
-              identifier: activeGroup.active
-                ? activeGroup.identifier
+              identifier: helperStatus.active
+                ? helperStatus.identifier
                 : user.identifier,
               reservation: newReservation,
-              groups: activeGroup.active
-                ? [activeGroup.id]
+              helpers: helperStatus.active
+                ? [helperStatus.id]
                 : user.helpers.map((h) => h.id),
             });
           },
@@ -549,12 +550,12 @@ const ReserveInformation = ({ route, navigation }) => {
 
         dispatch(addE(newEconomy));
         await addEconomy({
-          identifier: activeGroup.active
-            ? activeGroup.identifier
+          identifier: helperStatus.active
+            ? helperStatus.identifier
             : user.identifier,
           economy: newEconomy,
-          groups: activeGroup.active
-            ? [activeGroup.id]
+          helpers: helperStatus.active
+            ? [helperStatus.id]
             : user.helpers.map((h) => h.id),
         });
       } else {
@@ -564,12 +565,12 @@ const ReserveInformation = ({ route, navigation }) => {
         currentEconomy.modificationDate = new Date().getTime();
         dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
         await editEconomy({
-          identifier: activeGroup.active
-            ? activeGroup.identifier
+          identifier: helperStatus.active
+            ? helperStatus.identifier
             : user.identifier,
           economy: currentEconomy,
-          groups: activeGroup.active
-            ? [activeGroup.id]
+          helpers: helperStatus.active
+            ? [helperStatus.id]
             : user.helpers.map((h) => h.id),
         });
       }
@@ -630,7 +631,7 @@ const ReserveInformation = ({ route, navigation }) => {
               smallParagraph
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
-              {!activeGroup.active || activeGroup.accessToReservations
+              {!helperStatus.active || helperStatus.accessToReservations
                 ? thousandsSystem(item.identification)
                 : "PRIVADO"}
             </TextStyle>
@@ -652,7 +653,7 @@ const ReserveInformation = ({ route, navigation }) => {
           </View>
           <TouchableOpacity
             onPress={() => {
-              if (activeGroup.active && !activeGroup.accessToReservations)
+              if (helperStatus.active && !helperStatus.accessToReservations)
                 return;
 
               Alert.alert(
@@ -685,12 +686,12 @@ const ReserveInformation = ({ route, navigation }) => {
                         editR({ ref: reserve.ref, data: newReservation })
                       );
                       await editReservation({
-                        identifier: activeGroup.active
-                          ? activeGroup.identifier
+                        identifier: helperStatus.active
+                          ? helperStatus.identifier
                           : user.identifier,
                         reservation: newReservation,
-                        groups: activeGroup.active
-                          ? [activeGroup.id]
+                        helpers: helperStatus.active
+                          ? [helperStatus.id]
                           : user.helpers.map((h) => h.id),
                       });
                     },
@@ -730,7 +731,7 @@ const ReserveInformation = ({ route, navigation }) => {
           </View>
           <TouchableOpacity
             onPress={() => {
-              if (activeGroup.active && activeGroup.accessToReservations)
+              if (helperStatus.active && helperStatus.accessToReservations)
                 return;
               if (item.checkOut)
                 removeCheckOut({ type: "unique", hosted: [item] });
@@ -762,7 +763,7 @@ const ReserveInformation = ({ route, navigation }) => {
               smallParagraph
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
-              {!activeGroup.active || activeGroup.accessToReservations
+              {!helperStatus.active || helperStatus.accessToReservations
                 ? !item.payment
                   ? "EN ESPERA"
                   : item.payment === "business"
@@ -813,7 +814,7 @@ const ReserveInformation = ({ route, navigation }) => {
                 >
                   <Ionicons
                     name="close"
-                    size={34}
+                    size={getFontSize(28)}
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   />
                 </TouchableOpacity>
@@ -836,7 +837,7 @@ const ReserveInformation = ({ route, navigation }) => {
                 >
                   Cédula:{" "}
                   <TextStyle color={light.main2}>
-                    {!activeGroup.active || activeGroup.accessToReservations
+                    {!helperStatus.active || helperStatus.accessToReservations
                       ? thousandsSystem(item.identification)
                       : "PRIVADO"}
                   </TextStyle>
@@ -876,7 +877,7 @@ const ReserveInformation = ({ route, navigation }) => {
                 >
                   Pagado:{" "}
                   <TextStyle color={light.main2}>
-                    {!activeGroup.active || activeGroup.accessToReservations
+                    {!helperStatus.active || helperStatus.accessToReservations
                       ? !item.payment
                         ? "EN ESPERA"
                         : item.payment === "business"
@@ -917,12 +918,12 @@ const ReserveInformation = ({ route, navigation }) => {
           >
             Reservación
           </TextStyle>
-          {(!activeGroup.active || activeGroup.accessToReservations) && (
+          {(!helperStatus.active || helperStatus.accessToReservations) && (
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <TouchableOpacity onPress={() => print({ html })}>
                 <Ionicons
                   name="print"
-                  size={35}
+                  size={getFontSize(28)}
                   color={light.main2}
                   style={{ marginHorizontal: 5 }}
                 />
@@ -939,7 +940,7 @@ const ReserveInformation = ({ route, navigation }) => {
               >
                 <Ionicons
                   name="document-attach"
-                  size={35}
+                  size={getFontSize(28)}
                   color={light.main2}
                   style={{ marginHorizontal: 5 }}
                 />
@@ -963,7 +964,7 @@ const ReserveInformation = ({ route, navigation }) => {
                 }}
                 style={{ marginHorizontal: 5 }}
               >
-                <Ionicons name="create-outline" size={38} color={light.main2} />
+                <Ionicons name="create-outline" size={getFontSize(31)} color={light.main2} />
               </TouchableOpacity>
             </View>
           )}
@@ -1054,8 +1055,8 @@ const ReserveInformation = ({ route, navigation }) => {
                     <TouchableOpacity
                       onPress={() => {
                         if (
-                          activeGroup.active &&
-                          !activeGroup.accessToReservations
+                          helperStatus.active &&
+                          !helperStatus.accessToReservations
                         )
                           return;
                         const quantity = reserve?.hosted.reduce((a, b) => {
@@ -1093,12 +1094,12 @@ const ReserveInformation = ({ route, navigation }) => {
                                   })
                                 );
                                 await editReservation({
-                                  identifier: activeGroup.active
-                                    ? activeGroup.identifier
+                                  identifier: helperStatus.active
+                                    ? helperStatus.identifier
                                     : user.identifier,
                                   reservation: newReservation,
-                                  groups: activeGroup.active
-                                    ? [activeGroup.id]
+                                  helpers: helperStatus.active
+                                    ? [helperStatus.id]
                                     : user.helpers.map((h) => h.id),
                                 });
                               },
@@ -1135,8 +1136,8 @@ const ReserveInformation = ({ route, navigation }) => {
                     <TouchableOpacity
                       onPress={() => {
                         if (
-                          activeGroup.active &&
-                          !activeGroup.accessToReservations
+                          helperStatus.active &&
+                          !helperStatus.accessToReservations
                         )
                           return;
                         if (!reserve?.hosted.some((h) => !h.checkOut)) {
@@ -1183,7 +1184,7 @@ const ReserveInformation = ({ route, navigation }) => {
                 </View>
               </ScrollView>
               {reserve?.hosted.some((h) => !h.checkOut) &&
-                (!activeGroup.active || activeGroup.accessToReservations) && (
+                (!helperStatus.active || helperStatus.accessToReservations) && (
                   <ButtonStyle
                     onPress={() => {
                       validateCheckOut({
@@ -1200,7 +1201,7 @@ const ReserveInformation = ({ route, navigation }) => {
             </View>
           )}
           <View>
-            {(!activeGroup.active || activeGroup.accessToReservations) &&
+            {(!helperStatus.active || helperStatus.accessToReservations) &&
               reserve?.discount && (
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
@@ -1211,7 +1212,7 @@ const ReserveInformation = ({ route, navigation }) => {
                   </TextStyle>
                 </TextStyle>
               )}
-            {(!activeGroup.active || activeGroup.accessToReservations) && (
+            {(!helperStatus.active || helperStatus.accessToReservations) && (
               <TextStyle
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
@@ -1221,7 +1222,7 @@ const ReserveInformation = ({ route, navigation }) => {
                 </TextStyle>
               </TextStyle>
             )}
-            {(!activeGroup.active || activeGroup.accessToReservations) && (
+            {(!helperStatus.active || helperStatus.accessToReservations) && (
               <TextStyle
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
@@ -1239,7 +1240,7 @@ const ReserveInformation = ({ route, navigation }) => {
                 )}
               </TextStyle>
             )}
-            {(!activeGroup.active || activeGroup.accessToReservations) && (
+            {(!helperStatus.active || helperStatus.accessToReservations) && (
               <TextStyle
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
@@ -1249,7 +1250,7 @@ const ReserveInformation = ({ route, navigation }) => {
                 </TextStyle>
               </TextStyle>
             )}
-            {(!activeGroup.active || activeGroup.accessToReservations) && (
+            {(!helperStatus.active || helperStatus.accessToReservations) && (
               <TextStyle
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
@@ -1311,7 +1312,7 @@ const ReserveInformation = ({ route, navigation }) => {
               !OF ? light.main2 : mode === "light" ? dark.main2 : light.main4
             }
             onPress={() => {
-              const group = groupState.find((g) => g.ref === nomenclature.ref);
+              const group = zoneState.find((g) => g.ref === nomenclature.ref);
               navigation.navigate("CreateOrder", {
                 editing: OF ? true : false,
                 id: OF ? OF.id : undefined,
@@ -1343,7 +1344,7 @@ const ReserveInformation = ({ route, navigation }) => {
               </TextStyle>
               <Ionicons
                 name="book-outline"
-                size={21}
+                size={getFontSize(17)}
                 style={{ marginLeft: 10 }}
                 color={
                   !OF
@@ -1357,13 +1358,13 @@ const ReserveInformation = ({ route, navigation }) => {
           </ButtonStyle>
           <Ionicons
             name={OF ? "receipt-outline" : "checkbox"}
-            size={50}
+            size={getFontSize(40)}
             color={
               !OF ? light.main2 : mode === "light" ? dark.main2 : light.main4
             }
           />
         </View>
-        {(!activeGroup.active || activeGroup.accessToReservations) && (
+        {(!helperStatus.active || helperStatus.accessToReservations) && (
           <ButtonStyle
             backgroundColor={light.main2}
             onPress={() => {
@@ -1386,16 +1387,16 @@ const ReserveInformation = ({ route, navigation }) => {
                         dispatch(removeR({ ref: route.params.ref }));
                         navigation.pop();
                         await removeReservation({
-                          identifier: activeGroup.active
-                            ? activeGroup.identifier
+                          identifier: helperStatus.active
+                            ? helperStatus.identifier
                             : user.identifier,
                           ref: route.params.ref,
-                          groups: activeGroup.active
-                            ? [activeGroup.id]
+                          helpers: helperStatus.active
+                            ? [helperStatus.id]
                             : user.helpers.map((h) => h.id),
                         });
                         await helperNotification(
-                          activeGroup,
+                          helperStatus,
                           user,
                           "Reservación eliminada",
                           `Una reservación ha sido eliminada por ${user.identifier}`,
@@ -1467,7 +1468,7 @@ const ReserveInformation = ({ route, navigation }) => {
                 <TouchableOpacity onPress={() => cleanData()}>
                   <Ionicons
                     name="close"
-                    size={34}
+                    size={getFontSize(28)}
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   />
                 </TouchableOpacity>
@@ -1592,12 +1593,12 @@ const ReserveInformation = ({ route, navigation }) => {
                       await manageEconomy({ ids, hosted: newHosted });
 
                     await editReservation({
-                      identifier: activeGroup.active
-                        ? activeGroup.identifier
+                      identifier: helperStatus.active
+                        ? helperStatus.identifier
                         : user.identifier,
                       reservation: newReservation,
-                      groups: activeGroup.active
-                        ? [activeGroup.id]
+                      helpers: helperStatus.active
+                        ? [helperStatus.id]
                         : user.helpers.map((h) => h.id),
                     });
                   };

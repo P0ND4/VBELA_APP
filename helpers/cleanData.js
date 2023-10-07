@@ -1,7 +1,7 @@
 import { clean as cleanUser } from "@features/user/informationSlice";
-import { clean as cleanReservations } from "@features/groups/reservationsSlice";
-import { clean as cleanNomenclatures } from "@features/groups/nomenclaturesSlice";
-import { clean as cleanGroups } from "@features/groups/informationSlice";
+import { clean as cleanReservations } from "@features/zones/reservationsSlice";
+import { clean as cleanNomenclatures } from "@features/zones/nomenclaturesSlice";
+import { clean as cleanZones } from "@features/zones/informationSlice";
 import { clean as cleanHelpers } from "@features/helpers/informationSlice";
 import { clean as cleanTables } from "@features/tables/informationSlice";
 import { clean as cleanOrders } from "@features/tables/ordersSlice";
@@ -9,13 +9,14 @@ import { clean as cleanKitchen } from "@features/tables/kitchenSlice";
 import { clean as cleanMenu } from "@features/tables/menuSlice";
 import { clean as cleanEconomy } from "@features/function/economySlice";
 import { inactive as inactiveSession } from "@features/user/sessionSlice";
-import { inactive as inactiveGroup } from "@features/function/informationSlice";
+import { inactive as inactiveGroup } from "@features/helpers/statusSlice";
 import { clean as cleanRoster } from "@features/function/rosterSlice";
 import { clean as cleanPeople } from "@features/function/peopleSlice";
 import { clean as cleanInventory } from '@features/inventory/informationSlice';
 import { clean as cleanProducts } from "@features/sales/productsSlice";
 import { clean as cleanSales } from "@features/sales/salesSlice";
-import { clean as cleanAccommodations } from "@features/groups/accommodationsSlice";
+import { clean as cleanAccommodations } from "@features/zones/accommodationsSlice";
+import { clean as cleanGroups } from "@features/sales/groupsSlice";
 
 export default cleanData = (dispatch) => {
   dispatch(inactiveSession());
@@ -23,7 +24,7 @@ export default cleanData = (dispatch) => {
   dispatch(cleanUser());
   dispatch(cleanReservations());
   dispatch(cleanNomenclatures());
-  dispatch(cleanGroups());
+  dispatch(cleanZones());
   dispatch(cleanHelpers());
   dispatch(cleanTables());
   dispatch(cleanOrders());
@@ -36,4 +37,5 @@ export default cleanData = (dispatch) => {
   dispatch(cleanProducts());
   dispatch(cleanSales());
   dispatch(cleanAccommodations());
+  dispatch(cleanGroups());
 };

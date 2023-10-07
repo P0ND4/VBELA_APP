@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { Platform, PixelRatio } from "react-native";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
@@ -188,3 +188,6 @@ export const getExpoID = async () =>  {
 
   return token;
 }
+
+const fontScale = PixelRatio.getFontScale();
+export const getFontSize = (size) => size / fontScale;

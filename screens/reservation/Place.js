@@ -8,7 +8,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useSelector } from "react-redux";
-import { months, thousandsSystem, changeDate } from "@helpers/libs";
+import { months, thousandsSystem, changeDate, getFontSize } from "@helpers/libs";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -23,14 +23,14 @@ const width = Dimensions.get("screen").width;
 
 const PlaceScreen = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
-  const activeGroup = useSelector((state) => state.activeGroup);
-  const groupState = useSelector((state) => state.groups);
+  const helperStatus = useSelector((state) => state.helperStatus);
+  const zoneState = useSelector((state) => state.zones);
   const nomenclaturesState = useSelector((state) => state.nomenclatures);
   const reservationsState = useSelector((state) => state.reservations);
 
   const owner = route.params?.owner;
 
-  const [group, setGroup] = useState([]);
+  const [zone, setZone] = useState([]);
   const [reservations, setReservation] = useState([]);
   const [nomenclatures, setNomenclatures] = useState([]);
   const [activeFilter, setActiveFilter] = useState(false);
@@ -53,11 +53,11 @@ const PlaceScreen = ({ route, navigation }) => {
   }, [nomenclatures, reservationsState]);
 
   useEffect(() => {
-    setGroup(groupState.find((group) => group.ref === route.params.ref));
+    setZone(zoneState.find((zone) => zone.ref === route.params.ref));
     setNomenclatures(
       nomenclaturesState.filter((n) => n.ref === route.params.ref)
     );
-  }, [groupState, nomenclaturesState]);
+  }, [zoneState, nomenclaturesState]);
 
   useEffect(() => {
     const guests = [];
@@ -85,8 +85,8 @@ const PlaceScreen = ({ route, navigation }) => {
   }, [activeFilter]);
 
   useEffect(() => {
-    navigation.setOptions({ title: group?.name });
-  }, [group]);
+    navigation.setOptions({ title: zone?.name });
+  }, [zone]);
 
   const DayOfTheMonth = () =>
     nomenclatures?.map((place) => (
@@ -96,7 +96,7 @@ const PlaceScreen = ({ route, navigation }) => {
       >
         <TouchableOpacity
           onPress={() => {
-            if (activeGroup.active && !activeGroup.accessToReservations) return;
+            if (helperStatus.active && !helperStatus.accessToReservations) return;
             navigation.navigate("PlaceInformation", {
               ref: route.params.ref,
               id: place.id,
@@ -155,7 +155,7 @@ const PlaceScreen = ({ route, navigation }) => {
 
                   if (
                     disable ||
-                    (!activeGroup.accessToReservations && activeGroup.active)
+                    (!helperStatus.accessToReservations && helperStatus.active)
                   )
                     return;
                   if (!dayTaken) {
@@ -351,7 +351,7 @@ const PlaceScreen = ({ route, navigation }) => {
             <TouchableOpacity onPress={() => setActiveFilter(false)}>
               <Ionicons
                 name="close"
-                size={30}
+                size={getFontSize(24)}
                 color={mode === "light" ? light.textDark : dark.textWhite}
               />
             </TouchableOpacity>
@@ -384,41 +384,41 @@ const PlaceScreen = ({ route, navigation }) => {
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               {nomenclatures?.length > 0 &&
-                (!activeGroup.active || activeGroup.accessToReservations) && (
+                (!helperStatus.active || helperStatus.accessToReservations) && (
                   <TouchableOpacity
                     onPress={() => {
                       setActiveFilter(!activeFilter);
                       setTimeout(() => searchRef.current.focus());
                     }}
                   >
-                    <Ionicons name="search" size={38} color={light.main2} />
+                    <Ionicons name="search" size={getFontSize(31)} color={light.main2} />
                   </TouchableOpacity>
                 )}
-              {(!activeGroup.active || activeGroup.accessToReservations) && (
+              {(!helperStatus.active || helperStatus.accessToReservations) && (
                 <TouchableOpacity
                   onPress={() =>
                     navigation.navigate("PlaceInformation", {
                       ref: route.params.ref,
-                      name: group?.name,
+                      name: zone?.name,
                       type: "General",
                     })
                   }
                 >
                   <Ionicons
                     name="information-circle-outline"
-                    size={38}
+                    size={getFontSize(31)}
                     color={light.main2}
                   />
                 </TouchableOpacity>
               )}
               {nomenclatures?.length > 0 &&
-                (!activeGroup.active || activeGroup.accessToReservations) && (
+                (!helperStatus.active || helperStatus.accessToReservations) && (
                   <TouchableOpacity
                     onPress={() =>
                       navigation.navigate("CreatePlace", { ref: route.params.ref })
                     }
                   >
-                    <Ionicons name="add-circle" size={40} color={light.main2} />
+                    <Ionicons name="add-circle" size={getFontSize(32)} color={light.main2} />
                   </TouchableOpacity>
                 )}
             </View>
@@ -440,14 +440,14 @@ const PlaceScreen = ({ route, navigation }) => {
             customStyle={{ marginVertical: 30 }}
             color={mode === "light" ? light.textDark : dark.textWhite}
           >
-            {group?.name}
+            {zone?.name}
           </TextStyle>
         )}
         <ScrollView style={{ maxHeight: height / 1.5 }}>
           {activeFilter ? <GuestCard /> : <DayOfTheMonth />}
         </ScrollView>
         {nomenclatures?.length === 0 &&
-          (!activeGroup.active || activeGroup.accessToReservations) && (
+          (!helperStatus.active || helperStatus.accessToReservations) && (
             <ButtonStyle
               onPress={() =>
                 navigation.navigate("CreatePlace", { ref: route.params.ref })
@@ -458,8 +458,8 @@ const PlaceScreen = ({ route, navigation }) => {
             </ButtonStyle>
           )}
         {nomenclatures?.length === 0 &&
-          activeGroup.active &&
-          !activeGroup.accessToReservations && (
+          helperStatus.active &&
+          !helperStatus.accessToReservations && (
             <TextStyle center smallParagraph color={light.main2}>
               NO HAY NOMENCLATURAS
             </TextStyle>

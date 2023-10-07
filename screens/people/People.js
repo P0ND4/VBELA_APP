@@ -1,5 +1,4 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Picker } from "@react-native-picker/picker";
 import { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -9,10 +8,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
-  TouchableWithoutFeedback,
-  Modal,
 } from "react-native";
-import { Calendar } from "react-native-calendars";
 import { useDispatch, useSelector } from "react-redux";
 import {
   editEconomy,
@@ -34,12 +30,18 @@ import {
 import {
   removeManyByOwner as removeMBOR,
   edit as editR,
-} from "@features/groups/reservationsSlice";
+} from "@features/zones/reservationsSlice";
 import { removeManyByOwner as removeMBOO } from "@features/tables/ordersSlice";
 import { remove as removePer } from "@features/function/peopleSlice";
 
-import { changeDate, thousandsSystem, random } from "@helpers/libs";
+import {
+  changeDate,
+  thousandsSystem,
+  random,
+  getFontSize,
+} from "@helpers/libs";
 import theme from "@theme";
+import ChooseDate from "@components/ChooseDate";
 
 const light = theme.colors.light;
 const dark = theme.colors.dark;
@@ -53,21 +55,14 @@ const People = ({ navigation, userType }) => {
   const [filter, setFilter] = useState("");
 
   const user = useSelector((state) => state.user);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const mode = useSelector((state) => state.mode);
   const people = useSelector((state) => state.people);
   const economy = useSelector((state) => state.economy);
   const orders = useSelector((state) => state.orders);
-  const groups = useSelector((state) => state.groups);
-  const nomenclatures = useSelector((state) => state.nomenclatures);
   const reservations = useSelector((state) => state.reservations);
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [nomenclaturesToChoose, setNomenclaturesToChoose] = useState([]);
-  const [groupSelected, setGroupSelected] = useState("");
-  const [nomenclatureSelected, setNomenclatureSelected] = useState("");
-  const [markedDates, setMarkedDates] = useState({});
-
   const [personSelected, setPersonSelected] = useState({});
 
   const searchRef = useRef(null);
@@ -75,48 +70,6 @@ const People = ({ navigation, userType }) => {
   const dispatch = useDispatch();
 
   ///////////////////////
-
-  useEffect(() => {
-    if (nomenclaturesToChoose.length > 0) {
-      const nomenclatureReservations = reservations.filter(
-        (r) => r.id === nomenclatureSelected
-      );
-
-      let markedDates = {};
-      for (let reservation of nomenclatureReservations) {
-        const start = new Date(reservation.start);
-        const end = new Date(reservation.end);
-
-        let d = new Date(start);
-        while (d <= end) {
-          let dateISO = d.toISOString().slice(0, 10);
-          const startISO = start.toISOString().slice(0, 10);
-          const endISO = end.toISOString().slice(0, 10);
-          markedDates[dateISO] = {
-            startingDay: dateISO === startISO,
-            endingDay: dateISO === endISO,
-            color: light.main2,
-            textColor: "#000000",
-            reservation,
-          };
-          d.setDate(d.getDate() + 1);
-        }
-      }
-      setMarkedDates(markedDates);
-    }
-  }, [nomenclatureSelected, reservations]);
-
-  useEffect(() => {
-    if (groups.length > 0) {
-      const groupFound = groups.find((g) => g.ref === groupSelected);
-      const nomenclaturesFound = nomenclatures.filter(
-        (n) => n.ref === groupFound?.ref
-      );
-      setNomenclaturesToChoose(nomenclaturesFound);
-    }
-  }, [groupSelected]);
-
-  /////////////////////
 
   const extractData = (p) => {
     const information = economy.find(
@@ -263,12 +216,12 @@ const People = ({ navigation, userType }) => {
     const removeP = async () => {
       dispatch(removePer({ id: data.personID }));
       await removePerson({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         id: data.personID,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     };
@@ -276,24 +229,24 @@ const People = ({ navigation, userType }) => {
     const deleteEco = async () => {
       dispatch(removeManyEco({ ref: data.personID }));
       await removeManyEconomy({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         ref: data.personID,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     };
 
     const sendEditUser = async (change) => {
       await editUser({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         change,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     };
@@ -445,24 +398,24 @@ const People = ({ navigation, userType }) => {
     const deleteEco = async () => {
       dispatch(removeEco({ id: data.economyID }));
       await removeEconomy({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         id: data.economyID,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     };
 
     const sendEditUser = async (change) => {
       await editUser({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         change,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     };
@@ -681,126 +634,141 @@ const People = ({ navigation, userType }) => {
         return (
           <>
             <View style={[styles.row, { width: "100%" }]}>
-              {(!activeGroup.active ||
-                (userType === "customer" && activeGroup.accessToTables) ||
-                (userType === "supplier" && activeGroup.accessToSupplier)) && (
-                <ButtonStyle
-                  backgroundColor={
-                    userType === "customer"
-                      ? !OF
-                        ? light.main2
-                        : mode === "light"
-                        ? dark.main2
-                        : light.main4
-                      : mode === "light"
-                      ? dark.main2
-                      : light.main5
-                  }
-                  style={{ width: SCREEN_WIDTH / 2.4 }}
-                  onPress={() => {
-                    if (userType === "supplier") {
-                      navigation.navigate("CreateEconomy", {
-                        type: "purchase",
-                        ref: item.personID,
-                        owner: {
-                          identification: item.identification,
-                          name: item.name,
-                        },
-                      });
-                    }
-
-                    if (userType === "customer") {
-                      navigation.navigate("CreateOrder", {
-                        editing: OF ? true : false,
-                        id: OF ? OF.id : undefined,
-                        ref: item.personID,
-                        table: item.name,
-                        selection: OF ? OF.selection : [],
-                        reservation: "Cliente",
-                      });
-                    }
-                  }}
-                >
-                  <TextStyle
-                    paragrahp
-                    center
-                    color={
+              {(!helperStatus.active ||
+                (userType === "customer" && helperStatus.accessToTables) ||
+                (userType === "supplier" && helperStatus.accessToSupplier)) &&
+                (userType === "supplier" ||
+                  ["both", "sales"].includes(user?.type)) && (
+                  <ButtonStyle
+                    backgroundColor={
                       userType === "customer"
                         ? !OF
-                          ? light.textDark
+                          ? light.main2
+                          : mode === "light"
+                          ? dark.main2
+                          : light.main4
+                        : mode === "light"
+                        ? dark.main2
+                        : light.main5
+                    }
+                    style={{
+                      width:
+                        userType === "customer" && user?.type === "sales"
+                          ? "100%"
+                          : SCREEN_WIDTH / 2.4,
+                    }}
+                    onPress={() => {
+                      if (userType === "supplier") {
+                        navigation.navigate("CreateEconomy", {
+                          type: "purchase",
+                          ref: item.personID,
+                          owner: {
+                            identification: item.identification,
+                            name: item.name,
+                          },
+                        });
+                      }
+
+                      if (userType === "customer") {
+                        navigation.navigate("CreateOrder", {
+                          editing: OF ? true : false,
+                          id: OF ? OF.id : undefined,
+                          ref: item.personID,
+                          table: item.name,
+                          selection: OF ? OF.selection : [],
+                          reservation: "Cliente",
+                        });
+                      }
+                    }}
+                  >
+                    <TextStyle
+                      paragrahp
+                      center
+                      color={
+                        userType === "customer"
+                          ? !OF
+                            ? light.textDark
+                            : mode === "light"
+                            ? dark.textWhite
+                            : light.textDark
                           : mode === "light"
                           ? dark.textWhite
                           : light.textDark
-                        : mode === "light"
-                        ? dark.textWhite
-                        : light.textDark
-                    }
-                  >
-                    {userType === "supplier" ? "Compra / Costos" : "Menú"}
-                  </TextStyle>
-                </ButtonStyle>
-              )}
-              {(!activeGroup.active ||
-                (userType === "customer" && activeGroup.accessToTables) ||
-                (userType === "supplier" && activeGroup.accessToSupplier)) && (
-                <ButtonStyle
-                  style={{ width: SCREEN_WIDTH / 2.4 }}
-                  backgroundColor={
-                    userType === "customer"
-                      ? !existsAccommodation.id
-                        ? light.main2
+                      }
+                    >
+                      {userType === "supplier" ? "Compra / Costos" : "Menú"}
+                    </TextStyle>
+                  </ButtonStyle>
+                )}
+              {(!helperStatus.active ||
+                (userType === "customer" && helperStatus.accessToTables) ||
+                (userType === "supplier" && helperStatus.accessToSupplier)) &&
+                (userType === "supplier" ||
+                  ["both", "accommodation"].includes(user?.type)) && (
+                  <ButtonStyle
+                    style={{
+                      width:
+                        userType === "customer" &&
+                        user?.type === "accommodation"
+                          ? "100%"
+                          : SCREEN_WIDTH / 2.4,
+                    }}
+                    backgroundColor={
+                      userType === "customer"
+                        ? !existsAccommodation.id
+                          ? light.main2
+                          : mode === "light"
+                          ? dark.main2
+                          : light.main4
                         : mode === "light"
                         ? dark.main2
-                        : light.main4
-                      : mode === "light"
-                      ? dark.main2
-                      : light.main5
-                  }
-                  onPress={() => {
-                    if (userType === "supplier") {
-                      navigation.navigate("CreateEconomy", {
-                        type: "expense",
-                        ref: item.personID,
-                        owner: {
-                          identification: item.identification,
-                          name: item.name,
-                        },
-                      });
+                        : light.main5
                     }
-
-                    if (userType === "customer") {
-                      if (existsAccommodation.id)
-                        return navigation.navigate("ReserveInformation", {
-                          ref: reservationFound.ref,
-                          id: reservationFound.id,
+                    onPress={() => {
+                      if (userType === "supplier") {
+                        navigation.navigate("CreateEconomy", {
+                          type: "expense",
+                          ref: item.personID,
+                          owner: {
+                            identification: item.identification,
+                            name: item.name,
+                          },
                         });
+                      }
 
-                      setPersonSelected(item);
-                      setModalVisible(!modalVisible);
-                    }
-                  }}
-                >
-                  <TextStyle
-                    paragrahp
-                    color={
-                      userType === "customer"
-                        ? existsAccommodation.id
+                      if (userType === "customer") {
+                        if (existsAccommodation.id)
+                          return navigation.navigate("ReserveInformation", {
+                            ref: reservationFound.ref,
+                            id: reservationFound.id,
+                          });
+
+                        setPersonSelected(item);
+                        setModalVisible(!modalVisible);
+                      }
+                    }}
+                  >
+                    <TextStyle
+                      paragrahp
+                      color={
+                        userType === "customer"
+                          ? existsAccommodation.id
+                            ? dark.textWhite
+                            : light.textDark
+                          : mode === "light"
                           ? dark.textWhite
                           : light.textDark
-                        : mode === "light"
-                        ? dark.textWhite
-                        : light.textDark
-                    }
-                    center
-                  >
-                    {userType === "supplier"
-                      ? "Gasto / Inversión"
-                      : existsAccommodation.id
-                      ? "Ya alojado"
-                      : "Alojamiento"}
-                  </TextStyle>
-                </ButtonStyle>
-              )}
+                      }
+                      center
+                    >
+                      {userType === "supplier"
+                        ? "Gasto / Inversión"
+                        : existsAccommodation.id
+                        ? "Ya alojado"
+                        : "Alojamiento"}
+                    </TextStyle>
+                  </ButtonStyle>
+                )}
             </View>
             <ButtonStyle
               backgroundColor={light.main2}
@@ -934,12 +902,12 @@ const People = ({ navigation, userType }) => {
                               editEco({ id: newEconomy.id, data: newEconomy })
                             );
                             await editEconomy({
-                              identifier: activeGroup.active
-                                ? activeGroup.identifier
+                              identifier: helperStatus.active
+                                ? helperStatus.identifier
                                 : user.identifier,
                               economy: newEconomy,
-                              groups: activeGroup.active
-                                ? [activeGroup.id]
+                              helpers: helperStatus.active
+                                ? [helperStatus.id]
                                 : user.helpers.map((h) => h.id),
                             });
                           },
@@ -992,7 +960,7 @@ const People = ({ navigation, userType }) => {
             >
               <Ionicons
                 name="git-compare"
-                size={26}
+                size={getFontSize(21)}
                 color={mode === "light" ? dark.main2 : light.main5}
               />
             </TouchableOpacity>
@@ -1006,16 +974,16 @@ const People = ({ navigation, userType }) => {
               >
                 <Ionicons
                   name="trash"
-                  size={26}
+                  size={getFontSize(21)}
                   color={mode === "light" ? dark.main2 : light.main5}
                 />
               </TouchableOpacity>
             )}
             {open &&
               item.type !== "debt" &&
-              (!activeGroup.active ||
-                (userType === "customer" && activeGroup.accessToTables) ||
-                (userType === "supplier" && activeGroup.accessToSupplier)) && (
+              (!helperStatus.active ||
+                (userType === "customer" && helperStatus.accessToTables) ||
+                (userType === "supplier" && helperStatus.accessToSupplier)) && (
                 <TouchableOpacity
                   style={{ marginHorizontal: 5 }}
                   onPress={() => {
@@ -1033,7 +1001,7 @@ const People = ({ navigation, userType }) => {
                 >
                   <Ionicons
                     name="create"
-                    size={26}
+                    size={getFontSize(21)}
                     color={mode === "light" ? dark.main2 : light.main5}
                   />
                 </TouchableOpacity>
@@ -1123,7 +1091,7 @@ const People = ({ navigation, userType }) => {
                 >
                   <Ionicons
                     name="close"
-                    size={30}
+                    size={getFontSize(24)}
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   />
                 </TouchableOpacity>
@@ -1157,7 +1125,11 @@ const People = ({ navigation, userType }) => {
                       setTimeout(() => searchRef.current.focus());
                     }}
                   >
-                    <Ionicons name="search" size={35} color={light.main2} />
+                    <Ionicons
+                      name="search"
+                      size={getFontSize(28)}
+                      color={light.main2}
+                    />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={{ marginHorizontal: 4 }}
@@ -1170,7 +1142,7 @@ const People = ({ navigation, userType }) => {
                   >
                     <Ionicons
                       name="document-text"
-                      size={35}
+                      size={getFontSize(28)}
                       color={light.main2}
                     />
                   </TouchableOpacity>
@@ -1180,7 +1152,11 @@ const People = ({ navigation, userType }) => {
                       navigation.navigate("CreatePerson", { type: userType })
                     }
                   >
-                    <Ionicons name="add-circle" size={35} color={light.main2} />
+                    <Ionicons
+                      name="add-circle"
+                      size={getFontSize(28)}
+                      color={light.main2}
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1214,319 +1190,104 @@ const People = ({ navigation, userType }) => {
       ) : (
         <Debt />
       )}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(!modalVisible)}
-      >
-        <TouchableWithoutFeedback
-          onPress={() => setModalVisible(!modalVisible)}
-        >
-          <View style={{ backgroundColor: "#0005", height: "100%" }} />
-        </TouchableWithoutFeedback>
-        <View
-          style={[
-            StyleSheet.absoluteFillObject,
-            {
-              justifyContent: "center",
-              alignItems: "center",
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.accommodationCard,
-              {
-                backgroundColor: mode === "light" ? light.main4 : dark.main1,
-              },
-            ]}
-          >
-            <View>
-              <View style={styles.row}>
-                <TextStyle color={light.main2} subtitle>
-                  ALOJAR
-                </TextStyle>
-                <TouchableOpacity
-                  onPress={() => setModalVisible(!modalVisible)}
-                >
-                  <Ionicons
-                    name="close"
-                    size={34}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  />
-                </TouchableOpacity>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginVertical: 20,
-                }}
-              >
-                <View
-                  style={{
-                    marginHorizontal: 2,
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
-                  }}
-                >
-                  <Picker
-                    mode="dropdown"
-                    selectedValue={groupSelected}
-                    onValueChange={(value) => {
-                      setGroupSelected(value);
-                      setNomenclatureSelected("");
-                    }}
-                    dropdownIconColor={
-                      mode === "light" ? light.textDark : dark.textWhite
-                    }
-                    style={{
-                      width: SCREEN_WIDTH / 2.7,
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                      color: mode === "light" ? light.textDark : dark.textWhite,
-                      fontSize: 20,
-                    }}
-                  >
-                    <Picker.Item
-                      label="SELECCIONE LA ZONA"
-                      value=""
-                      style={{
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                      }}
-                      color={mode === "light" ? light.textDark : dark.textWhite}
-                    />
-                    {groups.map((group, index) => (
-                      <Picker.Item
-                        key={group.id + index}
-                        label={group.name}
-                        value={group.ref}
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      />
-                    ))}
-                  </Picker>
-                </View>
-                {nomenclaturesToChoose.length > 0 && (
-                  <View
-                    style={{
-                      marginHorizontal: 2,
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    }}
-                  >
-                    <Picker
-                      mode="dropdown"
-                      selectedValue={nomenclatureSelected}
-                      onValueChange={(value) => {
-                        setNomenclatureSelected(value);
-                      }}
-                      dropdownIconColor={
-                        mode === "light" ? light.textDark : dark.textWhite
-                      }
-                      style={{
-                        width: SCREEN_WIDTH / 2.7,
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                        fontSize: 20,
-                      }}
-                    >
-                      <Picker.Item
-                        label="SELECCIONA LA NOMENCLATURA"
-                        value=""
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      />
-                      {nomenclaturesToChoose.map((nomenclature, index) => (
-                        <Picker.Item
-                          key={nomenclature.id}
-                          label={nomenclature.name || nomenclature.nomenclature}
-                          value={nomenclature.id}
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                      ))}
-                    </Picker>
-                  </View>
-                )}
-              </View>
-              {nomenclaturesToChoose.length > 0 && nomenclatureSelected ? (
-                <Calendar
-                  style={{ borderRadius: 8 }}
-                  // Specify theme properties to override specific styles for calendar parts. Default = {}
-                  theme={{
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
-                    calendarBackground:
-                      mode === "light" ? light.main5 : dark.main2,
-                    textSectionTitleColor: light.main2, // TITULO DE SEMANA
-                    textSectionTitleDisabledColor: "#d9e1e8", // TITULO DE SEMANA DESACTIVADO
-                    selectedDayBackgroundColor: "#00adf5", // NO SE
-                    selectedDayTextColor: "#ffffff", // NO SE
-                    todayTextColor: light.main2, // COLOR DEL DIA DE HOY
-                    dayTextColor:
-                      mode === "light" ? light.textDark : dark.textWhite, // COLOR DE LAS FECHAS
-                    textDisabledColor: `${
-                      mode === "light" ? light.textDark : dark.textWhite
-                    }66`, // COLOR QUE NO ES DEL MES
-                    dotColor: "#00adf5", // NO SE
-                    selectedDotColor: "#ffffff", // NO SE
-                    arrowColor:
-                      mode === "light" ? light.textDark : dark.textWhite, // COLOR DE LAS FLECHAS
-                    disabledArrowColor: `${light.main2}66`, //COLOR DE LAS FECHAS DESHABILITADAS
-                    monthTextColor:
-                      mode === "light" ? light.textDark : dark.textWhite, // TEXTO DEL MES
-                    indicatorColor:
-                      mode === "light" ? light.textDark : dark.textWhite, // COLOR DE INDICADOR
-                    textDayFontFamily: "monospace", // FONT FAMILY DEL DIA
-                    textMonthFontFamily: "monospace", // FONT FAMILY DEL MES
-                    textDayHeaderFontFamily: "monospace", // FONT FAMILY DEL ENCABEZADO
-                    textDayFontWeight: "300", // FONT WEIGHT DEL LOS DIAS DEL MES
-                    textMonthFontWeight: "bold", // FONT WEIGHT DEL TITULO DEL MES
-                    textDayHeaderFontWeight: "300", // FONT WEIGHT DEL DIA DEL ENCABEZADO
-                    textDayFontSize: 16, // TAMANO DE LA LETRA DEL DIA
-                    textMonthFontSize: 18, // TAMANO DE LA LETRA DEL MES
-                    textDayHeaderFontSize: 16, // TAMANO DEL ENCABEZADO DEL DIA
-                  }}
-                  maxDate="2024-12-31"
-                  minDate="2023-01-01"
-                  firstDay={1}
-                  displayLoadingIndicator={false} // ESTA COOL
-                  enableSwipeMonths={true}
-                  onDayPress={(data) => {
-                    const reservation =
-                      markedDates[data.dateString]?.reservation;
-                    const obj = {
-                      fullName: personSelected.name,
-                      email: "",
-                      identification: personSelected.identification,
-                      phoneNumber: "",
-                      payment: 0,
-                      owner: personSelected.personID,
-                      checkIn: null,
-                      checkOut: null,
-                      id: random(20),
-                    };
+      <ChooseDate
+        modalVisible={modalVisible}
+        setModalVisible={setModalVisible}
+        onDayPress={({ data, nomenclatureID, markedDates, cleanData }) => {
+          const reservation = markedDates[data.dateString]?.reservation;
+          const obj = {
+            fullName: personSelected.name,
+            email: "",
+            identification: personSelected.identification,
+            phoneNumber: "",
+            payment: 0,
+            owner: personSelected.personID,
+            checkIn: null,
+            checkOut: null,
+            id: random(20),
+          };
 
-                    const cleanData = () => {
-                      setModalVisible(false);
-                      setPersonSelected({});
-                      setGroupSelected("");
-                      setNomenclatureSelected("");
-                      setNomenclatureSelected([]);
-                      setMarkedDates({});
-                    };
+          if (reservation) {
+            Alert.alert(
+              "Habitación compartida",
+              "¿Deseas compartir la habitación con este cliente?",
+              [
+                {
+                  text: "No",
+                  style: "cancel",
+                },
+                {
+                  text: "Si",
+                  onPress: async () => {
+                    const reservationUpdated = { ...reservation };
 
-                    if (reservation) {
-                      Alert.alert(
-                        "Habitación compartida",
-                        "¿Deseas compartir la habitación con este cliente?",
-                        [
-                          {
-                            text: "No",
-                            style: "cancel",
-                          },
-                          {
-                            text: "Si",
-                            onPress: async () => {
-                              const reservationUpdated = { ...reservation };
+                    const updateReservation = async ({ checkIn }) => {
+                      obj.checkIn = checkIn;
 
-                              const updateReservation = async ({ checkIn }) => {
-                                obj.checkIn = checkIn;
-
-                                reservationUpdated.hosted = [
-                                  ...reservationUpdated.hosted,
-                                  obj,
-                                ];
-                                dispatch(
-                                  editR({
-                                    ref: reservationUpdated.ref,
-                                    data: reservationUpdated,
-                                  })
-                                );
-                                cleanData();
-                                Alert.alert(
-                                  "Excelente",
-                                  "El cliente ha sido hospedado en una habitación compartida satisfactoriamente"
-                                );
-                                await editReservation({
-                                  identifier: activeGroup.active
-                                    ? activeGroup.identifier
-                                    : user.identifier,
-                                  reservation: reservationUpdated,
-                                  groups: activeGroup.active
-                                    ? [activeGroup.id]
-                                    : user.helpers.map((h) => h.id),
-                                });
-                              };
-
-                              Alert.alert(
-                                "CHECK IN",
-                                "¿El cliente ya ha llegado para hospedarse?",
-                                [
-                                  { text: "Cancelar", style: "cancel" },
-                                  {
-                                    text: "No",
-                                    onPress: () =>
-                                      updateReservation({ checkIn: null }),
-                                  },
-                                  {
-                                    text: "Si",
-                                    onPress: () =>
-                                      updateReservation({ checkIn: new Date().getTime() }),
-                                  },
-                                ],
-                                { cancelable: true }
-                              );
-                            },
-                          },
-                        ],
-                        { cancelable: true }
+                      reservationUpdated.hosted = [
+                        ...reservationUpdated.hosted,
+                        obj,
+                      ];
+                      dispatch(
+                        editR({
+                          ref: reservationUpdated.ref,
+                          data: reservationUpdated,
+                        })
                       );
-                    } else {
-                      navigation.navigate("CreateReserve", {
-                        hosted: [obj],
-                        year: data.year,
-                        day: data.day,
-                        month: data.month,
-                        id: nomenclatureSelected,
-                      });
                       cleanData();
-                    }
-                  }}
-                  onDayLongPress={() => {}}
-                  arrowsHitSlop={10}
-                  markingType="period"
-                  markedDates={markedDates}
-                />
-              ) : (
-                <TextStyle center verySmall color={light.main2}>
-                  Seleccione el grupo y la nomenclatura
-                </TextStyle>
-              )}
-            </View>
-          </View>
-        </View>
-      </Modal>
+                      setPersonSelected({});
+                      Alert.alert(
+                        "Excelente",
+                        "El cliente ha sido hospedado en una habitación compartida satisfactoriamente"
+                      );
+                      await editReservation({
+                        identifier: helperStatus.active
+                          ? helperStatus.identifier
+                          : user.identifier,
+                        reservation: reservationUpdated,
+                        helpers: helperStatus.active
+                          ? [helperStatus.id]
+                          : user.helpers.map((h) => h.id),
+                      });
+                    };
+
+                    Alert.alert(
+                      "CHECK IN",
+                      "¿El cliente ya ha llegado para hospedarse?",
+                      [
+                        { text: "Cancelar", style: "cancel" },
+                        {
+                          text: "No",
+                          onPress: () => updateReservation({ checkIn: null }),
+                        },
+                        {
+                          text: "Si",
+                          onPress: () =>
+                            updateReservation({
+                              checkIn: new Date().getTime(),
+                            }),
+                        },
+                      ],
+                      { cancelable: true }
+                    );
+                  },
+                },
+              ],
+              { cancelable: true }
+            );
+          } else {
+            navigation.navigate("CreateReserve", {
+              hosted: [obj],
+              year: data.year,
+              day: data.day,
+              month: data.month,
+              id: nomenclatureID,
+            });
+            cleanData();
+            setPersonSelected({});
+          }
+        }}
+      />
     </Layout>
   );
 };
@@ -1549,12 +1310,6 @@ const styles = StyleSheet.create({
     borderColor: light.main2,
     borderRadius: 8,
     borderWidth: 1,
-  },
-  accommodationCard: {
-    width: "90%",
-    borderRadius: 8,
-    padding: 25,
-    justifyContent: "space-between",
   },
 });
 

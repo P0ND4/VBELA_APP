@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
+import { getFontSize } from '@helpers/libs';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -68,7 +69,7 @@ const Tables = () => {
           </View>
           {tables?.length > 0 && (
             <TouchableOpacity onPress={() => navigation.navigate("CreateTable")}>
-              <Ionicons name="add-circle" size={40} color={light.main2} />
+              <Ionicons name="add-circle" size={getFontSize(32)} color={light.main2} />
             </TouchableOpacity>
           )}
         </View>
@@ -149,7 +150,7 @@ const Tables = () => {
                     </TextStyle>
                     <Ionicons
                       name="book-outline"
-                      size={21}
+                      size={getFontSize(17)}
                       style={{ marginLeft: 10 }}
                       color={
                         !OF
@@ -163,7 +164,7 @@ const Tables = () => {
                 </ButtonStyle>
                 <Ionicons
                   name={OF ? "receipt-outline" : "checkbox"}
-                  size={38}
+                  size={getFontSize(31)}
                   color={
                     !OF
                       ? light.main2

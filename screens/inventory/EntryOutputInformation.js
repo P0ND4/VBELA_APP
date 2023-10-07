@@ -11,7 +11,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { thousandsSystem, print, generatePDF, changeDate } from "@helpers/libs";
+import { thousandsSystem, print, generatePDF, changeDate, getFontSize } from "@helpers/libs";
 import { editInventory } from "@api";
 import { edit } from "@features/inventory/informationSlice";
 import theme from "@theme";
@@ -24,7 +24,7 @@ const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("screen");
 const EntryOutputInformation = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const inventory = useSelector((state) => state.inventory);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const user = useSelector((state) => state.user);
   const helpers = useSelector((state) => state.helpers);
 
@@ -257,12 +257,12 @@ const EntryOutputInformation = ({ route, navigation }) => {
             dispatch(edit({ id: inventoryRef.id, data: editable }));
             navigation.pop();
             await editInventory({
-              identifier: activeGroup.active
-                ? activeGroup.identifier
+              identifier: helperStatus.active
+                ? helperStatus.identifier
                 : user.identifier,
               inventory: editable,
-              groups: activeGroup.active
-                ? [activeGroup.id]
+              helpers: helperStatus.active
+                ? [helperStatus.id]
                 : helpers.map((h) => h.id),
             });
           },
@@ -509,7 +509,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
             <TouchableOpacity onPress={() => removeEntryOutput()}>
               <Ionicons
                 name="trash"
-                size={35}
+                size={getFontSize(28)}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -525,7 +525,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
             >
               <Ionicons
                 name="print"
-                size={35}
+                size={getFontSize(28)}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -542,7 +542,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
             >
               <Ionicons
                 name="document-attach"
-                size={35}
+                size={getFontSize(28)}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -552,7 +552,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
             <TouchableOpacity>
               <Ionicons
                 name="filter"
-                size={35}
+                size={getFontSize(28)}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />

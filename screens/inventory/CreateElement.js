@@ -9,7 +9,7 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
 import { Picker } from "@react-native-picker/picker";
-import { thousandsSystem, random } from "@helpers/libs";
+import { thousandsSystem, random, getFontSize } from "@helpers/libs";
 import { add, edit, remove } from "@features/inventory/informationSlice";
 import { addInventory, editInventory, removeInventory } from "@api";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -32,7 +32,7 @@ const CreateElement = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
   const helpers = useSelector((state) => state.helpers);
   const mode = useSelector((state) => state.mode);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const inventory = useSelector((state) => state.inventory);
 
   const element = route.params?.item;
@@ -103,10 +103,10 @@ const CreateElement = ({ route, navigation }) => {
     dispatch(edit({ id: data.id, data }));
     navigation.pop();
     await editInventory({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       inventory: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
   };
@@ -135,12 +135,12 @@ const CreateElement = ({ route, navigation }) => {
       dispatch(add(data));
       navigation.pop();
       await addInventory({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         inventory: data,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : helpers.map((h) => h.id),
       });
     }
@@ -163,12 +163,12 @@ const CreateElement = ({ route, navigation }) => {
             dispatch(remove({ id: element.id }));
             navigation.pop();
             await removeInventory({
-              identifier: activeGroup.active
-                ? activeGroup.identifier
+              identifier: helperStatus.active
+                ? helperStatus.identifier
                 : user.identifier,
               id: element.id,
-              groups: activeGroup.active
-                ? [activeGroup.id]
+              helpers: helperStatus.active
+                ? [helperStatus.id]
                 : user.helpers.map((h) => h.id),
             });
           },
@@ -272,7 +272,7 @@ const CreateElement = ({ route, navigation }) => {
                             : dark.textWhite
                           : "#888888"
                       }
-                      size={18}
+                      size={getFontSize(15)}
                       name="caret-down"
                     />
                   </View>

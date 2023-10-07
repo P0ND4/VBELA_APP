@@ -22,7 +22,7 @@ const Drawer = createDrawerNavigator();
 function App() {
   const mode = useSelector((state) => state.mode);
   const user = useSelector((state) => state.user);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
 
   return (
     <Drawer.Navigator
@@ -44,8 +44,8 @@ function App() {
       }}
       drawerContent={(props) => <CustomDrawer {...props} />}
     >
-      {activeGroup.active
-        ? (activeGroup.accessToTables || activeGroup.accessToReservations) &&
+      {helperStatus.active
+        ? (helperStatus.accessToTables || helperStatus.accessToReservations) &&
           ["both", "accommodation"].includes(user?.type)
         : ["both", "accommodation"].includes(user?.type) && (
             <Drawer.Screen
@@ -59,7 +59,7 @@ function App() {
               }}
             />
           )}
-      {(!activeGroup.active || activeGroup.accessToStatistics) && (
+      {(!helperStatus.active || helperStatus.accessToStatistics) && (
         <Drawer.Screen
           name="Statistic"
           component={Statistic}
@@ -71,7 +71,7 @@ function App() {
           }}
         />
       )}
-      {!activeGroup.active && (
+      {!helperStatus.active && (
         <Drawer.Screen
           name="Helper"
           component={Helper}
@@ -83,51 +83,51 @@ function App() {
           }}
         />
       )}
-      {(activeGroup.active
-        ? activeGroup.accessToProductsAndServices &&
+      {(helperStatus.active
+        ? helperStatus.accessToProductsAndServices &&
           ["both", "sales"].includes(user?.type)
         : ["both", "sales"].includes(user?.type)) && (
         <Drawer.Screen
           name="Sales"
           component={Sales}
           options={{
-            title: "Productos y servicios",
+            title: "Venta de Productos&Servicios",
             drawerIcon: ({ color }) => (
               <Ionicons name="layers-outline" size={22} color={color} />
             ),
           }}
         />
       )}
-      {(activeGroup.active
-        ? activeGroup.accessToTables && ["both", "sales"].includes(user?.type)
+      {(helperStatus.active
+        ? helperStatus.accessToTables && ["both", "sales"].includes(user?.type)
         : ["both", "sales"].includes(user?.type)) && (
         <Drawer.Screen
           name="Tables"
           component={Tables}
           options={{
-            title: "Ventas",
+            title: "Restaurante/Bar",
             drawerIcon: ({ color }) => (
               <Ionicons name="pricetag-outline" size={22} color={color} />
             ),
           }}
         />
       )}
-      {(activeGroup.active
-        ? (activeGroup.accessToKitchen || activeGroup.accessToTables) &&
+      {(helperStatus.active
+        ? (helperStatus.accessToKitchen || helperStatus.accessToTables) &&
           ["both", "sales"].includes(user?.type)
         : ["both", "sales"].includes(user?.type)) && (
         <Drawer.Screen
           name="Kitchen"
           component={Kitchen}
           options={{
-            title: "Cocina",
+            title: "Producción",
             drawerIcon: ({ color }) => (
               <Ionicons name="flame-outline" size={22} color={color} />
             ),
           }}
         />
       )}
-      {(!activeGroup.active || activeGroup.accessToRoster) && (
+      {(!helperStatus.active || helperStatus.accessToRoster) && (
         <Drawer.Screen
           name="CreateRoster"
           component={CreateRoster}
@@ -139,9 +139,9 @@ function App() {
           }}
         />
       )}
-      {(!activeGroup.active ||
-        activeGroup.accessToCustomer ||
-        activeGroup.accessToTables) && (
+      {(!helperStatus.active ||
+        helperStatus.accessToCustomer ||
+        helperStatus.accessToTables) && (
         <Drawer.Screen
           name="Customers"
           options={{
@@ -154,8 +154,8 @@ function App() {
           {(props) => <People {...props} userType="customer" />}
         </Drawer.Screen>
       )}
-      {(activeGroup.active
-        ? activeGroup.accessToSupplier && ["both", "sales"].includes(user?.type)
+      {(helperStatus.active
+        ? helperStatus.accessToSupplier && ["both", "sales"].includes(user?.type)
         : ["both", "sales"].includes(user?.type)) && (
         <Drawer.Screen
           name="Providers"
@@ -169,8 +169,8 @@ function App() {
           {(props) => <People {...props} userType="supplier" />}
         </Drawer.Screen>
       )}
-      {(activeGroup.active
-        ? activeGroup.accessToInventory &&
+      {(helperStatus.active
+        ? helperStatus.accessToInventory &&
           ["both", "sales"].includes(user?.type)
         : ["both", "sales"].includes(user?.type)) && (
         <Drawer.Screen

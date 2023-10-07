@@ -1,9 +1,13 @@
+import { useEffect, useRef, useState } from "react";
+import { AppState, Easing } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import { editUser, getRule, getUser } from "@api";
+import { socket } from "@socket";
 import {
   active,
   inactive,
   inactive as inactiveGroup,
-} from "@features/function/informationSlice";
+} from "@features/helpers/statusSlice";
 import {
   change as changeHelper,
   change as changeHelpers,
@@ -49,25 +53,22 @@ import InvoiceByEmail from "@screens/sales/InvoiceByEmail";
 import OrderCompletion from "@screens/sales/OrderCompletion";
 import PreviewOrder from "@screens/sales/PreviewOrder";
 import TableInformation from "@screens/sales/TableInformation";
-import { socket } from "@socket";
-import theme from "@theme";
-import { useEffect, useRef, useState } from "react";
-import { AppState, Easing } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
-
-import Wifi from "@screens/setting/Wifi";
-import * as BackgroundFetch from "expo-background-fetch";
-import * as localization from "expo-localization";
-import * as Notifications from "expo-notifications";
-import * as TaskManager from "expo-task-manager";
-
+import CreateGroup from "@screens/sales/CreateGroup";
 import EmailAndPhone from "@screens/register/EmailAndPhone";
 import Selection from "@screens/register/Selection";
 import Verification from "@screens/register/Verification";
 import ClientSupplier from "@screens/setting/ClientSupplier";
 import EntryOutputInformation from "@screens/inventory/EntryOutputInformation";
-import App from "./App";
 import InventoryInformation from "@screens/inventory/InventoryInformation";
+import Wifi from "@screens/setting/Wifi";
+import theme from "@theme";
+
+import * as BackgroundFetch from "expo-background-fetch";
+import * as localization from "expo-localization";
+import * as Notifications from "expo-notifications";
+import * as TaskManager from "expo-task-manager";
+
+import App from "./App";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -117,7 +118,7 @@ const Main = () => {
   const user = useSelector((state) => state.user);
   const helpers = useSelector((state) => state.helpers);
   const session = useSelector((state) => state.session);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const synchronization = useSelector((state) => state.synchronization);
   const language = useSelector((state) => state.language);
 
@@ -130,11 +131,11 @@ const Main = () => {
   const [status, setStatus] = useState(null);
 
   const sendSync = async (data) => {
-    const groups = user?.helpers?.map((h) => h.id);
+    const rooms = user?.helpers?.map((h) => h.id);
     socket.emit("sync", {
       data,
-      groups: activeGroup.id ? [activeGroup.id] : [],
-      helpers: groups,
+      room: helperStatus.id ? [helperStatus.id] : [],
+      helpers: rooms,
       identifier: user?.identifier,
     });
     await removeFile({ name: "data.json" });
@@ -143,19 +144,19 @@ const Main = () => {
   const checkUser = async (data) => {
     const information = await readFile({ name: "user.json" });
     const userFound = data.helpers?.find(
-      (helper) => helper.id === activeGroup.id
+      (helper) => helper.id === helperStatus.id
     );
 
     if (userFound) {
       if (
-        userFound.user !== activeGroup.user ||
-        userFound.password !== activeGroup.password
+        userFound.user !== helperStatus.user ||
+        userFound.password !== helperStatus.password
       ) {
         dispatch(inactive());
         if (!information.error) changeGeneralInformation(dispatch, information);
         return { error: true, type: "User or password changed" };
       } else {
-        dispatch(active({ ...userFound, identifier: activeGroup.identifier }));
+        dispatch(active({ ...userFound, identifier: helperStatus.identifier }));
         return { error: false, type: null, userFound };
       }
     } else {
@@ -188,7 +189,7 @@ const Main = () => {
       }
 
       await helperNotification(
-        activeGroup,
+        helperStatus,
         user,
         `${user?.identifier} ha recuperado la conexión`,
         check.error
@@ -281,11 +282,11 @@ const Main = () => {
   useEffect(() => {
     const sendSocket = () => {
       if (connected && session) {
-        const groups = helpers.map((h) => h.id);
-        if (user && activeGroup.active)
-          socket.emit("enter_room", { groups: [activeGroup.id] });
+        const rooms = helpers.map((h) => h.id);
+        if (user && helperStatus.active)
+          socket.emit("enter_room", { helpers: [helperStatus.id] });
         else if (user && helpers.length > 0)
-          socket.emit("enter_room", { groups });
+          socket.emit("enter_room", { helpers: rooms });
       }
     };
 
@@ -304,21 +305,21 @@ const Main = () => {
 
     // Limpia el oyente al desmontar el componente
     return () => appStateListener.remove();
-  }, [connected, session, helpers, activeGroup.active]);
+  }, [connected, session, helpers, helperStatus.active]);
 
   useEffect(() => {
     const getInformation = async () => {
       const res = await getUser({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user?.identifier,
       });
-      if (!activeGroup.active)
+      if (!helperStatus.active)
         await writeFile({ name: "user.json", value: res });
       if (res.error && res?.details === "api") return;
 
       if (res.error && res.type === "Username does not exist" && connected) {
-        if (!activeGroup.active) {
+        if (!helperStatus.active) {
           navigation.current.replace("SignIn");
           await removeFile({ name: "data.json" });
           await removeFile({ name: "user.json" });
@@ -332,7 +333,7 @@ const Main = () => {
       const isChange = await dataNotUploadedInformation(res);
       if (!isChange) changeGeneralInformation(dispatch, res);
 
-      if (!activeGroup.active && !res.error) {
+      if (!helperStatus.active && !res.error) {
         dispatch(changeUser(res));
         dispatch(changeLanguage(res?.settings?.language));
         dispatch(changeMode(res.mode));
@@ -340,12 +341,12 @@ const Main = () => {
         dispatch(changeHelpers(res.helpers));
       }
 
-      const groups = helpers.map((h) => h.id);
+      const rooms = helpers.map((h) => h.id);
       await writeFile({
         name: "work.json",
         value: {
-          groups: activeGroup.id ? [activeGroup.id] : [],
-          helpers: groups,
+          room: helperStatus.id ? [helperStatus.id] : [],
+          helpers: rooms,
           identifier: user?.identifier,
         },
       });
@@ -367,7 +368,7 @@ const Main = () => {
 
     // Limpia el oyente al desmontar el componente
     return () => appStateListener.remove();
-  }, [connected, session, activeGroup.active]);
+  }, [connected, session, helperStatus.active]);
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -386,11 +387,11 @@ const Main = () => {
   }, []);
 
   useEffect(() => {
-    const groups = helpers.map((h) => h.id);
+    const rooms = helpers.map((h) => h.id);
     if (
       connected &&
       session &&
-      (groups.length > 0 || activeGroup.active) &&
+      (rooms.length > 0 || helperStatus.active) &&
       synchronization.connected
     ) {
       let pingSend = false;
@@ -421,7 +422,7 @@ const Main = () => {
     connected,
     session,
     helpers,
-    activeGroup.active,
+    helperStatus.active,
     synchronization.connected,
   ]);
 
@@ -437,9 +438,9 @@ const Main = () => {
 
   useEffect(() => {
     const leave = async (g) => {
-      socket.emit("leave", { groups: g });
-      const groups = helpers.map((h) => h.id);
-      if (groups.length > 0) socket.emit("enter_room", { groups });
+      socket.emit("leave", { helpers: g });
+      const rooms = helpers.map((h) => h.id);
+      if (rooms.length > 0) socket.emit("enter_room", { helpers: rooms });
       changeGeneralInformation(dispatch, user);
       dispatch(inactiveGroup());
     };
@@ -449,11 +450,11 @@ const Main = () => {
 
   useEffect(() => {
     const change = ({ data, confidential }) => {
-      if (confidential && !activeGroup.active) {
+      if (confidential && !helperStatus.active) {
         dispatch(changeUser(data));
         dispatch(changeHelper(data.helpers));
       }
-      if (activeGroup.active) {
+      if (helperStatus.active) {
         const user = checkUser(data);
         if (user.error) return;
       }
@@ -462,7 +463,7 @@ const Main = () => {
 
     socket.on("change", change);
     return () => socket.off("change", change);
-  }, [activeGroup]);
+  }, [helperStatus]);
 
   useEffect(() => {
     (async () => {
@@ -673,6 +674,11 @@ const Main = () => {
           name="InventoryInformation"
           component={InventoryInformation}
           options={{ title: 'Información de inventario' }}
+        />
+        <Stack.Screen
+          name="CreateGroup"
+          component={CreateGroup}
+          options={{ title: 'Crear grupo' }}
         />
       </Stack.Group>
       <Stack.Screen

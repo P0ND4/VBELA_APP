@@ -28,7 +28,7 @@ const CreatePerson = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const people = useSelector((state) => state.people);
   const economy = useSelector((state) => state.economy);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
 
   const type = route.params?.type;
   const editing = route.params?.editing;
@@ -67,12 +67,12 @@ const CreatePerson = ({ route, navigation }) => {
       dispatch(add(data));
       navigation.pop();
       await addPerson({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         person: data,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     }
@@ -93,15 +93,15 @@ const CreatePerson = ({ route, navigation }) => {
         })
       );
       await editEconomy({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         economy: {
           ...foundEconomy,
           owner: { identification: data.identification, name: data.name },
         },
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     }
@@ -112,10 +112,10 @@ const CreatePerson = ({ route, navigation }) => {
     dispatch(editPeople({ id: dataP.id, data }));
     navigation.pop();
     await editPerson({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       person: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
   };

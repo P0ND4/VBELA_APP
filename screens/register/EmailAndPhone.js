@@ -13,6 +13,7 @@ import {
   Keyboard,
 } from "react-native";
 import { verifyPhoneNumber, verifyEmail } from "@api";
+import { getFontSize } from '@helpers/libs';
 import TextStyle from "@components/TextStyle";
 import InputStyle from "@components/InputStyle";
 import Layout from "@components/Layout";
@@ -152,7 +153,7 @@ const EmailAndPhone = ({ route, navigation }) => {
           <Ionicons
             name={icon}
             color={mode === "light" ? light.textDark : dark.textWhite}
-            size={20}
+            size={getFontSize(16)}
             style={{ marginLeft: 10 }}
           />
         )}
@@ -246,7 +247,7 @@ const EmailAndPhone = ({ route, navigation }) => {
               color={
                 mode === "light" ? `${light.textDark}66` : `${dark.textWhite}66`
               }
-              size={15}
+              size={getFontSize(12)}
             />
           </TouchableOpacity>
         )}
@@ -348,7 +349,7 @@ const EmailAndPhone = ({ route, navigation }) => {
             <Ionicons
               name="mail"
               color={light.textDark}
-              size={20}
+              size={getFontSize(16)}
               style={{ marginLeft: 10 }}
             />
           )}
@@ -399,7 +400,7 @@ const EmailAndPhone = ({ route, navigation }) => {
                     ? `${light.textDark}66`
                     : `${dark.textWhite}66`
                 }
-                size={30}
+                size={getFontSize(24)}
               />
             </TouchableOpacity>
           </View>
@@ -413,7 +414,7 @@ const EmailAndPhone = ({ route, navigation }) => {
                     ? `${light.textDark}66`
                     : `${dark.textWhite}66`
                 }
-                size={30}
+                size={getFontSize(24)}
               />
             )}
             placeholder="Buscar"
@@ -465,11 +466,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
-
-//133.20 MIOS EN EL BANCO
-// 196.87 RAFAEL
-// 207.37 CONVERTIDO
-// MI GANANCIA EN COMISION 10.5
-// LE DEBO A RAFAEL 26$
 
 export default EmailAndPhone;

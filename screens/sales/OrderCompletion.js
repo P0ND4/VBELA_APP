@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import { useSelector } from "react-redux";
-import { thousandsSystem } from "@helpers/libs";
+import { thousandsSystem, getFontSize } from "@helpers/libs";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -33,7 +33,7 @@ const OrderCompletion = ({ route }) => {
         <View style={{ alignItems: "center" }}>
           <Ionicons
             name={!data.pay ? "time-outline" : "checkmark-circle-outline"}
-            size={180}
+            size={getFontSize(145)}
             color={light.main2}
           />
           <TextStyle
@@ -58,7 +58,7 @@ const OrderCompletion = ({ route }) => {
                 <Ionicons
                   name="reader-outline"
                   color={light.textDark}
-                  size={28}
+                  size={getFontSize(23)}
                   style={{ marginRight: 10 }}
                 />
                 <TextStyle bigParagraph>Factura</TextStyle>

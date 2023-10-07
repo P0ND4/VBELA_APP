@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { View, TouchableOpacity, Alert } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { remove as removeZone } from "@features/groups/informationSlice";
+import { remove as removeZoneRedux } from "@features/zones/informationSlice";
 import {
   remove,
   removeMany as removeManyNomenclature,
-} from "@features/groups/nomenclaturesSlice";
-import { removeMany as removeManyReservation } from "@features/groups/reservationsSlice";
-import { changeDate, thousandsSystem } from "@helpers/libs";
-import { removeGroup, removeNomenclature } from "@api";
+} from "@features/zones/nomenclaturesSlice";
+import { removeMany as removeManyReservation } from "@features/zones/reservationsSlice";
+import { changeDate, thousandsSystem, getFontSize } from "@helpers/libs";
+import { removeZone, removeNomenclature } from "@api";
 import helperNotification from "@helpers/helperNotification";
 import Layout from "@components/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -21,14 +21,14 @@ const dark = theme.colors.dark;
 
 const PlaceInformation = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
-  const groupState = useSelector((state) => state.groups);
+  const zoneState = useSelector((state) => state.zones);
   const user = useSelector((state) => state.user);
   const nomenclaturesState = useSelector((state) => state.nomenclatures);
   const nomenclatureState = useSelector((state) => state.nomenclatures);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const reservations = useSelector((state) => state.reservations);
 
-  const [group, setGroup] = useState(null);
+  const [zone, setZone] = useState(null);
   const [nomenclatures, setNomenclatures] = useState([]);
   const [nomenclature, setNomenclature] = useState(null);
   const [totalMoney, setTotalMoney] = useState(null);
@@ -41,19 +41,19 @@ const PlaceInformation = ({ route, navigation }) => {
   useEffect(() => {
     setNomenclatures(nomenclaturesState.filter((n) => n.ref === route.params.ref));
     setNomenclature(nomenclatureState.find((n) => n.id === route.params.id));
-    setGroup(groupState.find((group) => group.ref === route.params.ref));
-  }, [groupState, nomenclatureState, nomenclaturesState]);
+    setZone(zoneState.find((zone) => zone.ref === route.params.ref));
+  }, [zoneState, nomenclatureState, nomenclaturesState]);
 
   useEffect(() => {
     if (params.type === "General")
-      navigation.setOptions({ title: group?.name });
+      navigation.setOptions({ title: zone?.name });
     else
       navigation.setOptions({
         title: nomenclature?.name
           ? nomenclature?.name
           : nomenclature?.nomenclature,
       });
-  }, [group, nomenclature]);
+  }, [zone, nomenclature]);
 
   useEffect(() => {
     let totalMoney = 0;
@@ -123,7 +123,7 @@ const PlaceInformation = ({ route, navigation }) => {
             navigation.navigate(
               params.type === "General" ? "CreateZone" : "CreatePlace",
               {
-                item: params.type === "General" ? group : nomenclature,
+                item: params.type === "General" ? zone : nomenclature,
                 ref: route.params.ref,
                 id: route.params.id,
                 editing: true,
@@ -131,27 +131,27 @@ const PlaceInformation = ({ route, navigation }) => {
             );
           }}
         >
-          <Ionicons name="create-outline" size={38} color={light.main2} />
+          <Ionicons name="create-outline" size={getFontSize(31)} color={light.main2} />
         </TouchableOpacity>
       </View>
       <TextStyle smallSubtitle color={light.main2}>
         {params.type}
       </TextStyle>
-      {params.type === "General" && (group?.description || group?.location) && (
+      {params.type === "General" && (zone?.description || zone?.location) && (
         <View style={{ marginTop: 14 }}>
-          {group?.description && (
+          {zone?.description && (
             <TextStyle
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
-              {group?.description}
+              {zone?.description}
             </TextStyle>
           )}
-          {group?.location && (
+          {zone?.location && (
             <TextStyle
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
               Ubicacion:{" "}
-              <TextStyle color={light.main2}>{group?.location}</TextStyle>
+              <TextStyle color={light.main2}>{zone?.location}</TextStyle>
             </TextStyle>
           )}
         </View>
@@ -181,7 +181,7 @@ const PlaceInformation = ({ route, navigation }) => {
             {changeDate(
               new Date(
                 params.type === "General"
-                  ? group?.modificationDate
+                  ? zone?.modificationDate
                   : nomenclature?.modificationDate
               )
             )}
@@ -193,7 +193,7 @@ const PlaceInformation = ({ route, navigation }) => {
             {changeDate(
               new Date(
                 params.type === "General"
-                  ? group?.creationDate
+                  ? zone?.creationDate
                   : nomenclature?.creationDate
               )
             )}
@@ -226,16 +226,16 @@ const PlaceInformation = ({ route, navigation }) => {
                       ids.push(nomenclatures[i].id);
                     }
                     dispatch(removeManyNomenclature({ ref: route.params.ref }));
-                    dispatch(removeZone({ ref: route.params.ref }));
+                    dispatch(removeZoneRedux({ ref: route.params.ref }));
                     navigation.popToTop();
-                    await removeGroup({
-                      identifier: activeGroup.active
-                        ? activeGroup.identifier
+                    await removeZone({
+                      identifier: helperStatus.active
+                        ? helperStatus.identifier
                         : user.identifier,
                       ref: route.params.ref,
                       ids,
-                      groups: activeGroup.active
-                        ? [activeGroup.id]
+                      helpers: helperStatus.active
+                        ? [helperStatus.id]
                         : user.helpers.map((h) => h.id),
                     });
                   } else {
@@ -243,24 +243,24 @@ const PlaceInformation = ({ route, navigation }) => {
                     dispatch(removeManyReservation({ ref: route.params.id }));
                     navigation.pop();
                     await removeNomenclature({
-                      identifier: activeGroup.active
-                        ? activeGroup.identifier
+                      identifier: helperStatus.active
+                        ? helperStatus.identifier
                         : user.identifier,
                       id: route.params.id,
-                      groups: activeGroup.active
-                        ? [activeGroup.id]
+                      helpers: helperStatus.active
+                        ? [helperStatus.id]
                         : user.helpers.map((h) => h.id),
                     });
                   }
 
                   await helperNotification(
-                    activeGroup,
+                    helperStatus,
                     user,
                     "Removido todas las reservas",
                     `Se han eliminado todas las reservas ${
                       params.type === "General"
-                        ? `del grupo (${group.name})`
-                        : `en (${group.name} | ${nomenclature.nomenclature})`
+                        ? `del grupo (${zone.name})`
+                        : `en (${zone.name} | ${nomenclature.nomenclature})`
                     }`,
                     "accessToReservations"
                   );

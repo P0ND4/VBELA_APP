@@ -5,7 +5,6 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   ScrollView,
-  TouchableOpacity,
 } from "react-native";
 import { useForm } from "react-hook-form";
 import { useSelector, useDispatch } from "react-redux";
@@ -18,7 +17,7 @@ import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
-import { thousandsSystem } from "@helpers/libs";
+import { thousandsSystem, getFontSize } from "@helpers/libs";
 import { add, edit, remove } from "@features/function/rosterSlice";
 
 const light = theme.colors.light;
@@ -34,7 +33,7 @@ const CreateRoster = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
   const roster = useSelector((state) => state.roster);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const helpers = useSelector((state) => state.helpers);
 
   const data = route.params?.item;
@@ -67,10 +66,10 @@ const CreateRoster = ({ route, navigation }) => {
     dispatch(edit({ id: data.id, data: d }));
     navigation.pop();
     await editRoster({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       roster: d,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
   };
@@ -87,10 +86,10 @@ const CreateRoster = ({ route, navigation }) => {
     dispatch(add(data));
     navigation.pop();
     await addRoster({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       roster: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
   };
@@ -112,12 +111,12 @@ const CreateRoster = ({ route, navigation }) => {
             dispatch(remove({ id: data.id }));
             navigation.pop();
             await removeRoster({
-              identifier: activeGroup.active
-                ? activeGroup.identifier
+              identifier: helperStatus.active
+                ? helperStatus.identifier
                 : user.identifier,
               id: data.id,
-              groups: activeGroup.active
-                ? [activeGroup.id]
+              helpers: helperStatus.active
+                ? [helperStatus.id]
                 : user.helpers.map((h) => h.id),
             });
           },
@@ -198,7 +197,7 @@ const CreateRoster = ({ route, navigation }) => {
                   El valor es obligatorio
                 </TextStyle>
               )}
-              <View style={{ marginVertical: 4 }}>
+              <View>
                 <ButtonStyle
                   backgroundColor={mode === "light" ? light.main5 : dark.main2}
                   onPress={() => pickerRef.current.focus()}
@@ -223,7 +222,7 @@ const CreateRoster = ({ route, navigation }) => {
                     </TextStyle>
                     <Ionicons
                       color={rosterSelected ? "#FFFFFF" : "#AAAAAA"}
-                      size={18}
+                      size={getFontSize(15)}
                       name="caret-down"
                     />
                   </View>

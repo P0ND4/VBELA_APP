@@ -33,6 +33,7 @@ const Statistic = ({ navigation }) => {
   const reservations = useSelector((state) => state.reservations);
   const roster = useSelector((state) => state.roster);
   const salesProductsAndServices = useSelector((state) => state.sales);
+  const user = useSelector((state) => state.user);
 
   const [isLoading, setIsLoading] = useState(true);
   const [purchases, setPurchases] = useState([]);
@@ -208,7 +209,12 @@ const Statistic = ({ navigation }) => {
     );
     setDischarge(expense + expenseAndInvestmentAccountPayable);
     setIncome(
-      sales + purchase + ro + receivableTotal + purchaseAndCostAccountPayable + productsAndServices
+      sales +
+        purchase +
+        ro +
+        receivableTotal +
+        purchaseAndCostAccountPayable +
+        productsAndServices
     );
 
     setTimeout(() => {
@@ -582,33 +588,41 @@ const Statistic = ({ navigation }) => {
             showsVerticalScrollIndicator={false}
             style={{ marginTop: 20, height: height / 1.25 }}
           >
-            <View
-              style={[
-                styles.container,
-                { borderColor: mode === "light" ? light.main5 : dark.main2 },
-              ]}
-            >
-              <TextStyle
-                bold
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
+            {["both", "sales"].includes(user?.type) && (
+              <View
+                style={[
+                  styles.container,
+                  { borderColor: mode === "light" ? light.main5 : dark.main2 },
+                ]}
               >
-                VENTAS DIARIAS (MENÚ)
-              </TextStyle>
-              <View style={{ maxWidth: width / 2.5 }}>
-                <ScrollView horizontal showsHorizontalScrollIndicator>
-                  <TextStyle bold smallParagraph color={light.main2}>
-                    {thousandsSystem(sales)}
-                  </TextStyle>
-                </ScrollView>
+                <TextStyle
+                  bold
+                  smallParagraph
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  VENTAS DIARIAS (MENÚ)
+                </TextStyle>
+                <View style={{ maxWidth: width / 2.5 }}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator>
+                    <TextStyle bold smallParagraph color={light.main2}>
+                      {thousandsSystem(sales)}
+                    </TextStyle>
+                  </ScrollView>
+                </View>
               </View>
-            </View>
-            <Information name="COMIDA" value={thousandsSystem(food)} />
-            <Information
-              name="PRODUCTOS Y SERVICIOS"
-              value={thousandsSystem(productsAndServices)}
-            />
-            <Information name="ALOJAMIENTO" value={thousandsSystem(amount)} />
+            )}
+            {["both", "sales"].includes(user?.type) && (
+              <Information name="COMIDA" value={thousandsSystem(food)} />
+            )}
+            {["both", "sales"].includes(user?.type) && (
+              <Information
+                name="PRODUCTOS Y SERVICIOS"
+                value={thousandsSystem(productsAndServices)}
+              />
+            )}
+            {["both", "accommodation"].includes(user?.type) && (
+              <Information name="ALOJAMIENTO" value={thousandsSystem(amount)} />
+            )}
             <Information
               name="GASTOS/INVERSIÓN"
               value={thousandsSystem(expense)}
@@ -823,7 +837,9 @@ const Statistic = ({ navigation }) => {
                 )
               }
             />
-            <Information name="HUÉSPEDES" value={thousandsSystem(people)} />
+            {["both", "accommodation"].includes(user?.type) && (
+              <Information name="HUÉSPEDES" value={thousandsSystem(people)} />
+            )}
             <Information
               name="UTILIDAD PROMEDIO"
               value={thousandsSystem(averageUtility)}
@@ -853,29 +869,33 @@ const Statistic = ({ navigation }) => {
                 </ScrollView>
               </View>
             </View>
-            <View>
-              <ProgressChart
-                style={{ marginTop: 20 }}
-                data={data}
-                width={width - 20}
-                height={220}
-                strokeWidth={16}
-                radius={32}
-                chartConfig={getConfig({ BFO: 0, BTO: 0, DP: 0 })}
-                hideLegend={false}
-              />
-              <Image source={Premium} style={styles.premium} />
-            </View>
-            <View>
-              <LineChart
-                data={dataLine}
-                width={width - 20}
-                style={{ paddingRight: 35, marginTop: 20 }}
-                height={height / 4}
-                chartConfig={getConfig({ BFO: 0, BTO: 0, DP: 0 })}
-              />
-              <Image source={Premium} style={styles.premium} />
-            </View>
+            {["both", "sales"].includes(user?.type) && (
+              <View>
+                <ProgressChart
+                  style={{ marginTop: 20 }}
+                  data={data}
+                  width={width - 20}
+                  height={220}
+                  strokeWidth={16}
+                  radius={32}
+                  chartConfig={getConfig({ BFO: 0, BTO: 0, DP: 0 })}
+                  hideLegend={false}
+                />
+                <Image source={Premium} style={styles.premium} />
+              </View>
+            )}
+            {["both", "accommodation"].includes(user?.type) && (
+              <View>
+                <LineChart
+                  data={dataLine}
+                  width={width - 20}
+                  style={{ paddingRight: 35, marginTop: 20 }}
+                  height={height / 4}
+                  chartConfig={getConfig({ BFO: 0, BTO: 0, DP: 0 })}
+                />
+                <Image source={Premium} style={styles.premium} />
+              </View>
+            )}
           </ScrollView>
         </View>
       )}

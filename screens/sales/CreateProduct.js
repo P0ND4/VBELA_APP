@@ -1,7 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useSelector, useDispatch } from "react-redux";
-import { View, StyleSheet, Alert, Dimensions } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Alert,
+  Dimensions,
+  KeyboardAvoidingView,
+  ScrollView,
+} from "react-native";
 import {
   add as addM,
   edit as editM,
@@ -20,12 +27,13 @@ import {
   editProduct,
   removeProduct,
 } from "@api";
-import { thousandsSystem, random } from "@helpers/libs";
+import { thousandsSystem, random, getFontSize } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import TextStyle from "@components/TextStyle";
 import InputStyle from "@components/InputStyle";
 import ButtonStyle from "@components/ButtonStyle";
+import MultipleSelect from "@components/MultipleSelect";
 import Layout from "@components/Layout";
 import theme from "@theme";
 
@@ -50,11 +58,16 @@ const CreateProduct = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const menu = useSelector((state) => state.menu);
   const products = useSelector((state) => state.products);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const groups = useSelector((state) => state.groups);
+  const helperStatus = useSelector((state) => state.helperStatus);
 
   const [name, setName] = useState(editing ? item.name : "");
+  const [identifier, setIdentifier] = useState(editing ? item.identifier : "");
   const [price, setPrice] = useState(
     editing ? thousandsSystem(item.value) : ""
+  );
+  const [purchase, setPurchase] = useState(
+    editing ? thousandsSystem(item.purchase) : ""
   );
   const [unit, setUnit] = useState(editing ? item.unit : "");
   const [quantity, setQuantity] = useState(
@@ -62,6 +75,28 @@ const CreateProduct = ({ route, navigation }) => {
   );
   const [reorder, setReorder] = useState(
     editing ? thousandsSystem(item.reorder || 0) : ""
+  );
+  const [utility, setUtility] = useState(
+    editing ? item.value - item.purchase : 0
+  );
+
+  const [subcategoryKey, setSubcategoryKey] = useState(Math.random());
+  const [categoryKey, setCategoryKey] = useState(Math.random());
+
+  const [modalCategory, setModalCategory] = useState(false);
+  const [modalSubcategory, setModalSubcategory] = useState(false);
+  const [category, setCategory] = useState(editing ? item.category : []);
+  const [subcategory, setSubcategory] = useState(
+    editing ? item.subcategory : []
+  );
+  const [subcategoryOptions, setSubcategoryOptions] = useState(
+    editing
+      ? groups
+          .filter((g) => item.category.includes(g.id))
+          .map((o) => o.subcategory)
+          .flat()
+          .map((sub) => ({ ...sub, name: sub.subcategory }))
+      : []
   );
 
   const dispatch = useDispatch();
@@ -71,6 +106,10 @@ const CreateProduct = ({ route, navigation }) => {
   const selection = route.params?.selection;
 
   useEffect(() => {
+    setUtility(price.replace(/[^0-9]/g, "") - purchase.replace(/[^0-9]/g, ""));
+  }, [price, purchase]);
+
+  useEffect(() => {
     navigation.setOptions({
       title: sales ? "Nuevo producto/servicio" : "Nuevo menú",
     });
@@ -78,10 +117,17 @@ const CreateProduct = ({ route, navigation }) => {
 
   useEffect(() => {
     register("name", { value: editing ? item.name : "", required: true });
+    register("identifier", { value: editing ? item.identifier : "" });
     register("unit", { value: editing ? item.unit : "", required: true });
     register("quantity", { value: editing ? item.quantity : 0 });
     register("reorder", { value: editing ? item.reorder : 0 });
     register("value", { value: editing ? item.value : "", required: true });
+    register("purchase", {
+      value: editing ? item.purchase : "",
+      required: true,
+    });
+    register("category", { value: editing ? item.category : [] });
+    register("subcategory", { value: editing ? item.subcategory : [] });
   }, []);
 
   const onSubmitCreate = async (data) => {
@@ -96,24 +142,24 @@ const CreateProduct = ({ route, navigation }) => {
       dispatch(addP(data));
       navigation.pop();
       await addProduct({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         product: data,
-        groups: activeGroup.active
-          ? [activeGroup.id]
-          : user.helpers.map((h) => h.id)
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
       });
     } else {
       dispatch(addM(data));
       navigation.pop();
       await addMenu({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         menu: data,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     }
@@ -130,24 +176,24 @@ const CreateProduct = ({ route, navigation }) => {
       dispatch(editP({ id: item.id, data }));
       navigation.pop();
       await editProduct({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         product: data,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     } else {
       dispatch(editM({ id: item.id, data }));
       navigation.pop();
       await editMenu({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         menu: data,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     }
@@ -167,24 +213,24 @@ const CreateProduct = ({ route, navigation }) => {
             dispatch(removeP({ id: item.id }));
             navigation.pop();
             await removeProduct({
-              identifier: activeGroup.active
-                ? activeGroup.identifier
+              identifier: helperStatus.active
+                ? helperStatus.identifier
                 : user.identifier,
               id: item.id,
-              groups: activeGroup.active
-                ? [activeGroup.id]
+              helpers: helperStatus.active
+                ? [helperStatus.id]
                 : user.helpers.map((h) => h.id),
             });
           } else {
             dispatch(removeM({ id: item.id }));
             navigation.pop();
             await removeMenu({
-              identifier: activeGroup.active
-                ? activeGroup.identifier
+              identifier: helperStatus.active
+                ? helperStatus.identifier
                 : user.identifier,
               id: item.id,
-              groups: activeGroup.active
-                ? [activeGroup.id]
+              helpers: helperStatus.active
+                ? [helperStatus.id]
                 : user.helpers.map((h) => h.id),
             });
           }
@@ -209,208 +255,459 @@ const CreateProduct = ({ route, navigation }) => {
   ];
 
   return (
-    <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
-      <View />
-      <View style={{ alignItems: "center" }}>
-        <View
-          style={[
-            styles.catalogueCard,
-            {
-              backgroundColor: mode === "light" ? light.main5 : dark.main2,
-            },
-          ]}
+    <Layout style={{ marginTop: 0 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
         >
-          <View
-            style={{
-              height: "60%",
-              justifyContent: "center",
-              alignItems: "center",
-              padding: 14,
-            }}
-          >
+          <View style={{ justifyContent: "space-between", flexGrow: 1 }}>
             <TextStyle
               color={mode === "light" ? light.textDark : dark.textWhite}
-              smallParagraph
+              subtitle
             >
-              {!name ? "Nombre" : name}
+              Utilidad neta:{" "}
+              <TextStyle subtitle color={utility < 0 ? "#F70000" : light.main2}>
+                {utility < 0 ? "-" : ""}
+                {thousandsSystem(Math.abs(utility))}
+              </TextStyle>
             </TextStyle>
-          </View>
-          <View style={styles.footerCatalogue}>
-            <TextStyle verySmall>
-              {!name
-                ? "Nombre"
-                : name.length > 18
-                ? name.slice(0, 17) + "..."
-                : name}
-            </TextStyle>
-            <TextStyle smallParagraph>{!price ? "0" : price}</TextStyle>
-          </View>
-        </View>
-        <View style={{ marginTop: 20, width: "100%" }}>
-          <InputStyle
-            value={name}
-            onChangeText={(text) => {
-              setValue("name", text);
-              setName(text);
-            }}
-            maxLength={16}
-            placeholder="Nombre del producto"
-          />
-          {errors.name?.type && (
-            <TextStyle verySmall color={light.main2}>
-              El nombre es requerido
-            </TextStyle>
-          )}
-          <View>
-            <ButtonStyle
-              backgroundColor={mode === "light" ? light.main5 : dark.main2}
-              onPress={() => pickerRef.current?.focus()}
-            >
+            <View style={{ alignItems: "center" }}>
               <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
+                style={[
+                  styles.catalogueCard,
+                  {
+                    marginVertical: 20,
+                    backgroundColor:
+                      mode === "light" ? light.main5 : dark.main2,
+                  },
+                ]}
               >
-                <TextStyle
-                  color={
-                    unit
-                      ? mode === "light"
-                        ? light.textDark
-                        : dark.textWhite
-                      : "#888888"
-                  }
+                <View
+                  style={{
+                    height: "60%",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    padding: 14,
+                  }}
                 >
-                  {unitOptions.find((u) => u.value === unit)?.label}
-                </TextStyle>
-                <Ionicons
-                  color={
-                    unit
-                      ? mode === "light"
-                        ? light.textDark
-                        : dark.textWhite
-                      : "#888888"
-                  }
-                  size={18}
-                  name="caret-down"
-                />
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                    smallParagraph
+                  >
+                    {!name ? "Nombre" : name}
+                  </TextStyle>
+                  <View style={{ flexDirection: "row" }}>
+                    <TextStyle
+                      verySmall
+                      color={
+                        parseInt(quantity.replace(/[^0-9]/g, "")) <
+                        parseInt(reorder.replace(/[^0-9]/g, ""))
+                          ? "#F70000"
+                          : light.main2
+                      }
+                    >
+                      {parseInt(quantity.replace(/[^0-9]/g, "")) < 0 ? "-" : ""}
+                      {thousandsSystem(
+                        Math.abs(parseInt(quantity.replace(/[^0-9]/g, "")))
+                      )}
+                      /
+                    </TextStyle>
+                    <TextStyle
+                      verySmall
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    >
+                      {reorder || 0}
+                    </TextStyle>
+                  </View>
+                </View>
+                <View style={styles.footerCatalogue}>
+                  <TextStyle verySmall>
+                    {!identifier
+                      ? "Identificador"
+                      : identifier.length > 18
+                      ? identifier.slice(0, 17) + "..."
+                      : identifier}
+                  </TextStyle>
+                  <View style={[styles.row, { flexWrap: "wrap" }]}>
+                    <TextStyle smallParagraph>{price || 0}</TextStyle>
+                    <TextStyle verySmall>{unit}</TextStyle>
+                  </View>
+                </View>
               </View>
-            </ButtonStyle>
+              <View style={{ width: "100%" }}>
+                <InputStyle
+                  value={name}
+                  onChangeText={(text) => {
+                    setValue("name", text);
+                    setName(text);
+                  }}
+                  right={
+                    name
+                      ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
+                      : null
+                  }
+                  maxLength={16}
+                  placeholder="Nombre del producto"
+                />
+                {errors.name?.type && (
+                  <TextStyle verySmall color={light.main2}>
+                    El nombre es requerido
+                  </TextStyle>
+                )}
+                <InputStyle
+                  value={identifier}
+                  right={
+                    identifier
+                      ? () => (
+                          <TextStyle color={light.main2}>
+                            Identificador
+                          </TextStyle>
+                        )
+                      : null
+                  }
+                  onChangeText={(text) => {
+                    setValue("identifier", text);
+                    setIdentifier(text);
+                  }}
+                  maxLength={16}
+                  placeholder="Identificador del producto"
+                />
+                <View>
+                  <ButtonStyle
+                    backgroundColor={
+                      mode === "light" ? light.main5 : dark.main2
+                    }
+                    onPress={() => pickerRef.current?.focus()}
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <TextStyle
+                        color={
+                          unit
+                            ? mode === "light"
+                              ? light.textDark
+                              : dark.textWhite
+                            : "#888888"
+                        }
+                      >
+                        {unitOptions.find((u) => u.value === unit)?.label}
+                      </TextStyle>
+                      <Ionicons
+                        color={
+                          unit
+                            ? mode === "light"
+                              ? light.textDark
+                              : dark.textWhite
+                            : "#888888"
+                        }
+                        size={getFontSize(15)}
+                        name="caret-down"
+                      />
+                    </View>
+                  </ButtonStyle>
 
-            <View style={{ display: "none" }}>
-              <Picker
-                ref={pickerRef}
-                style={{
-                  color: mode === "light" ? light.textDark : dark.textWhite,
-                }}
-                selectedValue={unit}
-                onValueChange={(value) => {
-                  setValue("unit", value);
-                  setUnit(value);
+                  <View style={{ display: "none" }}>
+                    <Picker
+                      ref={pickerRef}
+                      style={{
+                        color:
+                          mode === "light" ? light.textDark : dark.textWhite,
+                      }}
+                      selectedValue={unit}
+                      onValueChange={(value) => {
+                        setValue("unit", value);
+                        setUnit(value);
+                      }}
+                    >
+                      {unitOptions.map((u) => (
+                        <Picker.Item
+                          key={u.value}
+                          label={u.label}
+                          value={u.value}
+                          style={{
+                            backgroundColor:
+                              mode === "light" ? light.main5 : dark.main2,
+                          }}
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                        />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+                {errors.unit?.type && (
+                  <TextStyle verySmall color={light.main2}>
+                    Seleccione la unidad del elemento
+                  </TextStyle>
+                )}
+                <InputStyle
+                  value={quantity}
+                  right={
+                    quantity
+                      ? () => (
+                          <TextStyle color={light.main2}>Cantidad</TextStyle>
+                        )
+                      : null
+                  }
+                  placeholder="Cantidad en stock"
+                  keyboardType="numeric"
+                  maxLength={9}
+                  onChangeText={(text) => {
+                    if (text === "") setValue("quantity", 0);
+                    else
+                      setValue(
+                        "quantity",
+                        parseInt(text.replace(/[^0-9]/g, ""))
+                      );
+                    setQuantity(thousandsSystem(text.replace(/[^0-9]/g, "")));
+                  }}
+                />
+                <InputStyle
+                  value={reorder}
+                  right={
+                    reorder
+                      ? () => (
+                          <TextStyle color={light.main2}>
+                            Punto de reorden
+                          </TextStyle>
+                        )
+                      : null
+                  }
+                  placeholder="Punto de reorden"
+                  keyboardType="numeric"
+                  maxLength={9}
+                  onChangeText={(text) => {
+                    if (text === "") setValue("reorder", 0);
+                    else
+                      setValue(
+                        "reorder",
+                        parseInt(text.replace(/[^0-9]/g, ""))
+                      );
+                    setReorder(thousandsSystem(text.replace(/[^0-9]/g, "")));
+                  }}
+                />
+                <InputStyle
+                  value={price}
+                  placeholder="Precio de venta"
+                  maxLength={15}
+                  right={
+                    price
+                      ? () => (
+                          <TextStyle color={light.main2}>
+                            Precio de venta
+                          </TextStyle>
+                        )
+                      : null
+                  }
+                  keyboardType="numeric"
+                  onChangeText={(num) => {
+                    if (num === "") setValue("value", "");
+                    else
+                      setValue("value", parseInt(num.replace(/[^0-9]/g, "")));
+                    setPrice(thousandsSystem(num.replace(/[^0-9]/g, "")));
+                  }}
+                />
+                {errors.value?.type && (
+                  <TextStyle verySmall color={light.main2}>
+                    El precio de venta es requerido
+                  </TextStyle>
+                )}
+                <InputStyle
+                  value={purchase}
+                  placeholder="Precio de compra"
+                  right={
+                    purchase
+                      ? () => (
+                          <TextStyle color={light.main2}>
+                            Precio de compra
+                          </TextStyle>
+                        )
+                      : null
+                  }
+                  maxLength={15}
+                  keyboardType="numeric"
+                  onChangeText={(num) => {
+                    if (num === "") setValue("purchase", "");
+                    else
+                      setValue(
+                        "purchase",
+                        parseInt(num.replace(/[^0-9]/g, ""))
+                      );
+                    setPurchase(thousandsSystem(num.replace(/[^0-9]/g, "")));
+                  }}
+                />
+                {errors.purchase?.type && (
+                  <TextStyle verySmall color={light.main2}>
+                    El precio de compra es requerido
+                  </TextStyle>
+                )}
+              </View>
+              <ButtonStyle
+                backgroundColor={mode === "light" ? light.main5 : dark.main2}
+                onPress={() => {
+                  setCategoryKey(Math.random());
+                  setModalCategory(!modalCategory);
                 }}
               >
-                {unitOptions.map((u) => (
-                  <Picker.Item
-                    key={u.value}
-                    label={u.label}
-                    value={u.value}
-                    style={{
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    }}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <TextStyle
+                    color={
+                      category.length
+                        ? mode === "light"
+                          ? light.textDark
+                          : dark.textWhite
+                        : "#888888"
+                    }
+                  >
+                    Seleccionar categorías{" "}
+                    {category.length ? `(${category.length})` : ""}
+                  </TextStyle>
+                  <Ionicons
+                    color={
+                      category.length
+                        ? mode === "light"
+                          ? light.textDark
+                          : dark.textWhite
+                        : "#888888"
+                    }
+                    size={getFontSize(15)}
+                    name="caret-down"
                   />
-                ))}
-              </Picker>
+                </View>
+              </ButtonStyle>
+              <ButtonStyle
+                backgroundColor={mode === "light" ? light.main5 : dark.main2}
+                onPress={() => {
+                  setSubcategoryKey(Math.random());
+                  setModalSubcategory(!modalSubcategory);
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <TextStyle
+                    color={
+                      subcategory.length
+                        ? mode === "light"
+                          ? light.textDark
+                          : dark.textWhite
+                        : "#888888"
+                    }
+                  >
+                    Seleccionar subcategorías{" "}
+                    {subcategory.length ? `(${subcategory.length})` : ""}
+                  </TextStyle>
+                  <Ionicons
+                    color={
+                      subcategory.length
+                        ? mode === "light"
+                          ? light.textDark
+                          : dark.textWhite
+                        : "#888888"
+                    }
+                    size={getFontSize(15)}
+                    name="caret-down"
+                  />
+                </View>
+              </ButtonStyle>
+            </View>
+            <View>
+              {editing && (
+                <ButtonStyle
+                  backgroundColor="transparent"
+                  style={{
+                    marginTop: 10,
+                    borderWidth: 2,
+                    borderColor: light.main2,
+                  }}
+                  onPress={() => onSubmitRemove()}
+                >
+                  <TextStyle center smallParagraph color={light.main2}>
+                    Eliminar pedido
+                  </TextStyle>
+                </ButtonStyle>
+              )}
+              <ButtonStyle
+                backgroundColor="transparent"
+                style={{
+                  borderWidth: 2,
+                  borderColor: light.main2,
+                }}
+                onPress={handleSubmit(!editing ? onSubmitCreate : onSubmitEdit)}
+              >
+                <TextStyle center smallParagraph color={light.main2}>
+                  {!editing ? "Añadir producto" : "Guardar"}
+                </TextStyle>
+              </ButtonStyle>
             </View>
           </View>
-          {errors.unit?.type && (
-            <TextStyle verySmall color={light.main2}>
-              Seleccione la unidad del elemento
-            </TextStyle>
-          )}
-          <InputStyle
-            value={quantity}
-            right={
-              quantity
-                ? () => <TextStyle color={light.main2}>Cantidad</TextStyle>
-                : null
-            }
-            placeholder="Cantidad en stock"
-            keyboardType="numeric"
-            maxLength={9}
-            onChangeText={(text) => {
-              if (text === "") setValue("quantity", 0);
-              else setValue("quantity", parseInt(text.replace(/[^0-9]/g, "")));
-              setQuantity(thousandsSystem(text.replace(/[^0-9]/g, "")));
-            }}
-          />
-          <InputStyle
-            value={reorder}
-            right={
-              reorder
-                ? () => (
-                    <TextStyle color={light.main2}>Punto de reorden</TextStyle>
-                  )
-                : null
-            }
-            placeholder="Punto de reorden"
-            keyboardType="numeric"
-            maxLength={9}
-            onChangeText={(text) => {
-              if (text === "") setValue("reorder", 0);
-              else setValue("reorder", parseInt(text.replace(/[^0-9]/g, "")));
-              setReorder(thousandsSystem(text.replace(/[^0-9]/g, "")));
-            }}
-          />
-          <InputStyle
-            value={price}
-            placeholder="Valor por unidad"
-            maxLength={15}
-            keyboardType="numeric"
-            onChangeText={(num) => {
-              if (num === "") setValue("value", "");
-              else setValue("value", parseInt(num.replace(/[^0-9]/g, "")));
-              setPrice(thousandsSystem(num.replace(/[^0-9]/g, "")));
-            }}
-          />
-          {errors.value?.type && (
-            <TextStyle verySmall color={light.main2}>
-              El precio es requerido
-            </TextStyle>
-          )}
-        </View>
-      </View>
-      <View>
-        {editing && (
-          <ButtonStyle
-            backgroundColor="transparent"
-            style={{
-              marginTop: 10,
-              borderWidth: 2,
-              borderColor: light.main2,
-            }}
-            onPress={() => onSubmitRemove()}
-          >
-            <TextStyle center smallParagraph color={light.main2}>
-              Eliminar pedido
-            </TextStyle>
-          </ButtonStyle>
-        )}
-        <ButtonStyle
-          backgroundColor="transparent"
-          style={{
-            borderWidth: 2,
-            borderColor: light.main2,
-          }}
-          onPress={handleSubmit(!editing ? onSubmitCreate : onSubmitEdit)}
-        >
-          <TextStyle center smallParagraph color={light.main2}>
-            {!editing ? "Añadir producto" : "Guardar"}
-          </TextStyle>
-        </ButtonStyle>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      <MultipleSelect
+        key={categoryKey}
+        modalVisible={modalCategory}
+        setModalVisible={setModalCategory}
+        noItemsText="No hay categoría"
+        onSelectedItemsChange={(value) => {
+          const options = groups.filter((g) => value.includes(g.id));
+          const subcategories = options.map((o) => o.subcategory).flat();
+          setSubcategoryOptions(
+            subcategories.map((sub) => ({ ...sub, name: sub.subcategory }))
+          );
+          setCategory(value);
+          setSubcategoryKey(Math.random());
+          setValue("category", value);
+        }}
+        selected={
+          editing
+            ? groups.filter((g) => category.includes(g.id)).map((g) => g.id)
+            : []
+        }
+        data={groups
+          .filter((g) => {
+            const type = sales ? "sales" : "menu";
+            if (g.type === type) return true;
+          })
+          .map((group) => ({ ...group, name: group.category }))}
+      />
+      <MultipleSelect
+        key={subcategoryKey}
+        modalVisible={modalSubcategory}
+        setModalVisible={setModalSubcategory}
+        noItemsText="No hay subcategoría"
+        onSelectedItemsChange={(value) => {
+          setSubcategory(value);
+          setValue("subcategory", value);
+        }}
+        selected={
+          editing
+            ? groups
+                .filter((g) => category.includes(g.id))
+                .map((o) => o.subcategory)
+                .flat()
+                .map((sub) => sub.id)
+                .filter((id) => item.subcategory.includes(id))
+            : []
+        }
+        data={subcategoryOptions}
+      />
     </Layout>
   );
 };
@@ -428,6 +725,11 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 5,
     borderBottomRightRadius: 5,
     paddingHorizontal: 14,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 });
 

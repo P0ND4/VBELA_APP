@@ -32,7 +32,7 @@ const CreateEconomy = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
   const economy = useSelector((state) => state.economy);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
 
   const ref = route.params?.ref;
   const owner = route.params?.owner;
@@ -108,15 +108,15 @@ const CreateEconomy = ({ route, navigation }) => {
     dispatch(edit({ id: data.id, data: d }));
     navigation.pop();
     await editEconomy({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       economy: d,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
     if (route.params.type !== "debt") {
       await helperNotification(
-        activeGroup,
+        helperStatus,
         user,
         route.params.type === "expense" ? "Gasto editado" : "Compra editada",
         `${
@@ -144,16 +144,16 @@ const CreateEconomy = ({ route, navigation }) => {
     dispatch(add(data));
     navigation.pop();
     await addEconomy({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       economy: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
 
     if (route.params.type !== "debt") {
       await helperNotification(
-        activeGroup,
+        helperStatus,
         user,
         route.params.type === "expense" ? "Gasto creado" : "Compra creada",
         `${
@@ -185,16 +185,16 @@ const CreateEconomy = ({ route, navigation }) => {
             dispatch(remove({ id: data.id }));
             navigation.pop();
             await removeEconomy({
-              identifier: activeGroup.active
-                ? activeGroup.identifier
+              identifier: helperStatus.active
+                ? helperStatus.identifier
                 : user.identifier,
               id: data.id,
-              groups: activeGroup.active
-                ? [activeGroup.id]
+              helpers: helperStatus.active
+                ? [helperStatus.id]
                 : user.helpers.map((h) => h.id),
             });
             await helperNotification(
-              activeGroup,
+              helperStatus,
               user,
               route.params.type === "expense"
                 ? "Gasto eliminado"

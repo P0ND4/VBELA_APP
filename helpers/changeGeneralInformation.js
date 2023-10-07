@@ -1,6 +1,6 @@
-import { change as changeReservations } from "@features/groups/reservationsSlice";
-import { change as changeNomenclatures } from "@features/groups/nomenclaturesSlice";
-import { change as changeGroups } from "@features/groups/informationSlice";
+import { change as changeReservations } from "@features/zones/reservationsSlice";
+import { change as changeNomenclatures } from "@features/zones/nomenclaturesSlice";
+import { change as changeZones } from "@features/zones/informationSlice";
 import { change as changeTables } from "@features/tables/informationSlice";
 import { change as changeOrders } from "@features/tables/ordersSlice";
 import { change as changeEconomy } from "@features/function/economySlice";
@@ -11,10 +11,11 @@ import { change as changePeople } from "@features/function/peopleSlice";
 import { change as changeInventory } from "@features/inventory/informationSlice";
 import { change as changeProducts } from "@features/sales/productsSlice";
 import { change as changeSlice } from "@features/sales/salesSlice";
-import { change as changeAccommodations } from "@features/groups/accommodationsSlice";
+import { change as changeAccommodations } from "@features/zones/accommodationsSlice";
+import { change as changeGroups } from "@features/sales/groupsSlice";
 
 export default changeGeneralInformation = (dispatch, data) => {
-  dispatch(changeGroups(data.groups));
+  dispatch(changeZones(data.zones));
   dispatch(changeReservations(data.reservations));
   dispatch(changeNomenclatures(data.nomenclatures));
   dispatch(changeTables(data.tables));
@@ -28,4 +29,5 @@ export default changeGeneralInformation = (dispatch, data) => {
   dispatch(changeProducts(data.products));
   dispatch(changeSlice(data.sales));
   dispatch(changeAccommodations(data.accommodations));
+  dispatch(changeGroups(data.groups));
 };

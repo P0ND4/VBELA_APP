@@ -10,9 +10,10 @@ import {
   TouchableOpacity,
   Modal,
   TouchableWithoutFeedback,
+  FlatList,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { thousandsSystem, random, months } from "@helpers/libs";
+import { thousandsSystem, random, months, getFontSize } from "@helpers/libs";
 import { add as addS } from "@features/sales/salesSlice";
 import { change as changeP } from "@features/sales/productsSlice";
 import { editUser } from "@api";
@@ -32,10 +33,11 @@ const dark = theme.colors.dark;
 
 const Sales = () => {
   const user = useSelector((state) => state.user);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const productsRef = useSelector((state) => state.products);
   const mode = useSelector((state) => state.mode);
   const sales = useSelector((state) => state.sales);
+  const groupsREF = useSelector((state) => state.groups);
 
   const initialState = {
     active: false,
@@ -53,9 +55,34 @@ const Sales = () => {
   const [activeFilter, setActiveFilter] = useState(false);
   const [filters, setFilters] = useState(initialState);
   const [products, setProducts] = useState([]);
+  const [categorySelected, setCategorySelected] = useState({
+    id: "everything",
+    category: "Todos",
+    subcategory: [],
+  });
+  const [subcategorySelected, setSubcategorySelected] = useState(null);
+  const [groups, setGroups] = useState([]);
 
   const [days, setDays] = useState([]);
   const [years, setYears] = useState([]);
+  const [keyCategory, setKeyCategory] = useState(Math.random());
+  const [keySubcategory, setKeySubcategory] = useState(Math.random());
+
+  useEffect(() => {
+    setKeySubcategory(Math.random());
+  }, [categorySelected]);
+
+  useEffect(() => {
+    const obj = { id: "everything", category: "Todos", subcategory: [] };
+    const groups = [obj, ...groupsREF.filter(g => g.type === 'sales')];
+    setKeyCategory(Math.random());
+    if (categorySelected.id !== "everything") {
+      const group = groupsREF.find((g) => g.id === categorySelected.id);
+      if (!group) setCategorySelected(obj);
+      else setCategorySelected(group);
+    }
+    setGroups(groups);
+  }, [groupsREF]);
 
   useEffect(() => {
     const date = new Date();
@@ -105,16 +132,27 @@ const Sales = () => {
       return 0;
     });
 
-    if (search || filters.active) {
+    if (search || filters.active || categorySelected.id !== "everything") {
       p = p.filter((p) => {
-        const text = search.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        if (
-          p.name
+        const convertText = (text) =>
+          text
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase()
-            .includes(text.toLowerCase()) ||
-          p.value.toString().includes(text.toLowerCase())
+            .toLowerCase();
+        if (
+          categorySelected.id !== "everything" &&
+          !p.category.includes(categorySelected.id)
+        )
+          return;
+        if (
+          subcategorySelected &&
+          !p.subcategory.includes(subcategorySelected?.id)
+        )
+          return;
+        if (
+          convertText(p.name).includes(convertText(search)) ||
+          convertText(p.identifier).includes(convertText(search)) ||
+          p.value.toString().includes(convertText(search))
         ) {
           if (!filters.active) return p;
 
@@ -145,7 +183,7 @@ const Sales = () => {
       }
       setProducts(added);
     }
-  }, [productsRef, search, filters]);
+  }, [productsRef, search, filters, categorySelected, subcategorySelected]);
 
   const getTotal = (totalDiscount, selection, tip, tax) =>
     totalDiscount !== 0
@@ -215,15 +253,17 @@ const Sales = () => {
     if (d.pay) navigation.pop();
     navigation.navigate("OrderCompletion", { data, total, sales: true });
     await editUser({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
       change: {
         sales: [...sales, data],
-        products: newProducts
+        products: newProducts,
       },
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
-    })
+    });
   };
 
   return (
@@ -231,7 +271,7 @@ const Sales = () => {
       <View>
         <View style={styles.title}>
           <TextStyle smallSubtitle color={light.main2}>
-            SERVICIOS/PRODUCTOS
+            PRODUCTOS & SERVICIOS
           </TextStyle>
         </View>
       </View>
@@ -245,7 +285,7 @@ const Sales = () => {
           >
             <Ionicons
               name="search"
-              size={26}
+              size={getFontSize(21)}
               color={mode === "light" ? light.textDark : dark.textWhite}
             />
           </TouchableOpacity>
@@ -268,7 +308,7 @@ const Sales = () => {
             >
               <Ionicons
                 name="close"
-                size={30}
+                size={getFontSize(24)}
                 color={mode === "light" ? light.textDark : dark.textWhite}
               />
             </TouchableOpacity>
@@ -285,7 +325,11 @@ const Sales = () => {
               }}
             />
             <TouchableOpacity onPress={() => setActiveFilter(!activeFilter)}>
-              <Ionicons name="filter" size={30} color={light.main2} />
+              <Ionicons
+                name="filter"
+                size={getFontSize(24)}
+                color={light.main2}
+              />
             </TouchableOpacity>
           </View>
         )}
@@ -315,9 +359,122 @@ const Sales = () => {
           </TouchableOpacity>
         )}
       </View>
+      <View>
+        <View style={styles.header}>
+          <FlatList
+            key={keyCategory}
+            data={groups}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              return (
+                <TouchableOpacity
+                  onPress={() => {
+                    setCategorySelected(item);
+                    setSubcategorySelected("");
+                  }}
+                  onLongPress={() => {
+                    if (item.id !== "everything") {
+                      navigation.navigate("CreateGroup", {
+                        editing: true,
+                        item,
+                      });
+                    }
+                  }}
+                  style={[
+                    styles.category,
+                    {
+                      backgroundColor:
+                        categorySelected.id === item.id
+                          ? light.main2
+                          : mode === "light"
+                          ? light.main5
+                          : dark.main2,
+                    },
+                  ]}
+                >
+                  <TextStyle
+                    smallParagraph
+                    color={
+                      categorySelected.id === item.id
+                        ? light.textDark
+                        : mode === "light"
+                        ? light.textDark
+                        : dark.textWhite
+                    }
+                  >
+                    {item.category}
+                  </TextStyle>
+                </TouchableOpacity>
+              );
+            }}
+          />
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("CreateGroup", { type: "sales" })
+            }
+          >
+            <Ionicons
+              name="add-circle"
+              color={light.main2}
+              size={getFontSize(24)}
+            />
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          key={keySubcategory}
+          data={categorySelected?.subcategory}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginTop: categorySelected?.subcategory.length ? 8 : 0 }}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => {
+            return (
+              <TouchableOpacity
+                onPress={() =>
+                  setSubcategorySelected(
+                    subcategorySelected?.id === item.id ? null : item
+                  )
+                }
+                onLongPress={() =>
+                  navigation.navigate("CreateGroup", {
+                    editing: true,
+                    item: categorySelected,
+                  })
+                }
+                style={[
+                  styles.category,
+                  {
+                    backgroundColor:
+                      subcategorySelected === item
+                        ? light.main2
+                        : mode === "light"
+                        ? light.main5
+                        : dark.main2,
+                  },
+                ]}
+              >
+                <TextStyle
+                  smallParagraph
+                  color={
+                    subcategorySelected === item
+                      ? light.textDark
+                      : mode === "light"
+                      ? light.textDark
+                      : dark.textWhite
+                  }
+                >
+                  {item.subcategory}
+                </TextStyle>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
       <View style={{ marginVertical: 10 }}>
         <ScrollView
-          style={{ height: SCREEN_HEIGHT / 1.7 }}
+          style={{ maxHeight: SCREEN_HEIGHT / 1.7 }}
           contentContainerStyle={{
             flexDirection: "row",
             justifyContent: "space-between",
@@ -422,7 +579,7 @@ const Sales = () => {
                           },
                         ]}
                       >
-                        <TextStyle verySmall>{item.name}</TextStyle>
+                        <TextStyle verySmall>{item.identifier}</TextStyle>
                         <View style={[styles.header, { flexWrap: "wrap" }]}>
                           <TextStyle verySmall>
                             {thousandsSystem(item.value)}
@@ -432,13 +589,15 @@ const Sales = () => {
                       </View>
                     </View>
                   )}
-                  {!item?.id && index === productsRef.length && (
-                    <Ionicons
-                      name="add"
-                      size={55}
-                      color={mode === "light" ? "#BBBBBB" : dark.main1}
-                    />
-                  )}
+                  {!item?.id &&
+                    index ===
+                      products.filter((p) => typeof p !== "number").length && (
+                      <Ionicons
+                        name="add"
+                        size={getFontSize(45)}
+                        color={mode === "light" ? "#BBBBBB" : dark.main1}
+                      />
+                    )}
                 </View>
               </TouchableNativeFeedback>
             );
@@ -520,7 +679,7 @@ const Sales = () => {
                 >
                   <Ionicons
                     name="close"
-                    size={30}
+                    size={getFontSize(24)}
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   />
                 </TouchableOpacity>
@@ -825,6 +984,12 @@ const styles = StyleSheet.create({
   cardPicker: {
     padding: 2,
     borderRadius: 8,
+  },
+  category: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 5,
+    marginHorizontal: 2,
   },
 });
 

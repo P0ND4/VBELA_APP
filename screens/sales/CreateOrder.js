@@ -10,9 +10,10 @@ import {
   TouchableOpacity,
   Modal,
   TouchableWithoutFeedback,
+  FlatList,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { thousandsSystem, random, months } from "@helpers/libs";
+import { thousandsSystem, random, months, getFontSize } from "@helpers/libs";
 import { add as addM, edit, remove } from "@features/tables/ordersSlice";
 import { change as changeM } from "@features/tables/menuSlice";
 import {
@@ -51,12 +52,13 @@ const dark = theme.colors.dark;
 
 const CreateOrder = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const orders = useSelector((state) => state.orders);
   const menu = useSelector((state) => state.menu);
   const mode = useSelector((state) => state.mode);
   const economy = useSelector((state) => state.economy);
   const folk = useSelector((state) => state.people);
+  const groupsREF = useSelector((state) => state.groups);
 
   const initialState = {
     active: false,
@@ -76,9 +78,34 @@ const CreateOrder = ({ route, navigation }) => {
   const [activeFilter, setActiveFilter] = useState(false);
   const [filters, setFilters] = useState(initialState);
   const [order, setOrder] = useState("");
+  const [categorySelected, setCategorySelected] = useState({
+    id: "everything",
+    category: "Todos",
+    subcategory: [],
+  });
+  const [subcategorySelected, setSubcategorySelected] = useState(null);
+  const [groups, setGroups] = useState([]);
 
   const [days, setDays] = useState([]);
   const [years, setYears] = useState([]);
+  const [keyCategory, setKeyCategory] = useState(Math.random());
+  const [keySubcategory, setKeySubcategory] = useState(Math.random());
+
+  useEffect(() => {
+    setKeySubcategory(Math.random());
+  }, [categorySelected]);
+
+  useEffect(() => {
+    const obj = { id: "everything", category: "Todos", subcategory: [] };
+    const groups = [obj, ...groupsREF.filter((g) => g.type === "menu")];
+    setKeyCategory(Math.random());
+    if (categorySelected.id !== "everything") {
+      const group = groupsREF.find((g) => g.id === categorySelected.id);
+      if (!group) setCategorySelected(obj);
+      else setCategorySelected(group);
+    }
+    setGroups(groups);
+  }, [groupsREF]);
 
   useEffect(() => {
     const date = new Date();
@@ -175,12 +202,12 @@ const CreateOrder = ({ route, navigation }) => {
 
       dispatch(addE(newEconomy));
       await addEconomy({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         economy: newEconomy,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     } else {
@@ -190,12 +217,12 @@ const CreateOrder = ({ route, navigation }) => {
       currentEconomy.modificationDate = new Date().getTime();
       dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
       await editEconomy({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         economy: currentEconomy,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     }
@@ -244,20 +271,22 @@ const CreateOrder = ({ route, navigation }) => {
       manageEconomy({ editing: d.pay, total, kitchen: dat.isSendtoKitchen });
     if (d.pay) {
       await editUser({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         change: { menu: newMenu },
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     }
     await addOrder({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
       order: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
   };
@@ -306,20 +335,22 @@ const CreateOrder = ({ route, navigation }) => {
       });
     if (d.pay) {
       await editUser({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         change: { menu: newMenu },
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     }
     await editOrder({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
       order: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
   };
@@ -351,16 +382,16 @@ const CreateOrder = ({ route, navigation }) => {
           selection
         );
       await addKitchen({
-        identifier: activeGroup.active
-          ? activeGroup.identifier
+        identifier: helperStatus.active
+          ? helperStatus.identifier
           : user.identifier,
         kitchen: obj,
-        groups: activeGroup.active
-          ? [activeGroup.id]
+        helpers: helperStatus.active
+          ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
       await helperNotification(
-        activeGroup,
+        helperStatus,
         user,
         "Nuevo pedido pendiente",
         `Una orden ha sido pedida en ${reservation ? reservation : `la mesa`} ${
@@ -399,16 +430,27 @@ const CreateOrder = ({ route, navigation }) => {
       return 0;
     });
 
-    if (search || filters.active) {
+    if (search || filters.active || categorySelected.id !== "everything") {
       m = m.filter((p) => {
-        const text = search.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        if (
-          p.name
+        const convertText = (text) =>
+          text
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase()
-            .includes(text.toLowerCase()) ||
-          p.value.toString().includes(text.toLowerCase())
+            .toLowerCase();
+        if (
+          categorySelected.id !== "everything" &&
+          !p.category.includes(categorySelected.id)
+        )
+          return;
+        if (
+          subcategorySelected &&
+          !p.subcategory.includes(subcategorySelected?.id)
+        )
+          return;
+        if (
+          convertText(p.name).includes(convertText(search)) ||
+          convertText(p.identifier).includes(convertText(search)) ||
+          p.value.toString().includes(convertText(search))
         ) {
           if (!filters.active) return p;
 
@@ -439,7 +481,7 @@ const CreateOrder = ({ route, navigation }) => {
       }
       setProducts(added);
     }
-  }, [menu, search, filters]);
+  }, [menu, search, filters, categorySelected, subcategorySelected]);
 
   const removeO = async () => {
     Alert.alert("Eliminar", "¿Desea eliminar la orden?", [
@@ -464,44 +506,44 @@ const CreateOrder = ({ route, navigation }) => {
             if (currentEconomy.amount === 0) {
               dispatch(removeE({ id: currentEconomy.id }));
               await removeEconomy({
-                identifier: activeGroup.active
-                  ? activeGroup.identifier
+                identifier: helperStatus.active
+                  ? helperStatus.identifier
                   : user.identifier,
                 id: currentEconomy.id,
-                groups: activeGroup.active
-                  ? [activeGroup.id]
+                helpers: helperStatus.active
+                  ? [helperStatus.id]
                   : user.helpers.map((h) => h.id),
               });
             } else {
               currentEconomy.modificationDate = new Date().getTime();
               dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
               await editEconomy({
-                identifier: activeGroup.active
-                  ? activeGroup.identifier
+                identifier: helperStatus.active
+                  ? helperStatus.identifier
                   : user.identifier,
                 economy: currentEconomy,
-                groups: activeGroup.active
-                  ? [activeGroup.id]
+                helpers: helperStatus.active
+                  ? [helperStatus.id]
                   : user.helpers.map((h) => h.id),
               });
             }
           }
           await removeManyKitchen({
-            identifier: activeGroup.active
-              ? activeGroup.identifier
+            identifier: helperStatus.active
+              ? helperStatus.identifier
               : user.identifier,
             ref: route.params.id,
-            groups: activeGroup.active
-              ? [activeGroup.id]
+            helpers: helperStatus.active
+              ? [helperStatus.id]
               : user.helpers.map((h) => h.id),
           });
           await removeOrder({
-            identifier: activeGroup.active
-              ? activeGroup.identifier
+            identifier: helperStatus.active
+              ? helperStatus.identifier
               : user.identifier,
             id: information.id,
-            groups: activeGroup.active
-              ? [activeGroup.id]
+            helpers: helperStatus.active
+              ? [helperStatus.id]
               : user.helpers.map((h) => h.id),
           });
         },
@@ -548,7 +590,7 @@ const CreateOrder = ({ route, navigation }) => {
           >
             <Ionicons
               name="search"
-              size={26}
+              size={getFontSize(21)}
               color={mode === "light" ? light.textDark : dark.textWhite}
             />
           </TouchableOpacity>
@@ -571,7 +613,7 @@ const CreateOrder = ({ route, navigation }) => {
             >
               <Ionicons
                 name="close"
-                size={30}
+                size={getFontSize(24)}
                 color={mode === "light" ? light.textDark : dark.textWhite}
               />
             </TouchableOpacity>
@@ -588,7 +630,11 @@ const CreateOrder = ({ route, navigation }) => {
               }}
             />
             <TouchableOpacity onPress={() => setActiveFilter(!activeFilter)}>
-              <Ionicons name="filter" size={30} color={light.main2} />
+              <Ionicons
+                name="filter"
+                size={getFontSize(24)}
+                color={light.main2}
+              />
             </TouchableOpacity>
           </View>
         )}
@@ -617,6 +663,117 @@ const CreateOrder = ({ route, navigation }) => {
             </TextStyle>
           </TouchableOpacity>
         )}
+      </View>
+      <View>
+        <View style={styles.header}>
+          <FlatList
+            key={keyCategory}
+            data={groups}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              return (
+                <TouchableOpacity
+                  onPress={() => {
+                    setCategorySelected(item);
+                    setSubcategorySelected("");
+                  }}
+                  onLongPress={() => {
+                    if (item.id !== "everything") {
+                      navigation.navigate("CreateGroup", {
+                        editing: true,
+                        item,
+                      });
+                    }
+                  }}
+                  style={[
+                    styles.category,
+                    {
+                      backgroundColor:
+                        categorySelected.id === item.id
+                          ? light.main2
+                          : mode === "light"
+                          ? light.main5
+                          : dark.main2,
+                    },
+                  ]}
+                >
+                  <TextStyle
+                    smallParagraph
+                    color={
+                      categorySelected.id === item.id
+                        ? light.textDark
+                        : mode === "light"
+                        ? light.textDark
+                        : dark.textWhite
+                    }
+                  >
+                    {item.category}
+                  </TextStyle>
+                </TouchableOpacity>
+              );
+            }}
+          />
+          <TouchableOpacity
+            onPress={() => navigation.navigate("CreateGroup", { type: "menu" })}
+          >
+            <Ionicons
+              name="add-circle"
+              color={light.main2}
+              size={getFontSize(24)}
+            />
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          key={keySubcategory}
+          data={categorySelected?.subcategory}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginTop: categorySelected?.subcategory.length ? 8 : 0 }}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => {
+            return (
+              <TouchableOpacity
+                onPress={() =>
+                  setSubcategorySelected(
+                    subcategorySelected?.id === item.id ? null : item
+                  )
+                }
+                onLongPress={() =>
+                  navigation.navigate("CreateGroup", {
+                    editing: true,
+                    item: categorySelected,
+                  })
+                }
+                style={[
+                  styles.category,
+                  {
+                    backgroundColor:
+                      subcategorySelected === item
+                        ? light.main2
+                        : mode === "light"
+                        ? light.main5
+                        : dark.main2,
+                  },
+                ]}
+              >
+                <TextStyle
+                  smallParagraph
+                  color={
+                    subcategorySelected === item
+                      ? light.textDark
+                      : mode === "light"
+                      ? light.textDark
+                      : dark.textWhite
+                  }
+                >
+                  {item.subcategory}
+                </TextStyle>
+              </TouchableOpacity>
+            );
+          }}
+        />
       </View>
       <View style={{ marginVertical: 10 }}>
         <ScrollView
@@ -748,10 +905,10 @@ const CreateOrder = ({ route, navigation }) => {
                       </View>
                     </View>
                   )}
-                  {!item?.id && index === menu.length && (
+                  {!item?.id && index === products.filter((p) => typeof p !== "number").length && (
                     <Ionicons
                       name="add"
-                      size={55}
+                      size={getFontSize(45)}
                       color={mode === "light" ? "#BBBBBB" : dark.main1}
                     />
                   )}
@@ -849,7 +1006,7 @@ const CreateOrder = ({ route, navigation }) => {
                 >
                   <Ionicons
                     name="close"
-                    size={30}
+                    size={getFontSize(24)}
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   />
                 </TouchableOpacity>
@@ -1160,6 +1317,12 @@ const styles = StyleSheet.create({
   cardPicker: {
     padding: 2,
     borderRadius: 8,
+  },
+  category: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 5,
+    marginHorizontal: 2,
   },
 });
 

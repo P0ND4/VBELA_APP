@@ -5,7 +5,7 @@ import {
   Alert
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { thousandsSystem } from "@helpers/libs";
+import { thousandsSystem, getFontSize } from "@helpers/libs";
 import { remove } from "@features/tables/informationSlice";
 import { removeTable } from "@api";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -21,7 +21,7 @@ const light = theme.colors.light;
 const TableInformation = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const tableState = useSelector((state) => state.tables);
   const orsState = useSelector((state) => state.orders);
 
@@ -82,7 +82,7 @@ const TableInformation = ({ route, navigation }) => {
             navigation.navigate("CreateTable", { item: table, editing: true })
           }
         >
-          <Ionicons name="create-outline" size={38} color={light.main2} />
+          <Ionicons name="create-outline" size={getFontSize(31)} color={light.main2} />
         </TouchableOpacity>
       </View>
       {table?.description && (
@@ -120,10 +120,10 @@ const TableInformation = ({ route, navigation }) => {
                   dispatch(removeMany({ ref: route.params.id }));
                   navigation.pop();
                   await removeTable({
-                    identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+                    identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
                     id: route.params.id,
-                    groups: activeGroup.active
-                      ? [activeGroup.id]
+                    helpers: helperStatus.active
+                      ? [helperStatus.id]
                       : user.helpers.map((h) => h.id),
                   });
                 },

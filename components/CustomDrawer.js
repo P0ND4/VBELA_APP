@@ -12,7 +12,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { socket } from "@socket";
 import { useEffect, useState } from "react";
-import { inactive as inactiveGroup } from "@features/function/informationSlice";
+import { inactive as inactiveGroup } from "@features/helpers/statusSlice";
 import changeGeneralInformation from "@helpers/changeGeneralInformation";
 import {
   Alert,
@@ -35,7 +35,7 @@ const dark = theme.colors.dark;
 const CustomDrawer = (props) => {
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const helpers = useSelector((state) => state.helpers);
 
   const [translate, setTranslate] = useState({});
@@ -76,8 +76,8 @@ const CustomDrawer = (props) => {
 
         await editUser({ email: user.email, change: { helpers } });
       }
-      const groups = helpers?.map((h) => h.id);
-      if (groups.length > 0) socket.emit("leave", { groups });
+      const rooms = helpers?.map((h) => h.id);
+      if (rooms.length > 0) socket.emit("leave", { helpers: rooms });
       cleanData(dispatch);
     }, 300);
   };
@@ -159,7 +159,7 @@ const CustomDrawer = (props) => {
                 {
                   text: translate.affirmation,
                   onPress: () => {
-                    if (activeGroup.active) {
+                    if (helperStatus.active) {
                       Alert.alert(
                         "Vas a regresar a tus datos",
                         "Los datos estan guardados, no se perderán",
@@ -171,13 +171,13 @@ const CustomDrawer = (props) => {
                           {
                             text: "Ok",
                             onPress: async () => {
-                              const active = activeGroup;
+                              const active = helperStatus;
                               socket.emit("leave", {
-                                groups: [activeGroup.id],
+                                helpers: [helperStatus.id],
                               });
-                              const groups = helpers?.map((h) => h.id);
-                              if (groups.length > 0)
-                                socket.emit("enter_room", { groups });
+                              const rooms = helpers?.map((h) => h.id);
+                              if (rooms.length > 0)
+                                socket.emit("enter_room", { helpers: rooms });
                               changeGeneralInformation(dispatch, user);
                               dispatch(inactiveGroup());
                               await helperCameOut(active, user);
@@ -209,7 +209,7 @@ const CustomDrawer = (props) => {
             customStyle={{ fontFamily: "Roboto-Medium", marginLeft: 5 }}
             color={mode === "dark" ? dark.textWhite : light.textDark}
           >
-            {activeGroup.active ? "Salir del grupo" : "Cerrar sesión"}
+            {helperStatus.active ? "Salir del grupo" : "Cerrar sesión"}
           </TextStyle>
         </TouchableOpacity>
       </View>

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Keyboard, KeyboardAvoidingView, ScrollView } from "react-native";
 import { useForm } from "react-hook-form";
 import { useSelector, useDispatch } from "react-redux";
-import { add, edit } from "@features/groups/nomenclaturesSlice";
+import { add, edit } from "@features/zones/nomenclaturesSlice";
 import { random, thousandsSystem } from "@helpers/libs";
 import { addNomenclature, editNomenclature } from "@api";
 import ButtonStyle from "@components/ButtonStyle";
@@ -24,7 +24,7 @@ const CreatePlace = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const nomenclaturesState = useSelector((state) => state.nomenclatures);
   const user = useSelector((state) => state.user);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
 
   const place = route.params?.item;
   const editing = route.params?.editing;
@@ -81,10 +81,10 @@ const CreatePlace = ({ route, navigation }) => {
     dispatch(edit({ id: place.id, data }));
     navigation.pop();
     await editNomenclature({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       nomenclature: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
   };
@@ -103,10 +103,10 @@ const CreatePlace = ({ route, navigation }) => {
     dispatch(add(data));
     navigation.pop();
     await addNomenclature({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       nomenclature: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
   };

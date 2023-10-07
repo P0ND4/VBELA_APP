@@ -1,7 +1,7 @@
 const { createSlice } = require("@reduxjs/toolkit");
 
 export const informationSlice = createSlice({
-  name: "groups",
+  name: "zones",
   initialState: [],
   reducers: {
     add: (state, action) => void (state = state.push(action.payload)),

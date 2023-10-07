@@ -8,10 +8,10 @@ export const connect = async ({ data = {}, url, syncData = true }) => {
   try {
     const result = await axios.post(`${API}${url}`, data, { timeout: 3000 });
 
-    if (data?.groups?.length > 0)
+    if (data?.helpers?.length > 0)
       socket.emit("change", {
         data: result.data,
-        groups: data.groups,
+        helpers: data.helpers,
         confidential: url === "/helper/edit",
       });
 
@@ -35,7 +35,8 @@ export const connect = async ({ data = {}, url, syncData = true }) => {
       "inventory",
       "sale",
       "product",
-      "accommodation"
+      "accommodation",
+      "group"
     ];
     const typeOfData = url.slice(1).split("/")[0];
     const identification = options.includes(typeOfData) ? "id" : "ref";
@@ -84,14 +85,14 @@ export const addUser = async (data) =>
 export const editUser = async (data) =>
   await connect({ data, url: "/user/edit" });
 
-export const addGroup = async (data) =>
-  await connect({ data, url: "/group/add" });
+export const addZone = async (data) =>
+  await connect({ data, url: "/zone/add" });
 
-export const editGroup = async (data) =>
-  await connect({ data, url: "/group/edit" });
+export const editZone = async (data) =>
+  await connect({ data, url: "/zone/edit" });
 
-export const removeGroup = async (data) =>
-  await connect({ data, url: "/group/remove" });
+export const removeZone = async (data) =>
+  await connect({ data, url: "/zone/remove" });
 
 export const addNomenclature = async (data) =>
   await connect({ data, url: "/nomenclature/add" });
@@ -248,3 +249,12 @@ export const editAccommodation = async (data) =>
 
 export const removeAccommodation = async (data) =>
   await connect({ data, url: "/accommodation/remove" });
+
+export const addGroup = async (data) =>
+  await connect({ data, url: "/group/add" });
+
+export const editGroup = async (data) =>
+  await connect({ data, url: "/group/edit" });
+
+export const removeGroup = async (data) =>
+  await connect({ data, url: "/group/remove" });

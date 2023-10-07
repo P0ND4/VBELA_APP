@@ -17,7 +17,7 @@ module.exports = function (api) {
             "@socket": "./socket.js",
             "@theme": "./theme.js",
             "@countries.json": "./countries.json",
-            "@language": "./language"
+            "@language": "./language",
           },
         },
       ],

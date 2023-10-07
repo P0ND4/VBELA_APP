@@ -15,6 +15,7 @@ import {
   remove as removeK,
 } from "@features/tables/kitchenSlice";
 import helperNotification from "@helpers/helperNotification";
+import { getFontSize } from '@helpers/libs';
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -29,7 +30,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const Kitchen = () => {
   const kitchen = useSelector((state) => state.kitchen);
   const mode = useSelector((state) => state.mode);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const user = useSelector((state) => state.user);
 
   const [orders, setOrders] = useState([]);
@@ -65,7 +66,7 @@ const Kitchen = () => {
               <Ionicons
                 color={light.main2}
                 name={open ? "eye-off" : "eye"}
-                size={22}
+                size={getFontSize(18)}
               />
             </TouchableOpacity>
           )}
@@ -129,14 +130,14 @@ const Kitchen = () => {
 
               dispatch(editK({ id, data: kit }));
               await editKitchen({
-                identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+                identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
                 kitchen: kit,
-                groups: activeGroup.active
-                  ? [activeGroup.id]
+                helpers: helperStatus.active
+                  ? [helperStatus.id]
                   : user.helpers.map((h) => h.id),
               });
               await helperNotification(
-                activeGroup,
+                helperStatus,
                 user,
                 "Pedido finalizado",
                 `El pedido esta en espera de retiro en ${
@@ -161,10 +162,10 @@ const Kitchen = () => {
           onPress: async () => {
             dispatch(removeK({ id }));
             await removeKitchen({
-              identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+              identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
               id,
-              groups: activeGroup.active
-                ? [activeGroup.id]
+              helpers: helperStatus.active
+                ? [helperStatus.id]
                 : user.helpers.map((h) => h.id),
             });
           },
@@ -244,7 +245,7 @@ const Kitchen = () => {
         style={{ height: SCREEN_HEIGHT / 1.1 }}
       >
         {orders.length > 0 &&
-          (!activeGroup.active || activeGroup.accessToKitchen) && (
+          (!helperStatus.active || helperStatus.accessToKitchen) && (
             <View>
               <TextStyle
                 smallSubtitle
@@ -268,7 +269,7 @@ const Kitchen = () => {
           </TextStyle>
         )}
         {ordersFinished.length > 0 &&
-          (!activeGroup.active || activeGroup.accessToTables) && (
+          (!helperStatus.active || helperStatus.accessToTables) && (
             <View>
               <TextStyle
                 smallSubtitle

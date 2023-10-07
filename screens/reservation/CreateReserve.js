@@ -9,7 +9,6 @@ import {
   Modal,
   TouchableWithoutFeedback,
   TouchableOpacity,
-  Switch,
   Alert,
   Dimensions,
   FlatList,
@@ -26,12 +25,12 @@ import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
-import { add as addR, edit as editR } from "@features/groups/reservationsSlice";
+import { add as addR, edit as editR } from "@features/zones/reservationsSlice";
 import {
   add as addA,
   edit as editA,
   remove as removeA,
-} from "@features/groups/accommodationsSlice";
+} from "@features/zones/accommodationsSlice";
 import helperNotification from "@helpers/helperNotification";
 import {
   addDays,
@@ -39,10 +38,12 @@ import {
   months,
   random,
   thousandsSystem,
+  getFontSize,
 } from "@helpers/libs";
 import theme from "@theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Picker } from "@react-native-picker/picker";
+import AddPerson from "../../components/AddPerson";
 
 const light = theme.colors.light;
 const dark = theme.colors.dark;
@@ -55,13 +56,6 @@ const CreateReserve = ({ route, navigation }) => {
     setValue: setReservationValue,
     formState: { errors: reservationErrors },
     handleSubmit: handleReservationSubmit,
-  } = useForm();
-
-  const {
-    register: hostedRegister,
-    setValue: setHostedValue,
-    formState: { errors: hostedErrors },
-    handleSubmit: handleHostedSubmit,
   } = useForm();
 
   const {
@@ -82,7 +76,7 @@ const CreateReserve = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
   const nomenclaturesState = useSelector((state) => state.nomenclatures);
   const reservationsState = useSelector((state) => state.reservations);
-  const activeGroup = useSelector((state) => state.activeGroup);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const accommodationState = useSelector((state) => state.accommodation);
 
   const personStaying = route.params?.hosted;
@@ -101,6 +95,11 @@ const CreateReserve = ({ route, navigation }) => {
     editing ? reserve.hosted : personStaying || []
   );
 
+  const [editingHosted, setEditingHosted] = useState({
+    key: Math.random(),
+    active: false,
+  });
+
   //////////
   const [accommodationElementName, setAccommodationElementName] = useState("");
   const [accommodationElementValue, setAccommodationElementValue] =
@@ -118,17 +117,6 @@ const CreateReserve = ({ route, navigation }) => {
     editing: false,
     item: null,
   });
-
-  //////////
-
-  const [fullName, setFullName] = useState("");
-  const [identification, setIdentification] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [email, setEmail] = useState("");
-  const [checkIn, setCheckIn] = useState(false);
-  const [editingHosted, setEditingHosted] = useState({ editing: false });
-
-  //////////
 
   const [days, setDays] = useState(editing ? reserve.days : "");
   const [amount, setAmount] = useState("");
@@ -177,14 +165,6 @@ const CreateReserve = ({ route, navigation }) => {
     valueType,
     accommodationSelected,
   ]);
-
-  useEffect(() => {
-    hostedRegister("fullName", { value: "", required: true });
-    hostedRegister("email", { value: "" });
-    hostedRegister("identification", { value: "" });
-    hostedRegister("phoneNumber", { value: "" });
-    hostedRegister("checkIn", { value: null });
-  }, []);
 
   useEffect(() => {
     accommodationRegister("name", { value: "", required: true });
@@ -238,7 +218,9 @@ const CreateReserve = ({ route, navigation }) => {
           const year = route.params.year;
 
           const currentReservations = editing
-            ? reservationsState.filter((r) => r.ref !== reserve.ref && r.id === route.params.id)
+            ? reservationsState.filter(
+                (r) => r.ref !== reserve.ref && r.id === route.params.id
+              )
             : reservationsState.filter((r) => r.id === route.params.id);
 
           for (let i = 0; i < num; i++) {
@@ -281,14 +263,16 @@ const CreateReserve = ({ route, navigation }) => {
     navigation.pop();
 
     await editReservation({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
       reservation: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
     await helperNotification(
-      activeGroup,
+      helperStatus,
       user,
       "Reservación editada",
       `Una reservación ha sido editada por ${days} días, por el usuario ${
@@ -323,14 +307,16 @@ const CreateReserve = ({ route, navigation }) => {
     dispatch(addR(data));
     navigation.pop();
     await addReservation({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
       reservation: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
     await helperNotification(
-      activeGroup,
+      helperStatus,
       user,
       "Reservación creada",
       `Una reservación de ${days} días ha sido creada por ${
@@ -340,49 +326,6 @@ const CreateReserve = ({ route, navigation }) => {
       )}`,
       "accessToReservations"
     );
-  };
-
-  const cleanDataPeople = () => {
-    setFullName("");
-    setEmail("");
-    setIdentification("");
-    setPhoneNumber("");
-    setDiscount("");
-    setCheckIn(false);
-    setHostedValue("fullName", "");
-    setHostedValue("email", "");
-    setHostedValue("identification", "");
-    setHostedValue("phoneNumber", "");
-    setHostedValue("checkIn", null);
-    setReservationValue("discount", "");
-    setEditingHosted({ editing: false });
-    setModalVisiblePeople(!modalVisiblePeople);
-  };
-
-  const updateHosted = (data) => {
-    data.id = editingHosted.id;
-    data.owner = editingHosted.owner;
-    data.payment = editingHosted.payment;
-    data.checkOut = editingHosted.checkOut;
-
-    const newArray = hosted.map((h) => {
-      if (h.id === editingHosted.id) return data;
-      return h;
-    });
-    setHosted(newArray);
-    setReservationValue("hosted", newArray);
-    cleanDataPeople();
-  };
-
-  const saveHosted = (data) => {
-    const id = random(20);
-    data.id = id;
-    data.owner = null;
-    data.payment = 0;
-    data.checkOut = null;
-    setHosted([...hosted, data]);
-    setReservationValue("hosted", [...hosted, data]);
-    cleanDataPeople();
   };
 
   const saveAccommodationElement = (data) => {
@@ -429,10 +372,12 @@ const CreateReserve = ({ route, navigation }) => {
     });
     dispatch(editA({ id: item.id, data }));
     await editAccommodation({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
       accommodation: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
   };
@@ -448,10 +393,12 @@ const CreateReserve = ({ route, navigation }) => {
       animated: true,
     });
     await addAccommodation({
-      identifier: activeGroup.active ? activeGroup.identifier : user.identifier,
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
       accommodation: data,
-      groups: activeGroup.active
-        ? [activeGroup.id]
+      helpers: helperStatus.active
+        ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
   };
@@ -476,12 +423,12 @@ const CreateReserve = ({ route, navigation }) => {
               animated: true,
             });
             await removeAccommodation({
-              identifier: activeGroup.active
-                ? activeGroup.identifier
+              identifier: helperStatus.active
+                ? helperStatus.identifier
                 : user.identifier,
               id,
-              groups: activeGroup.active
-                ? [activeGroup.id]
+              helpers: helperStatus.active
+                ? [helperStatus.id]
                 : user.helpers.map((h) => h.id),
             });
           },
@@ -489,6 +436,36 @@ const CreateReserve = ({ route, navigation }) => {
       ],
       { cancelable: true }
     );
+  };
+
+  const updateHosted = ({ data, cleanData }) => {
+    data.id = editingHosted.id;
+    data.owner = editingHosted.owner;
+    data.payment = editingHosted.payment;
+    data.checkOut = editingHosted.checkOut;
+
+    const newArray = hosted.map((h) => {
+      if (h.id === editingHosted.id) return data;
+      return h;
+    });
+    setHosted(newArray);
+    setReservationValue("hosted", newArray);
+    cleanData();
+    setDiscount("");
+    setReservationValue("discount", "");
+  };
+
+  const saveHosted = ({ data, cleanData }) => {
+    const id = random(20);
+    data.id = id;
+    data.owner = null;
+    data.payment = 0;
+    data.checkOut = null;
+    setHosted([...hosted, data]);
+    setReservationValue("hosted", [...hosted, data]);
+    cleanData();
+    setDiscount("");
+    setReservationValue("discount", "");
   };
 
   return (
@@ -563,33 +540,18 @@ const CreateReserve = ({ route, navigation }) => {
                       <View style={{ flexDirection: "row" }}>
                         <TouchableOpacity
                           onPress={() => {
-                            setFullName(item.fullName);
-                            setEmail(item.email);
-                            setPhoneNumber(item.phoneNumber);
-                            setIdentification(
-                              thousandsSystem(item.identification)
-                            );
-                            setCheckIn(!!item.checkIn);
+                            console.log(item)
                             setEditingHosted({
-                              editing: true,
-                              ...item,
+                              key: Math.random(),
+                              active: true,
+                              ...item
                             });
-
-                            setHostedValue("fullName", item.fullName);
-                            setHostedValue("email", item.email);
-                            setHostedValue(
-                              "identification",
-                              item.identification
-                            );
-                            setHostedValue("phoneNumber", item.phoneNumber);
-                            setHostedValue("checkIn", item.checkIn);
-
                             setModalVisiblePeople(!modalVisiblePeople);
                           }}
                         >
                           <Ionicons
                             name="create-outline"
-                            size={24}
+                            size={getFontSize(19)}
                             style={{ marginHorizontal: 4 }}
                             color={
                               mode === "light" ? light.textDark : dark.textWhite
@@ -625,7 +587,7 @@ const CreateReserve = ({ route, navigation }) => {
                           >
                             <Ionicons
                               name="trash"
-                              size={24}
+                              size={getFontSize(19)}
                               style={{ marginHorizontal: 4 }}
                               color={
                                 mode === "light"
@@ -653,7 +615,7 @@ const CreateReserve = ({ route, navigation }) => {
                 <Ionicons
                   name="person-add"
                   color={light.textDark}
-                  size={20}
+                  size={getFontSize(16)}
                   style={{ marginLeft: 10 }}
                 />
               </ButtonStyle>
@@ -717,7 +679,7 @@ const CreateReserve = ({ route, navigation }) => {
                             : dark.textWhite
                           : "#888888"
                       }
-                      size={18}
+                      size={getFontSize(15)}
                       name="caret-down"
                     />
                   </View>
@@ -800,7 +762,7 @@ const CreateReserve = ({ route, navigation }) => {
                     <Ionicons
                       name="bed-outline"
                       color={light.textDark}
-                      size={20}
+                      size={getFontSize(16)}
                       style={{ marginLeft: 10 }}
                     />
                   </ButtonStyle>
@@ -880,168 +842,17 @@ const CreateReserve = ({ route, navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisiblePeople}
-        onRequestClose={() => {
-          cleanDataPeople();
-          setModalVisiblePeople(!modalVisiblePeople);
+      <AddPerson
+        key={editingHosted.key}
+        modalVisible={modalVisiblePeople}
+        setModalVisible={setModalVisiblePeople}
+        editing={editingHosted}
+        setEditing={setEditingHosted}
+        handleSubmit={(data) => {
+          if (editingHosted.active) updateHosted(data)
+          else saveHosted(data);
         }}
-      >
-        <TouchableWithoutFeedback
-          onPress={() => {
-            cleanDataPeople();
-            setModalVisiblePeople(!modalVisiblePeople);
-          }}
-        >
-          <View style={{ backgroundColor: "#0005", height: "100%" }} />
-        </TouchableWithoutFeedback>
-        <View
-          style={[
-            StyleSheet.absoluteFillObject,
-            {
-              justifyContent: "center",
-              alignItems: "center",
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: mode === "light" ? light.main4 : dark.main1,
-              },
-            ]}
-          >
-            <View>
-              <View style={styles.row}>
-                <TextStyle color={light.main2} bigSubtitle>
-                  AGREGAR
-                </TextStyle>
-                <TouchableOpacity
-                  onPress={() => {
-                    cleanDataPeople();
-                    setModalVisiblePeople(!modalVisiblePeople);
-                  }}
-                >
-                  <Ionicons
-                    name="close"
-                    size={34}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  />
-                </TouchableOpacity>
-              </View>
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                Añade la persona que quieres alojar
-              </TextStyle>
-            </View>
-            <View>
-              <ScrollView>
-                <InputStyle
-                  value={fullName}
-                  placeholder="Nombre Completo"
-                  right={
-                    fullName
-                      ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
-                      : null
-                  }
-                  maxLength={30}
-                  onChangeText={(text) => {
-                    setFullName(text);
-                    setHostedValue("fullName", text);
-                  }}
-                />
-                {hostedErrors.fullName?.type && (
-                  <TextStyle verySmall color={light.main2}>
-                    Nombre completo obligatorio
-                  </TextStyle>
-                )}
-                <InputStyle
-                  value={email}
-                  placeholder="Correo electrónico"
-                  right={
-                    email
-                      ? () => <TextStyle color={light.main2}>Correo</TextStyle>
-                      : null
-                  }
-                  maxLength={40}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    setHostedValue("email", text);
-                  }}
-                />
-                <InputStyle
-                  value={identification}
-                  placeholder="Cédula"
-                  maxLength={15}
-                  right={
-                    identification
-                      ? () => <TextStyle color={light.main2}>Cédula</TextStyle>
-                      : null
-                  }
-                  keyboardType="numeric"
-                  onChangeText={(text) => {
-                    setIdentification(
-                      thousandsSystem(text.replace(/[^0-9]/g, ""))
-                    );
-                    setHostedValue(
-                      "identification",
-                      text.replace(/[^0-9]/g, "")
-                    );
-                  }}
-                />
-                <InputStyle
-                  value={phoneNumber}
-                  placeholder="Número de teléfono"
-                  right={
-                    phoneNumber
-                      ? () => (
-                          <TextStyle color={light.main2}>Teléfono</TextStyle>
-                        )
-                      : null
-                  }
-                  keyboardType="numeric"
-                  maxLength={15}
-                  onChangeText={(text) => {
-                    setPhoneNumber(text);
-                    setHostedValue("phoneNumber", text);
-                  }}
-                />
-                <View style={[styles.row, { marginTop: 10 }]}>
-                  <TextStyle smallParagraph color={light.main2}>
-                    CHECK IN ¿YA LLEGO EL HUÉSPED?
-                  </TextStyle>
-                  <Switch
-                    trackColor={{ false: dark.main2, true: light.main2 }}
-                    thumbColor={light.main4}
-                    ios_backgroundColor="#3e3e3e"
-                    onValueChange={() => {
-                      setCheckIn(!checkIn);
-                      setHostedValue(
-                        "checkIn",
-                        !checkIn ? new Date().getTime() : null
-                      );
-                    }}
-                    value={checkIn}
-                  />
-                </View>
-              </ScrollView>
-            </View>
-            <ButtonStyle
-              backgroundColor={light.main2}
-              onPress={handleHostedSubmit(
-                editingHosted.editing ? updateHosted : saveHosted
-              )}
-            >
-              <TextStyle center>Guardar</TextStyle>
-            </ButtonStyle>
-          </View>
-        </View>
-      </Modal>
+      />
       <Modal
         animationType="fade"
         transparent={true}
@@ -1111,7 +922,7 @@ const CreateReserve = ({ route, navigation }) => {
                     >
                       <Ionicons
                         name="arrow-forward"
-                        size={34}
+                        size={getFontSize(28)}
                         color={
                           mode === "light" ? light.textDark : dark.textWhite
                         }
@@ -1300,7 +1111,7 @@ const CreateReserve = ({ route, navigation }) => {
                     >
                       <Ionicons
                         name="close"
-                        size={34}
+                        size={getFontSize(28)}
                         color={
                           mode === "light" ? light.textDark : dark.textWhite
                         }
@@ -1372,7 +1183,7 @@ const CreateReserve = ({ route, navigation }) => {
                               <Ionicons
                                 name="information-circle"
                                 color={light.main2}
-                                size={28}
+                                size={getFontSize(23)}
                                 style={{ marginRight: 5 }}
                               />
                             </TouchableOpacity>
@@ -1406,7 +1217,7 @@ const CreateReserve = ({ route, navigation }) => {
                             <Ionicons
                               name="create-outline"
                               color={light.main2}
-                              size={28}
+                              size={getFontSize(23)}
                               style={{ marginHorizontal: 5 }}
                             />
                           </TouchableOpacity>
@@ -1428,7 +1239,7 @@ const CreateReserve = ({ route, navigation }) => {
                     <Ionicons
                       name="add-circle-outline"
                       color={light.textDark}
-                      size={20}
+                      size={getFontSize(16)}
                       style={{ marginLeft: 10 }}
                     />
                   </ButtonStyle>
@@ -1469,7 +1280,7 @@ const CreateReserve = ({ route, navigation }) => {
                     >
                       <Ionicons
                         name="arrow-back"
-                        size={34}
+                        size={getFontSize(28)}
                         color={
                           mode === "light" ? light.textDark : dark.textWhite
                         }
@@ -1576,7 +1387,7 @@ const CreateReserve = ({ route, navigation }) => {
                             <Ionicons
                               name="close-circle"
                               color={light.main2}
-                              size={40}
+                              size={getFontSize(32)}
                             />
                           </TouchableOpacity>
                         </View>
@@ -1637,7 +1448,7 @@ const CreateReserve = ({ route, navigation }) => {
                       <Ionicons
                         name="add-circle"
                         color={light.main2}
-                        size={40}
+                        size={getFontSize(32)}
                       />
                     </TouchableOpacity>
                   </View>

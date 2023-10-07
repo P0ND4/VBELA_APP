@@ -14,8 +14,7 @@ web-build/
 .DS_Store
 
 #Project
-*.env
 .tmp/*
-google-services*.json
-*.apk
+.env
 package-lock.json
+android

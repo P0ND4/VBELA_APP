@@ -15,7 +15,7 @@ import { change as changeSettings } from "@features/settings/settingsSlice";
 import { change as changeLanguage } from "@features/settings/languageSlice";
 import { active } from "@features/user/sessionSlice";
 import { addUser } from "@api";
-import { getExpoID } from "@helpers/libs";
+import { getExpoID, getFontSize } from "@helpers/libs";
 import axios from "axios";
 import TextStyle from "@components/TextStyle";
 import Layout from "@components/Layout";
@@ -359,7 +359,11 @@ const SignIn = ({ navigation }) => {
               onPress={() => googleHandlePessAsync()}
               backgroundColor={mode === "dark" ? dark.main2 : light.main5}
             >
-              <Ionicons name="logo-google" size={38} style={styles.icons} />
+              <Ionicons
+                name="logo-google"
+                size={getFontSize(31)}
+                style={styles.icons}
+              />
             </ButtonStyle>
             <TextStyle
               smallParagraph
@@ -378,7 +382,7 @@ const SignIn = ({ navigation }) => {
               <Ionicons
                 name="logo-facebook"
                 color="#FFFFFF"
-                size={38}
+                size={getFontSize(31)}
                 style={styles.icons}
               />
             </ButtonStyle>
@@ -399,7 +403,7 @@ const SignIn = ({ navigation }) => {
             >
               <Ionicons
                 name="call"
-                size={38}
+                size={getFontSize(31)}
                 color="#FFFFFF"
                 style={styles.icons}
               />
@@ -422,7 +426,7 @@ const SignIn = ({ navigation }) => {
               <Ionicons
                 name="mail"
                 color="#FFFFFF"
-                size={38}
+                size={getFontSize(31)}
                 style={styles.icons}
               />
             </ButtonStyle>
@@ -444,13 +448,13 @@ const SignIn = ({ navigation }) => {
 const styles = StyleSheet.create({
   button: {
     width: "auto",
-    width: 60,
-    height: 60,
+    width: getFontSize(49),
+    height: getFontSize(49),
     paddingVertical: 0,
     paddingHorizontal: 0,
     alignItems: "center",
     justifyContent: "center",
-    margin: 4
+    margin: 4,
   },
 });
 

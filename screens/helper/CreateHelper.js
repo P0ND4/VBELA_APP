@@ -11,7 +11,7 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
 import { editData, push, remove } from "@features/helpers/informationSlice";
-import { active } from "@features/function/informationSlice";
+import { active } from "@features/helpers/statusSlice";
 import Layout from "@components/Layout";
 import InputStyle from "@components/InputStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -164,11 +164,11 @@ const CreateHelper = ({ navigation, route }) => {
     data.modificationDate = new Date().getTime();
     dispatch(push(data));
     navigation.pop();
-    socket.emit("enter_room", { groups: [data.id] });
+    socket.emit("enter_room", { helpers: [data.id] });
     await addHelper({
       identifier: user.identifier,
       helper: data,
-      groups: helpers.map((h) => h.id),
+      helpers: helpers.map((h) => h.id),
     });
   };
 
@@ -184,10 +184,10 @@ const CreateHelper = ({ navigation, route }) => {
       const userFound = u.helpers.find((helper) => helper.user === data.user);
 
       if (userFound && userFound.password === data.password) {
-        const groups = helpers.map((h) => h.id);
+        const helpers = helpers.map((h) => h.id);
 
-        if (groups.length > 0) socket.emit("leave", { groups });
-        socket.emit("enter_room", { groups: [userFound.id] });
+        if (helpers.length > 0) socket.emit("leave", { helpers });
+        socket.emit("enter_room", { helpers: [userFound.id] });
 
         if (!userFound.expoID.includes(user.expoID)) {
           if (user.expoID)
@@ -195,7 +195,7 @@ const CreateHelper = ({ navigation, route }) => {
           await editHelper({
             identifier: u.identifier,
             helper: userFound,
-            groups: [userFound.id],
+            helpers: [userFound.id],
           });
         }
 
@@ -241,7 +241,7 @@ const CreateHelper = ({ navigation, route }) => {
     await editHelper({
       identifier: user.identifier,
       helper: data,
-      groups: helpers.map((h) => h.id),
+      helpers: helpers.map((h) => h.id),
     });
   };
 
@@ -259,13 +259,13 @@ const CreateHelper = ({ navigation, route }) => {
           text: "Si",
           onPress: async () => {
             setLoading(true);
-            socket.emit("close_room", { groups: [item.id] });
+            socket.emit("close_room", { helpers: [item.id] });
             dispatch(remove({ id: item.id }));
             navigation.pop();
             await removeHelper({
               identifier: user.identifier,
               id: item.id,
-              groups: helpers.map((h) => h.id),
+              helpers: helpers.map((h) => h.id),
             });
           },
         },

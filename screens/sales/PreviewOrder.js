@@ -8,7 +8,7 @@ import {
   Dimensions,
   Alert,
 } from "react-native";
-import { thousandsSystem } from "@helpers/libs";
+import { thousandsSystem, getFontSize } from "@helpers/libs";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -118,7 +118,7 @@ const PreviewOrder = ({ route, navigation }) => {
                     >
                       <Ionicons
                         name="file-tray-stacked"
-                        size={28}
+                        size={getFontSize(23)}
                         color={
                           mode === "light" ? light.textDark : dark.textWhite
                         }
@@ -150,7 +150,7 @@ const PreviewOrder = ({ route, navigation }) => {
                     >
                       <Ionicons
                         name="reader"
-                        size={28}
+                        size={getFontSize(23)}
                         color={
                           mode === "light" ? light.textDark : dark.textWhite
                         }
@@ -184,7 +184,7 @@ const PreviewOrder = ({ route, navigation }) => {
                     >
                       <Ionicons
                         name="cash"
-                        size={28}
+                        size={getFontSize(23)}
                         color={
                           mode === "light" ? light.textDark : dark.textWhite
                         }
@@ -226,7 +226,7 @@ const PreviewOrder = ({ route, navigation }) => {
                     >
                       <Ionicons
                         name="pricetag"
-                        size={28}
+                        size={getFontSize(23)}
                         color={light.main2}
                         style={{ marginLeft: 5 }}
                       />
@@ -271,7 +271,7 @@ const PreviewOrder = ({ route, navigation }) => {
               <TouchableOpacity onPress={() => setTotalDiscount(0)}>
                 <Ionicons
                   name="close-circle-outline"
-                  size={30}
+                  size={getFontSize(24)}
                   style={{ marginRight: 15 }}
                   color={light.main2}
                 />
@@ -297,7 +297,7 @@ const PreviewOrder = ({ route, navigation }) => {
               <TouchableOpacity onPress={() => setTip(0)}>
                 <Ionicons
                   name="close-circle-outline"
-                  size={30}
+                  size={getFontSize(24)}
                   style={{ marginRight: 15 }}
                   color={light.main2}
                 />
@@ -321,7 +321,7 @@ const PreviewOrder = ({ route, navigation }) => {
               <TouchableOpacity onPress={() => setTax(0)}>
                 <Ionicons
                   name="close-circle-outline"
-                  size={30}
+                  size={getFontSize(24)}
                   style={{ marginRight: 15 }}
                   color={light.main2}
                 />
@@ -389,7 +389,7 @@ const PreviewOrder = ({ route, navigation }) => {
           >
             <Ionicons
               name="cash"
-              size={35}
+              size={getFontSize(28)}
               color={
                 paymentMethod !== "Efectivo" ? light.main2 : light.textDark
               }
@@ -421,7 +421,7 @@ const PreviewOrder = ({ route, navigation }) => {
           >
             <Ionicons
               name="card"
-              size={35}
+              size={getFontSize(28)}
               color={paymentMethod !== "Tarjeta" ? light.main2 : light.textDark}
               style={{ marginLeft: 5 }}
             />
@@ -449,7 +449,7 @@ const PreviewOrder = ({ route, navigation }) => {
           >
             <Ionicons
               name="browsers"
-              size={35}
+              size={getFontSize(28)}
               color={paymentMethod !== "Otros" ? light.main2 : light.textDark}
               style={{ marginLeft: 5 }}
             />
@@ -494,7 +494,7 @@ const PreviewOrder = ({ route, navigation }) => {
               );
             }}
           >
-            <Ionicons name="trash" size={28} color={light.main2} />
+            <Ionicons name="trash" size={getFontSize(23)} color={light.main2} />
           </TouchableOpacity>
           {!sales && (
             <ButtonStyle
