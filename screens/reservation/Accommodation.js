@@ -49,7 +49,7 @@ const Accommodation = ({ navigation }) => {
 
   const [zoneSelected, setZoneSelected] = useState("");
   const [route, setRoute] = useState("");
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisibleCalendar, setModalVisibleCalendar] = useState(false);
 
   const [modalVisiblePeople, setModalVisiblePeople] = useState(false);
   const [reservationSelected, setReservationSelected] = useState(null);
@@ -68,6 +68,7 @@ const Accommodation = ({ navigation }) => {
     };
     dispatch(editR({ ref: reservationSelected.ref, data: reserveUpdated }));
     setReservationSelected(null);
+    setModalVisibleCalendar(false)
     cleanData();
     await editReservation({
       identifier: helperStatus.active
@@ -106,7 +107,7 @@ const Accommodation = ({ navigation }) => {
 
         const value = { x: contentOffset.x, animated: false };
 
-        scrollViewDaysRef.current.scrollTo(value);
+        if ('days' !== index) scrollViewDaysRef.current.scrollTo(value);
         scrollViewsRefs.current.forEach((ref, i) => {
           if (i !== index && ref) {
             ref.scrollTo(value);
@@ -2181,7 +2182,7 @@ const Accommodation = ({ navigation }) => {
               <ButtonStyle
                 style={{ width: "auto" }}
                 backgroundColor={light.main2}
-                onPress={() => setModalVisible(!modalVisible)}
+                onPress={() => setModalVisibleCalendar(!modalVisibleCalendar)}
               >
                 <TextStyle center>Crear una reserva</TextStyle>
               </ButtonStyle>
@@ -2369,8 +2370,8 @@ const Accommodation = ({ navigation }) => {
         </Picker>
       </View>
       <ChooseDate
-        modalVisible={modalVisible}
-        setModalVisible={setModalVisible}
+        modalVisible={modalVisibleCalendar}
+        setModalVisible={setModalVisibleCalendar}
         onDayPress={({ data, markedDates, nomenclatureID, cleanData }) => {
           const reservation = markedDates[data.dateString]?.reservation;
 

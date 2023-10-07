@@ -301,15 +301,15 @@ const CreateProduct = ({ route, navigation }) => {
                     <TextStyle
                       verySmall
                       color={
-                        parseInt(quantity.replace(/[^0-9]/g, "")) <
-                        parseInt(reorder.replace(/[^0-9]/g, ""))
+                        parseInt(quantity ? quantity.replace(/[^0-9]/g, "") : 0) <
+                        parseInt(reorder ? reorder.replace(/[^0-9]/g, "") : 0)
                           ? "#F70000"
                           : light.main2
                       }
                     >
-                      {parseInt(quantity.replace(/[^0-9]/g, "")) < 0 ? "-" : ""}
+                      {parseInt(quantity ? quantity.replace(/[^0-9]/g, "") : 0) < 0 ? "-" : ""}
                       {thousandsSystem(
-                        Math.abs(parseInt(quantity.replace(/[^0-9]/g, "")))
+                        Math.abs(parseInt(quantity ? quantity.replace(/[^0-9]/g, "") : 0))
                       )}
                       /
                     </TextStyle>

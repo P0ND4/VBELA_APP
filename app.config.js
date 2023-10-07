@@ -4,7 +4,7 @@ export default {
     slug: "vbela",
     version: "3.2.0",
     orientation: "portrait",
-    icon: "./assets/icon.png",
+    icon: "./assets/logo.png",
     userInterfaceStyle: "light",
     splash: {
       image: "./assets/splash.png",

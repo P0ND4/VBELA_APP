@@ -137,12 +137,14 @@ const MultipleSelect = ({
               );
             })}
           </ScrollView>
-          <ButtonStyle
-            backgroundColor={light.main2}
-            onPress={() => setSelectedItems([])}
-          >
-            <TextStyle center>Remover todo</TextStyle>
-          </ButtonStyle>
+          {selectedItems.length > 0 && (
+            <ButtonStyle
+              backgroundColor={light.main2}
+              onPress={() => setSelectedItems([])}
+            >
+              <TextStyle center>Remover todo</TextStyle>
+            </ButtonStyle>
+          )}
           <ButtonStyle
             backgroundColor={light.main2}
             onPress={() => {
