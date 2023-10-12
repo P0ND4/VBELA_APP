@@ -57,16 +57,29 @@ const CreateRoster = ({ route, navigation }) => {
     register("roster", { value: editing ? data.roster : "", required: true });
   }, []);
 
+  const cleanData = () => {
+    setValue("name", "");
+    setValue("amount", "");
+    setValue("roster", "");
+    setName("");
+    setAmount("");
+    setRosterSelected("");
+    navigation.setParams({ editing: false, item: null });
+  };
+
   const onSubmitEdit = async (d) => {
     setLoading(true);
     Keyboard.dismiss();
     d.ref = data.ref;
     d.creationDate = data.creationDate;
     d.modificationDate = new Date().getTime();
+    cleanData();
     dispatch(edit({ id: data.id, data: d }));
-    navigation.pop();
+    Alert.alert("ÉXITO", "Se ha editado la información correctamente");
     await editRoster({
-      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
       roster: d,
       helpers: helperStatus.active
         ? [helperStatus.id]
@@ -83,10 +96,13 @@ const CreateRoster = ({ route, navigation }) => {
     data.id = id;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
+    cleanData();
     dispatch(add(data));
-    navigation.pop();
+    Alert.alert("ÉXITO", "Se ha guardado la información correctamente");
     await addRoster({
-      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
       roster: data,
       helpers: helperStatus.active
         ? [helperStatus.id]
@@ -108,8 +124,9 @@ const CreateRoster = ({ route, navigation }) => {
           text: "Si",
           onPress: async () => {
             setLoading(true);
+            cleanData();
             dispatch(remove({ id: data.id }));
-            navigation.pop();
+            Alert.alert("ÉXITO", "Se ha eliminado la información correctamente");
             await removeRoster({
               identifier: helperStatus.active
                 ? helperStatus.identifier

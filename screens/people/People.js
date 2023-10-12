@@ -670,14 +670,34 @@ const People = ({ navigation, userType }) => {
                       }
 
                       if (userType === "customer") {
-                        navigation.navigate("CreateOrder", {
-                          editing: OF ? true : false,
-                          id: OF ? OF.id : undefined,
-                          ref: item.personID,
-                          table: item.name,
-                          selection: OF ? OF.selection : [],
-                          reservation: "Cliente",
-                        });
+                        Alert.alert('VENTAS','¿A cuál de estas ventas quieres ingresar?',[
+                          {
+                            text: 'Cancelar',
+                            style: 'cancel'
+                          },
+                          {
+                            text: 'Menú',
+                            onPress: () => {
+                              navigation.navigate("CreateOrder", {
+                                editing: OF ? true : false,
+                                id: OF ? OF.id : undefined,
+                                ref: item.personID,
+                                table: item.name,
+                                selection: OF ? OF.selection : [],
+                                reservation: "Cliente",
+                              });
+                            }
+                          },
+                          {
+                            text: 'Productos&Servicios',
+                            onPress: () => {
+                              navigation.navigate("Sales", {
+                                ref: item.personID,
+                                name: item.name,
+                              });
+                            }
+                          },
+                        ])
                       }
                     }}
                   >
@@ -696,7 +716,7 @@ const People = ({ navigation, userType }) => {
                           : light.textDark
                       }
                     >
-                      {userType === "supplier" ? "Compra / Costos" : "Menú"}
+                      {userType === "supplier" ? "Compra / Costos" : "Ventas"}
                     </TextStyle>
                   </ButtonStyle>
                 )}

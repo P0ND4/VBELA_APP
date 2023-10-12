@@ -24,8 +24,8 @@ const EditOrder = ({ route, navigation }) => {
   const [amount, setAmount] = useState(
     route.params.amount ? thousandsSystem(route.params.amount) : ""
   );
-  const [price, setPrice] = useState(
-    route.params.price ? thousandsSystem(route.params.price) : ""
+  const [value, setValue] = useState(
+    route.params.value ? thousandsSystem(route.params.value) : ""
   );
   const [count, setCount] = useState(
     route.params.count ? thousandsSystem(route.params.count) : ""
@@ -43,7 +43,7 @@ const EditOrder = ({ route, navigation }) => {
   useEffect(() => {
     navigation.setOptions({
       title:
-        route.params.data === "price"
+        route.params.data === "value"
           ? "Precio unitario"
           : route.params.data === "tip"
           ? "Propina"
@@ -215,7 +215,7 @@ const EditOrder = ({ route, navigation }) => {
               const i = { ...item };
               if (i.id === id) {
                 i.count = parseInt(amount.replace(/[^0-9]/g, ""));
-                i.total = parseInt(amount.replace(/[^0-9]/g, "")) * i.price;
+                i.total = parseInt(amount.replace(/[^0-9]/g, "")) * i.value;
               }
               return i;
             });
@@ -295,7 +295,7 @@ const EditOrder = ({ route, navigation }) => {
     );
   }
 
-  if (route.params.data === "price") {
+  if (route.params.data === "value") {
     return (
       <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
         <View />
@@ -303,12 +303,12 @@ const EditOrder = ({ route, navigation }) => {
           <TextStyle color={light.main2}>Editar precio unitario</TextStyle>
           <InputStyle
             placeholder="Precio"
-            value={price}
+            value={value}
             maxLength={10}
             keyboardType="numeric"
             onChangeText={(num) => {
               if (parseInt(num.replace(/[^0-9]/g, "")) <= 0) return;
-              setPrice(thousandsSystem(num.replace(/[^0-9]/g, "")));
+              setValue(thousandsSystem(num.replace(/[^0-9]/g, "")));
             }}
             stylesContainer={{ width: "60%", marginVertical: 10 }}
             stylesInput={{ textAlign: "center", width: 0 }}
@@ -330,8 +330,8 @@ const EditOrder = ({ route, navigation }) => {
               const i = { ...item };
               if (i.id === id) {
                 i.total =
-                  i.count * parseInt(price.replace(/[^0-9]/g, ""));
-                i.price = parseInt(price.replace(/[^0-9]/g, ""));
+                  i.count * parseInt(value.replace(/[^0-9]/g, ""));
+                i.value = parseInt(value.replace(/[^0-9]/g, ""));
               }
               return i;
             });

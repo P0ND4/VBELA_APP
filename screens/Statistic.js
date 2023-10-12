@@ -117,13 +117,20 @@ const Statistic = ({ navigation }) => {
 
     for (let reservation of reservations) {
       const date = new Date(reservation.creationDate);
-      const calculatedAmount =
-        reservation.discount > 0
-          ? reservation.amount - reservation.discount
-          : reservation.amount;
+      const calculatedAmount = reservation?.hosted.reduce((a, b) => {
+        const amount = reservation?.discount
+          ? reservation?.amount - reservation?.discount
+          : reservation?.amount;
+        if (!dateValidation(new Date(b.checkOut))) {
+          return (a +=
+            b.payment === "business"
+              ? Math.floor(amount / reservation?.hosted.length)
+              : b.payment);
+        } else return a;
+      }, 0);
+      amount += calculatedAmount;
       if (dateValidation(date)) continue;
       people += reservation.hosted.length;
-      amount += calculatedAmount;
 
       const ids = reservation.hosted.filter((h) => h.owner).map((h) => h.owner);
 
@@ -220,7 +227,16 @@ const Statistic = ({ navigation }) => {
     setTimeout(() => {
       setIsLoading(false);
     }, 200);
-  }, [day, month, year, economy, orders, roster]);
+  }, [
+    day,
+    month,
+    year,
+    economy,
+    orders,
+    roster,
+    salesProductsAndServices,
+    reservations,
+  ]);
 
   useEffect(() => {
     const date = new Date();
@@ -348,7 +364,9 @@ const Statistic = ({ navigation }) => {
 
   let amountTotal = 0;
   let sale = 0;
-  const dataD = [0, 0, 0, 0];
+  const dataD = ["both", "accommodation"].includes(user?.type)
+    ? [0, 0, 0, 0]
+    : [0, 0, 0];
 
   for (let data of economy) {
     const date = new Date(data.creationDate);
@@ -394,7 +412,8 @@ const Statistic = ({ navigation }) => {
   dataD[0] = parseFloat(getPercentage(expense));
   dataD[1] = parseFloat(getPercentage(purchase));
   dataD[2] = parseFloat(getPercentage(sale));
-  dataD[3] = parseFloat(getPercentage(amount));
+  if (["both", "accommodation"].includes(user?.type))
+    dataD[3] = parseFloat(getPercentage(amount));
 
   const data = {
     labels: ["Gasto", "Compras", "Consumo", "Reservas"],

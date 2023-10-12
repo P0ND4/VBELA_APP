@@ -7,6 +7,7 @@ import {
   ScrollView,
   Modal,
   TouchableWithoutFeedback,
+  Alert,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { Picker } from "@react-native-picker/picker";
@@ -68,7 +69,7 @@ const Accommodation = ({ navigation }) => {
     };
     dispatch(editR({ ref: reservationSelected.ref, data: reserveUpdated }));
     setReservationSelected(null);
-    setModalVisibleCalendar(false)
+    setModalVisibleCalendar(false);
     cleanData();
     await editReservation({
       identifier: helperStatus.active
@@ -93,6 +94,136 @@ const Accommodation = ({ navigation }) => {
     setDays(Array.from({ length: days }, (_, i) => i + 1));
   }, [month, year]);
 
+  const backgroundSelected = (params) =>
+    route === params
+      ? mode === "light"
+        ? light.main5
+        : dark.main2
+      : light.main2;
+
+  const textColorSelected = (params) =>
+    route === params
+      ? mode === "light"
+        ? light.textDark
+        : dark.textWhite
+      : light.textDark;
+
+  const InformationGuest = ({ modalVisible, setModalVisible, item }) => {
+    return (
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(!modalVisible)}
+      >
+        <TouchableWithoutFeedback
+          onPress={() => setModalVisible(!modalVisible)}
+        >
+          <View style={{ backgroundColor: "#0005", height: "100%" }} />
+        </TouchableWithoutFeedback>
+        <View
+          style={[
+            StyleSheet.absoluteFillObject,
+            {
+              justifyContent: "center",
+              alignItems: "center",
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: mode === "light" ? light.main4 : dark.main1,
+              },
+            ]}
+          >
+            <View style={styles.row}>
+              <TextStyle color={light.main2} bigSubtitle>
+                INFORMACIÓN
+              </TextStyle>
+              <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
+                <Ionicons
+                  name="close"
+                  size={getFontSize(28)}
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={{ marginTop: 20 }}>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Nombre completo:{" "}
+                <TextStyle color={light.main2}>{item.fullName}</TextStyle>
+              </TextStyle>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Correo electrónico:{" "}
+                <TextStyle color={light.main2}>{item.email}</TextStyle>
+              </TextStyle>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Cédula:{" "}
+                <TextStyle color={light.main2}>
+                  {!helperStatus.active || helperStatus.accessToReservations
+                    ? thousandsSystem(item.identification)
+                    : "PRIVADO"}
+                </TextStyle>
+              </TextStyle>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Número de teléfono:{" "}
+                <TextStyle color={light.main2}>{item.phoneNumber}</TextStyle>
+              </TextStyle>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                CHECK IN:{" "}
+                <TextStyle color={light.main2}>
+                  {item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"}
+                </TextStyle>
+              </TextStyle>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Cliente registrado:{" "}
+                <TextStyle color={light.main2}>
+                  {item.owner ? "SI" : "NO"}
+                </TextStyle>
+              </TextStyle>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                CHECK OUT:{" "}
+                <TextStyle color={light.main2}>
+                  {item.checkOut ? changeDate(new Date(item.checkOut)) : "NO"}
+                </TextStyle>
+              </TextStyle>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Pagado:{" "}
+                <TextStyle color={light.main2}>
+                  {!helperStatus.active || helperStatus.accessToReservations
+                    ? !item.payment
+                      ? "EN ESPERA"
+                      : item.payment === "business"
+                      ? "POR EMPRESA"
+                      : thousandsSystem(item.payment)
+                    : "PRIVADO"}
+                </TextStyle>
+              </TextStyle>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   const Available = () => {
     const [activeInformation, setActiveInformation] = useState(false);
     const [activeScrollView, setActiveScrollView] = useState(null);
@@ -107,7 +238,7 @@ const Accommodation = ({ navigation }) => {
 
         const value = { x: contentOffset.x, animated: false };
 
-        if ('days' !== index) scrollViewDaysRef.current.scrollTo(value);
+        if ("days" !== index) scrollViewDaysRef.current.scrollTo(value);
         scrollViewsRefs.current.forEach((ref, i) => {
           if (i !== index && ref) {
             ref.scrollTo(value);
@@ -116,9 +247,7 @@ const Accommodation = ({ navigation }) => {
       }
     };
 
-    const handleTouchStart = (index) => {
-      setActiveScrollView(index);
-    };
+    const handleTouchStart = (index) => setActiveScrollView(index);
 
     return (
       <View style={{ height: height / 1.55 }}>
@@ -173,6 +302,7 @@ const Accommodation = ({ navigation }) => {
               </TouchableOpacity>
               <ScrollView
                 ref={scrollViewDaysRef}
+                contentOffset={{ x: (new Date().getDate() - 1) * 38, y: 0 }}
                 style={{ marginLeft: 2 }}
                 horizontal
                 onScroll={(event) => handleScroll(event, "days")}
@@ -213,7 +343,7 @@ const Accommodation = ({ navigation }) => {
                           })
                         }
                       >
-                        <TextStyle bold>
+                        <TextStyle smallParagraph bold>
                           {item.name.toUpperCase().slice(0, 8)}
                         </TextStyle>
                       </TouchableOpacity>
@@ -229,7 +359,9 @@ const Accommodation = ({ navigation }) => {
                           marginLeft: 4,
                         }}
                       >
-                        <TextStyle bold>AÑADIR NOMENCLATURA</TextStyle>
+                        <TextStyle smallParagraph bold>
+                          AÑADIR NOMENCLATURA
+                        </TextStyle>
                       </TouchableOpacity>
                     </View>
                     <View style={{ flexDirection: "row" }}>
@@ -301,6 +433,10 @@ const Accommodation = ({ navigation }) => {
                       <ScrollView
                         ref={(ref) => (scrollViewsRefs.current[index] = ref)}
                         style={{ marginLeft: 2 }}
+                        contentOffset={{
+                          x: (new Date().getDate() - 1) * 38,
+                          y: 0,
+                        }}
                         horizontal
                         onScroll={(event) => handleScroll(event, index)}
                         onTouchStart={() => handleTouchStart(index)}
@@ -646,6 +782,7 @@ const Accommodation = ({ navigation }) => {
             accommodation: item?.accommodation?.name || "Estandar",
             groupID: ref,
             nomenclatureID: item.id,
+            reservationID: item.ref,
             days: item.days,
             zone,
             nomenclature,
@@ -695,6 +832,198 @@ const Accommodation = ({ navigation }) => {
       } else setHosted(hosted);
     }, [search, filters]);
 
+    const Guest = ({ guest }) => {
+      const [informationModalVisible, setInformationModalVisible] =
+        useState(false);
+
+      return (
+        <>
+          <View style={{ flexDirection: "row" }}>
+            <TouchableOpacity
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+              onLongPress={() =>
+                navigation.navigate("ReserveInformation", {
+                  ref: guest.reservationID,
+                  id: guest.nomenclatureID,
+                })
+              }
+              onPress={() =>
+                setInformationModalVisible(!informationModalVisible)
+              }
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.fullName}
+              </TextStyle>
+            </TouchableOpacity>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.identification}
+              </TextStyle>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                if (helperStatus.active && !helperStatus.accessToReservations)
+                  return;
+
+                Alert.alert(
+                  "CAMBIAR",
+                  `¿El cliente ${guest.checkIn ? "no " : ""} ha llegado?`,
+                  [
+                    {
+                      text: "Cancelar",
+                      style: "cancel",
+                    },
+                    {
+                      text: "Si",
+                      onPress: async () => {
+                        const reserve = reservations.find(
+                          (r) => r.ref === guest.reservationID
+                        );
+                        const newHosted = reserve?.hosted.map((i) => {
+                          if (i.id === guest.id) {
+                            const newI = { ...i };
+                            newI.checkIn = i.checkIn
+                              ? null
+                              : new Date().getTime();
+                            newI.checkOut = null;
+                            newI.payment = 0;
+                            return newI;
+                          }
+                          return i;
+                        });
+
+                        const newReservation = { ...reserve };
+                        newReservation.hosted = newHosted;
+                        dispatch(
+                          editR({
+                            ref: guest.reservationID,
+                            data: newReservation,
+                          })
+                        );
+                        await editReservation({
+                          identifier: helperStatus.active
+                            ? helperStatus.identifier
+                            : user.identifier,
+                          reservation: newReservation,
+                          helpers: helperStatus.active
+                            ? [helperStatus.id]
+                            : user.helpers.map((h) => h.id),
+                        });
+                      },
+                    },
+                  ],
+                  { cancelable: true }
+                );
+              }}
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.checkIn ? changeDate(new Date(guest.checkIn)) : "NO"}
+              </TextStyle>
+            </TouchableOpacity>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.zone}
+              </TextStyle>
+            </View>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.nomenclature}
+              </TextStyle>
+            </View>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.accommodation}
+              </TextStyle>
+            </View>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.days}
+              </TextStyle>
+            </View>
+          </View>
+          <InformationGuest
+            modalVisible={informationModalVisible}
+            setModalVisible={setInformationModalVisible}
+            item={guest}
+          />
+        </>
+      );
+    };
+
     return (
       <View style={{ height: height / 1.55 }}>
         <View style={[styles.row, { marginBottom: 15 }]}>
@@ -724,7 +1053,9 @@ const Accommodation = ({ navigation }) => {
             padding: 15,
           }}
         >
-          <TextStyle bold>LISTADO DE HUÉSPEDES</TextStyle>
+          <TextStyle smallParagraph bold>
+            LISTADO DE HUÉSPEDES
+          </TextStyle>
         </View>
         <ScrollView showsVerticalScrollIndicator={false}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -843,140 +1174,9 @@ const Accommodation = ({ navigation }) => {
                   </TextStyle>
                 </View>
               </View>
-              {hosted.map((guest) => {
-                return (
-                  <View key={guest.id} style={{ flexDirection: "row" }}>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        },
-                      ]}
-                    >
-                      <TextStyle
-                        smallParagraph
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        {guest.fullName}
-                      </TextStyle>
-                    </View>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        },
-                      ]}
-                    >
-                      <TextStyle
-                        smallParagraph
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        {guest.identification}
-                      </TextStyle>
-                    </View>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        },
-                      ]}
-                    >
-                      <TextStyle
-                        smallParagraph
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        {guest.checkIn
-                          ? changeDate(new Date(guest.checkIn))
-                          : "NO"}
-                      </TextStyle>
-                    </View>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        },
-                      ]}
-                    >
-                      <TextStyle
-                        smallParagraph
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        {guest.zone}
-                      </TextStyle>
-                    </View>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        },
-                      ]}
-                    >
-                      <TextStyle
-                        smallParagraph
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        {guest.nomenclature}
-                      </TextStyle>
-                    </View>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        },
-                      ]}
-                    >
-                      <TextStyle
-                        smallParagraph
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        {guest.accommodation}
-                      </TextStyle>
-                    </View>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        },
-                      ]}
-                    >
-                      <TextStyle
-                        smallParagraph
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        {guest.days}
-                      </TextStyle>
-                    </View>
-                  </View>
-                );
-              })}
+              {hosted.map((guest) => (
+                <Guest guest={guest} key={guest.id} />
+              ))}
             </View>
           </ScrollView>
         </ScrollView>
@@ -1534,7 +1734,7 @@ const Accommodation = ({ navigation }) => {
         .filter((n) => n.ref === zoneSelected || !zoneSelected)
         .flatMap((item) => {
           const zone = zones.find((z) => z.ref === item.ref);
-          
+
           const hosted = reservations
             .filter((r) => r.id === item.id)
             .flatMap((r) => {
@@ -1542,6 +1742,8 @@ const Accommodation = ({ navigation }) => {
                 .filter((r) => !r.checkOut && r.checkIn)
                 .map((person) => ({
                   ...person,
+                  reservationID: r.ref,
+                  nomenclatureID: r.id,
                   accommodationID: r.accommodation?.id || "standard",
                   accommodation: r?.accommodation?.name || "Estandar",
                   days: r.days,
@@ -1549,7 +1751,7 @@ const Accommodation = ({ navigation }) => {
                 }));
             });
 
-          return { ...item, hosted, zoneName: zone?.name || '' };
+          return { ...item, hosted, zoneName: zone?.name || "" };
         });
 
       if (search || filters.active) {
@@ -1590,6 +1792,166 @@ const Accommodation = ({ navigation }) => {
       } else setLocation(location);
     }, [search, filters]);
 
+    const Guest = ({ guest }) => {
+      const [informationModalVisible, setInformationModalVisible] =
+        useState(false);
+
+      return (
+        <>
+          <View style={{ flexDirection: "row" }}>
+            <TouchableOpacity
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+              onLongPress={() =>
+                navigation.navigate("ReserveInformation", {
+                  ref: guest.reservationID,
+                  id: guest.nomenclatureID,
+                })
+              }
+              onPress={() =>
+                setInformationModalVisible(!informationModalVisible)
+              }
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.fullName}
+              </TextStyle>
+            </TouchableOpacity>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.identification}
+              </TextStyle>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                if (helperStatus.active && !helperStatus.accessToReservations)
+                  return;
+
+                Alert.alert(
+                  "CAMBIAR",
+                  `¿El cliente ${guest.checkIn ? "no " : ""} ha llegado?`,
+                  [
+                    {
+                      text: "Cancelar",
+                      style: "cancel",
+                    },
+                    {
+                      text: "Si",
+                      onPress: async () => {
+                        const reserve = reservations.find(
+                          (r) => r.ref === guest.reservationID
+                        );
+                        const newHosted = reserve?.hosted.map((i) => {
+                          if (i.id === guest.id) {
+                            const newI = { ...i };
+                            newI.checkIn = i.checkIn
+                              ? null
+                              : new Date().getTime();
+                            newI.checkOut = null;
+                            newI.payment = 0;
+                            return newI;
+                          }
+                          return i;
+                        });
+
+                        const newReservation = { ...reserve };
+                        newReservation.hosted = newHosted;
+                        dispatch(
+                          editR({
+                            ref: guest.reservationID,
+                            data: newReservation,
+                          })
+                        );
+                        await editReservation({
+                          identifier: helperStatus.active
+                            ? helperStatus.identifier
+                            : user.identifier,
+                          reservation: newReservation,
+                          helpers: helperStatus.active
+                            ? [helperStatus.id]
+                            : user.helpers.map((h) => h.id),
+                        });
+                      },
+                    },
+                  ],
+                  { cancelable: true }
+                );
+              }}
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.checkIn ? changeDate(new Date(guest.checkIn)) : "NO"}
+              </TextStyle>
+            </TouchableOpacity>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.accommodation}
+              </TextStyle>
+            </View>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.days}
+              </TextStyle>
+            </View>
+          </View>
+          <InformationGuest
+            modalVisible={informationModalVisible}
+            setModalVisible={setInformationModalVisible}
+            item={guest}
+          />
+        </>
+      );
+    };
+
     return (
       <View style={{ height: height / 1.55 }}>
         <View style={[styles.row, { marginBottom: 15 }]}>
@@ -1623,7 +1985,7 @@ const Accommodation = ({ navigation }) => {
                     padding: 15,
                   }}
                 >
-                  <TextStyle bold>
+                  <TextStyle smallParagraph bold>
                     {item?.zoneName?.toUpperCase()} ({item.nomenclature})
                   </TextStyle>
                 </View>
@@ -1731,124 +2093,9 @@ const Accommodation = ({ navigation }) => {
                         </TextStyle>
                       </View>
                     </View>
-                    {item.hosted.map((guest) => {
-                      return (
-                        <View key={guest.id} style={{ flexDirection: "row" }}>
-                          <View
-                            style={[
-                              styles.table,
-                              {
-                                borderColor:
-                                  mode === "light"
-                                    ? light.textDark
-                                    : dark.textWhite,
-                              },
-                            ]}
-                          >
-                            <TextStyle
-                              smallParagraph
-                              color={
-                                mode === "light"
-                                  ? light.textDark
-                                  : dark.textWhite
-                              }
-                            >
-                              {guest.fullName}
-                            </TextStyle>
-                          </View>
-                          <View
-                            style={[
-                              styles.table,
-                              {
-                                borderColor:
-                                  mode === "light"
-                                    ? light.textDark
-                                    : dark.textWhite,
-                              },
-                            ]}
-                          >
-                            <TextStyle
-                              smallParagraph
-                              color={
-                                mode === "light"
-                                  ? light.textDark
-                                  : dark.textWhite
-                              }
-                            >
-                              {guest.identification}
-                            </TextStyle>
-                          </View>
-                          <View
-                            style={[
-                              styles.table,
-                              {
-                                borderColor:
-                                  mode === "light"
-                                    ? light.textDark
-                                    : dark.textWhite,
-                              },
-                            ]}
-                          >
-                            <TextStyle
-                              smallParagraph
-                              color={
-                                mode === "light"
-                                  ? light.textDark
-                                  : dark.textWhite
-                              }
-                            >
-                              {guest.checkIn
-                                ? changeDate(new Date(guest.checkIn))
-                                : "NO"}
-                            </TextStyle>
-                          </View>
-                          <View
-                            style={[
-                              styles.table,
-                              {
-                                borderColor:
-                                  mode === "light"
-                                    ? light.textDark
-                                    : dark.textWhite,
-                              },
-                            ]}
-                          >
-                            <TextStyle
-                              smallParagraph
-                              color={
-                                mode === "light"
-                                  ? light.textDark
-                                  : dark.textWhite
-                              }
-                            >
-                              {guest.accommodation}
-                            </TextStyle>
-                          </View>
-                          <View
-                            style={[
-                              styles.table,
-                              {
-                                borderColor:
-                                  mode === "light"
-                                    ? light.textDark
-                                    : dark.textWhite,
-                              },
-                            ]}
-                          >
-                            <TextStyle
-                              smallParagraph
-                              color={
-                                mode === "light"
-                                  ? light.textDark
-                                  : dark.textWhite
-                              }
-                            >
-                              {guest.days}
-                            </TextStyle>
-                          </View>
-                        </View>
-                      );
-                    })}
+                    {item.hosted.map((guest) => (
+                      <Guest guest={guest} key={guest.id} />
+                    ))}
                   </View>
                 </ScrollView>
               </View>
@@ -2179,16 +2426,12 @@ const Accommodation = ({ navigation }) => {
         <>
           <View>
             <View style={styles.row}>
-              <ButtonStyle
-                style={{ width: "auto" }}
-                backgroundColor={light.main2}
-                onPress={() => setModalVisibleCalendar(!modalVisibleCalendar)}
-              >
-                <TextStyle center>Crear una reserva</TextStyle>
-              </ButtonStyle>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 {route && (
-                  <TouchableOpacity onPress={() => setRoute("")}>
+                  <TouchableOpacity
+                    onPress={() => setRoute("")}
+                    style={{ marginRight: 10 }}
+                  >
                     <Ionicons
                       name="arrow-back"
                       size={getFontSize(25)}
@@ -2196,104 +2439,128 @@ const Accommodation = ({ navigation }) => {
                     />
                   </TouchableOpacity>
                 )}
-                {(!route ||
-                  (route !== "hosted" && route !== "reservations")) && (
-                  <View
+                <ButtonStyle
+                  style={{ width: "auto" }}
+                  backgroundColor={light.main2}
+                  onPress={() => setModalVisibleCalendar(!modalVisibleCalendar)}
+                >
+                  <TextStyle smallParagraph center>
+                    Crear una reserva
+                  </TextStyle>
+                </ButtonStyle>
+              </View>
+              {(!route || (route !== "hosted" && route !== "reservations")) && (
+                <View
+                  style={{
+                    marginHorizontal: 2,
+                    backgroundColor:
+                      mode === "light" ? light.main5 : dark.main2,
+                  }}
+                >
+                  <Picker
+                    mode="dropdown"
+                    selectedValue={zoneSelected || ""}
+                    onValueChange={(value) => {
+                      if (value === "CreateZone")
+                        return navigation.navigate("CreateZone");
+                      setZoneSelected(value);
+                    }}
+                    dropdownIconColor={
+                      mode === "light" ? light.textDark : dark.textWhite
+                    }
                     style={{
-                      marginHorizontal: 2,
+                      width: width / 2.8,
                       backgroundColor:
                         mode === "light" ? light.main5 : dark.main2,
+                      color: mode === "light" ? light.textDark : dark.textWhite,
+                      fontSize: 20,
                     }}
                   >
-                    <Picker
-                      mode="dropdown"
-                      selectedValue={zoneSelected || ""}
-                      onValueChange={(value) => {
-                        if (value === "CreateZone")
-                          return navigation.navigate("CreateZone");
-                        setZoneSelected(value);
-                      }}
-                      dropdownIconColor={
-                        mode === "light" ? light.textDark : dark.textWhite
-                      }
+                    <Picker.Item
+                      label="SELECCIONA"
+                      value=""
                       style={{
-                        width: width / 2.8,
                         backgroundColor:
                           mode === "light" ? light.main5 : dark.main2,
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                        fontSize: 20,
+                        fontSize: getFontSize(10),
                       }}
-                    >
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    />
+                    {zones.map((zone, index) => (
                       <Picker.Item
-                        label="SELECCIONA"
-                        value=""
+                        key={zone.id + index}
+                        label={zone.name}
+                        value={zone.ref}
                         style={{
                           backgroundColor:
                             mode === "light" ? light.main5 : dark.main2,
+                          fontSize: getFontSize(10),
                         }}
                         color={
                           mode === "light" ? light.textDark : dark.textWhite
                         }
                       />
-                      {zones.map((zone, index) => (
-                        <Picker.Item
-                          key={zone.id + index}
-                          label={zone.name}
-                          value={zone.ref}
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                      ))}
-                      {(!helperStatus.active ||
-                        helperStatus.accessToReservations) && (
-                        <Picker.Item
-                          label="CREAR"
-                          value="CreateZone"
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                      )}
-                    </Picker>
-                  </View>
-                )}
-              </View>
+                    ))}
+                    {(!helperStatus.active ||
+                      helperStatus.accessToReservations) && (
+                      <Picker.Item
+                        label="CREAR"
+                        value="CreateZone"
+                        style={{
+                          backgroundColor:
+                            mode === "light" ? light.main5 : dark.main2,
+                          fontSize: getFontSize(10),
+                        }}
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      />
+                    )}
+                  </Picker>
+                </View>
+              )}
             </View>
-            <View style={[styles.row, { marginBottom: 15, marginTop: 30 }]}>
+            <View style={[styles.row, { marginVertical: 15 }]}>
               <ButtonStyle
-                backgroundColor={light.main2}
+                backgroundColor={backgroundSelected("hosted")}
                 onPress={() => setRoute("hosted")}
                 style={{ width: "auto" }}
               >
-                <TextStyle smallParagraph bold>
+                <TextStyle
+                  color={textColorSelected("hosted")}
+                  smallParagraph
+                  bold
+                >
                   ALOJADOS
                 </TextStyle>
               </ButtonStyle>
               <ButtonStyle
-                backgroundColor={light.main2}
+                backgroundColor={backgroundSelected(
+                  "reservations"
+                )}
                 onPress={() => setRoute("reservations")}
                 style={{ width: "auto" }}
               >
-                <TextStyle smallParagraph bold>
+                <TextStyle
+                  color={textColorSelected("reservations")}
+                  smallParagraph
+                  bold
+                >
                   RESERVAS
                 </TextStyle>
               </ButtonStyle>
               <ButtonStyle
-                backgroundColor={light.main2}
+                backgroundColor={backgroundSelected(
+                  "location"
+                )}
                 onPress={() => setRoute("location")}
                 style={{ width: "auto" }}
               >
-                <TextStyle smallParagraph bold>
+                <TextStyle
+                  color={textColorSelected("location")}
+                  smallParagraph
+                  bold
+                >
                   UBICACIÓN
                 </TextStyle>
               </ButtonStyle>

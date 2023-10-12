@@ -174,9 +174,9 @@ const PreviewOrder = ({ route, navigation }) => {
                       style={{ alignItems: "center" }}
                       onPress={() =>
                         navigation.navigate("EditOrder", {
-                          data: "price",
+                          data: "value",
                           id: item.id,
-                          price: selection.find((i) => i.id === item.id).price,
+                          value: selection.find((i) => i.id === item.id).value,
                           selection,
                           setSelection,
                         })
@@ -197,7 +197,7 @@ const PreviewOrder = ({ route, navigation }) => {
                         }
                       >
                         {thousandsSystem(
-                          selection.find((b) => b.id === item.id).price
+                          selection.find((b) => b.id === item.id).value
                         )}
                       </TextStyle>
                       <TextStyle

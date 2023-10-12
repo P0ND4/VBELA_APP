@@ -18,7 +18,7 @@ import {
   print,
   generatePDF,
   random,
-  getFontSize
+  getFontSize,
 } from "@helpers/libs";
 import { remove as removeR } from "@features/zones/reservationsSlice";
 import {
@@ -48,19 +48,9 @@ const light = theme.colors.light;
 const width = Dimensions.get("screen").width;
 const height = Dimensions.get("screen").height;
 
-const Hosted = ({
-  item,
-  amount,
-  hostedChangeRef,
-  setTotalToPay,
-  editable,
-  reserve,
-}) => {
+const Hosted = ({ item, hostedChangeRef, setTotalToPay, editable }) => {
   const mode = useSelector((state) => state.mode);
-
-  const [payment, setPayment] = useState(
-    thousandsSystem(Math.floor(amount / reserve?.hosted.length))
-  );
+  const [payment, setPayment] = useState("");
 
   return (
     <View key={item.id} style={styles.row}>
@@ -138,23 +128,19 @@ const ReserveInformation = ({ route, navigation }) => {
       reserve?.discount ? reserve?.amount - reserve?.discount : reserve?.amount
     );
     setTotalPayment(
-      reserve?.hosted?.reduce((a, b) => {
-        if (b.payment === "business") {
-          return a + amount / reserve?.hosted.length;
-        } else return a + b.payment;
-      }, 0)
+      Math.floor(
+        reserve?.hosted?.reduce((a, b) => {
+          if (b.payment === "business") {
+            return a + amount / reserve?.hosted.length;
+          } else return a + b.payment;
+        }, 0)
+      )
     );
   }, [reserveState, nomenclatureState, orders]);
 
   useEffect(() => {
     setTip(amount - totalToPay);
   }, [totalToPay, amount]);
-
-  useEffect(() => {
-    setTotalToPay(
-      Math.floor((amount / reserve?.hosted.length) * hosted.length)
-    );
-  }, [hosted, amount]);
 
   const dispatch = useDispatch();
 
@@ -177,21 +163,6 @@ const ReserveInformation = ({ route, navigation }) => {
             <td style="width: 100px; border: 1px solid #000; padding: 8px">
               <p style="font-size: 14px; font-weight: 600; word-break: break-word;">${
                 item.fullName
-              }</p>
-            </td>
-            <td style="width: 100px; border: 1px solid #000; padding: 8px;">
-              <p style="font-size: 14px; font-weight: 600; word-break: break-word;">${
-                item.email
-              }</p>
-            </td>
-            <td style="width: 100px; border: 1px solid #000; padding: 8px">
-              <p style="font-size: 14px; font-weight: 600; word-break: break-word;">${thousandsSystem(
-                item.identification
-              )}</p>
-            </td>
-            <td style="width: 100px; border: 1px solid #000; padding: 8px">
-              <p style="font-size: 14px; font-weight: 600; word-break: break-word;">${
-                item.phoneNumber
               }</p>
             </td>
             <td style="width: 50px; border: 1px solid #000; padding: 8px">
@@ -246,15 +217,6 @@ const ReserveInformation = ({ route, navigation }) => {
         <tr>
           <td style="width: 100px; border: 1px solid #000; padding: 8px">
             <p style="font-size: 14px; font-weight: 600;">NOMBRE</p>
-          </td>
-          <td style="width: 100px; border: 1px solid #000; padding: 8px">
-            <p style="font-size: 14px; font-weight: 600;">CORREO</p>
-          </td>
-          <td style="width: 100px; border: 1px solid #000; padding: 8px">
-            <p style="font-size: 14px; font-weight: 600;">CÉDULA</p>
-          </td>
-          <td style="width: 100px; border: 1px solid #000; padding: 8px">
-            <p style="font-size: 14px; font-weight: 600; display: inline-block;">TELÉFONO</p>
           </td>
           <td style="width: 50px; border: 1px solid #000; padding: 8px">
             <p style="font-size: 14px; font-weight: 600;">CHECK IN</p>
@@ -602,55 +564,6 @@ const ReserveInformation = ({ route, navigation }) => {
               }`}
             </TextStyle>
           </TouchableOpacity>
-          <View
-            style={[
-              styles.table,
-              {
-                borderColor: mode === "light" ? light.textDark : dark.textWhite,
-              },
-            ]}
-          >
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              {`${item.email.slice(0, 15)}${
-                item.email.length > 15 ? "..." : ""
-              }`}
-            </TextStyle>
-          </View>
-          <View
-            style={[
-              styles.table,
-              {
-                borderColor: mode === "light" ? light.textDark : dark.textWhite,
-              },
-            ]}
-          >
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              {!helperStatus.active || helperStatus.accessToReservations
-                ? thousandsSystem(item.identification)
-                : "PRIVADO"}
-            </TextStyle>
-          </View>
-          <View
-            style={[
-              styles.table,
-              {
-                borderColor: mode === "light" ? light.textDark : dark.textWhite,
-              },
-            ]}
-          >
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              {item.phoneNumber}
-            </TextStyle>
-          </View>
           <TouchableOpacity
             onPress={() => {
               if (helperStatus.active && !helperStatus.accessToReservations)
@@ -964,7 +877,11 @@ const ReserveInformation = ({ route, navigation }) => {
                 }}
                 style={{ marginHorizontal: 5 }}
               >
-                <Ionicons name="create-outline" size={getFontSize(31)} color={light.main2} />
+                <Ionicons
+                  name="create-outline"
+                  size={getFontSize(31)}
+                  color={light.main2}
+                />
               </TouchableOpacity>
             </View>
           )}
@@ -1011,45 +928,6 @@ const ReserveInformation = ({ route, navigation }) => {
                     >
                       <TextStyle color={light.main2} smallParagraph>
                         Nombre
-                      </TextStyle>
-                    </View>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        },
-                      ]}
-                    >
-                      <TextStyle color={light.main2} smallParagraph>
-                        CORREO
-                      </TextStyle>
-                    </View>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        },
-                      ]}
-                    >
-                      <TextStyle color={light.main2} smallParagraph>
-                        CÉDULA
-                      </TextStyle>
-                    </View>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        },
-                      ]}
-                    >
-                      <TextStyle color={light.main2} smallParagraph>
-                        TELÉFONO
                       </TextStyle>
                     </View>
                     <TouchableOpacity
@@ -1477,8 +1355,7 @@ const ReserveInformation = ({ route, navigation }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                Añade el pago total de huésped (por defecto, se divide el dinero
-                por la cantidad de huéspedes)
+                Añade el pago total de huésped
               </TextStyle>
             </View>
             <View>
@@ -1488,11 +1365,9 @@ const ReserveInformation = ({ route, navigation }) => {
                 renderItem={({ item }) => (
                   <Hosted
                     item={item}
-                    amount={amount}
                     hostedChangeRef={hostedChangeRef}
                     setTotalToPay={setTotalToPay}
                     editable={!businessPayment}
-                    reserve={reserve}
                   />
                 )}
                 style={{ maxHeight: 200, marginVertical: 10 }}

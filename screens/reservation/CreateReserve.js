@@ -118,7 +118,7 @@ const CreateReserve = ({ route, navigation }) => {
     item: null,
   });
 
-  const [days, setDays] = useState(editing ? reserve.days : "");
+  const [days, setDays] = useState(editing ? String(reserve.days) : "");
   const [amount, setAmount] = useState("");
   const [amountWithDiscount, setAmountWithDiscount] = useState("");
   const [discount, setDiscount] = useState(
@@ -626,13 +626,13 @@ const CreateReserve = ({ route, navigation }) => {
               )}
               <InputStyle
                 placeholder="Número de días"
+                value={days}
                 right={
                   days
                     ? () => <TextStyle color={light.main2}>Días</TextStyle>
                     : null
                 }
                 keyboardType="numeric"
-                value={days}
                 onChangeText={(num) => {
                   setDays(num.replace(/[^0-9]/g, ""));
                   setReservationValue("days", parseInt(num));

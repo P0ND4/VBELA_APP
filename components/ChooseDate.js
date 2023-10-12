@@ -158,6 +158,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                     style={{
                       backgroundColor:
                         mode === "light" ? light.main5 : dark.main2,
+                      fontSize: getFontSize(10),
                     }}
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   />
@@ -169,6 +170,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                       style={{
                         backgroundColor:
                           mode === "light" ? light.main5 : dark.main2,
+                        fontSize: getFontSize(10),
                       }}
                       color={mode === "light" ? light.textDark : dark.textWhite}
                     />
@@ -206,6 +208,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                       style={{
                         backgroundColor:
                           mode === "light" ? light.main5 : dark.main2,
+                        fontSize: getFontSize(10),
                       }}
                       color={mode === "light" ? light.textDark : dark.textWhite}
                     />
@@ -217,6 +220,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                         style={{
                           backgroundColor:
                             mode === "light" ? light.main5 : dark.main2,
+                          fontSize: getFontSize(10),
                         }}
                         color={
                           mode === "light" ? light.textDark : dark.textWhite

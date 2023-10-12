@@ -16,7 +16,8 @@ import { Picker } from "@react-native-picker/picker";
 import { thousandsSystem, random, months, getFontSize } from "@helpers/libs";
 import { add as addS } from "@features/sales/salesSlice";
 import { change as changeP } from "@features/sales/productsSlice";
-import { editUser } from "@api";
+import { add as addE, edit as editE } from "@features/function/economySlice";
+import { editUser, editEconomy, addEconomy } from "@api";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -31,13 +32,15 @@ const SCREEN_WIDTH = Dimensions.get("screen").width;
 const light = theme.colors.light;
 const dark = theme.colors.dark;
 
-const Sales = () => {
+const Sales = ({ route }) => {
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
   const productsRef = useSelector((state) => state.products);
   const mode = useSelector((state) => state.mode);
   const sales = useSelector((state) => state.sales);
   const groupsREF = useSelector((state) => state.groups);
+  const economy = useSelector((state) => state.economy);
+  const folk = useSelector((state) => state.people);
 
   const initialState = {
     active: false,
@@ -74,7 +77,7 @@ const Sales = () => {
 
   useEffect(() => {
     const obj = { id: "everything", category: "Todos", subcategory: [] };
-    const groups = [obj, ...groupsREF.filter(g => g.type === 'sales')];
+    const groups = [obj, ...groupsREF.filter((g) => g.type === "sales")];
     setKeyCategory(Math.random());
     if (categorySelected.id !== "everything") {
       const group = groupsREF.find((g) => g.id === categorySelected.id);
@@ -109,6 +112,8 @@ const Sales = () => {
     setDays(monthDays);
   }, [filters.year, filters.month]);
 
+  const ref = route.params?.ref;
+  const name = route.params?.name;
   const searchRef = useRef();
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -185,6 +190,55 @@ const Sales = () => {
     }
   }, [productsRef, search, filters, categorySelected, subcategorySelected]);
 
+  const manageEconomy = async ({ total }) => {
+    const foundEconomy = economy.find((e) => e.ref === ref);
+
+    if (!foundEconomy) {
+      const id = random(20);
+      const person = folk.find((p) => p.id === ref);
+
+      const newEconomy = {
+        id,
+        ref: person.id,
+        owner: {
+          identification: person.identification,
+          name: person.name,
+        },
+        type: "debt",
+        amount: total,
+        name: `Deuda ${person.name}`,
+        payment: 0,
+        creationDate: new Date().getTime(),
+        modificationDate: new Date().getTime(),
+      };
+
+      dispatch(addE(newEconomy));
+      await addEconomy({
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        economy: newEconomy,
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+    } else {
+      const currentEconomy = { ...foundEconomy };
+      currentEconomy.amount += total;
+      currentEconomy.modificationDate = new Date().getTime();
+      dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
+      await editEconomy({
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        economy: currentEconomy,
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
+  };
+
   const getTotal = (totalDiscount, selection, tip, tax) =>
     totalDiscount !== 0
       ? selection.reduce(
@@ -224,6 +278,8 @@ const Sales = () => {
     const d = extractObject(dat);
     const id = d.ID ? d.ID : random(20);
 
+    const person = folk.find((p) => p.id === ref);
+
     if (sales.find((sale) => sale.id === id)) return saveOrder(dat, selection);
     const data = {};
     const total = getTotal(d.discount, selection, d.tip, d.tax);
@@ -238,6 +294,7 @@ const Sales = () => {
     data.total = total;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
+    navigation.setParams({ ref: null, name: null })
     dispatch(addS(data));
     setSelection([]);
     const newProducts = productsRef.map((p) => {
@@ -250,6 +307,7 @@ const Sales = () => {
       return p;
     });
     dispatch(changeP(newProducts));
+    if (person) manageEconomy({ total });
     if (d.pay) navigation.pop();
     navigation.navigate("OrderCompletion", { data, total, sales: true });
     await editUser({
@@ -268,12 +326,30 @@ const Sales = () => {
 
   return (
     <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
-      <View>
-        <View style={styles.title}>
-          <TextStyle smallSubtitle color={light.main2}>
-            PRODUCTOS & SERVICIOS
-          </TextStyle>
-        </View>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <TextStyle smallSubtitle color={light.main2}>
+          {ref && (
+            <TextStyle
+              smallSubtitle
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              Cliente:
+            </TextStyle>
+          )}{" "}
+          {ref ? name : "PRODUCTOS & SERVICIOS"}
+        </TextStyle>
+        {ref && (
+          <TouchableOpacity
+            onPress={() => navigation.setParams({ ref: null, name: null })}
+          >
+            <Ionicons
+              style={{ marginLeft: 5 }}
+              name="close-circle"
+              size={getFontSize(24)}
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            />
+          </TouchableOpacity>
+        )}
       </View>
       <View style={styles.secondHeader}>
         {!activeSearch && (

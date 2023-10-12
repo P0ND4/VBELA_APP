@@ -41,8 +41,10 @@ function App() {
           fontFamily: "Roboto-Medium",
           fontSize: 15,
         },
+        unmountOnBlur: true,
       }}
       drawerContent={(props) => <CustomDrawer {...props} />}
+      unmountInactiveRoutes={true}
     >
       {helperStatus.active
         ? (helperStatus.accessToTables || helperStatus.accessToReservations) &&
@@ -137,6 +139,9 @@ function App() {
               <Ionicons name="clipboard-outline" size={22} color={color} />
             ),
           }}
+          listeners={({ navigation }) => ({
+            blur: () => navigation.setParams({ editing: false, item: null }),
+          })}
         />
       )}
       {(!helperStatus.active ||
@@ -155,7 +160,8 @@ function App() {
         </Drawer.Screen>
       )}
       {(helperStatus.active
-        ? helperStatus.accessToSupplier && ["both", "sales"].includes(user?.type)
+        ? helperStatus.accessToSupplier &&
+          ["both", "sales"].includes(user?.type)
         : ["both", "sales"].includes(user?.type)) && (
         <Drawer.Screen
           name="Providers"
