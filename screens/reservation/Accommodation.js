@@ -8,8 +8,10 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Alert,
+  FlatList,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigation } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
 import {
   months,
@@ -26,7 +28,6 @@ import theme from "@theme";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
-import Information from "@components/Information";
 import ChooseDate from "@components/ChooseDate";
 import AddPerson from "@components/AddPerson";
 
@@ -82,12 +83,7 @@ const Accommodation = ({ navigation }) => {
     });
   };
 
-  /////
-
-  const monthPickerRef = useRef();
-  const yearPickerRef = useRef();
-
-  /////
+  const navigationStack = useNavigation();
 
   useEffect(() => {
     const days = new Date(year, month - 1, 0).getDate();
@@ -109,600 +105,179 @@ const Accommodation = ({ navigation }) => {
       : light.textDark;
 
   const InformationGuest = ({ modalVisible, setModalVisible, item }) => {
+    const [editing, setEditing] = useState(false);
+    const [handler, setHandler] = useState({
+      active: true,
+      key: Math.random(),
+    });
+
+    const updateHosted = async ({ data, cleanData }) => {
+      data.id = item.id;
+      data.owner = item.owner;
+      data.payment = item.payment;
+      data.checkOut = item.checkOut;
+
+      let reserveUpdated = reservations.find(
+        (r) => r.ref === item.reservationID
+      );
+      reserveUpdated = {
+        ...reserveUpdated,
+        hosted: reserveUpdated.hosted.map((h) => {
+          if (h.id === item.id) return data;
+          return h;
+        }),
+      };
+      cleanData();
+      setModalVisible(!modalVisible);
+      dispatch(editR({ ref: reserveUpdated.ref, data: reserveUpdated }));
+      await editReservation({
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        reservation: reserveUpdated,
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+    };
+
     return (
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(!modalVisible)}
-      >
-        <TouchableWithoutFeedback
-          onPress={() => setModalVisible(!modalVisible)}
+      <>
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(!modalVisible)}
         >
-          <View style={{ backgroundColor: "#0005", height: "100%" }} />
-        </TouchableWithoutFeedback>
-        <View
-          style={[
-            StyleSheet.absoluteFillObject,
-            {
-              justifyContent: "center",
-              alignItems: "center",
-            },
-          ]}
-        >
+          <TouchableWithoutFeedback
+            onPress={() => setModalVisible(!modalVisible)}
+          >
+            <View style={{ backgroundColor: "#0005", height: "100%" }} />
+          </TouchableWithoutFeedback>
           <View
             style={[
-              styles.card,
+              StyleSheet.absoluteFillObject,
               {
-                backgroundColor: mode === "light" ? light.main4 : dark.main1,
+                justifyContent: "center",
+                alignItems: "center",
               },
             ]}
           >
-            <View style={styles.row}>
-              <TextStyle color={light.main2} bigSubtitle>
-                INFORMACIÓN
-              </TextStyle>
-              <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
-                <Ionicons
-                  name="close"
-                  size={getFontSize(28)}
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                />
-              </TouchableOpacity>
-            </View>
-            <View style={{ marginTop: 20 }}>
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                Nombre completo:{" "}
-                <TextStyle color={light.main2}>{item.fullName}</TextStyle>
-              </TextStyle>
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                Correo electrónico:{" "}
-                <TextStyle color={light.main2}>{item.email}</TextStyle>
-              </TextStyle>
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                Cédula:{" "}
-                <TextStyle color={light.main2}>
-                  {!helperStatus.active || helperStatus.accessToReservations
-                    ? thousandsSystem(item.identification)
-                    : "PRIVADO"}
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: mode === "light" ? light.main4 : dark.main1,
+                },
+              ]}
+            >
+              <View style={styles.row}>
+                <TextStyle color={light.main2} bigSubtitle>
+                  INFORMACIÓN
                 </TextStyle>
-              </TextStyle>
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                Número de teléfono:{" "}
-                <TextStyle color={light.main2}>{item.phoneNumber}</TextStyle>
-              </TextStyle>
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                CHECK IN:{" "}
-                <TextStyle color={light.main2}>
-                  {item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"}
-                </TextStyle>
-              </TextStyle>
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                Cliente registrado:{" "}
-                <TextStyle color={light.main2}>
-                  {item.owner ? "SI" : "NO"}
-                </TextStyle>
-              </TextStyle>
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                CHECK OUT:{" "}
-                <TextStyle color={light.main2}>
-                  {item.checkOut ? changeDate(new Date(item.checkOut)) : "NO"}
-                </TextStyle>
-              </TextStyle>
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                Pagado:{" "}
-                <TextStyle color={light.main2}>
-                  {!helperStatus.active || helperStatus.accessToReservations
-                    ? !item.payment
-                      ? "EN ESPERA"
-                      : item.payment === "business"
-                      ? "POR EMPRESA"
-                      : thousandsSystem(item.payment)
-                    : "PRIVADO"}
-                </TextStyle>
-              </TextStyle>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    );
-  };
-
-  const Available = () => {
-    const [activeInformation, setActiveInformation] = useState(false);
-    const [activeScrollView, setActiveScrollView] = useState(null);
-
-    const scrollViewDaysRef = useRef();
-    const scrollViewsRefs = useRef([]);
-
-    const handleScroll = (event, index) => {
-      if (index === activeScrollView) {
-        const { nativeEvent } = event;
-        const { contentOffset } = nativeEvent;
-
-        const value = { x: contentOffset.x, animated: false };
-
-        if ("days" !== index) scrollViewDaysRef.current.scrollTo(value);
-        scrollViewsRefs.current.forEach((ref, i) => {
-          if (i !== index && ref) {
-            ref.scrollTo(value);
-          }
-        });
-      }
-    };
-
-    const handleTouchStart = (index) => setActiveScrollView(index);
-
-    return (
-      <View style={{ height: height / 1.55 }}>
-        <View
-          style={{
-            marginBottom: 15,
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-        >
-          <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-            ASIGNACIÓN DE COLORES
-          </TextStyle>
-          <TouchableOpacity
-            onPress={() => setActiveInformation(!activeInformation)}
-          >
-            <Ionicons
-              name="help-circle-outline"
-              style={{ marginLeft: 5 }}
-              size={getFontSize(23)}
-              color={light.main2}
-            />
-          </TouchableOpacity>
-        </View>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View>
-            <View style={{ flexDirection: "row" }}>
-              <TouchableOpacity
-                style={[
-                  styles.available,
-                  { backgroundColor: light.main2, marginTop: 0, width: 48 },
-                ]}
-                onPress={() => monthPickerRef.current?.focus()}
-              >
-                <TextStyle smallParagraph>
-                  {months[month - 1]?.toUpperCase().slice(0, 3)}
-                </TextStyle>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.available,
-                  {
-                    backgroundColor: light.main2,
-                    marginTop: 0,
-                    width: 48,
-                    marginLeft: 4,
-                  },
-                ]}
-                onPress={() => yearPickerRef.current?.focus()}
-              >
-                <TextStyle smallParagraph>{year}</TextStyle>
-              </TouchableOpacity>
-              <ScrollView
-                ref={scrollViewDaysRef}
-                contentOffset={{ x: (new Date().getDate() - 1) * 38, y: 0 }}
-                style={{ marginLeft: 2 }}
-                horizontal
-                onScroll={(event) => handleScroll(event, "days")}
-                onTouchStart={() => handleTouchStart("days")}
-                scrollEventThrottle={16}
-                showsHorizontalScrollIndicator={false}
-              >
-                {days.map((item) => {
-                  return (
-                    <View
-                      key={item}
-                      style={[styles.days, { backgroundColor: light.main2 }]}
-                    >
-                      <TextStyle>{item}</TextStyle>
-                    </View>
-                  );
-                })}
-              </ScrollView>
-            </View>
-            {zones
-              .filter((zones) => zones.ref === zoneSelected || !zoneSelected)
-              .map((item, index) => {
-                return (
-                  <View key={item.ref}>
-                    <View style={{ flexDirection: "row" }}>
-                      <TouchableOpacity
-                        style={{
-                          backgroundColor: light.main2,
-                          padding: 8,
-                          marginTop: 5,
-                          width: 100,
-                        }}
-                        onPress={() =>
-                          navigation.navigate("PlaceInformation", {
-                            ref: item.ref,
-                            name: item?.name,
-                            type: "General",
-                          })
-                        }
-                      >
-                        <TextStyle smallParagraph bold>
-                          {item.name.toUpperCase().slice(0, 8)}
-                        </TextStyle>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() =>
-                          navigation.navigate("CreatePlace", { ref: item.ref })
-                        }
-                        style={{
-                          backgroundColor: light.main2,
-                          padding: 8,
-                          marginTop: 5,
-                          flexGrow: 1,
-                          marginLeft: 4,
-                        }}
-                      >
-                        <TextStyle smallParagraph bold>
-                          AÑADIR NOMENCLATURA
-                        </TextStyle>
-                      </TouchableOpacity>
-                    </View>
-                    <View style={{ flexDirection: "row" }}>
-                      <View>
-                        {nomenclatures
-                          .filter((n) => n.ref === item.ref)
-                          .map((item, i) => {
-                            const backgroundColor =
-                              mode === "light"
-                                ? `${light.main5}${i % 2 === 0 ? "CC" : "FF"}`
-                                : `${dark.main2}${i % 2 === 0 ? "CC" : "FF"}`;
-
-                            return (
-                              <View
-                                key={item.id}
-                                style={{ flexDirection: "row" }}
-                              >
-                                <View
-                                  style={[
-                                    styles.available,
-                                    { backgroundColor, width: 48 },
-                                  ]}
-                                >
-                                  <TextStyle
-                                    verySmall
-                                    center
-                                    color={
-                                      mode === "light"
-                                        ? light.textDark
-                                        : dark.textWhite
-                                    }
-                                  >
-                                    {item.name?.toUpperCase().slice(0, 5)}
-                                  </TextStyle>
-                                </View>
-                                <TouchableOpacity
-                                  style={[
-                                    styles.available,
-                                    {
-                                      backgroundColor,
-                                      width: 48,
-                                      marginLeft: 4,
-                                    },
-                                  ]}
-                                  onPress={() =>
-                                    navigation.navigate("PlaceInformation", {
-                                      ref: zoneSelected,
-                                      id: item.id,
-                                      type: "Nomenclatura",
-                                    })
-                                  }
-                                >
-                                  <TextStyle
-                                    verySmall
-                                    center
-                                    color={
-                                      mode === "light"
-                                        ? light.textDark
-                                        : dark.textWhite
-                                    }
-                                  >
-                                    {item.nomenclature}
-                                  </TextStyle>
-                                </TouchableOpacity>
-                              </View>
-                            );
-                          })}
-                      </View>
-                      <ScrollView
-                        ref={(ref) => (scrollViewsRefs.current[index] = ref)}
-                        style={{ marginLeft: 2 }}
-                        contentOffset={{
-                          x: (new Date().getDate() - 1) * 38,
-                          y: 0,
-                        }}
-                        horizontal
-                        onScroll={(event) => handleScroll(event, index)}
-                        onTouchStart={() => handleTouchStart(index)}
-                        scrollEventThrottle={16}
-                        showsHorizontalScrollIndicator={false}
-                      >
-                        <View>
-                          {nomenclatures
-                            .filter((n) => n.ref === item.ref)
-                            .map((item, i) => {
-                              const reservationsSelected = reservations.filter(
-                                (r) => r.id === item.id
-                              );
-                              return (
-                                <View
-                                  key={item.id}
-                                  style={{ flexDirection: "row", marginTop: 5 }}
-                                >
-                                  {days.map((day) => {
-                                    const reservation =
-                                      reservationsSelected.find((r) => {
-                                        const start = new Date(r.start);
-                                        start.setHours(0, 0, 0, 0);
-                                        const end = new Date(r.end);
-                                        end.setHours(0, 0, 0, 0);
-                                        const date = new Date(
-                                          year,
-                                          month - 1,
-                                          day
-                                        );
-                                        date.setHours(0, 0, 0, 0);
-
-                                        if (date >= start && date <= end)
-                                          return r;
-                                      });
-
-                                    let backgroundColor =
-                                      mode === "light"
-                                        ? `${light.main5}${
-                                            i % 2 === 0 ? "CC" : "FF"
-                                          }`
-                                        : `${dark.main2}${
-                                            i % 2 === 0 ? "CC" : "FF"
-                                          }`;
-
-                                    if (reservation) {
-                                      const findBackground = () => {
-                                        const checkIn =
-                                          reservation.hosted.reduce((a, b) => {
-                                            if (b.checkIn) return a + 1;
-                                            return a;
-                                          }, 0);
-
-                                        const checkOut =
-                                          reservation.hosted.reduce((a, b) => {
-                                            if (b.checkOut) return a + 1;
-                                            return a;
-                                          }, 0);
-
-                                        const hosted =
-                                          reservation.hosted?.length;
-
-                                        if (
-                                          ![0, hosted].includes(checkIn) &&
-                                          ![0, hosted].includes(checkOut)
-                                        )
-                                          return "#f87575"; //ALGUNOS SE FUERON, OTROS NO HA LLEGADO ✅
-                                        if (checkOut === hosted)
-                                          return "#b6e0f3"; // CUANDO YA SE FUERON ✅
-                                        if (![0, hosted].includes(checkOut))
-                                          return "#ff9900"; // CUANDO SE FUERON PERO FALTAN ALGUNOS ✅
-                                        if (checkIn === hosted)
-                                          return "#00ffbc"; // CUANDO YA LLEGARON ✅
-                                        if (![0, hosted].includes(checkIn))
-                                          return "#ffecb3"; // CUANDO ALGUNOS HAN LLEGADO PERO OTROS NO ✅
-                                        if (checkIn === 0) return light.main2; // CUANDO ESTAN RESERVADOS ✅
-                                      };
-
-                                      backgroundColor = findBackground();
-                                    }
-
-                                    return (
-                                      <TouchableOpacity
-                                        onPress={() => {
-                                          if (reservation) {
-                                            setModalVisiblePeople(
-                                              !modalVisiblePeople
-                                            );
-                                            setReservationSelected(reservation);
-                                          } else {
-                                            navigation.navigate(
-                                              "CreateReserve",
-                                              {
-                                                year,
-                                                day,
-                                                month,
-                                                id: item.id,
-                                              }
-                                            );
-                                          }
-                                        }}
-                                        onLongPress={() => {
-                                          if (reservation) {
-                                            navigation.navigate(
-                                              "ReserveInformation",
-                                              {
-                                                ref: reservation.ref,
-                                                id: item.id,
-                                              }
-                                            );
-                                          }
-                                        }}
-                                        key={day}
-                                        style={[
-                                          styles.days,
-                                          { backgroundColor },
-                                        ]}
-                                      >
-                                        <TextStyle>
-                                          {reservation?.hosted.length || ""}
-                                        </TextStyle>
-                                      </TouchableOpacity>
-                                    );
-                                  })}
-                                </View>
-                              );
-                            })}
-                        </View>
-                      </ScrollView>
-                    </View>
-                  </View>
-                );
-              })}
-          </View>
-        </ScrollView>
-        <Information
-          modalVisible={activeInformation}
-          setModalVisible={setActiveInformation}
-          style={{ width: "90%" }}
-          title="COLORES"
-          content={() => (
-            <View>
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                Depende del estado de la reservación, es el color
-              </TextStyle>
-              <View style={{ marginTop: 15 }}>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <View
-                    style={[
-                      styles.available,
-                      {
-                        width: 34,
-                        backgroundColor: "#f87575",
-                        marginRight: 10,
-                      },
-                    ]}
-                  />
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
+                <View style={{ flexDirection: "row" }}>
+                  <TouchableOpacity onPress={() => setEditing(!editing)}>
+                    <Ionicons
+                      name="create-outline"
+                      size={getFontSize(28)}
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setModalVisible(!modalVisible)}
                   >
-                    Algunos se fueron, otros no han llegado
-                  </TextStyle>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <View
-                    style={[
-                      styles.available,
-                      {
-                        width: 34,
-                        backgroundColor: "#b6e0f3",
-                        marginRight: 10,
-                      },
-                    ]}
-                  />
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Ya se fueron
-                  </TextStyle>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <View
-                    style={[
-                      styles.available,
-                      {
-                        width: 34,
-                        backgroundColor: "#ff9900",
-                        marginRight: 10,
-                      },
-                    ]}
-                  />
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Algunos se fueron, pero todavía faltan
-                  </TextStyle>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <View
-                    style={[
-                      styles.available,
-                      {
-                        width: 34,
-                        backgroundColor: "#00ffbc",
-                        marginRight: 10,
-                      },
-                    ]}
-                  />
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Ya llegaron
-                  </TextStyle>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <View
-                    style={[
-                      styles.available,
-                      {
-                        width: 34,
-                        backgroundColor: "#ffecb3",
-                        marginRight: 10,
-                      },
-                    ]}
-                  />
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Algunos han llegado, pero todavía faltan
-                  </TextStyle>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <View
-                    style={[
-                      styles.available,
-                      {
-                        width: 34,
-                        backgroundColor: light.main2,
-                        marginRight: 10,
-                      },
-                    ]}
-                  />
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Solo estan reservados (no han llegado)
-                  </TextStyle>
+                    <Ionicons
+                      name="close"
+                      size={getFontSize(28)}
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    />
+                  </TouchableOpacity>
                 </View>
               </View>
+              <View style={{ marginTop: 20 }}>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Nombre completo:{" "}
+                  <TextStyle color={light.main2}>{item.fullName}</TextStyle>
+                </TextStyle>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Correo electrónico:{" "}
+                  <TextStyle color={light.main2}>{item.email}</TextStyle>
+                </TextStyle>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Cédula:{" "}
+                  <TextStyle color={light.main2}>
+                    {!helperStatus.active || helperStatus.accessToReservations
+                      ? thousandsSystem(item.identification)
+                      : "PRIVADO"}
+                  </TextStyle>
+                </TextStyle>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Número de teléfono:{" "}
+                  <TextStyle color={light.main2}>{item.phoneNumber}</TextStyle>
+                </TextStyle>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  CHECK IN:{" "}
+                  <TextStyle color={light.main2}>
+                    {item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"}
+                  </TextStyle>
+                </TextStyle>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Cliente registrado:{" "}
+                  <TextStyle color={light.main2}>
+                    {item.owner ? "SI" : "NO"}
+                  </TextStyle>
+                </TextStyle>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  CHECK OUT:{" "}
+                  <TextStyle color={light.main2}>
+                    {item.checkOut ? changeDate(new Date(item.checkOut)) : "NO"}
+                  </TextStyle>
+                </TextStyle>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Pagado:{" "}
+                  <TextStyle color={light.main2}>
+                    {!helperStatus.active || helperStatus.accessToReservations
+                      ? !item.payment
+                        ? "EN ESPERA"
+                        : item.payment === "business"
+                        ? "POR EMPRESA"
+                        : thousandsSystem(item.payment)
+                      : "PRIVADO"}
+                  </TextStyle>
+                </TextStyle>
+              </View>
             </View>
-          )}
+          </View>
+        </Modal>
+        <AddPerson
+          key={handler.key}
+          setEditing={setHandler}
+          modalVisible={editing}
+          setModalVisible={setEditing}
+          editing={{ active: true, ...item }}
+          handleSubmit={(data) => updateHosted(data)}
         />
-      </View>
+      </>
     );
   };
 
-  const Hosted = ({ reservation }) => {
+  const Hosted = ({ type }) => {
     const [search, setSearch] = useState("");
     const [hosted, setHosted] = useState([]);
     const [activeFilter, setActiveFilter] = useState(false);
@@ -775,7 +350,13 @@ const Accommodation = ({ navigation }) => {
         const { name: zone } = zones.find((g) => g.ref === ref);
 
         return item.hosted
-          .filter((r) => (reservation ? !r.checkIn : !r.checkOut && r.checkIn))
+          .filter((r) =>
+            type === "reservation"
+              ? !r.checkIn
+              : type === "hosted"
+              ? !r.checkOut && r.checkIn
+              : true
+          )
           .map((person) => ({
             ...person,
             accommodationID: item.accommodation?.id || "standard",
@@ -839,47 +420,6 @@ const Accommodation = ({ navigation }) => {
       return (
         <>
           <View style={{ flexDirection: "row" }}>
-            <TouchableOpacity
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                },
-              ]}
-              onLongPress={() =>
-                navigation.navigate("ReserveInformation", {
-                  ref: guest.reservationID,
-                  id: guest.nomenclatureID,
-                })
-              }
-              onPress={() =>
-                setInformationModalVisible(!informationModalVisible)
-              }
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {guest.fullName}
-              </TextStyle>
-            </TouchableOpacity>
-            <View
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {guest.identification}
-              </TextStyle>
-            </View>
             <TouchableOpacity
               onPress={() => {
                 if (helperStatus.active && !helperStatus.accessToReservations)
@@ -950,7 +490,7 @@ const Accommodation = ({ navigation }) => {
                 {guest.checkIn ? changeDate(new Date(guest.checkIn)) : "NO"}
               </TextStyle>
             </TouchableOpacity>
-            <View
+            <TouchableOpacity
               style={[
                 styles.table,
                 {
@@ -958,14 +498,23 @@ const Accommodation = ({ navigation }) => {
                     mode === "light" ? light.textDark : dark.textWhite,
                 },
               ]}
+              onLongPress={() =>
+                navigation.navigate("ReserveInformation", {
+                  ref: guest.reservationID,
+                  id: guest.nomenclatureID,
+                })
+              }
+              onPress={() =>
+                setInformationModalVisible(!informationModalVisible)
+              }
             >
               <TextStyle
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                {guest.zone}
+                {guest.fullName}
               </TextStyle>
-            </View>
+            </TouchableOpacity>
             <View
               style={[
                 styles.table,
@@ -979,7 +528,7 @@ const Accommodation = ({ navigation }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                {guest.nomenclature}
+                {guest.days}
               </TextStyle>
             </View>
             <View
@@ -1011,7 +560,39 @@ const Accommodation = ({ navigation }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                {guest.days}
+                {thousandsSystem(guest.identification)}
+              </TextStyle>
+            </View>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.zone}
+              </TextStyle>
+            </View>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {guest.nomenclature}
               </TextStyle>
             </View>
           </View>
@@ -1050,12 +631,11 @@ const Accommodation = ({ navigation }) => {
           style={{
             width: "100%",
             backgroundColor: light.main2,
-            padding: 15,
+            paddingHorizontal: 15,
+            paddingVertical: 8,
           }}
         >
-          <TextStyle smallParagraph bold>
-            LISTADO DE HUÉSPEDES
-          </TextStyle>
+          <TextStyle smallParagraph>LISTADO DE HUÉSPEDES</TextStyle>
         </View>
         <ScrollView showsVerticalScrollIndicator={false}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -1074,7 +654,55 @@ const Accommodation = ({ navigation }) => {
                     smallParagraph
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   >
-                    Nombre
+                    CHECK IN
+                  </TextStyle>
+                </View>
+                <View
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                    },
+                  ]}
+                >
+                  <TextStyle
+                    smallParagraph
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    NOMBRE
+                  </TextStyle>
+                </View>
+                <View
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                    },
+                  ]}
+                >
+                  <TextStyle
+                    smallParagraph
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    DÍAS
+                  </TextStyle>
+                </View>
+                <View
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                    },
+                  ]}
+                >
+                  <TextStyle
+                    smallParagraph
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    TIPO
                   </TextStyle>
                 </View>
                 <View
@@ -1091,22 +719,6 @@ const Accommodation = ({ navigation }) => {
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   >
                     CÉDULA
-                  </TextStyle>
-                </View>
-                <View
-                  style={[
-                    styles.table,
-                    {
-                      borderColor:
-                        mode === "light" ? light.textDark : dark.textWhite,
-                    },
-                  ]}
-                >
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    CHECK IN
                   </TextStyle>
                 </View>
                 <View
@@ -1139,38 +751,6 @@ const Accommodation = ({ navigation }) => {
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   >
                     NOMENCLATURA
-                  </TextStyle>
-                </View>
-                <View
-                  style={[
-                    styles.table,
-                    {
-                      borderColor:
-                        mode === "light" ? light.textDark : dark.textWhite,
-                    },
-                  ]}
-                >
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    TIPO
-                  </TextStyle>
-                </View>
-                <View
-                  style={[
-                    styles.table,
-                    {
-                      borderColor:
-                        mode === "light" ? light.textDark : dark.textWhite,
-                    },
-                  ]}
-                >
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    DÍAS
                   </TextStyle>
                 </View>
               </View>
@@ -1982,10 +1562,11 @@ const Accommodation = ({ navigation }) => {
                   style={{
                     width: "100%",
                     backgroundColor: light.main2,
-                    padding: 15,
+                    paddingHorizontal: 15,
+                    paddingVertical: 8,
                   }}
                 >
-                  <TextStyle smallParagraph bold>
+                  <TextStyle smallParagraph>
                     {item?.zoneName?.toUpperCase()} ({item.nomenclature})
                   </TextStyle>
                 </View>
@@ -2420,6 +2001,136 @@ const Accommodation = ({ navigation }) => {
     );
   };
 
+  const Groups = () => {
+    return (
+      <View style={{ height: height / 1.55 }}>
+        <TextStyle
+          bigParagraph
+          color={mode === "light" ? light.textDark : dark.textWhite}
+        >
+          GRUPOS
+        </TextStyle>
+        <FlatList
+          data={zones}
+          style={{ marginTop: 20 }}
+          keyExtractor={(item) => item.ref}
+          renderItem={({ item }) => {
+            const hosted = nomenclatures
+              .filter((n) => n.ref === item.ref)
+              .reduce(
+                (a, n) =>
+                  a +
+                  reservations.reduce((a, b) => {
+                    if (b.id === n.id) return a + b.hosted.length;
+                    return a;
+                  }, 0),
+                0
+              );
+
+            return (
+              <TouchableOpacity
+                onLongPress={() => {
+                  navigation.navigate("PlaceInformation", {
+                    ref: item.ref,
+                    name: item?.name,
+                    type: "General",
+                  });
+                }}
+                onPress={() => {
+                  navigationStack.navigate("Place", {
+                    year,
+                    month,
+                    ref: item.ref,
+                    days,
+                  });
+                }}
+                style={[
+                  styles.zone,
+                  {
+                    backgroundColor:
+                      mode === "light" ? light.main5 : dark.main2,
+                  },
+                ]}
+              >
+                <View style={styles.row}>
+                  <TextStyle color={light.main2} smallSubtitle>
+                    {item?.name}
+                  </TextStyle>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        navigation.navigate("PlaceInformation", {
+                          ref: item.ref,
+                          name: item?.name,
+                          type: "General",
+                        });
+                      }}
+                    >
+                      <Ionicons
+                        size={getFontSize(24)}
+                        color={light.main2}
+                        name="information-circle-outline"
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        navigation.navigate("CreateZone", {
+                          item,
+                          ref: item.ref,
+                          editing: true,
+                        });
+                      }}
+                    >
+                      <Ionicons
+                        size={getFontSize(24)}
+                        color={light.main2}
+                        name="create-outline"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <View style={{ marginBottom: 10 }}>
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Descripción: {item?.description}
+                  </TextStyle>
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Ubicación: {item?.location}
+                  </TextStyle>
+                </View>
+                <View style={styles.row}>
+                  <TextStyle
+                    smallParagraph
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Creación:{" "}
+                    <TextStyle smallParagraph color={light.main2}>
+                      {changeDate(new Date(item.creationDate))}
+                    </TextStyle>
+                  </TextStyle>
+                  <TextStyle
+                    smallParagraph
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Alojados:{" "}
+                    <TextStyle smallParagraph color={light.main2}>
+                      {hosted || 0}
+                    </TextStyle>
+                  </TextStyle>
+                </View>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
+    );
+  };
+
   return (
     <Layout style={{ marginTop: 0 }}>
       {zones.length > 0 && (
@@ -2430,7 +2141,7 @@ const Accommodation = ({ navigation }) => {
                 {route && (
                   <TouchableOpacity
                     onPress={() => setRoute("")}
-                    style={{ marginRight: 10 }}
+                    style={{ marginRight: 5 }}
                   >
                     <Ionicons
                       name="arrow-back"
@@ -2449,48 +2160,63 @@ const Accommodation = ({ navigation }) => {
                   </TextStyle>
                 </ButtonStyle>
               </View>
-              {(!route || (route !== "hosted" && route !== "reservations")) && (
+              <View style={{ flexDirection: "row" }}>
+                <TouchableOpacity onPress={() => setRoute("historical")}>
+                  <Ionicons
+                    name="file-tray-stacked-outline"
+                    size={getFontSize(26)}
+                    color={light.main2}
+                  />
+                </TouchableOpacity>
+                {route === "" && (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("CreateZone")}
+                  >
+                    <Ionicons
+                      name="add-circle"
+                      size={getFontSize(26)}
+                      color={light.main2}
+                      style={{ marginLeft: 5 }}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
+              {route === "location" && (
                 <View
                   style={{
-                    marginHorizontal: 2,
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
+                    flexDirection: "row",
+                    alignItems: "center",
                   }}
                 >
-                  <Picker
-                    mode="dropdown"
-                    selectedValue={zoneSelected || ""}
-                    onValueChange={(value) => {
-                      if (value === "CreateZone")
-                        return navigation.navigate("CreateZone");
-                      setZoneSelected(value);
-                    }}
-                    dropdownIconColor={
-                      mode === "light" ? light.textDark : dark.textWhite
-                    }
+                  <View
                     style={{
-                      width: width / 2.8,
                       backgroundColor:
                         mode === "light" ? light.main5 : dark.main2,
-                      color: mode === "light" ? light.textDark : dark.textWhite,
-                      fontSize: 20,
                     }}
                   >
-                    <Picker.Item
-                      label="SELECCIONA"
-                      value=""
+                    <Picker
+                      mode="dropdown"
+                      selectedValue={zoneSelected || ""}
+                      onValueChange={(value) => {
+                        if (value === "CreateZone")
+                          return navigation.navigate("CreateZone");
+                        setZoneSelected(value);
+                      }}
+                      dropdownIconColor={
+                        mode === "light" ? light.textDark : dark.textWhite
+                      }
                       style={{
+                        width: width / 2.8,
                         backgroundColor:
                           mode === "light" ? light.main5 : dark.main2,
-                        fontSize: getFontSize(10),
+                        color:
+                          mode === "light" ? light.textDark : dark.textWhite,
+                        fontSize: 20,
                       }}
-                      color={mode === "light" ? light.textDark : dark.textWhite}
-                    />
-                    {zones.map((zone, index) => (
+                    >
                       <Picker.Item
-                        key={zone.id + index}
-                        label={zone.name}
-                        value={zone.ref}
+                        label="SELECCIONA"
+                        value=""
                         style={{
                           backgroundColor:
                             mode === "light" ? light.main5 : dark.main2,
@@ -2500,23 +2226,38 @@ const Accommodation = ({ navigation }) => {
                           mode === "light" ? light.textDark : dark.textWhite
                         }
                       />
-                    ))}
-                    {(!helperStatus.active ||
-                      helperStatus.accessToReservations) && (
-                      <Picker.Item
-                        label="CREAR"
-                        value="CreateZone"
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                          fontSize: getFontSize(10),
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      />
-                    )}
-                  </Picker>
+                      {zones.map((zone, index) => (
+                        <Picker.Item
+                          key={zone.id + index}
+                          label={zone.name}
+                          value={zone.ref}
+                          style={{
+                            backgroundColor:
+                              mode === "light" ? light.main5 : dark.main2,
+                            fontSize: getFontSize(10),
+                          }}
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                        />
+                      ))}
+                      {(!helperStatus.active ||
+                        helperStatus.accessToReservations) && (
+                        <Picker.Item
+                          label="CREAR"
+                          value="CreateZone"
+                          style={{
+                            backgroundColor:
+                              mode === "light" ? light.main5 : dark.main2,
+                            fontSize: getFontSize(10),
+                          }}
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                        />
+                      )}
+                    </Picker>
+                  </View>
                 </View>
               )}
             </View>
@@ -2526,50 +2267,38 @@ const Accommodation = ({ navigation }) => {
                 onPress={() => setRoute("hosted")}
                 style={{ width: "auto" }}
               >
-                <TextStyle
-                  color={textColorSelected("hosted")}
-                  smallParagraph
-                  bold
-                >
+                <TextStyle color={textColorSelected("hosted")} smallParagraph>
                   ALOJADOS
                 </TextStyle>
               </ButtonStyle>
               <ButtonStyle
-                backgroundColor={backgroundSelected(
-                  "reservations"
-                )}
+                backgroundColor={backgroundSelected("reservations")}
                 onPress={() => setRoute("reservations")}
                 style={{ width: "auto" }}
               >
                 <TextStyle
                   color={textColorSelected("reservations")}
                   smallParagraph
-                  bold
                 >
                   RESERVAS
                 </TextStyle>
               </ButtonStyle>
               <ButtonStyle
-                backgroundColor={backgroundSelected(
-                  "location"
-                )}
+                backgroundColor={backgroundSelected("location")}
                 onPress={() => setRoute("location")}
                 style={{ width: "auto" }}
               >
-                <TextStyle
-                  color={textColorSelected("location")}
-                  smallParagraph
-                  bold
-                >
+                <TextStyle color={textColorSelected("location")} smallParagraph>
                   UBICACIÓN
                 </TextStyle>
               </ButtonStyle>
             </View>
           </View>
 
-          {route === "reservations" && <Hosted reservation={true} />}
-          {route === "hosted" && <Hosted />}
-          {!route && <Available />}
+          {route === "reservations" && <Hosted type="reservation" />}
+          {route === "hosted" && <Hosted type="hosted" />}
+          {route === "historical" && <Hosted type="historical" />}
+          {!route && <Groups />}
           {route === "location" && <Location />}
         </>
       )}
@@ -2591,51 +2320,6 @@ const Accommodation = ({ navigation }) => {
           </ButtonStyle>
         </View>
       )}
-      <View style={{ display: "none" }}>
-        <Picker
-          ref={monthPickerRef}
-          style={{
-            color: mode === "light" ? light.textDark : dark.textWhite,
-          }}
-          selectedValue={month}
-          onValueChange={(value) => setMonth(value)}
-        >
-          {months.map((item, i) => (
-            <Picker.Item
-              key={item}
-              label={item}
-              value={i + 1}
-              style={{
-                backgroundColor: mode === "light" ? light.main5 : dark.main2,
-              }}
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            />
-          ))}
-        </Picker>
-        <Picker
-          ref={yearPickerRef}
-          style={{
-            color: mode === "light" ? light.textDark : dark.textWhite,
-          }}
-          selectedValue={year}
-          onValueChange={(value) => setYear(value)}
-        >
-          {Array.from(
-            { length: 5 },
-            (_, i) => new Date().getFullYear() + i
-          ).map((item, i) => (
-            <Picker.Item
-              key={item}
-              label={item.toString()}
-              value={item}
-              style={{
-                backgroundColor: mode === "light" ? light.main5 : dark.main2,
-              }}
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            />
-          ))}
-        </Picker>
-      </View>
       <ChooseDate
         modalVisible={modalVisibleCalendar}
         setModalVisible={setModalVisibleCalendar}
@@ -2707,6 +2391,11 @@ const styles = StyleSheet.create({
   cardPicker: {
     padding: 2,
     borderRadius: 8,
+  },
+  zone: {
+    padding: 14,
+    borderRadius: 4,
+    marginVertical: 4,
   },
 });
 

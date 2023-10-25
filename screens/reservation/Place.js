@@ -7,8 +7,19 @@ import {
   ScrollView,
   Dimensions,
 } from "react-native";
-import { useSelector } from "react-redux";
-import { months, thousandsSystem, changeDate, getFontSize } from "@helpers/libs";
+import { useSelector, useDispatch } from "react-redux";
+import { edit as editR } from "@features/zones/reservationsSlice";
+import { Picker } from "@react-native-picker/picker";
+import {
+  months,
+  thousandsSystem,
+  changeDate,
+  getFontSize,
+  random,
+} from "@helpers/libs";
+import { editReservation } from "@api";
+import AddPerson from "@components/AddPerson";
+import Information from "@components/Information";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -22,13 +33,12 @@ const height = Dimensions.get("window").height;
 const width = Dimensions.get("screen").width;
 
 const PlaceScreen = ({ route, navigation }) => {
+  const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
   const helperStatus = useSelector((state) => state.helperStatus);
   const zoneState = useSelector((state) => state.zones);
   const nomenclaturesState = useSelector((state) => state.nomenclatures);
   const reservationsState = useSelector((state) => state.reservations);
-
-  const owner = route.params?.owner;
 
   const [zone, setZone] = useState([]);
   const [reservations, setReservation] = useState([]);
@@ -36,8 +46,52 @@ const PlaceScreen = ({ route, navigation }) => {
   const [activeFilter, setActiveFilter] = useState(false);
   const [filter, setFilter] = useState("");
   const [filterResult, setFilterResult] = useState([]);
+  const [activeInformation, setActiveInformation] = useState(false);
+  const [modalVisiblePeople, setModalVisiblePeople] = useState(false);
+  const [reservationSelected, setReservationSelected] = useState(null);
+
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [days, setDays] = useState([]);
+
+  /////
+
+  const monthPickerRef = useRef();
+  const yearPickerRef = useRef();
+
+  /////
+
+  useEffect(() => {
+    const days = new Date(year, month, 0).getDate();
+    setDays(Array.from({ length: days }, (_, i) => i + 1));
+  }, [month, year]);
 
   const searchRef = useRef();
+  const dispatch = useDispatch();
+
+  const saveHosted = async ({ data, cleanData }) => {
+    const id = random(20);
+    data.id = id;
+    data.owner = null;
+    data.payment = 0;
+    data.checkOut = null;
+    const reserveUpdated = {
+      ...reservationSelected,
+      hosted: [...reservationSelected.hosted, data],
+    };
+    dispatch(editR({ ref: reservationSelected.ref, data: reserveUpdated }));
+    setReservationSelected(null);
+    cleanData();
+    await editReservation({
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
+      reservation: reserveUpdated,
+      helpers: helperStatus.active
+        ? [helperStatus.id]
+        : user.helpers.map((h) => h.id),
+    });
+  };
 
   useEffect(() => {
     let reservations = [];
@@ -62,19 +116,23 @@ const PlaceScreen = ({ route, navigation }) => {
   useEffect(() => {
     const guests = [];
 
+    const formatText = (text) =>
+      text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
     for (let guest of reservations) {
-      if (
-        guest.fullName?.includes(filter) ||
-        guest.email?.includes(filter) ||
-        guest.identification?.includes(filter) ||
-        thousandsSystem(guest.identification)?.includes(filter) ||
-        guest.phoneNumber?.includes(filter) ||
-        guest.people?.includes(filter) ||
-        guest.days?.includes(filter) ||
-        guest.amount?.toString().includes(filter) ||
-        thousandsSystem(guest.amount?.toString()).includes(filter)
-      )
-        guests.push(guest);
+      for (let hosted of guest.hosted) {
+        if (
+          formatText(hosted.fullName)?.includes(formatText(filter)) ||
+          formatText(hosted.email)?.includes(formatText(filter)) ||
+          formatText(hosted.identification)?.includes(formatText(filter)) ||
+          thousandsSystem(hosted.identification)?.includes(filter) ||
+          formatText(hosted.phoneNumber)?.includes(formatText(filter))
+        )
+          guests.push({ ...hosted, ...guest });
+      }
     }
 
     setFilterResult(guests);
@@ -89,14 +147,15 @@ const PlaceScreen = ({ route, navigation }) => {
   }, [zone]);
 
   const DayOfTheMonth = () =>
-    nomenclatures?.map((place) => (
+    nomenclatures?.map((place, i) => (
       <View
         key={place.nomenclature + place.modificationDate}
         style={styles.reservationDate}
       >
         <TouchableOpacity
           onPress={() => {
-            if (helperStatus.active && !helperStatus.accessToReservations) return;
+            if (helperStatus.active && !helperStatus.accessToReservations)
+              return;
             navigation.navigate("PlaceInformation", {
               ref: route.params.ref,
               id: place.id,
@@ -113,103 +172,104 @@ const PlaceScreen = ({ route, navigation }) => {
           </TextStyle>
         </TouchableOpacity>
         <FlatList
-          data={route.params.days}
-          horizontal={true}
+          data={days}
+          horizontal
           showsHorizontalScrollIndicator={false}
           keyExtractor={(item) => item}
-          renderItem={({ item }) => {
-            let dayTaken = false;
-            let disable = false;
-            let information;
-
-            const currentDate = new Date();
-            currentDate.setMilliseconds(0);
-            currentDate.setMinutes(0);
-            currentDate.setSeconds(0);
-            currentDate.setHours(0);
-
-            const year = route.params.year;
-            const month = months.indexOf(route.params.month);
-            const date = new Date(year, month, item).getTime();
-
-            if (date < currentDate) disable = true;
-
-            const belongingReservations = reservations.filter(
+          renderItem={({ item: day }) => {
+            const reservationsSelected = reservations.filter(
               (r) => r.id === place.id
             );
 
-            for (let reserve of belongingReservations) {
-              const start = new Date(reserve.start).getTime();
-              const end = new Date(reserve.end).getTime();
+            const reservation = reservationsSelected.find((r) => {
+              const start = new Date(r.start);
+              start.setHours(0, 0, 0, 0);
+              const end = new Date(r.end);
+              end.setHours(0, 0, 0, 0);
+              const date = new Date(year, month - 1, day);
+              date.setHours(0, 0, 0, 0);
 
-              if (date >= start && date <= end) {
-                dayTaken = true;
-                information = reserve;
-              }
+              if (date >= start && date <= end) return r;
+            });
+
+            let backgroundColor =
+              mode === "light"
+                ? `${light.main5}${i % 2 === 0 ? "CC" : "FF"}`
+                : `${dark.main2}${i % 2 === 0 ? "CC" : "FF"}`;
+
+            if (reservation) {
+              const findBackground = () => {
+                const checkIn = reservation.hosted.reduce((a, b) => {
+                  if (b.checkIn) return a + 1;
+                  return a;
+                }, 0);
+
+                const checkOut = reservation.hosted.reduce((a, b) => {
+                  if (b.checkOut) return a + 1;
+                  return a;
+                }, 0);
+
+                const hosted = reservation.hosted?.length;
+
+                if (
+                  ![0, hosted].includes(checkIn) &&
+                  ![0, hosted].includes(checkOut)
+                )
+                  return "#f87575"; //ALGUNOS SE FUERON, OTROS NO HA LLEGADO ✅
+                if (checkOut === hosted) return "#b6e0f3"; // CUANDO YA SE FUERON ✅
+                if (![0, hosted].includes(checkOut)) return "#ff9900"; // CUANDO SE FUERON PERO FALTAN ALGUNOS ✅
+                if (checkIn === hosted) return "#00ffbc"; // CUANDO YA LLEGARON ✅
+                if (![0, hosted].includes(checkIn)) return "#ffecb3"; // CUANDO ALGUNOS HAN LLEGADO PERO OTROS NO ✅
+                if (checkIn === 0) return light.main2; // CUANDO ESTAN RESERVADOS ✅
+              };
+
+              backgroundColor = findBackground();
             }
 
             return (
               <TouchableOpacity
                 onPress={() => {
-                  const params = route.params;
-
-                  if (
-                    disable ||
-                    (!helperStatus.accessToReservations && helperStatus.active)
-                  )
-                    return;
-                  if (!dayTaken) {
+                  if (reservation) {
+                    setModalVisiblePeople(!modalVisiblePeople);
+                    setReservationSelected(reservation);
+                  } else {
                     navigation.navigate("CreateReserve", {
-                      owner: owner ? owner : null,
-                      name: params.name,
-                      year: params.year,
-                      day: item,
-                      month: params.month,
-                      days: params.days,
+                      year,
+                      day,
+                      month,
                       id: place.id,
                     });
-                  } else {
+                  }
+                }}
+                onLongPress={() => {
+                  if (reservation) {
                     navigation.navigate("ReserveInformation", {
-                      ref: information.ref,
-                      days: params.days,
+                      ref: reservation.ref,
                       id: place.id,
                     });
                   }
                 }}
               >
-                <View
-                  style={[
-                    styles.date,
-                    {
-                      backgroundColor: disable
-                        ? mode === "light"
-                          ? dark.main2
-                          : light.main4
-                        : mode === "light"
-                        ? dayTaken
-                          ? light.main2
-                          : light.main5
-                        : dayTaken
-                        ? light.main2
-                        : dark.main2,
-                    },
-                  ]}
-                >
+                <View style={[styles.date, { backgroundColor }]}>
                   <TextStyle
-                    smallParagraph
+                    customStyle={{
+                      position: "absolute",
+                      top: 0,
+                      left: 1,
+                      fontSize: 9,
+                    }}
                     color={
-                      disable
-                        ? mode === "light"
-                          ? dark.textWhite
-                          : light.textDark
-                        : mode === "light"
+                      reservation?.hosted.length
                         ? light.textDark
-                        : dayTaken
+                        : mode === "light"
                         ? light.textDark
                         : dark.textWhite
                     }
                   >
-                    {("0" + item).slice(-2)}
+                    {("0" + day).slice(-2)}
+                  </TextStyle>
+                  <TextStyle smallParagraph>
+                    {reservation?.hosted.length || ""}
                   </TextStyle>
                 </View>
               </TouchableOpacity>
@@ -232,17 +292,17 @@ const PlaceScreen = ({ route, navigation }) => {
         </TextStyle>
       </View>
     ) : (
-      <View style={{ marginTop: 30 }}>
+      <View>
         {filterResult.map((guest, index) => (
           <TouchableOpacity
             onPress={() => {
               navigation.navigate("ReserveInformation", {
                 ref: guest.ref,
-                days: route.params.days,
+                days,
                 id: guest.id,
               });
             }}
-            key={guest.id + guest.modificationDate}
+            key={guest.id + guest.modificationDate + index}
             style={[
               styles.guestCard,
               { backgroundColor: mode === "light" ? light.main5 : dark.main2 },
@@ -271,9 +331,7 @@ const PlaceScreen = ({ route, navigation }) => {
             >
               Cédula:{" "}
               <TextStyle color={light.main2}>
-                {guest?.identification
-                  ? thousandsSystem(guest?.identification)
-                  : ""}
+                {thousandsSystem(guest?.identification || "")}
               </TextStyle>
             </TextStyle>
             <TextStyle
@@ -281,11 +339,11 @@ const PlaceScreen = ({ route, navigation }) => {
             >
               Dinero pagado:{" "}
               <TextStyle color={light.main2}>
-                {guest?.amount
-                  ? guest.discount
-                    ? thousandsSystem(guest?.amount - guest?.discount)
-                    : thousandsSystem(guest?.amount)
-                  : "0"}
+                {thousandsSystem(
+                  (guest?.discount
+                    ? guest?.amount - guest?.discount
+                    : guest?.amount) || ""
+                )}
               </TextStyle>
             </TextStyle>
             <TextStyle
@@ -293,7 +351,7 @@ const PlaceScreen = ({ route, navigation }) => {
             >
               Personas alojadas:{" "}
               <TextStyle color={light.main2}>
-                {guest?.people ? thousandsSystem(guest?.people) : "0"}
+                {thousandsSystem(guest?.hosted.length || "0")}
               </TextStyle>
             </TextStyle>
             <TextStyle
@@ -301,7 +359,7 @@ const PlaceScreen = ({ route, navigation }) => {
             >
               Días reservado:{" "}
               <TextStyle color={light.main2}>
-                {guest?.days ? thousandsSystem(guest?.days) : "0"}
+                {thousandsSystem(guest?.days || "0")}
               </TextStyle>
             </TextStyle>
             {guest?.discount && (
@@ -370,17 +428,23 @@ const PlaceScreen = ({ route, navigation }) => {
           </View>
         )}
         {!activeFilter && (
-          <View style={styles.header}>
-            <View style={styles.titlesContainer}>
-              <TextStyle smallTitle color={light.main2}>
-                {route.params.month}
-              </TextStyle>
-              <TextStyle
-                customStyle={{ marginLeft: 10 }}
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {route.params.year}
-              </TextStyle>
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <TouchableOpacity onPress={() => monthPickerRef.current.focus()}>
+                <TextStyle smallTitle color={light.main2}>
+                  {months[month - 1]}
+                </TextStyle>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => yearPickerRef.current.focus()}>
+                <TextStyle
+                  customStyle={{ marginLeft: 10 }}
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  {year}
+                </TextStyle>
+              </TouchableOpacity>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               {nomenclatures?.length > 0 &&
@@ -391,7 +455,11 @@ const PlaceScreen = ({ route, navigation }) => {
                       setTimeout(() => searchRef.current.focus());
                     }}
                   >
-                    <Ionicons name="search" size={getFontSize(31)} color={light.main2} />
+                    <Ionicons
+                      name="search"
+                      size={getFontSize(31)}
+                      color={light.main2}
+                    />
                   </TouchableOpacity>
                 )}
               {(!helperStatus.active || helperStatus.accessToReservations) && (
@@ -415,10 +483,16 @@ const PlaceScreen = ({ route, navigation }) => {
                 (!helperStatus.active || helperStatus.accessToReservations) && (
                   <TouchableOpacity
                     onPress={() =>
-                      navigation.navigate("CreatePlace", { ref: route.params.ref })
+                      navigation.navigate("CreatePlace", {
+                        ref: route.params.ref,
+                      })
                     }
                   >
-                    <Ionicons name="add-circle" size={getFontSize(32)} color={light.main2} />
+                    <Ionicons
+                      name="add-circle"
+                      size={getFontSize(32)}
+                      color={light.main2}
+                    />
                   </TouchableOpacity>
                 )}
             </View>
@@ -435,17 +509,46 @@ const PlaceScreen = ({ route, navigation }) => {
       </View>
       <View>
         {!activeFilter && (
-          <TextStyle
-            bigParagraph
-            customStyle={{ marginVertical: 30 }}
-            color={mode === "light" ? light.textDark : dark.textWhite}
+          <View
+            style={{
+              marginVertical: 20,
+              flexDirection: "row",
+              alignItems: "center",
+            }}
           >
-            {zone?.name}
-          </TextStyle>
+            <TextStyle
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              ASIGNACIÓN DE COLORES
+            </TextStyle>
+            <TouchableOpacity
+              onPress={() => setActiveInformation(!activeInformation)}
+            >
+              <Ionicons
+                name="help-circle-outline"
+                style={{ marginLeft: 5 }}
+                size={getFontSize(23)}
+                color={light.main2}
+              />
+            </TouchableOpacity>
+          </View>
         )}
-        <ScrollView style={{ maxHeight: height / 1.5 }}>
-          {activeFilter ? <GuestCard /> : <DayOfTheMonth />}
-        </ScrollView>
+        {activeFilter && (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={{ maxHeight: height / 1.22, marginTop: 20 }}
+          >
+            <GuestCard />
+          </ScrollView>
+        )}
+        {!activeFilter && (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={{ maxHeight: height / 1.5 }}
+          >
+            <DayOfTheMonth />
+          </ScrollView>
+        )}
         {nomenclatures?.length === 0 &&
           (!helperStatus.active || helperStatus.accessToReservations) && (
             <ButtonStyle
@@ -465,31 +568,198 @@ const PlaceScreen = ({ route, navigation }) => {
             </TextStyle>
           )}
       </View>
+      <Information
+        modalVisible={activeInformation}
+        setModalVisible={setActiveInformation}
+        style={{ width: "90%" }}
+        title="COLORES"
+        content={() => (
+          <View>
+            <TextStyle
+              smallParagraph
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              Depende del estado de la reservación, es el color
+            </TextStyle>
+            <View style={{ marginTop: 15 }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={[
+                    styles.available,
+                    {
+                      width: 34,
+                      backgroundColor: "#f87575",
+                      marginRight: 10,
+                    },
+                  ]}
+                />
+                <TextStyle
+                  smallParagraph
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Algunos se fueron, otros no han llegado
+                </TextStyle>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={[
+                    styles.available,
+                    {
+                      width: 34,
+                      backgroundColor: "#b6e0f3",
+                      marginRight: 10,
+                    },
+                  ]}
+                />
+                <TextStyle
+                  smallParagraph
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Ya se fueron
+                </TextStyle>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={[
+                    styles.available,
+                    {
+                      width: 34,
+                      backgroundColor: "#ff9900",
+                      marginRight: 10,
+                    },
+                  ]}
+                />
+                <TextStyle
+                  smallParagraph
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Algunos se fueron, pero todavía faltan
+                </TextStyle>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={[
+                    styles.available,
+                    {
+                      width: 34,
+                      backgroundColor: "#00ffbc",
+                      marginRight: 10,
+                    },
+                  ]}
+                />
+                <TextStyle
+                  smallParagraph
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Ya llegaron
+                </TextStyle>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={[
+                    styles.available,
+                    {
+                      width: 34,
+                      backgroundColor: "#ffecb3",
+                      marginRight: 10,
+                    },
+                  ]}
+                />
+                <TextStyle
+                  smallParagraph
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Algunos han llegado, pero todavía faltan
+                </TextStyle>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={[
+                    styles.available,
+                    {
+                      width: 34,
+                      backgroundColor: light.main2,
+                      marginRight: 10,
+                    },
+                  ]}
+                />
+                <TextStyle
+                  smallParagraph
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Solo estan reservados (no han llegado)
+                </TextStyle>
+              </View>
+            </View>
+          </View>
+        )}
+      />
+      <View style={{ display: "none" }}>
+        <Picker
+          ref={monthPickerRef}
+          style={{
+            color: mode === "light" ? light.textDark : dark.textWhite,
+          }}
+          selectedValue={month}
+          onValueChange={(value) => setMonth(value)}
+        >
+          {months.map((item, i) => (
+            <Picker.Item
+              key={item}
+              label={item}
+              value={i + 1}
+              style={{
+                backgroundColor: mode === "light" ? light.main5 : dark.main2,
+              }}
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            />
+          ))}
+        </Picker>
+        <Picker
+          ref={yearPickerRef}
+          style={{
+            color: mode === "light" ? light.textDark : dark.textWhite,
+          }}
+          selectedValue={year}
+          onValueChange={(value) => setYear(value)}
+        >
+          {Array.from(
+            { length: 5 },
+            (_, i) => new Date().getFullYear() + i
+          ).map((item, i) => (
+            <Picker.Item
+              key={item}
+              label={item.toString()}
+              value={item}
+              style={{
+                backgroundColor: mode === "light" ? light.main5 : dark.main2,
+              }}
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            />
+          ))}
+        </Picker>
+      </View>
+      <AddPerson
+        modalVisible={modalVisiblePeople}
+        setModalVisible={setModalVisiblePeople}
+        handleSubmit={(data) => saveHosted(data)}
+      />
     </Layout>
   );
 };
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  titlesContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   reservationDate: {
     flexDirection: "row",
-    marginVertical: 5,
+    marginVertical: 2,
     alignItems: "center",
   },
   date: {
-    width: Math.floor(width / 9.8),
-    height: Math.floor(width / 9.8),
+    width: Math.floor(width / 10),
+    height: Math.floor(width / 10),
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 8,
-    marginHorizontal: 4,
+    marginHorizontal: 2,
   },
   guestCard: {
     width: "100%",
@@ -497,6 +767,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 5,
     marginVertical: 5,
+  },
+  available: {
+    width: 48,
+    height: 34,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 5,
   },
 });
 

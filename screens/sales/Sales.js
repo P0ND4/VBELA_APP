@@ -17,7 +17,8 @@ import { thousandsSystem, random, months, getFontSize } from "@helpers/libs";
 import { add as addS } from "@features/sales/salesSlice";
 import { change as changeP } from "@features/sales/productsSlice";
 import { add as addE, edit as editE } from "@features/function/economySlice";
-import { editUser, editEconomy, addEconomy } from "@api";
+import { add as addP } from "@features/function/peopleSlice";
+import { editUser, editEconomy, addEconomy, addPerson } from "@api";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -114,6 +115,8 @@ const Sales = ({ route }) => {
 
   const ref = route.params?.ref;
   const name = route.params?.name;
+  const createClient = route.params?.createClient;
+
   const searchRef = useRef();
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -192,21 +195,42 @@ const Sales = ({ route }) => {
 
   const manageEconomy = async ({ total }) => {
     const foundEconomy = economy.find((e) => e.ref === ref);
-
+    if (createClient && !folk.find((p) => p.id === ref)) {
+      const data = {
+        name: route.params?.name,
+        identification: ''
+      };
+      data.id = ref;
+      data.type = "customer";
+      data.creationDate = new Date().getTime();
+      data.modificationDate = new Date().getTime();
+      dispatch(addP(data));
+      await addPerson({
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        person: data,
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
     if (!foundEconomy) {
       const id = random(20);
-      const person = folk.find((p) => p.id === ref);
+      let data = {};
+      if (!createClient) data = { ...folk.find((p) => p.id === ref) };
+      else data = { id: route.params?.ref, name: route.params?.name };
 
       const newEconomy = {
         id,
-        ref: person.id,
+        ref: data.id,
         owner: {
-          identification: person.identification,
-          name: person.name,
+          identification: data.identification || "",
+          name: data.name,
         },
         type: "debt",
         amount: total,
-        name: `Deuda ${person.name}`,
+        name: `Deuda ${data.name}`,
         payment: 0,
         creationDate: new Date().getTime(),
         modificationDate: new Date().getTime(),
@@ -294,7 +318,7 @@ const Sales = ({ route }) => {
     data.total = total;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
-    navigation.setParams({ ref: null, name: null })
+    navigation.setParams({ ref: null, name: null });
     dispatch(addS(data));
     setSelection([]);
     const newProducts = productsRef.map((p) => {
@@ -307,7 +331,7 @@ const Sales = ({ route }) => {
       return p;
     });
     dispatch(changeP(newProducts));
-    if (person) manageEconomy({ total });
+    if (person || createClient) manageEconomy({ total });
     if (d.pay) navigation.pop();
     navigation.navigate("OrderCompletion", { data, total, sales: true });
     await editUser({
@@ -326,19 +350,17 @@ const Sales = ({ route }) => {
 
   return (
     <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <TextStyle smallSubtitle color={light.main2}>
-          {ref && (
+      {ref && (
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <TextStyle smallSubtitle color={light.main2}>
             <TextStyle
               smallSubtitle
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
               Cliente:
-            </TextStyle>
-          )}{" "}
-          {ref ? name : "PRODUCTOS & SERVICIOS"}
-        </TextStyle>
-        {ref && (
+            </TextStyle>{" "}
+            {name}
+          </TextStyle>
           <TouchableOpacity
             onPress={() => navigation.setParams({ ref: null, name: null })}
           >
@@ -349,8 +371,8 @@ const Sales = ({ route }) => {
               color={mode === "light" ? light.textDark : dark.textWhite}
             />
           </TouchableOpacity>
-        )}
-      </View>
+        </View>
+      )}
       <View style={styles.secondHeader}>
         {!activeSearch && (
           <TouchableOpacity
@@ -487,6 +509,7 @@ const Sales = ({ route }) => {
             }}
           />
           <TouchableOpacity
+            style={{ marginLeft: 8 }}
             onPress={() =>
               navigation.navigate("CreateGroup", { type: "sales" })
             }

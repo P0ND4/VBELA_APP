@@ -145,6 +145,7 @@ const PreviewOrder = ({ route, navigation }) => {
                           setNewSelectionFromPreviewOrder: setNewSelection,
                           newSelection: route.params.newSelection,
                           setNewSelection: route.params.setNewSelection,
+                          sales
                         })
                       }
                     >
@@ -166,7 +167,7 @@ const PreviewOrder = ({ route, navigation }) => {
                       </TextStyle>
                       {item.observation && (
                         <TextStyle smallParagraph color={light.main2}>
-                          {item.observation.length} palabras
+                          {item.observation.length} letras
                         </TextStyle>
                       )}
                     </TouchableOpacity>

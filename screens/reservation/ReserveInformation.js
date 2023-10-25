@@ -12,6 +12,9 @@ import {
   Switch,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigation } from "@react-navigation/native";
+import { Picker } from "@react-native-picker/picker";
+import AddPerson from "@components/AddPerson";
 import {
   changeDate,
   thousandsSystem,
@@ -90,18 +93,17 @@ const ReserveInformation = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const reserveState = useSelector((state) => state.reservations);
   const nomenclatureState = useSelector((state) => state.nomenclatures);
-  const zoneState = useSelector((state) => state.zones);
   const helperStatus = useSelector((state) => state.helperStatus);
   const user = useSelector((state) => state.user);
   const orders = useSelector((state) => state.orders);
   const economy = useSelector((state) => state.economy);
   const folk = useSelector((state) => state.people);
 
-  const [OF, setOF] = useState(null);
   const [reserve, setReserve] = useState(null);
   const [totalPayment, setTotalPayment] = useState(0);
   const [nomenclature, setNomenclature] = useState({});
   const [show, setShow] = useState(false);
+  const [selectedSale, setSelectedSale] = useState("");
 
   //////////
 
@@ -114,6 +116,8 @@ const ReserveInformation = ({ route, navigation }) => {
   const [amount, setAmount] = useState(0);
 
   const hostedChangeRef = useRef([]);
+  const pickerRef = useRef();
+  const navigationStack = useNavigation();
 
   //////////
 
@@ -123,7 +127,6 @@ const ReserveInformation = ({ route, navigation }) => {
     const reserve = reserveState.find((r) => r.ref === route.params.ref);
     setReserve(reserve);
     setNomenclature(nomenclatureState.find((n) => n.id === route.params.id));
-    setOF(orders.find((o) => o.ref === route.params.ref && o.pay === false));
     setAmount(
       reserve?.discount ? reserve?.amount - reserve?.discount : reserve?.amount
     );
@@ -542,6 +545,39 @@ const ReserveInformation = ({ route, navigation }) => {
   const Table = ({ item }) => {
     const [informationModalVisible, setInformationModalVisible] =
       useState(false);
+    const [editing, setEditing] = useState(false);
+    const [handler, setHandler] = useState({
+      active: true,
+      key: Math.random(),
+    });
+
+    const updateHosted = async ({ data, cleanData }) => {
+      data.id = item.id;
+      data.owner = item.owner;
+      data.payment = item.payment;
+      data.checkOut = item.checkOut;
+
+      let reserveUpdated = reserveState.find((r) => r.ref === route.params.ref);
+      reserveUpdated = {
+        ...reserveUpdated,
+        hosted: reserveUpdated.hosted.map((h) => {
+          if (h.id === item.id) return data;
+          return h;
+        }),
+      };
+      cleanData();
+      setInformationModalVisible(!informationModalVisible);
+      dispatch(editR({ ref: reserveUpdated.ref, data: reserveUpdated }));
+      await editReservation({
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        reservation: reserveUpdated,
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+    };
 
     return (
       <>
@@ -720,17 +756,26 @@ const ReserveInformation = ({ route, navigation }) => {
                 <TextStyle color={light.main2} bigSubtitle>
                   INFORMACIÓN
                 </TextStyle>
-                <TouchableOpacity
-                  onPress={() =>
-                    setInformationModalVisible(!informationModalVisible)
-                  }
-                >
-                  <Ionicons
-                    name="close"
-                    size={getFontSize(28)}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  />
-                </TouchableOpacity>
+                <View style={{ flexDirection: "row" }}>
+                  <TouchableOpacity onPress={() => setEditing(!editing)}>
+                    <Ionicons
+                      name="create-outline"
+                      size={getFontSize(28)}
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() =>
+                      setInformationModalVisible(!informationModalVisible)
+                    }
+                  >
+                    <Ionicons
+                      name="close"
+                      size={getFontSize(28)}
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
               <View style={{ marginTop: 20 }}>
                 <TextStyle
@@ -803,6 +848,14 @@ const ReserveInformation = ({ route, navigation }) => {
             </View>
           </View>
         </Modal>
+        <AddPerson
+          key={handler.key}
+          setEditing={setHandler}
+          modalVisible={editing}
+          setModalVisible={setEditing}
+          editing={{ active: true, ...item }}
+          handleSubmit={(data) => updateHosted(data)}
+        />
       </>
     );
   };
@@ -1176,72 +1229,88 @@ const ReserveInformation = ({ route, navigation }) => {
             </TextStyle>
           </View>
         </View>
-
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
+        <ButtonStyle
+          backgroundColor={light.main2}
+          onPress={() => {
+            Alert.alert("VENTAS", "¿A cuál de estas ventas quieres ingresar?", [
+              {
+                text: "Cancelar",
+                style: "cancel",
+              },
+              {
+                text: "Menú",
+                onPress: () => {
+                  setSelectedSale("menu");
+                  pickerRef.current?.focus();
+                },
+              },
+              {
+                text: "Productos&Servicios",
+                onPress: () => {
+                  setSelectedSale("sale");
+                  pickerRef.current?.focus();
+                },
+              },
+            ]);
           }}
         >
-          <ButtonStyle
-            style={{ width: width / 1.32 }}
-            backgroundColor={
-              !OF ? light.main2 : mode === "light" ? dark.main2 : light.main4
-            }
-            onPress={() => {
-              const group = zoneState.find((g) => g.ref === nomenclature.ref);
-              navigation.navigate("CreateOrder", {
-                editing: OF ? true : false,
-                id: OF ? OF.id : undefined,
-                ref: route.params.ref,
-                table: nomenclature.nomenclature,
-                selection: OF ? OF.selection : [],
-                reservation: reserve?.owner ? "Cliente" : group.name,
-              });
+          <TextStyle center>Ventas</TextStyle>
+        </ButtonStyle>
+
+        <View style={{ display: "none" }}>
+          <Picker
+            ref={pickerRef}
+            style={{
+              color: mode === "light" ? light.textDark : dark.textWhite,
             }}
+            onValueChange={(hosted) => {
+              if (selectedSale === "sale") {
+                navigation.navigate("Sales", {
+                  ref: hosted.id,
+                  name: hosted.fullName,
+                  createClient: true,
+                });
+              }
+
+              if (selectedSale === "menu") {
+                const OF = orders.find(
+                  (o) => o.ref === hosted.id && o.pay === false
+                );
+                navigationStack.navigate("CreateOrder", {
+                  editing: OF ? true : false,
+                  id: OF ? OF.id : undefined,
+                  ref: hosted.id,
+                  table: hosted.fullName,
+                  selection: OF ? OF.selection : [],
+                  reservation: "Cliente",
+                  createClient: true,
+                });
+              }
+            }}
+            onBlur={() => setSelectedSale("")}
           >
-            <View
+            <Picker.Item
+              label="---- SELECCIONA EL HUÉSPED ----"
+              value=""
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
+                backgroundColor: mode === "light" ? light.main5 : dark.main2,
               }}
-            >
-              <TextStyle
-                color={
-                  !OF
-                    ? dark.textWhite
-                    : mode === "light"
-                    ? dark.textWhite
-                    : light.textDark
-                }
-                customStyle={{ fontSize: width / 19 }}
-              >
-                Menu
-              </TextStyle>
-              <Ionicons
-                name="book-outline"
-                size={getFontSize(17)}
-                style={{ marginLeft: 10 }}
-                color={
-                  !OF
-                    ? dark.textWhite
-                    : mode === "light"
-                    ? dark.textWhite
-                    : light.textDark
-                }
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            />
+            {reserve?.hosted.map((h) => (
+              <Picker.Item
+                key={h.id}
+                label={h.fullName}
+                value={h}
+                style={{
+                  backgroundColor: mode === "light" ? light.main5 : dark.main2,
+                }}
+                color={mode === "light" ? light.textDark : dark.textWhite}
               />
-            </View>
-          </ButtonStyle>
-          <Ionicons
-            name={OF ? "receipt-outline" : "checkbox"}
-            size={getFontSize(40)}
-            color={
-              !OF ? light.main2 : mode === "light" ? dark.main2 : light.main4
-            }
-          />
+            ))}
+          </Picker>
         </View>
+
         {(!helperStatus.active || helperStatus.accessToReservations) && (
           <ButtonStyle
             backgroundColor={light.main2}

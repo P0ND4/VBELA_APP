@@ -57,7 +57,7 @@ function App() {
                 title: "Alojamiento y reservas",
                 drawerIcon: ({ color }) => (
                   <Ionicons name="business-outline" size={22} color={color} />
-                ),
+                )
               }}
             />
           )}

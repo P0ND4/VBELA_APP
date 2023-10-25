@@ -76,7 +76,7 @@ const AddPerson = ({
     setValue("identification", "");
     setValue("phoneNumber", "");
     setValue("checkIn", null);
-    if (editing) setEditing({ key: Math.random, active: false });
+    if (editing && setEditing) setEditing({ key: Math.random(), active: false });
     setModalVisible(!modalVisible);
   };
 

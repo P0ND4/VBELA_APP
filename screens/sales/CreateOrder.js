@@ -25,6 +25,7 @@ import {
   edit as editE,
   remove as removeE,
 } from "@features/function/economySlice";
+import { add as addP} from "@features/function/peopleSlice";
 import helperNotification from "@helpers/helperNotification";
 import {
   addOrder,
@@ -36,6 +37,7 @@ import {
   removeOrder,
   removeEconomy,
   editUser,
+  addPerson
 } from "@api";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
@@ -136,6 +138,7 @@ const CreateOrder = ({ route, navigation }) => {
 
   const information = route.params;
   const reservation = route.params.reservation;
+  const createClient = route.params?.createClient;
 
   useEffect(() => {
     if (route.params.id) {
@@ -179,22 +182,45 @@ const CreateOrder = ({ route, navigation }) => {
   };
 
   const manageEconomy = async ({ editing, lastTotal, total, kitchen }) => {
-    const foundEconomy = economy.find((e) => e.ref === route.params.ref);
-
+    const foundEconomy = economy.find((e) => e.ref === route.params?.ref);
+    if (createClient && !folk.find((p) => p.id === route.params?.ref)) {
+      const idPerson = random(20);
+      const data = {
+        name: route.params?.table,
+        identification: ''
+      };
+      data.id = idPerson;
+      data.type = "customer";
+      data.creationDate = new Date().getTime();
+      data.modificationDate = new Date().getTime();
+      dispatch(addP(data));
+      await addPerson({
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        person: data,
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
     if (!foundEconomy) {
       const id = random(20);
-      const person = folk.find((p) => p.id === route.params.ref);
+      let data = {};
+      if (!createClient)
+        data = { ...folk.find((p) => p.id === route.params?.ref) };
+      else data = { id: route.params?.ref, name: route.params.table };
 
       const newEconomy = {
         id,
-        ref: person.id,
+        ref: data.id,
         owner: {
-          identification: person.identification,
-          name: person.name,
+          identification: data.identification || "",
+          name: data.name,
         },
         type: "debt",
         amount: total,
-        name: `Deuda ${person.name}`,
+        name: `Deuda ${data.name}`,
         payment: 0,
         creationDate: new Date().getTime(),
         modificationDate: new Date().getTime(),
@@ -267,7 +293,7 @@ const CreateOrder = ({ route, navigation }) => {
       navigation.pop();
     }
     navigation.replace("OrderCompletion", { data, total });
-    if (person)
+    if (person || createClient)
       manageEconomy({ editing: d.pay, total, kitchen: dat.isSendtoKitchen });
     if (d.pay) {
       await editUser({
@@ -326,7 +352,7 @@ const CreateOrder = ({ route, navigation }) => {
       navigation.pop();
     }
     navigation.replace("OrderCompletion", { data, total });
-    if (person)
+    if (person || createClient)
       manageEconomy({
         editing: d.pay,
         total,
@@ -895,7 +921,7 @@ const CreateOrder = ({ route, navigation }) => {
                           },
                         ]}
                       >
-                        <TextStyle verySmall>{item.name}</TextStyle>
+                        <TextStyle verySmall>{item.identifier}</TextStyle>
                         <View style={[styles.header, { flexWrap: "wrap" }]}>
                           <TextStyle verySmall>
                             {thousandsSystem(item.value)}
@@ -905,13 +931,15 @@ const CreateOrder = ({ route, navigation }) => {
                       </View>
                     </View>
                   )}
-                  {!item?.id && index === products.filter((p) => typeof p !== "number").length && (
-                    <Ionicons
-                      name="add"
-                      size={getFontSize(45)}
-                      color={mode === "light" ? "#BBBBBB" : dark.main1}
-                    />
-                  )}
+                  {!item?.id &&
+                    index ===
+                      products.filter((p) => typeof p !== "number").length && (
+                      <Ionicons
+                        name="add"
+                        size={getFontSize(45)}
+                        color={mode === "light" ? "#BBBBBB" : dark.main1}
+                      />
+                    )}
                 </View>
               </TouchableNativeFeedback>
             );

@@ -44,10 +44,7 @@ const CreatePerson = ({ route, navigation }) => {
 
   useEffect(() => {
     register("name", { value: editing ? dataP.name : "", required: true });
-    register("identification", {
-      value: editing ? dataP.identification : "",
-      required: true,
-    });
+    register("identification", { value: editing ? dataP.identification : "" });
 
     navigation.setOptions({
       title: type === "supplier" ? "Crear Proveedor" : "Crear Cliente",
@@ -81,7 +78,7 @@ const CreatePerson = ({ route, navigation }) => {
   const onSubmitEdit = async (data) => {
     setLoading(true);
     Keyboard.dismiss();
-    const foundEconomy = economy.find((e) => e.ref === dataP.id);
+    const foundEconomy = economy.find((e) => e.ref === dataP.personID);
     if (foundEconomy) {
       dispatch(
         editE({
@@ -106,10 +103,10 @@ const CreatePerson = ({ route, navigation }) => {
       });
     }
     data.modificationDate = new Date().getTime();
-    data.id = dataP.id;
+    data.id = dataP.personID;
     data.type = dataP.type;
     data.creationDate = dataP.creationDate;
-    dispatch(editPeople({ id: dataP.id, data }));
+    dispatch(editPeople({ id: dataP.personID, data }));
     navigation.pop();
     await editPerson({
       identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
@@ -169,11 +166,6 @@ const CreatePerson = ({ route, navigation }) => {
             setIdentification(thousandsSystem(text.replace(/[^0-9]/g, "")));
           }}
         />
-        {errors.identification?.type === "required" && (
-          <TextStyle verySmall color={light.main2}>
-            La cédula es requerido
-          </TextStyle>
-        )}
       </View>
       <ButtonStyle
         onPress={handleSubmit((data) => {

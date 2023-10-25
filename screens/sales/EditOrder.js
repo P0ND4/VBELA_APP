@@ -19,7 +19,9 @@ const EditOrder = ({ route, navigation }) => {
   const selection = route.params.selection;
   const newSelection = route.params.newSelection;
   const setNewSelection = route.params.setNewSelection;
-  const setNewSelectionFromPreviewOrder = route.params.setNewSelectionFromPreviewOrder;
+  const setNewSelectionFromPreviewOrder =
+    route.params.setNewSelectionFromPreviewOrder;
+  const sales = route.params.sales;
 
   const [amount, setAmount] = useState(
     route.params.amount ? thousandsSystem(route.params.amount) : ""
@@ -67,11 +69,15 @@ const EditOrder = ({ route, navigation }) => {
             center
             customStyle={{ width: "80%" }}
           >
-            Escriba una breve observación para ser más específico con el pedido,
-            esto lo leerá cocina
+            Escriba una breve observación para ser más específico con el pedido
+            {!sales ? ", esto lo leerá cocina" : ""}
           </TextStyle>
           <InputStyle
-            placeholder="Ejemplo: (La ensalada sin cebolla)"
+            placeholder={
+              !sales
+                ? "Ejemplo: (La ensalada sin cebolla)"
+                : "Ejemplo: (El zapato que estaba sin caja)"
+            }
             maxLength={300}
             value={observation}
             onChangeText={(text) => setObservation(text)}
@@ -93,14 +99,16 @@ const EditOrder = ({ route, navigation }) => {
                 if (i.id === id) i.observation = null;
                 return i;
               });
-              const itemsNew = newSelection.map((item) => {
-                const i = { ...item };
-                if (i.id === id) i.observation = null;
-                return i;
-              })
+              if (!sales) {
+                const itemsNew = newSelection.map((item) => {
+                  const i = { ...item };
+                  if (i.id === id) i.observation = null;
+                  return i;
+                });
+                setNewSelection(itemsNew);
+                setNewSelectionFromPreviewOrder(itemsNew);
+              }
               setSelection(items);
-              setNewSelection(itemsNew);
-              setNewSelectionFromPreviewOrder(itemsNew);
               navigation.pop();
             }}
           >
@@ -117,18 +125,22 @@ const EditOrder = ({ route, navigation }) => {
               if (i.id === id) i.observation = observation;
               return i;
             });
-            const itemsNew = newSelection.map((item) => {
-              const i = { ...item };
-              if (i.id === id) i.observation = observation;
-              return i;
-            });
+            if (!sales) {
+              const itemsNew = newSelection?.map((item) => {
+                const i = { ...item };
+                if (i.id === id) i.observation = observation;
+                return i;
+              });
+              setNewSelection(itemsNew);
+              setNewSelectionFromPreviewOrder(itemsNew);
+            }
             setSelection(items);
-            setNewSelection(itemsNew);
-            setNewSelectionFromPreviewOrder(itemsNew);
             navigation.pop();
           }}
         >
-          <TextStyle smallParagraph center>Guardar</TextStyle>
+          <TextStyle smallParagraph center>
+            Guardar
+          </TextStyle>
         </ButtonStyle>
       </Layout>
     );
@@ -166,7 +178,9 @@ const EditOrder = ({ route, navigation }) => {
             navigation.pop();
           }}
         >
-          <TextStyle smallParagraph center>Guardar</TextStyle>
+          <TextStyle smallParagraph center>
+            Guardar
+          </TextStyle>
         </ButtonStyle>
       </Layout>
     );
@@ -223,7 +237,9 @@ const EditOrder = ({ route, navigation }) => {
             navigation.pop();
           }}
         >
-          <TextStyle smallParagraph center>Guardar</TextStyle>
+          <TextStyle smallParagraph center>
+            Guardar
+          </TextStyle>
         </ButtonStyle>
       </Layout>
     );
@@ -256,7 +272,9 @@ const EditOrder = ({ route, navigation }) => {
             navigation.pop();
           }}
         >
-          <TextStyle smallParagraph center>Guardar</TextStyle>
+          <TextStyle smallParagraph center>
+            Guardar
+          </TextStyle>
         </ButtonStyle>
       </Layout>
     );
@@ -289,7 +307,9 @@ const EditOrder = ({ route, navigation }) => {
             navigation.pop();
           }}
         >
-          <TextStyle smallParagraph center>Guardar</TextStyle>
+          <TextStyle smallParagraph center>
+            Guardar
+          </TextStyle>
         </ButtonStyle>
       </Layout>
     );
@@ -329,8 +349,7 @@ const EditOrder = ({ route, navigation }) => {
             const items = selection.map((item) => {
               const i = { ...item };
               if (i.id === id) {
-                i.total =
-                  i.count * parseInt(value.replace(/[^0-9]/g, ""));
+                i.total = i.count * parseInt(value.replace(/[^0-9]/g, ""));
                 i.value = parseInt(value.replace(/[^0-9]/g, ""));
               }
               return i;
@@ -339,7 +358,9 @@ const EditOrder = ({ route, navigation }) => {
             navigation.pop();
           }}
         >
-          <TextStyle smallParagraph center>Guardar</TextStyle>
+          <TextStyle smallParagraph center>
+            Guardar
+          </TextStyle>
         </ButtonStyle>
       </Layout>
     );

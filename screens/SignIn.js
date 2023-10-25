@@ -81,6 +81,8 @@ const SignIn = ({ navigation }) => {
       facebookResponse.authentication
     ) {
       (async () => {
+        setModalVisible(true);
+        setPercentage(25);
         const response = await axios.get(
           `https://graph.facebook.com/me?access_token=${facebookResponse.authentication.accessToken}&fields=id,name,email`
         );
@@ -97,6 +99,8 @@ const SignIn = ({ navigation }) => {
       googleResponse.authentication
     ) {
       (async () => {
+        setModalVisible(true);
+        setPercentage(25);
         const response = await axios.get(
           "https://www.googleapis.com/userinfo/v2/me",
           {
@@ -114,7 +118,7 @@ const SignIn = ({ navigation }) => {
   const facebookHandlePressAsync = async () => {
     const result = await facebookPromptAsync();
     if (result.type !== "success") {
-      alert("Hubo un problema al iniciar sesión con Facebook");
+      alert("No se termino el inicio de sesión con Facebook");
       return;
     }
   };
@@ -122,18 +126,22 @@ const SignIn = ({ navigation }) => {
   const googleHandlePessAsync = async () => {
     const result = await googlePromptAsync();
     if (result.type !== "success") {
-      alert("Hubo un problema al iniciar sesión con Google");
+      alert("No set termino el inicio de sesión con Google");
       return;
     }
   };
 
   const sendInformation = async (response) => {
     const email = response.data.email;
+    setPercentage(50);
     let data = await addUser({ identifier: email, expoID: expoPushToken });
 
     if (data.error) return alert("Ha ocurrido un problema al iniciar sesión");
     if (!data.type) return navigation.navigate("Selection", { value: email });
-    setModalVisible(true);
+    if (data.error || !data.type) {
+      setModalVisible(false)
+      setPercentage(0);
+    };
     dispatch(changeMode(data.mode));
     changeGeneralInformation(dispatch, data);
     dispatch(changeUser(data));

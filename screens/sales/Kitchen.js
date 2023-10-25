@@ -82,8 +82,8 @@ const Kitchen = () => {
 
   const Main = ({ order, type }) => {
     const [visualize, setVisualize] = useState(false);
-    const [minutes, setMinutes] = useState();
-    const [seconds, setSeconds] = useState();
+    const [minutes, setMinutes] = useState('00');
+    const [seconds, setSeconds] = useState('00');
 
     const chronometerRef = useRef();
 

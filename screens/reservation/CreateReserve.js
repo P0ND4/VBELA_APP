@@ -43,7 +43,7 @@ import {
 import theme from "@theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Picker } from "@react-native-picker/picker";
-import AddPerson from "../../components/AddPerson";
+import AddPerson from "@components/AddPerson";
 
 const light = theme.colors.light;
 const dark = theme.colors.dark;

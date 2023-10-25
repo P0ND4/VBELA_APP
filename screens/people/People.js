@@ -670,34 +670,38 @@ const People = ({ navigation, userType }) => {
                       }
 
                       if (userType === "customer") {
-                        Alert.alert('VENTAS','¿A cuál de estas ventas quieres ingresar?',[
-                          {
-                            text: 'Cancelar',
-                            style: 'cancel'
-                          },
-                          {
-                            text: 'Menú',
-                            onPress: () => {
-                              navigation.navigate("CreateOrder", {
-                                editing: OF ? true : false,
-                                id: OF ? OF.id : undefined,
-                                ref: item.personID,
-                                table: item.name,
-                                selection: OF ? OF.selection : [],
-                                reservation: "Cliente",
-                              });
-                            }
-                          },
-                          {
-                            text: 'Productos&Servicios',
-                            onPress: () => {
-                              navigation.navigate("Sales", {
-                                ref: item.personID,
-                                name: item.name,
-                              });
-                            }
-                          },
-                        ])
+                        Alert.alert(
+                          "VENTAS",
+                          "¿A cuál de estas ventas quieres ingresar?",
+                          [
+                            {
+                              text: "Cancelar",
+                              style: "cancel",
+                            },
+                            {
+                              text: "Menú",
+                              onPress: () => {
+                                navigation.navigate("CreateOrder", {
+                                  editing: OF ? true : false,
+                                  id: OF ? OF.id : undefined,
+                                  ref: item.personID,
+                                  table: item.name,
+                                  selection: OF ? OF.selection : [],
+                                  reservation: "Cliente",
+                                });
+                              },
+                            },
+                            {
+                              text: "Productos&Servicios",
+                              onPress: () => {
+                                navigation.navigate("Sales", {
+                                  ref: item.personID,
+                                  name: item.name,
+                                });
+                              },
+                            },
+                          ]
+                        );
                       }
                     }}
                   >
@@ -974,16 +978,18 @@ const People = ({ navigation, userType }) => {
             <TextStyle color={light.main2} paragrahp>
               {thousandsSystem(total)}/{thousandsSystem(paid)}
             </TextStyle>
-            <TouchableOpacity
-              onPress={() => setName(!name)}
-              style={{ marginHorizontal: 5 }}
-            >
-              <Ionicons
-                name="git-compare"
-                size={getFontSize(21)}
-                color={mode === "light" ? dark.main2 : light.main5}
-              />
-            </TouchableOpacity>
+            {item?.identification && (
+              <TouchableOpacity
+                onPress={() => setName(!name)}
+                style={{ marginHorizontal: 5 }}
+              >
+                <Ionicons
+                  name="git-compare"
+                  size={getFontSize(21)}
+                  color={mode === "light" ? dark.main2 : light.main5}
+                />
+              </TouchableOpacity>
+            )}
             {open && (
               <TouchableOpacity
                 style={{ marginHorizontal: 5 }}
