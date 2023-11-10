@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -14,14 +14,33 @@ import { useSelector, useDispatch } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
 import {
+  edit as editRS,
+  remove as removeRS,
+} from "@features/zones/standardReservationsSlice";
+import {
+  add as addRA,
+  edit as editRA,
+  remove as removeRA,
+} from "@features/zones/accommodationReservationsSlice";
+import {
   months,
   changeDate,
   thousandsSystem,
   getFontSize,
   random,
+  addDays,
 } from "@helpers/libs";
-import { edit as editR } from "@features/zones/reservationsSlice";
-import { editReservation } from "@api";
+import {
+  edit as editE,
+  remove as removeE,
+} from "@features/function/economySlice";
+import {
+  editReservation,
+  removeEconomy,
+  editEconomy,
+  removeReservation,
+  addReservation,
+} from "@api";
 import Layout from "@components/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
@@ -41,9 +60,16 @@ const Accommodation = ({ navigation }) => {
   const zones = useSelector((state) => state.zones);
   const user = useSelector((state) => state.user);
   const nomenclatures = useSelector((state) => state.nomenclatures);
-  const reservations = useSelector((state) => state.reservations);
+  const standardReservations = useSelector(
+    (state) => state.standardReservations
+  );
+  const accommodationReservations = useSelector(
+    (state) => state.accommodationReservations
+  );
   const helperStatus = useSelector((state) => state.helperStatus);
-  const accommodationState = useSelector((state) => state.accommodation);
+  const orders = useSelector((state) => state.orders);
+  const economy = useSelector((state) => state.economy);
+  const folk = useSelector((state) => state.people);
 
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
@@ -56,31 +82,74 @@ const Accommodation = ({ navigation }) => {
   const [modalVisiblePeople, setModalVisiblePeople] = useState(false);
   const [reservationSelected, setReservationSelected] = useState(null);
 
+  const [daySelected, setDaySelected] = useState(null);
+
   const dispatch = useDispatch();
 
   const saveHosted = async ({ data, cleanData }) => {
-    const id = random(20);
-    data.id = id;
+    const id = random(10, { number: true });
     data.owner = null;
-    data.payment = 0;
     data.checkOut = null;
-    const reserveUpdated = {
-      ...reservationSelected,
-      hosted: [...reservationSelected.hosted, data],
-    };
-    dispatch(editR({ ref: reservationSelected.ref, data: reserveUpdated }));
+
+    if (reservationSelected.type === "standard") {
+      data.ref = reservationSelected.id;
+      data.id = id;
+      const reserveUpdated = {
+        ...reservationSelected,
+        hosted: [...reservationSelected.hosted, data],
+      };
+      dispatch(editRS({ ref: reservationSelected.ref, data: reserveUpdated }));
+      await editReservation({
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        reservation: {
+          data: reserveUpdated,
+          type: reservationSelected.type,
+        },
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
+
+    if (reservationSelected.type === "accommodation") {
+      data.ref = reservationSelected.ref;
+      data.id = id;
+      const obj = { ...data };
+      const end = addDays(
+        new Date(year, month - 1, daySelected),
+        parseInt(data.days - 1)
+      );
+      obj.end = end.getTime();
+      obj.start = new Date(year, month - 1, daySelected).getTime();
+      obj.amount = reservationSelected.amount;
+      obj.discount = data.discount;
+      obj.type = reservationSelected.type;
+      obj.accommodation = reservationSelected.accommodation;
+      obj.payment = 0;
+      obj.creationDate = new Date().getTime();
+      obj.modificationDate = new Date().getTime();
+
+      dispatch(addRA(obj));
+
+      await addReservation({
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        reservation: {
+          data: [obj],
+          type: reservationSelected.type,
+        },
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
+
+    setDaySelected(null);
     setReservationSelected(null);
-    setModalVisibleCalendar(false);
     cleanData();
-    await editReservation({
-      identifier: helperStatus.active
-        ? helperStatus.identifier
-        : user.identifier,
-      reservation: reserveUpdated,
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
-    });
   };
 
   const navigationStack = useNavigation();
@@ -89,6 +158,47 @@ const Accommodation = ({ navigation }) => {
     const days = new Date(year, month - 1, 0).getDate();
     setDays(Array.from({ length: days }, (_, i) => i + 1));
   }, [month, year]);
+
+  const deleteEconomy = async ({ ids, hosted }) => {
+    for (let ownerRef of ids) {
+      const foundEconomy = economy.find((e) => e.ref === ownerRef);
+      const client = hosted.find((h) => h.owner === ownerRef);
+      const person = folk.find((p) => p.id === ownerRef);
+
+      if (client.payment === "business" || client.payment === 0 || !person)
+        continue;
+
+      if (foundEconomy) {
+        const currentEconomy = { ...foundEconomy };
+        currentEconomy.amount -= client.payment;
+        currentEconomy.payment -= client.payment;
+        currentEconomy.modificationDate = new Date().getTime();
+        if (currentEconomy.amount <= 0) {
+          dispatch(removeE({ id: foundEconomy.id }));
+          await removeEconomy({
+            identifier: helperStatus.active
+              ? helperStatus.identifier
+              : user.identifier,
+            id: foundEconomy.id,
+            helpers: helperStatus.active
+              ? [helperStatus.id]
+              : user.helpers.map((h) => h.id),
+          });
+        } else {
+          dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
+          await editEconomy({
+            identifier: helperStatus.active
+              ? helperStatus.identifier
+              : user.identifier,
+            economy: currentEconomy,
+            helpers: helperStatus.active
+              ? [helperStatus.id]
+              : user.helpers.map((h) => h.id),
+          });
+        }
+      }
+    }
+  };
 
   const backgroundSelected = (params) =>
     route === params
@@ -105,36 +215,55 @@ const Accommodation = ({ navigation }) => {
       : light.textDark;
 
   const InformationGuest = ({ modalVisible, setModalVisible, item }) => {
+    const [openMoreInformation, setOpenMoreInformation] = useState(false);
     const [editing, setEditing] = useState(false);
+    const [OF, setOF] = useState(null);
     const [handler, setHandler] = useState({
       active: true,
       key: Math.random(),
     });
 
+    useEffect(() => {
+      setOF(orders.find((o) => o.ref === item.id && !o.pay));
+    }, [orders]);
+
     const updateHosted = async ({ data, cleanData }) => {
       data.id = item.id;
+      data.ref = item.ref;
       data.owner = item.owner;
-      data.payment = item.payment;
       data.checkOut = item.checkOut;
+      let reserveUpdated;
+      let guest;
 
-      let reserveUpdated = reservations.find(
-        (r) => r.ref === item.reservationID
-      );
-      reserveUpdated = {
-        ...reserveUpdated,
-        hosted: reserveUpdated.hosted.map((h) => {
-          if (h.id === item.id) return data;
-          return h;
-        }),
-      };
+      if (item.type === "accommodation") {
+        guest = accommodationReservations.find((r) => r.id === item.reservationID);
+        dispatch(editRA({ id: guest.id, data: { ...guest, ...data } }));
+      }
+      if (item.type === "standard") {
+        let reservationREF = standardReservations.find(
+          (r) => r.ref === item.reservationID
+        );
+        reserveUpdated = {
+          ...reservationREF,
+          hosted: reservationREF.hosted.map((h) => {
+            if (h.id === item.id) return data;
+            return h;
+          }),
+        };
+        dispatch(editRS({ ref: reserveUpdated.ref, data: reserveUpdated }));
+      }
+
       cleanData();
       setModalVisible(!modalVisible);
-      dispatch(editR({ ref: reserveUpdated.ref, data: reserveUpdated }));
       await editReservation({
         identifier: helperStatus.active
           ? helperStatus.identifier
           : user.identifier,
-        reservation: reserveUpdated,
+        reservation: {
+          data:
+            item.type === "standard" ? reserveUpdated : [{ ...guest, ...data }],
+          type: item.type,
+        },
         helpers: helperStatus.active
           ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
@@ -194,7 +323,7 @@ const Accommodation = ({ navigation }) => {
                   </TouchableOpacity>
                 </View>
               </View>
-              <View style={{ marginTop: 20 }}>
+              <View style={{ marginVertical: 20 }}>
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
@@ -226,6 +355,31 @@ const Accommodation = ({ navigation }) => {
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
+                  País:{" "}
+                  <TextStyle color={light.main2}>{item.country}</TextStyle>
+                </TextStyle>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Grupo: <TextStyle color={light.main2}>{item.zone}</TextStyle>
+                </TextStyle>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Nomenclatura:{" "}
+                  <TextStyle color={light.main2}>{item.nomenclature}</TextStyle>
+                </TextStyle>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Tipo:{" "}
+                  <TextStyle color={light.main2}>
+                    {item.type === "accommodation" ? "Acomodación" : "Estandar"}
+                  </TextStyle>
+                </TextStyle>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
                   CHECK IN:{" "}
                   <TextStyle color={light.main2}>
                     {item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"}
@@ -247,20 +401,321 @@ const Accommodation = ({ navigation }) => {
                     {item.checkOut ? changeDate(new Date(item.checkOut)) : "NO"}
                   </TextStyle>
                 </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  Pagado:{" "}
-                  <TextStyle color={light.main2}>
-                    {!helperStatus.active || helperStatus.accessToReservations
-                      ? !item.payment
-                        ? "EN ESPERA"
-                        : item.payment === "business"
-                        ? "POR EMPRESA"
-                        : thousandsSystem(item.payment)
-                      : "PRIVADO"}
+                {item.type === "accommodation" && (
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Pagado:{" "}
+                    <TextStyle color={light.main2}>
+                      {!helperStatus.active || helperStatus.accessToReservations
+                        ? !item.payment
+                          ? "EN ESPERA"
+                          : item.payment === "business"
+                          ? "POR EMPRESA"
+                          : thousandsSystem(item.payment)
+                        : "PRIVADO"}
+                    </TextStyle>
                   </TextStyle>
-                </TextStyle>
+                )}
+                {openMoreInformation && (
+                  <View>
+                    {item.type === "accommodation" && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Pago total:{" "}
+                        <TextStyle color={light.main2}>
+                          {thousandsSystem(item.payment || "0")}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {item.type === "accommodation" && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Costo total:{" "}
+                        <TextStyle color={light.main2}>
+                          {thousandsSystem(
+                            item.discount
+                              ? item.days * (item.amount - item.discount)
+                              : item.days * item.amount
+                          )}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {item.type === "accommodation" && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Costo por dia:{" "}
+                        <TextStyle color={light.main2}>
+                          {thousandsSystem(
+                            item.discount
+                              ? item.amount - item.discount
+                              : item.amount
+                          )}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {item.type === "accommodation" && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Costo pagado:{" "}
+                        <TextStyle color={light.main2}>
+                          {thousandsSystem(item.payment)}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {item.type === "accommodation" && item.discount && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Descuento:{" "}
+                        <TextStyle color={light.main2}>
+                          {thousandsSystem(item.discount)}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {item.type === "accommodation" && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Días reservado:{" "}
+                        <TextStyle color={light.main2}>
+                          {thousandsSystem(item.days)}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {item.type === "accommodation" && item.start && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Fecha de registro:{" "}
+                        <TextStyle color={light.main2}>
+                          {changeDate(new Date(item.start))}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {item.type === "accommodation" && item.end && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Fecha de finalización:{" "}
+                        <TextStyle color={light.main2}>
+                          {changeDate(new Date(item.end))}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                  </View>
+                )}
+              </View>
+              <View>
+                {item.type === "accommodation" && (
+                  <ButtonStyle
+                    backgroundColor={light.main2}
+                    onPress={() => setOpenMoreInformation(!openMoreInformation)}
+                  >
+                    <TextStyle center>
+                      {!openMoreInformation ? "Mostrar más" : "Mostrar menos"}
+                    </TextStyle>
+                  </ButtonStyle>
+                )}
+                <View style={styles.row}>
+                  <ButtonStyle
+                    backgroundColor={light.main2}
+                    style={{ width: "49%" }}
+                    onPress={() => {
+                      navigation.navigate("Sales", {
+                        ref: item.id,
+                        name: item.fullName,
+                        createClient: true,
+                      });
+                    }}
+                  >
+                    <TextStyle center>P&S</TextStyle>
+                  </ButtonStyle>
+                  <ButtonStyle
+                    onPress={() => {
+                      navigationStack.navigate("CreateOrder", {
+                        editing: OF ? true : false,
+                        id: OF ? OF.id : undefined,
+                        ref: item.id,
+                        table: item.fullName,
+                        selection: OF ? OF.selection : [],
+                        reservation: "Cliente",
+                        createClient: true,
+                      });
+                    }}
+                    style={{ width: "49%" }}
+                    backgroundColor={
+                      !OF
+                        ? light.main2
+                        : mode === "light"
+                        ? dark.main2
+                        : light.main4
+                    }
+                  >
+                    <TextStyle
+                      center
+                      color={
+                        !OF
+                          ? light.textDark
+                          : mode === "light"
+                          ? dark.textWhite
+                          : light.textDark
+                      }
+                    >
+                      Menú
+                    </TextStyle>
+                  </ButtonStyle>
+                </View>
+                <ButtonStyle
+                  backgroundColor={light.main2}
+                  onPress={() => {
+                    Alert.alert(
+                      "¿Estás seguro?",
+                      "Se eliminarán todos los datos de este huésped",
+                      [
+                        {
+                          text: "No estoy seguro",
+                          style: "cancel",
+                        },
+                        {
+                          text: "Estoy seguro",
+                          onPress: async () => {
+                            let reserve;
+
+                            if (item.type === "standard") {
+                              const reservation = standardReservations.find(
+                                (r) => r.ref === item.reservationID
+                              );
+
+                              reserve = reservation;
+                            }
+
+                            if (item.type === "accommodation") {
+                              const reservation =
+                                accommodationReservations.find(
+                                  (r) => r.id === item.reservationID
+                                );
+
+                              reserve = { ...reservation, hosted: [item] };
+                            }
+
+                            const ids = reserve?.hosted
+                              .filter(
+                                (h) => h.owner && h.checkOut && h.id === item.id
+                              )
+                              .map((h) => h.owner);
+
+                            const send = async () => {
+                              setModalVisible(!modalVisible);
+
+                              if (item.type === "accommodation") {
+                                dispatch(removeRA({ id: item.id }));
+                              }
+
+                              if (item.type === "standard") {
+                                const newReservation = { ...reserve };
+                                const newHosted = reserve?.hosted.filter(
+                                  (h) => h.id !== item.id
+                                );
+                                newReservation.hosted = newHosted;
+                                if (reserve?.hosted?.length > 1) {
+                                  dispatch(
+                                    editRS({
+                                      ref: reserve.ref,
+                                      data: newReservation,
+                                    })
+                                  );
+                                  await editReservation({
+                                    identifier: helperStatus.active
+                                      ? helperStatus.identifier
+                                      : user.identifier,
+                                    reservation: {
+                                      data: newReservation,
+                                      type: item.type,
+                                    },
+                                    helpers: helperStatus.active
+                                      ? [helperStatus.id]
+                                      : user.helpers.map((h) => h.id),
+                                  });
+                                } else
+                                  dispatch(
+                                    removeRS({ ref: item.reservationID })
+                                  );
+                              }
+
+                              if (
+                                item.type === "accommodation" ||
+                                reserve?.hosted?.length === 1
+                              ) {
+                                await removeReservation({
+                                  identifier: helperStatus.active
+                                    ? helperStatus.identifier
+                                    : user.identifier,
+                                  reservation: {
+                                    identifier:
+                                      item.type === "standard"
+                                        ? item.reservationID
+                                        : [item.reservationID],
+                                    type: item.type,
+                                  },
+                                  helpers: helperStatus.active
+                                    ? [helperStatus.id]
+                                    : user.helpers.map((h) => h.id),
+                                });
+                              }
+                            };
+
+                            if (ids?.length > 0) {
+                              Alert.alert(
+                                "ECONOMÍA",
+                                "¿Quiere eliminar la información de economía de los clientes?",
+                                [
+                                  {
+                                    text: "No",
+                                    onPress: async () => await send(),
+                                  },
+                                  {
+                                    text: "Si",
+                                    onPress: async () => {
+                                      await deleteEconomy({
+                                        ids,
+                                        hosted: reserve?.hosted,
+                                      });
+                                      await send();
+                                    },
+                                  },
+                                ]
+                              );
+                            } else await send();
+                          },
+                        },
+                      ],
+                      { cancelable: true }
+                    );
+                  }}
+                >
+                  <TextStyle center>Eliminar huésped</TextStyle>
+                </ButtonStyle>
               </View>
             </View>
           </View>
@@ -271,7 +726,9 @@ const Accommodation = ({ navigation }) => {
           modalVisible={editing}
           setModalVisible={setEditing}
           editing={{ active: true, ...item }}
+          discount={item.type === "accommodation"}
           handleSubmit={(data) => updateHosted(data)}
+          type={item.type}
         />
       </>
     );
@@ -343,7 +800,7 @@ const Accommodation = ({ navigation }) => {
     };
 
     useEffect(() => {
-      const hosted = reservations.flatMap((item) => {
+      const standard = standardReservations.flatMap((item) => {
         const { nomenclature, ref } = nomenclatures.find(
           (n) => n.id === item.id
         );
@@ -359,7 +816,7 @@ const Accommodation = ({ navigation }) => {
           )
           .map((person) => ({
             ...person,
-            accommodationID: item.accommodation?.id || "standard",
+            type: item.type,
             accommodation: item?.accommodation?.name || "Estandar",
             groupID: ref,
             nomenclatureID: item.id,
@@ -368,8 +825,45 @@ const Accommodation = ({ navigation }) => {
             zone,
             nomenclature,
             creationDate: item.creationDate,
+            start: item.start,
           }));
       });
+
+      const accommodation = accommodationReservations
+        .filter((r) =>
+          type === "reservation"
+            ? !r.checkIn
+            : type === "hosted"
+            ? !r.checkOut && r.checkIn
+            : true
+        )
+        .flatMap((item) => {
+          const { nomenclature, ref } = nomenclatures.find(
+            (n) => n.id === item.ref
+          );
+          const { name: zone } = zones.find((g) => g.ref === ref);
+
+          return {
+            ...item,
+            accommodation: item?.accommodation?.name || "Estandar",
+            groupID: ref,
+            nomenclatureID: item.ref,
+            reservationID: item.id,
+            days: item.days,
+            zone,
+            nomenclature,
+            creationDate: item.creationDate,
+          };
+        });
+
+      const union = [...accommodation, ...standard];
+      const hosted = union.sort((a, b) => {
+        if (a.start < b.start) return -1;
+        if (a.start > b.start) return 1;
+        return 0;
+      });
+
+      //TODO solo cambiar los que cambiaron :) en chageDispatch
 
       if (search || filters.active) {
         const hostedWithSearch = hosted.filter((h) => {
@@ -384,7 +878,8 @@ const Accommodation = ({ navigation }) => {
             h?.identification.includes(search) ||
             h?.identification.replace(/[^0-9]/g, "").includes(search) ||
             h?.phoneNumber.includes(search) ||
-            formatText(h?.email).includes(formatText(search))
+            formatText(h?.email).includes(formatText(search)) ||
+            formatText(h?.country).includes(formatText(search))
           ) {
             if (!filters.active) return h;
             if (dateValidation(new Date(h.creationDate))) return;
@@ -398,7 +893,7 @@ const Accommodation = ({ navigation }) => {
               h.days > parseInt(filters.maxDays.replace(/\D/g, ""))
             )
               return;
-            if (filters.type && h.accommodationID !== filters.type) return;
+            if (filters.type && h.type !== filters.type) return;
             if (filters.zone && h.groupID !== filters.zone) return;
             if (
               filters.nomenclature &&
@@ -420,6 +915,22 @@ const Accommodation = ({ navigation }) => {
       return (
         <>
           <View style={{ flexDirection: "row" }}>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {changeDate(new Date(guest.start))}
+              </TextStyle>
+            </View>
             <TouchableOpacity
               onPress={() => {
                 if (helperStatus.active && !helperStatus.accessToReservations)
@@ -436,35 +947,66 @@ const Accommodation = ({ navigation }) => {
                     {
                       text: "Si",
                       onPress: async () => {
-                        const reserve = reservations.find(
-                          (r) => r.ref === guest.reservationID
-                        );
-                        const newHosted = reserve?.hosted.map((i) => {
-                          if (i.id === guest.id) {
-                            const newI = { ...i };
-                            newI.checkIn = i.checkIn
-                              ? null
-                              : new Date().getTime();
-                            newI.checkOut = null;
-                            newI.payment = 0;
-                            return newI;
-                          }
-                          return i;
-                        });
+                        let newReservation;
 
-                        const newReservation = { ...reserve };
-                        newReservation.hosted = newHosted;
-                        dispatch(
-                          editR({
-                            ref: guest.reservationID,
-                            data: newReservation,
-                          })
-                        );
+                        if (guest.type === "accommodation") {
+                          dispatch(
+                            editRA({
+                              id: guest.id,
+                              data: {
+                                ...guest,
+                                checkIn: guest.checkIn
+                                  ? null
+                                  : new Date().getTime(),
+                              },
+                            })
+                          );
+                        }
+
+                        if (guest.type === "standard") {
+                          newReservation = {
+                            ...standardReservations.find(
+                              (r) => r.ref === guest.reservationID
+                            ),
+                          };
+                          const newHosted = newReservation?.hosted.map((i) => {
+                            if (i.id === guest.id) {
+                              const newI = { ...i };
+                              newI.checkIn = i.checkIn
+                                ? null
+                                : new Date().getTime();
+                              return newI;
+                            }
+                            return i;
+                          });
+
+                          newReservation.hosted = newHosted;
+                          dispatch(
+                            editRS({
+                              ref: guest.reservationID,
+                              data: newReservation,
+                            })
+                          );
+                        }
+
                         await editReservation({
                           identifier: helperStatus.active
                             ? helperStatus.identifier
                             : user.identifier,
-                          reservation: newReservation,
+                          reservation: {
+                            data:
+                              guest.type === "standard"
+                                ? newReservation
+                                : [
+                                    {
+                                      ...guest,
+                                      checkIn: guest.checkIn
+                                        ? null
+                                        : new Date().getTime(),
+                                    },
+                                  ],
+                            type: guest.type,
+                          },
                           helpers: helperStatus.active
                             ? [helperStatus.id]
                             : user.helpers.map((h) => h.id),
@@ -480,6 +1022,7 @@ const Accommodation = ({ navigation }) => {
                 {
                   borderColor:
                     mode === "light" ? light.textDark : dark.textWhite,
+                  width: 85,
                 },
               ]}
             >
@@ -496,14 +1039,34 @@ const Accommodation = ({ navigation }) => {
                 {
                   borderColor:
                     mode === "light" ? light.textDark : dark.textWhite,
+                  width: 100,
                 },
               ]}
-              onLongPress={() =>
+              onLongPress={() => {
+                const place = nomenclatures.find(
+                  (n) => n.id === guest.nomenclatureID
+                );
+                let reservation = [];
+
+                if (guest?.type === "standard") {
+                  const re = standardReservations.find(
+                    (r) => r.ref === guest.reservationID
+                  );
+                  reservation.push(re);
+                }
+
+                if (guest?.type === "accommodation") {
+                  const re = accommodationReservations.find(
+                    (r) => r.id === guest.reservationID
+                  );
+                  reservation.push(re);
+                }
+
                 navigation.navigate("ReserveInformation", {
-                  ref: guest.reservationID,
-                  id: guest.nomenclatureID,
-                })
-              }
+                  reservation,
+                  place,
+                });
+              }}
               onPress={() =>
                 setInformationModalVisible(!informationModalVisible)
               }
@@ -521,6 +1084,7 @@ const Accommodation = ({ navigation }) => {
                 {
                   borderColor:
                     mode === "light" ? light.textDark : dark.textWhite,
+                  width: 40,
                 },
               ]}
             >
@@ -537,38 +1101,7 @@ const Accommodation = ({ navigation }) => {
                 {
                   borderColor:
                     mode === "light" ? light.textDark : dark.textWhite,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {guest.accommodation}
-              </TextStyle>
-            </View>
-            <View
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {thousandsSystem(guest.identification)}
-              </TextStyle>
-            </View>
-            <View
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
+                  width: 90,
                 },
               ]}
             >
@@ -585,6 +1118,7 @@ const Accommodation = ({ navigation }) => {
                 {
                   borderColor:
                     mode === "light" ? light.textDark : dark.textWhite,
+                  width: 100,
                 },
               ]}
             >
@@ -592,7 +1126,15 @@ const Accommodation = ({ navigation }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                {guest.nomenclature}
+                {!helperStatus.active || helperStatus.accessToReservations
+                  ? guest.checkOut && guest?.type === "standard"
+                    ? "PAGADO"
+                    : !guest.payment
+                    ? "EN ESPERA"
+                    : guest.payment === "business"
+                    ? "POR EMPRESA"
+                    : thousandsSystem(guest.payment)
+                  : "PRIVADO"}
               </TextStyle>
             </View>
           </View>
@@ -654,6 +1196,23 @@ const Accommodation = ({ navigation }) => {
                     smallParagraph
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   >
+                    FECHA/RESERVA
+                  </TextStyle>
+                </View>
+                <View
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                      width: 85,
+                    },
+                  ]}
+                >
+                  <TextStyle
+                    smallParagraph
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
                     CHECK IN
                   </TextStyle>
                 </View>
@@ -663,6 +1222,7 @@ const Accommodation = ({ navigation }) => {
                     {
                       borderColor:
                         mode === "light" ? light.textDark : dark.textWhite,
+                      width: 100,
                     },
                   ]}
                 >
@@ -679,6 +1239,7 @@ const Accommodation = ({ navigation }) => {
                     {
                       borderColor:
                         mode === "light" ? light.textDark : dark.textWhite,
+                      width: 40,
                     },
                   ]}
                 >
@@ -695,38 +1256,7 @@ const Accommodation = ({ navigation }) => {
                     {
                       borderColor:
                         mode === "light" ? light.textDark : dark.textWhite,
-                    },
-                  ]}
-                >
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    TIPO
-                  </TextStyle>
-                </View>
-                <View
-                  style={[
-                    styles.table,
-                    {
-                      borderColor:
-                        mode === "light" ? light.textDark : dark.textWhite,
-                    },
-                  ]}
-                >
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    CÉDULA
-                  </TextStyle>
-                </View>
-                <View
-                  style={[
-                    styles.table,
-                    {
-                      borderColor:
-                        mode === "light" ? light.textDark : dark.textWhite,
+                      width: 90,
                     },
                   ]}
                 >
@@ -743,14 +1273,12 @@ const Accommodation = ({ navigation }) => {
                     {
                       borderColor:
                         mode === "light" ? light.textDark : dark.textWhite,
+                      width: 100,
                     },
                   ]}
                 >
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    NOMENCLATURA
+                  <TextStyle color={light.main2} smallParagraph>
+                    PAGADO
                   </TextStyle>
                 </View>
               </View>
@@ -909,20 +1437,18 @@ const Accommodation = ({ navigation }) => {
                           mode === "light" ? light.textDark : dark.textWhite
                         }
                       />
-                      {accommodationState.map((accommodation) => (
-                        <Picker.Item
-                          key={accommodation.id}
-                          label={accommodation.name}
-                          value={accommodation.id}
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                      ))}
+
+                      <Picker.Item
+                        label="Acomodación"
+                        value="accommodation"
+                        style={{
+                          backgroundColor:
+                            mode === "light" ? light.main5 : dark.main2,
+                        }}
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      />
                     </Picker>
                   </View>
                 </View>
@@ -1310,26 +1836,58 @@ const Accommodation = ({ navigation }) => {
     };
 
     useEffect(() => {
+      const standard = standardReservations.flatMap((item) => {
+        const { nomenclature, ref } = nomenclatures.find(
+          (n) => n.id === item.id
+        );
+        const { name: zone } = zones.find((g) => g.ref === ref);
+
+        return item.hosted.map((person) => ({
+          ...person,
+          type: item.type,
+          accommodation: item?.accommodation?.name || "Estandar",
+          groupID: ref,
+          nomenclatureID: item.id,
+          reservationID: item.ref,
+          days: item.days,
+          zone,
+          nomenclature,
+          creationDate: item.creationDate,
+          start: item.start,
+        }));
+      });
+
+      const accommodation = accommodationReservations.flatMap((item) => {
+        const { nomenclature, ref } = nomenclatures.find(
+          (n) => n.id === item.ref
+        );
+        const { name: zone } = zones.find((g) => g.ref === ref);
+
+        return {
+          ...item,
+          accommodation: item?.accommodation?.name || "Estandar",
+          groupID: ref,
+          nomenclatureID: item.ref,
+          reservationID: item.id,
+          days: item.days,
+          zone,
+          nomenclature,
+          creationDate: item.creationDate,
+        };
+      });
+
+      const union = [...accommodation, ...standard];
+      const organized = union.sort((a, b) => {
+        if (a.start < b.start) return -1;
+        if (a.start > b.start) return 1;
+        return 0;
+      });
+
       const location = nomenclatures
         .filter((n) => n.ref === zoneSelected || !zoneSelected)
         .flatMap((item) => {
           const zone = zones.find((z) => z.ref === item.ref);
-
-          const hosted = reservations
-            .filter((r) => r.id === item.id)
-            .flatMap((r) => {
-              return r.hosted
-                .filter((r) => !r.checkOut && r.checkIn)
-                .map((person) => ({
-                  ...person,
-                  reservationID: r.ref,
-                  nomenclatureID: r.id,
-                  accommodationID: r.accommodation?.id || "standard",
-                  accommodation: r?.accommodation?.name || "Estandar",
-                  days: r.days,
-                  creationDate: r.creationDate,
-                }));
-            });
+          const hosted = organized.filter((r) => r.ref === item.id);
 
           return { ...item, hosted, zoneName: zone?.name || "" };
         });
@@ -1348,7 +1906,8 @@ const Accommodation = ({ navigation }) => {
               h?.identification.includes(search) ||
               h?.identification.replace(/[^0-9]/g, "").includes(search) ||
               h?.phoneNumber.includes(search) ||
-              formatText(h?.email).includes(formatText(search))
+              formatText(h?.email).includes(formatText(search)) ||
+              formatText(h?.country).includes(formatText(search))
             ) {
               if (!filters.active) return h;
               if (dateValidation(new Date(h.creationDate))) return;
@@ -1362,7 +1921,7 @@ const Accommodation = ({ navigation }) => {
                 h.days > parseInt(filters.maxDays.replace(/\D/g, ""))
               )
                 return;
-              if (filters.type && h.accommodationID !== filters.type) return;
+              if (filters.type && h.type !== filters.type) return;
 
               return h;
             }
@@ -1370,7 +1929,7 @@ const Accommodation = ({ navigation }) => {
         }));
         setLocation(locationWithSearch);
       } else setLocation(location);
-    }, [search, filters]);
+    }, [search, filters, standardReservations, accommodationReservations]);
 
     const Guest = ({ guest }) => {
       const [informationModalVisible, setInformationModalVisible] =
@@ -1379,31 +1938,6 @@ const Accommodation = ({ navigation }) => {
       return (
         <>
           <View style={{ flexDirection: "row" }}>
-            <TouchableOpacity
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                },
-              ]}
-              onLongPress={() =>
-                navigation.navigate("ReserveInformation", {
-                  ref: guest.reservationID,
-                  id: guest.nomenclatureID,
-                })
-              }
-              onPress={() =>
-                setInformationModalVisible(!informationModalVisible)
-              }
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {guest.fullName}
-              </TextStyle>
-            </TouchableOpacity>
             <View
               style={[
                 styles.table,
@@ -1417,7 +1951,7 @@ const Accommodation = ({ navigation }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                {guest.identification}
+                {changeDate(new Date(guest.start))}
               </TextStyle>
             </View>
             <TouchableOpacity
@@ -1436,35 +1970,66 @@ const Accommodation = ({ navigation }) => {
                     {
                       text: "Si",
                       onPress: async () => {
-                        const reserve = reservations.find(
-                          (r) => r.ref === guest.reservationID
-                        );
-                        const newHosted = reserve?.hosted.map((i) => {
-                          if (i.id === guest.id) {
-                            const newI = { ...i };
-                            newI.checkIn = i.checkIn
-                              ? null
-                              : new Date().getTime();
-                            newI.checkOut = null;
-                            newI.payment = 0;
-                            return newI;
-                          }
-                          return i;
-                        });
+                        let newReservation;
 
-                        const newReservation = { ...reserve };
-                        newReservation.hosted = newHosted;
-                        dispatch(
-                          editR({
-                            ref: guest.reservationID,
-                            data: newReservation,
-                          })
-                        );
+                        if (guest.type === "accommodation") {
+                          dispatch(
+                            editRA({
+                              id: guest.id,
+                              data: {
+                                ...guest,
+                                checkIn: guest.checkIn
+                                  ? null
+                                  : new Date().getTime(),
+                              },
+                            })
+                          );
+                        }
+
+                        if (guest.type === "standard") {
+                          newReservation = {
+                            ...standardReservations.find(
+                              (r) => r.ref === guest.reservationID
+                            ),
+                          };
+                          const newHosted = newReservation?.hosted.map((i) => {
+                            if (i.id === guest.id) {
+                              const newI = { ...i };
+                              newI.checkIn = i.checkIn
+                                ? null
+                                : new Date().getTime();
+                              return newI;
+                            }
+                            return i;
+                          });
+
+                          newReservation.hosted = newHosted;
+                          dispatch(
+                            editRS({
+                              ref: guest.reservationID,
+                              data: newReservation,
+                            })
+                          );
+                        }
+
                         await editReservation({
                           identifier: helperStatus.active
                             ? helperStatus.identifier
                             : user.identifier,
-                          reservation: newReservation,
+                          reservation: {
+                            data:
+                              guest.type === "standard"
+                                ? newReservation
+                                : [
+                                    {
+                                      ...guest,
+                                      checkIn: guest.checkIn
+                                        ? null
+                                        : new Date().getTime(),
+                                    },
+                                  ],
+                            type: guest.type,
+                          },
                           helpers: helperStatus.active
                             ? [helperStatus.id]
                             : user.helpers.map((h) => h.id),
@@ -1478,6 +2043,7 @@ const Accommodation = ({ navigation }) => {
               style={[
                 styles.table,
                 {
+                  width: 85,
                   borderColor:
                     mode === "light" ? light.textDark : dark.textWhite,
                 },
@@ -1490,28 +2056,58 @@ const Accommodation = ({ navigation }) => {
                 {guest.checkIn ? changeDate(new Date(guest.checkIn)) : "NO"}
               </TextStyle>
             </TouchableOpacity>
-            <View
+            <TouchableOpacity
               style={[
                 styles.table,
                 {
+                  width: 100,
                   borderColor:
                     mode === "light" ? light.textDark : dark.textWhite,
                 },
               ]}
+              onLongPress={() => {
+                const place = nomenclatures.find(
+                  (n) => n.id === guest.nomenclatureID
+                );
+                let reservation = [];
+
+                if (guest?.type === "standard") {
+                  const re = standardReservations.find(
+                    (r) => r.ref === guest.reservationID
+                  );
+                  reservation.push(re);
+                }
+
+                if (guest?.type === "accommodation") {
+                  const re = accommodationReservations.find(
+                    (r) => r.id === guest.reservationID
+                  );
+                  reservation.push(re);
+                }
+
+                navigation.navigate("ReserveInformation", {
+                  reservation,
+                  place,
+                });
+              }}
+              onPress={() =>
+                setInformationModalVisible(!informationModalVisible)
+              }
             >
               <TextStyle
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                {guest.accommodation}
+                {guest.fullName}
               </TextStyle>
-            </View>
+            </TouchableOpacity>
             <View
               style={[
                 styles.table,
                 {
                   borderColor:
                     mode === "light" ? light.textDark : dark.textWhite,
+                  width: 45,
                 },
               ]}
             >
@@ -1520,6 +2116,31 @@ const Accommodation = ({ navigation }) => {
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
                 {guest.days}
+              </TextStyle>
+            </View>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                  width: 100,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {!helperStatus.active || helperStatus.accessToReservations
+                  ? guest.checkOut && guest?.type === "standard"
+                    ? "PAGADO"
+                    : !guest.payment
+                    ? "EN ESPERA"
+                    : guest.payment === "business"
+                    ? "POR EMPRESA"
+                    : thousandsSystem(guest.payment)
+                  : "PRIVADO"}
               </TextStyle>
             </View>
           </View>
@@ -1590,33 +2211,14 @@ const Accommodation = ({ navigation }) => {
                             mode === "light" ? light.textDark : dark.textWhite
                           }
                         >
-                          Nombre
+                          FECHA/RESERVA
                         </TextStyle>
                       </View>
                       <View
                         style={[
                           styles.table,
                           {
-                            borderColor:
-                              mode === "light"
-                                ? light.textDark
-                                : dark.textWhite,
-                          },
-                        ]}
-                      >
-                        <TextStyle
-                          smallParagraph
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        >
-                          CÉDULA
-                        </TextStyle>
-                      </View>
-                      <View
-                        style={[
-                          styles.table,
-                          {
+                            width: 85,
                             borderColor:
                               mode === "light"
                                 ? light.textDark
@@ -1641,6 +2243,7 @@ const Accommodation = ({ navigation }) => {
                               mode === "light"
                                 ? light.textDark
                                 : dark.textWhite,
+                            width: 100,
                           },
                         ]}
                       >
@@ -1650,13 +2253,14 @@ const Accommodation = ({ navigation }) => {
                             mode === "light" ? light.textDark : dark.textWhite
                           }
                         >
-                          TIPO
+                          NOMBRE
                         </TextStyle>
                       </View>
                       <View
                         style={[
                           styles.table,
                           {
+                            width: 45,
                             borderColor:
                               mode === "light"
                                 ? light.textDark
@@ -1671,6 +2275,22 @@ const Accommodation = ({ navigation }) => {
                           }
                         >
                           DÍAS
+                        </TextStyle>
+                      </View>
+                      <View
+                        style={[
+                          styles.table,
+                          {
+                            borderColor:
+                              mode === "light"
+                                ? light.textDark
+                                : dark.textWhite,
+                            width: 100,
+                          },
+                        ]}
+                      >
+                        <TextStyle color={light.main2} smallParagraph>
+                          PAGADO
                         </TextStyle>
                       </View>
                     </View>
@@ -2017,15 +2637,20 @@ const Accommodation = ({ navigation }) => {
           renderItem={({ item }) => {
             const hosted = nomenclatures
               .filter((n) => n.ref === item.ref)
-              .reduce(
-                (a, n) =>
-                  a +
-                  reservations.reduce((a, b) => {
-                    if (b.id === n.id) return a + b.hosted.length;
-                    return a;
-                  }, 0),
-                0
-              );
+              .reduce((a, n) => {
+                const value =
+                  n.type === "standard"
+                    ? standardReservations.reduce((a, b) => {
+                        if (b.id === n.id) return a + b.hosted.length;
+                        return a;
+                      }, 0)
+                    : accommodationReservations.reduce((a, b) => {
+                        if (b.ref === n.id) return a + 1;
+                        return a;
+                      }, 0);
+
+                return a + value;
+              }, 0);
 
             return (
               <TouchableOpacity
@@ -2090,18 +2715,22 @@ const Accommodation = ({ navigation }) => {
                   </View>
                 </View>
                 <View style={{ marginBottom: 10 }}>
-                  <TextStyle
-                    verySmall
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Descripción: {item?.description}
-                  </TextStyle>
-                  <TextStyle
-                    verySmall
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Ubicación: {item?.location}
-                  </TextStyle>
+                  {item?.description && (
+                    <TextStyle
+                      verySmall
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    >
+                      Descripción: {item?.description}
+                    </TextStyle>
+                  )}
+                  {item?.location && (
+                    <TextStyle
+                      verySmall
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    >
+                      Ubicación: {item?.location}
+                    </TextStyle>
+                  )}
                 </View>
                 <View style={styles.row}>
                   <TextStyle
@@ -2325,16 +2954,27 @@ const Accommodation = ({ navigation }) => {
         setModalVisible={setModalVisibleCalendar}
         onDayPress={({ data, markedDates, nomenclatureID, cleanData }) => {
           const reservation = markedDates[data.dateString]?.reservation;
+          const nom = nomenclatures.find((n) => n.id === nomenclatureID);
 
           if (reservation) {
-            setModalVisiblePeople(!modalVisiblePeople);
+            if (
+              reservation.type === "standard" &&
+              nom.people === reservation?.hosted?.length
+            )
+              return Alert.alert(
+                "OOPS",
+                "Ha superado el monto máximo de huéspedes permitidos en la habitación"
+              );
+
+            setDaySelected(data.day);
             setReservationSelected(reservation);
+            setModalVisiblePeople(!modalVisiblePeople);
           } else {
             navigation.navigate("CreateReserve", {
               year: data.year,
               day: data.day,
               month: data.month,
-              id: nomenclatureID,
+              place: nom,
             });
             cleanData();
           }
@@ -2344,6 +2984,8 @@ const Accommodation = ({ navigation }) => {
         modalVisible={modalVisiblePeople}
         setModalVisible={setModalVisiblePeople}
         handleSubmit={(data) => saveHosted(data)}
+        discount={reservationSelected?.type === "accommodation"}
+        type={reservationSelected?.type}
       />
     </Layout>
   );

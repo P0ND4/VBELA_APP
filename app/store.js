@@ -6,7 +6,6 @@ import informationUserSlice from "@features/user/informationSlice";
 import informationZonesSlice from "@features/zones/informationSlice";
 import sessionSlice from "@features/user/sessionSlice";
 import nomenclaturesSlice from "@features/zones/nomenclaturesSlice";
-import reservationsSlice from "@features/zones/reservationsSlice";
 import helpersSlice from "@features/helpers/informationSlice";
 import helperStatusSlice from "@features/helpers/statusSlice";
 import informationTablesSlice from "@features/tables/informationSlice";
@@ -27,12 +26,16 @@ import productsSlice from "@features/sales/productsSlice";
 import accommodationSlice from "@features/zones/accommodationsSlice";
 import groupsSlice from "@features/sales/groupsSlice";
 
+import standardReservationsSlice from "@features/zones/standardReservationsSlice";
+import accommodationReservationsSlice from "@features/zones/accommodationReservationsSlice"; 
+
 const reducers = combineReducers({
   mode: modeSlice, // Mode light and dark
   user: informationUserSlice,
   zones: informationZonesSlice,
   nomenclatures: nomenclaturesSlice,
-  reservations: reservationsSlice,
+  standardReservations: standardReservationsSlice,
+  accommodationReservations: accommodationReservationsSlice,
   session: sessionSlice,
   helpers: helpersSlice,
   helperStatus: helperStatusSlice,

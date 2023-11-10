@@ -193,74 +193,99 @@ const Sales = ({ route }) => {
     }
   }, [productsRef, search, filters, categorySelected, subcategorySelected]);
 
-  const manageEconomy = async ({ total }) => {
+  const manageEconomy = ({ total, callBack }) => {
     const foundEconomy = economy.find((e) => e.ref === ref);
-    if (createClient && !folk.find((p) => p.id === ref)) {
-      const data = {
-        name: route.params?.name,
-        identification: ''
-      };
-      data.id = ref;
-      data.type = "customer";
-      data.creationDate = new Date().getTime();
-      data.modificationDate = new Date().getTime();
-      dispatch(addP(data));
-      await addPerson({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        person: data,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-    }
-    if (!foundEconomy) {
-      const id = random(20);
-      let data = {};
-      if (!createClient) data = { ...folk.find((p) => p.id === ref) };
-      else data = { id: route.params?.ref, name: route.params?.name };
+    const saveEconomy = async ({ payment }) => {
+      if (createClient && !folk.find((p) => p.id === ref)) {
+        const data = {
+          name: route.params?.name,
+          identification: "",
+        };
+        data.id = ref;
+        data.type = "customer";
+        data.creationDate = new Date().getTime();
+        data.modificationDate = new Date().getTime();
+        dispatch(addP(data));
+        await addPerson({
+          identifier: helperStatus.active
+            ? helperStatus.identifier
+            : user.identifier,
+          person: data,
+          helpers: helperStatus.active
+            ? [helperStatus.id]
+            : user.helpers.map((h) => h.id),
+        });
+      }
+      if (!foundEconomy) {
+        const id = random(20);
+        let data = {};
+        if (!createClient) data = { ...folk.find((p) => p.id === ref) };
+        else data = { id: route.params?.ref, name: route.params?.name };
 
-      const newEconomy = {
-        id,
-        ref: data.id,
-        owner: {
-          identification: data.identification || "",
-          name: data.name,
-        },
-        type: "debt",
-        amount: total,
-        name: `Deuda ${data.name}`,
-        payment: 0,
-        creationDate: new Date().getTime(),
-        modificationDate: new Date().getTime(),
-      };
+        const newEconomy = {
+          id,
+          ref: data.id,
+          owner: {
+            identification: data.identification || "",
+            name: data.name,
+          },
+          type: "debt",
+          amount: total,
+          name: `Deuda ${data.name}`,
+          payment: payment ? total : 0,
+          creationDate: new Date().getTime(),
+          modificationDate: new Date().getTime(),
+        };
 
-      dispatch(addE(newEconomy));
-      await addEconomy({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        economy: newEconomy,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-    } else {
-      const currentEconomy = { ...foundEconomy };
-      currentEconomy.amount += total;
-      currentEconomy.modificationDate = new Date().getTime();
-      dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
-      await editEconomy({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        economy: currentEconomy,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-    }
+        dispatch(addE(newEconomy));
+        await addEconomy({
+          identifier: helperStatus.active
+            ? helperStatus.identifier
+            : user.identifier,
+          economy: newEconomy,
+          helpers: helperStatus.active
+            ? [helperStatus.id]
+            : user.helpers.map((h) => h.id),
+        });
+      } else {
+        const currentEconomy = { ...foundEconomy };
+        currentEconomy.amount += total;
+        if (payment) currentEconomy.payment += total;
+        currentEconomy.modificationDate = new Date().getTime();
+        dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
+        await editEconomy({
+          identifier: helperStatus.active
+            ? helperStatus.identifier
+            : user.identifier,
+          economy: currentEconomy,
+          helpers: helperStatus.active
+            ? [helperStatus.id]
+            : user.helpers.map((h) => h.id),
+        });
+      }
+      await callBack();
+    };
+
+    if (createClient) {
+      Alert.alert(
+        "PAGO",
+        "¿El cliente ha pagado el producto/servicio?",
+        [
+          {
+            text: "Cancelar",
+            style: 'cancel'
+          },
+          {
+            text: "No",
+            onPress: () => saveEconomy({ payment: false }),
+          },
+          {
+            text: "Si",
+            onPress: () => saveEconomy({ payment: true }),
+          },
+        ]
+      );
+    } else saveEconomy({ payment: false });
   };
 
   const getTotal = (totalDiscount, selection, tip, tax) =>
@@ -318,34 +343,39 @@ const Sales = ({ route }) => {
     data.total = total;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
-    navigation.setParams({ ref: null, name: null });
-    dispatch(addS(data));
-    setSelection([]);
-    const newProducts = productsRef.map((p) => {
-      const pc = { ...p };
-      const found = selection.find((s) => s.id === p.id);
-      if (found) {
-        pc.quantity -= found.count;
-        return pc;
-      }
-      return p;
-    });
-    dispatch(changeP(newProducts));
-    if (person || createClient) manageEconomy({ total });
-    if (d.pay) navigation.pop();
-    navigation.navigate("OrderCompletion", { data, total, sales: true });
-    await editUser({
-      identifier: helperStatus.active
-        ? helperStatus.identifier
-        : user.identifier,
-      change: {
-        sales: [...sales, data],
-        products: newProducts,
-      },
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
-    });
+
+    const close = async () => {
+      navigation.setParams({ ref: null, name: null, createClient: null });
+      dispatch(addS(data));
+      setSelection([]);
+      const newProducts = productsRef.map((p) => {
+        const pc = { ...p };
+        const found = selection.find((s) => s.id === p.id);
+        if (found) {
+          pc.quantity -= found.count;
+          return pc;
+        }
+        return p;
+      });
+      dispatch(changeP(newProducts));
+      if (d.pay) navigation.pop();
+      navigation.navigate("OrderCompletion", { data, total, sales: true });
+      await editUser({
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        change: {
+          sales: [...sales, data],
+          products: newProducts,
+        },
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+    };
+
+    if (person || createClient) await manageEconomy({ total, callBack: close });
+    else close();
   };
 
   return (

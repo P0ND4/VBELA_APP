@@ -18,7 +18,8 @@ import {
   removeMany,
   remove,
 } from "@features/function/economySlice";
-import { removeManyByOwner as removeMBOR } from "@features/zones/reservationsSlice";
+import { removeManyByOwner as removeMBORS } from "@features/zones/standardReservationsSlice";
+import { removeManyByOwner as removeMBORA } from "@features/zones/accommodationReservationsSlice";
 import { removeManyByOwner as removeMBOO } from "@features/tables/ordersSlice";
 import { removeEconomy, editUser, removeManyEconomy } from "@api";
 import {
@@ -41,7 +42,12 @@ const PeopleInformation = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const economy = useSelector((state) => state.economy);
   const helperStatus = useSelector((state) => state.helperStatus);
-  const reservations = useSelector((state) => state.reservations);
+  const standardReservations = useSelector(
+    (state) => state.standardReservations
+  );
+  const accommodationReservations = useSelector(
+    (state) => state.accommodationReservations
+  );
   const orders = useSelector((state) => state.orders);
   const user = useSelector((state) => state.user);
   const people = useSelector((state) => state.people);
@@ -60,16 +66,24 @@ const PeopleInformation = ({ route, navigation }) => {
       [
         ...filter.map((e) => {
           const eco = { ...e };
-          const reser = reservations.filter(({ hosted }) =>
+          const standard = standardReservations.filter(({ hosted }) =>
             hosted.some(({ owner }) => owner === e.ref)
           );
-          const reservationsSorted = reser.map(({ creationDate, hosted }) => {
-            const day = new Date(creationDate).getDate();
-            const month = new Date(creationDate).getMonth() + 1;
-            const client = hosted.find((h) => h.owner === e.ref);
+          const accommodation = accommodationReservations.filter(
+            (r) => r.owner === e.ref
+          );
+          const reser = [...standard, ...accommodation];
+
+          const reservationsSorted = reser.map((r) => {
+            const day = new Date(r.creationDate).getDate();
+            const month = new Date(r.creationDate).getMonth() + 1;
+            const client =
+              r.type === "standard"
+                ? r?.hosted.find((h) => h.owner === e.ref)
+                : r;
 
             return {
-              quantity: hosted.length,
+              quantity: r?.hosted?.length || 1,
               date: `${("0" + day).slice(-2)}-${("0" + month).slice(-2)}`,
               total:
                 client.payment === 0
@@ -130,7 +144,10 @@ const PeopleInformation = ({ route, navigation }) => {
           }, []);
 
           eco.details = details.sort((a, b) => a.date > b.date);
-          eco.people = reser.reduce((a, b) => a + b.hosted.length, 0);
+          eco.people = reser.reduce((a, b) => {
+            const value = b.hosted?.length || 1;
+            return a + value;
+          }, 0);
           eco.orders = details.reduce(
             (a, b) => a + parseInt(b.orders?.total),
             0
@@ -161,18 +178,40 @@ const PeopleInformation = ({ route, navigation }) => {
         findCustomer(filter);
       }
     }
-  }, [economy, type]);
+  }, [economy, type, standardReservations, accommodationReservations]);
 
   const customerDataRemove = async (economy) => {
     const person = people.find((p) => p.id === economy.ref);
-    dispatch(removeMBOR({ owner: person.id }));
+    dispatch(removeMBORS({ owner: person.id }));
+    dispatch(removeMBORA({ owner: person.id }));
     dispatch(removeMBOO({ ref: person.id }));
+    const newStandardReservations = standardReservations.reduce(
+      (acc, reservation) => {
+        const filteredHosted = reservation.hosted.filter(
+          (hosted) => hosted.owner !== person.id
+        );
+        return filteredHosted.length
+          ? [...acc, { ...reservation, hosted: filteredHosted }]
+          : acc;
+      },
+      []
+    );
+
+    const newAccommodationReservations = accommodationReservations.reduce(
+      (acc, reservation) => {
+        return reservation.owner !== person.id
+          ? [...acc, { ...reservation }]
+          : acc;
+      },
+      []
+    );
     await editUser({
       identifier: helperStatus.active
         ? helperStatus.identifier
         : user.identifier,
       change: {
-        reservations: reservations.filter((r) => r.owner !== person.id),
+        "reservations.standard": newStandardReservations,
+        "reservations.accommodation": newAccommodationReservations,
         orders: orders.filter((o) => o.ref !== person.id),
       },
       helpers: helperStatus.active
@@ -217,7 +256,7 @@ const PeopleInformation = ({ route, navigation }) => {
                     smallParagraph
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   >
-                    {item.orders.quantity}
+                    {item?.orders?.quantity}
                   </TextStyle>
                 )}
                 {item.reservations && (
@@ -225,12 +264,12 @@ const PeopleInformation = ({ route, navigation }) => {
                     smallParagraph
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   >
-                    {item.reservations.quantity}
+                    {item?.reservations?.quantity}
                   </TextStyle>
                 )}
               </View>
               <View style={{ alignItems: "center" }}>
-                {item.orders && (
+                {item?.orders && (
                   <TextStyle
                     smallParagraph
                     color={mode === "light" ? light.textDark : dark.textWhite}
@@ -238,7 +277,7 @@ const PeopleInformation = ({ route, navigation }) => {
                     Comida
                   </TextStyle>
                 )}
-                {item.reservations && (
+                {item?.reservations && (
                   <TextStyle
                     smallParagraph
                     color={mode === "light" ? light.textDark : dark.textWhite}
@@ -253,7 +292,7 @@ const PeopleInformation = ({ route, navigation }) => {
                     verySmall
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   >
-                    {thousandsSystem(item.orders?.total)}
+                    {thousandsSystem(item?.orders?.total || 0)}
                   </TextStyle>
                 )}
                 {item.reservations && (
@@ -261,7 +300,7 @@ const PeopleInformation = ({ route, navigation }) => {
                     verySmall
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   >
-                    {thousandsSystem(item.reservations?.total)}
+                    {thousandsSystem(item?.reservations?.total || 0)}
                   </TextStyle>
                 )}
               </View>
@@ -362,7 +401,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 Comida:
               </TextStyle>
               <TextStyle color={light.main2}>
-                {item.orders ? thousandsSystem(item.orders) : "0"}
+                {item.orders ? thousandsSystem(item.orders || 0) : "0"}
               </TextStyle>
             </View>
           )}
@@ -483,16 +522,18 @@ const PeopleInformation = ({ route, navigation }) => {
               : "DESCONOCIDO"}
           </TextStyle>
           <View style={styles.events}>
-            <TouchableOpacity
-              onPress={() => setName(!name)}
-              style={{ marginHorizontal: 3 }}
-            >
-              <Ionicons
-                name="git-compare"
-                size={getFontSize(21)}
-                color={mode === "light" ? dark.main2 : light.main5}
-              />
-            </TouchableOpacity>
+            {item?.identification && (
+              <TouchableOpacity
+                onPress={() => setName(!name)}
+                style={{ marginHorizontal: 3 }}
+              >
+                <Ionicons
+                  name="git-compare"
+                  size={getFontSize(21)}
+                  color={mode === "light" ? dark.main2 : light.main5}
+                />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={{ marginHorizontal: 3 }}
               onPress={() => deleteEconomy(item)}
@@ -583,7 +624,7 @@ const PeopleInformation = ({ route, navigation }) => {
 
             if (type === "person") {
               dispatch(removeMany({ ref }));
-              if (userType === "customer") customerDataRemove(economy);
+              if (userType === "customer") customerDataRemove({ ref });
               await removeManyEconomy({
                 identifier: helperStatus.active
                   ? helperStatus.identifier
@@ -720,7 +761,7 @@ const PeopleInformation = ({ route, navigation }) => {
           </td>
           <td style="text-align: right;">
             <p style="font-size: 22px; font-weight: 600;">
-              ${thousandsSystem(item.orders)}
+              ${thousandsSystem(item.orders || 0)}
             </p>
           </td>
         </tr>
@@ -730,7 +771,7 @@ const PeopleInformation = ({ route, navigation }) => {
           </td>
           <td style="text-align: right;">
             <p style="font-size: 22px; font-weight: 600;">
-              ${thousandsSystem(item.reservations)}
+              ${thousandsSystem(item.reservations || 0)}
             </p>
           </td>
         </tr>

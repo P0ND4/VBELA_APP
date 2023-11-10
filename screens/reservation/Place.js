@@ -6,9 +6,11 @@ import {
   FlatList,
   ScrollView,
   Dimensions,
+  Alert,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { edit as editR } from "@features/zones/reservationsSlice";
+import { edit as editRS } from "@features/zones/standardReservationsSlice";
+import { add as addRA } from "@features/zones/accommodationReservationsSlice";
 import { Picker } from "@react-native-picker/picker";
 import {
   months,
@@ -16,8 +18,10 @@ import {
   changeDate,
   getFontSize,
   random,
+  addDays,
 } from "@helpers/libs";
-import { editReservation } from "@api";
+import { editReservation, addReservation } from "@api";
+import moment from "moment";
 import AddPerson from "@components/AddPerson";
 import Information from "@components/Information";
 import Layout from "@components/Layout";
@@ -38,10 +42,14 @@ const PlaceScreen = ({ route, navigation }) => {
   const helperStatus = useSelector((state) => state.helperStatus);
   const zoneState = useSelector((state) => state.zones);
   const nomenclaturesState = useSelector((state) => state.nomenclatures);
-  const reservationsState = useSelector((state) => state.reservations);
+  const standardReservations = useSelector(
+    (state) => state.standardReservations
+  );
+  const accommodationReservations = useSelector(
+    (state) => state.accommodationReservations
+  );
 
   const [zone, setZone] = useState([]);
-  const [reservations, setReservation] = useState([]);
   const [nomenclatures, setNomenclatures] = useState([]);
   const [activeFilter, setActiveFilter] = useState(false);
   const [filter, setFilter] = useState("");
@@ -53,6 +61,8 @@ const PlaceScreen = ({ route, navigation }) => {
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
   const [days, setDays] = useState([]);
+
+  const [daySelected, setDaySelected] = useState(null);
 
   /////
 
@@ -70,41 +80,70 @@ const PlaceScreen = ({ route, navigation }) => {
   const dispatch = useDispatch();
 
   const saveHosted = async ({ data, cleanData }) => {
-    const id = random(20);
-    data.id = id;
+    const id = random(10, { number: true });
     data.owner = null;
-    data.payment = 0;
     data.checkOut = null;
-    const reserveUpdated = {
-      ...reservationSelected,
-      hosted: [...reservationSelected.hosted, data],
-    };
-    dispatch(editR({ ref: reservationSelected.ref, data: reserveUpdated }));
-    setReservationSelected(null);
-    cleanData();
-    await editReservation({
-      identifier: helperStatus.active
-        ? helperStatus.identifier
-        : user.identifier,
-      reservation: reserveUpdated,
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
-    });
-  };
 
-  useEffect(() => {
-    let reservations = [];
-
-    for (let n of nomenclatures) {
-      const found = reservationsState.filter((r) => r.id === n.id);
-      for (let r of found) {
-        reservations.push(r);
-      }
+    if (reservationSelected.type === "standard") {
+      data.ref = reservationSelected.id;
+      data.id = id;
+      const reserveUpdated = {
+        ...reservationSelected,
+        hosted: [...reservationSelected.hosted, data],
+      };
+      dispatch(editRS({ ref: reservationSelected.ref, data: reserveUpdated }));
+      await editReservation({
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        reservation: {
+          data: reserveUpdated,
+          type: reservationSelected.type,
+        },
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
     }
 
-    setReservation(reservations);
-  }, [nomenclatures, reservationsState]);
+    if (reservationSelected.type === "accommodation") {
+      data.ref = reservationSelected.ref;
+      data.id = id;
+      const obj = { ...data };
+      const end = addDays(
+        new Date(year, month - 1, daySelected),
+        parseInt(data.days - 1)
+      );
+      obj.end = end.getTime();
+      obj.start = new Date(year, month - 1, daySelected).getTime();
+      obj.amount = reservationSelected.amount;
+      obj.discount = data.discount;
+      obj.type = reservationSelected.type;
+      obj.accommodation = reservationSelected.accommodation;
+      obj.payment = 0;
+      obj.creationDate = new Date().getTime();
+      obj.modificationDate = new Date().getTime();
+
+      dispatch(addRA(obj));
+
+      await addReservation({
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        reservation: {
+          data: [obj],
+          type: reservationSelected.type,
+        },
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
+
+    setDaySelected(null);
+    setReservationSelected(null);
+    cleanData();
+  };
 
   useEffect(() => {
     setZone(zoneState.find((zone) => zone.ref === route.params.ref));
@@ -122,16 +161,24 @@ const PlaceScreen = ({ route, navigation }) => {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
 
-    for (let guest of reservations) {
+    const eventHandler = (hosted) => {
+      return (
+        formatText(hosted.fullName)?.includes(formatText(filter)) ||
+        formatText(hosted.email)?.includes(formatText(filter)) ||
+        formatText(hosted.identification)?.includes(formatText(filter)) ||
+        thousandsSystem(hosted.identification)?.includes(filter) ||
+        formatText(hosted.phoneNumber)?.includes(formatText(filter)) ||
+        formatText(hosted.country)?.includes(formatText(filter))
+      );
+    };
+
+    for (let hosted of accommodationReservations) {
+      if (eventHandler(hosted)) guests.push({ ...hosted });
+    }
+
+    for (let guest of standardReservations) {
       for (let hosted of guest.hosted) {
-        if (
-          formatText(hosted.fullName)?.includes(formatText(filter)) ||
-          formatText(hosted.email)?.includes(formatText(filter)) ||
-          formatText(hosted.identification)?.includes(formatText(filter)) ||
-          thousandsSystem(hosted.identification)?.includes(filter) ||
-          formatText(hosted.phoneNumber)?.includes(formatText(filter))
-        )
-          guests.push({ ...hosted, ...guest });
+        if (eventHandler(hosted)) guests.push({ ...hosted, ...guest });
       }
     }
 
@@ -176,21 +223,35 @@ const PlaceScreen = ({ route, navigation }) => {
           horizontal
           showsHorizontalScrollIndicator={false}
           keyExtractor={(item) => item}
+          initialNumToRender={32}
+          contentOffset={{
+            x: (new Date().getDate() - 1) * 43,
+            y: 0,
+          }}
           renderItem={({ item: day }) => {
-            const reservationsSelected = reservations.filter(
+            const standard = standardReservations.filter(
               (r) => r.id === place.id
             );
+            const accommodation = accommodationReservations.filter(
+              (r) => r.ref === place.id
+            );
 
-            const reservation = reservationsSelected.find((r) => {
-              const start = new Date(r.start);
-              start.setHours(0, 0, 0, 0);
-              const end = new Date(r.end);
-              end.setHours(0, 0, 0, 0);
-              const date = new Date(year, month - 1, day);
-              date.setHours(0, 0, 0, 0);
+            const reservationsSelected =
+              place.type === "accommodation" ? accommodation : standard;
 
-              if (date >= start && date <= end) return r;
-            });
+            const reservation = [];
+
+            for (let r of reservationsSelected) {
+              const start = new Date(r.start).toISOString().slice(0, 10);
+              const end = new Date(r.end).toISOString().slice(0, 10);
+              const date = new Date(year, month - 1, day)
+                .toISOString()
+                .slice(0, 10);
+
+              if (moment(date).isBetween(start, end, null, "[]")) {
+                reservation.push(r);
+              }
+            }
 
             let backgroundColor =
               mode === "light"
@@ -199,18 +260,28 @@ const PlaceScreen = ({ route, navigation }) => {
 
             if (reservation) {
               const findBackground = () => {
-                const checkIn = reservation.hosted.reduce((a, b) => {
-                  if (b.checkIn) return a + 1;
-                  return a;
-                }, 0);
+                const checkIn =
+                  place.type === "standard"
+                    ? reservation[0]?.hosted.reduce((a, b) => {
+                        if (b.checkIn) return a + 1;
+                        return a;
+                      }, 0) || 0
+                    : reservation.filter((r) => r.checkIn).length;
 
-                const checkOut = reservation.hosted.reduce((a, b) => {
-                  if (b.checkOut) return a + 1;
-                  return a;
-                }, 0);
+                const checkOut =
+                  place.type === "standard"
+                    ? reservation[0]?.hosted.reduce((a, b) => {
+                        if (b.checkOut) return a + 1;
+                        return a;
+                      }, 0) || 0
+                    : reservation.filter((r) => r.checkOut).length;
 
-                const hosted = reservation.hosted?.length;
+                const hosted =
+                  place.type === "standard"
+                    ? reservation[0]?.hosted.length || 0
+                    : reservation.length || 0;
 
+                if (hosted === 0) return backgroundColor; //SI NO HAY HUESPEDES ✅
                 if (
                   ![0, hosted].includes(checkIn) &&
                   ![0, hosted].includes(checkOut)
@@ -229,23 +300,32 @@ const PlaceScreen = ({ route, navigation }) => {
             return (
               <TouchableOpacity
                 onPress={() => {
-                  if (reservation) {
+                  if (
+                    place.type === "standard" &&
+                    place.people === reservation[0]?.hosted?.length
+                  )
+                    return Alert.alert(
+                      "OOPS",
+                      "Ha superado el monto máximo de huéspedes permitidos en la habitación"
+                    );
+                  if (reservation.length) {
                     setModalVisiblePeople(!modalVisiblePeople);
-                    setReservationSelected(reservation);
+                    setDaySelected(day);
+                    setReservationSelected(reservation[0]);
                   } else {
                     navigation.navigate("CreateReserve", {
                       year,
                       day,
                       month,
-                      id: place.id,
+                      place,
                     });
                   }
                 }}
                 onLongPress={() => {
-                  if (reservation) {
+                  if (reservation.length) {
                     navigation.navigate("ReserveInformation", {
-                      ref: reservation.ref,
-                      id: place.id,
+                      reservation,
+                      place,
                     });
                   }
                 }}
@@ -259,7 +339,7 @@ const PlaceScreen = ({ route, navigation }) => {
                       fontSize: 9,
                     }}
                     color={
-                      reservation?.hosted.length
+                      reservation[0]?.hosted?.length || reservation?.length
                         ? light.textDark
                         : mode === "light"
                         ? light.textDark
@@ -269,7 +349,9 @@ const PlaceScreen = ({ route, navigation }) => {
                     {("0" + day).slice(-2)}
                   </TextStyle>
                   <TextStyle smallParagraph>
-                    {reservation?.hosted.length || ""}
+                    {reservation[0]?.hosted?.length ||
+                      reservation?.length ||
+                      ""}
                   </TextStyle>
                 </View>
               </TouchableOpacity>
@@ -293,103 +375,143 @@ const PlaceScreen = ({ route, navigation }) => {
       </View>
     ) : (
       <View>
-        {filterResult.map((guest, index) => (
-          <TouchableOpacity
-            onPress={() => {
-              navigation.navigate("ReserveInformation", {
-                ref: guest.ref,
-                days,
-                id: guest.id,
-              });
-            }}
-            key={guest.id + guest.modificationDate + index}
-            style={[
-              styles.guestCard,
-              { backgroundColor: mode === "light" ? light.main5 : dark.main2 },
-            ]}
-          >
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
+        {filterResult.map((guest, index) => {
+          return (
+            <TouchableOpacity
+              onPress={() => {
+                let reservation = [];
+                let place = {};
+
+                if (guest?.type === "standard") {
+                  const re = standardReservations.find(
+                    (r) => r.id === guest.id
+                  );
+                  place = nomenclatures.find((n) => n.id === guest.id);
+                  reservation.push(re);
+                }
+
+                if (guest?.type === "accommodation") {
+                  const re = accommodationReservations.find(
+                    (r) => r.ref === guest.ref
+                  );
+                  place = nomenclatures.find((n) => n.id === guest.ref);
+                  reservation.push(re);
+                }
+
+                navigation.navigate("ReserveInformation", {
+                  reservation,
+                  place,
+                });
+              }}
+              key={guest.id + guest.modificationDate + index}
+              style={[
+                styles.guestCard,
+                {
+                  backgroundColor: mode === "light" ? light.main5 : dark.main2,
+                },
+              ]}
             >
-              Nombre completo:{" "}
-              <TextStyle color={light.main2}>{guest?.fullName}</TextStyle>
-            </TextStyle>
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Correo electrónico:{" "}
-              <TextStyle color={light.main2}>{guest?.email}</TextStyle>
-            </TextStyle>
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Número de teléfono:{" "}
-              <TextStyle color={light.main2}>{guest?.phoneNumber}</TextStyle>
-            </TextStyle>
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Cédula:{" "}
-              <TextStyle color={light.main2}>
-                {thousandsSystem(guest?.identification || "")}
-              </TextStyle>
-            </TextStyle>
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Dinero pagado:{" "}
-              <TextStyle color={light.main2}>
-                {thousandsSystem(
-                  (guest?.discount
-                    ? guest?.amount - guest?.discount
-                    : guest?.amount) || ""
-                )}
-              </TextStyle>
-            </TextStyle>
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Personas alojadas:{" "}
-              <TextStyle color={light.main2}>
-                {thousandsSystem(guest?.hosted.length || "0")}
-              </TextStyle>
-            </TextStyle>
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Días reservado:{" "}
-              <TextStyle color={light.main2}>
-                {thousandsSystem(guest?.days || "0")}
-              </TextStyle>
-            </TextStyle>
-            {guest?.discount && (
               <TextStyle
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                Descuento:{" "}
+                Nombre completo:{" "}
+                <TextStyle color={light.main2}>{guest?.fullName}</TextStyle>
+              </TextStyle>
+              {guest?.email && (
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Correo electrónico:{" "}
+                  <TextStyle color={light.main2}>{guest?.email}</TextStyle>
+                </TextStyle>
+              )}
+              {guest?.phoneNumber && (
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Número de teléfono:{" "}
+                  <TextStyle color={light.main2}>
+                    {guest?.phoneNumber}
+                  </TextStyle>
+                </TextStyle>
+              )}
+              {guest?.identification && (
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Cédula:{" "}
+                  <TextStyle color={light.main2}>
+                    {thousandsSystem(guest?.identification || "")}
+                  </TextStyle>
+                </TextStyle>
+              )}
+              {guest?.country && (
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  País:{" "}
+                  <TextStyle color={light.main2}>{guest?.country}</TextStyle>
+                </TextStyle>
+              )}
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Dinero pagado:{" "}
                 <TextStyle color={light.main2}>
-                  {thousandsSystem(guest?.discount)}
+                  {thousandsSystem(
+                    (guest?.discount
+                      ? guest?.amount - guest?.discount
+                      : guest?.amount) || ""
+                  )}
                 </TextStyle>
               </TextStyle>
-            )}
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Fecha de registro:{" "}
-              <TextStyle color={light.main2}>
-                {changeDate(new Date(guest?.start))}
+              {guest.type === "standard" && (
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Personas alojadas:{" "}
+                  <TextStyle color={light.main2}>
+                    {thousandsSystem(guest?.hosted?.length || "0")}
+                  </TextStyle>
+                </TextStyle>
+              )}
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Días reservado:{" "}
+                <TextStyle color={light.main2}>
+                  {thousandsSystem(guest?.days || "0")}
+                </TextStyle>
               </TextStyle>
-            </TextStyle>
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Fecha de finalización:{" "}
-              <TextStyle color={light.main2}>
-                {changeDate(new Date(guest?.end))}
+              {guest?.discount && (
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Descuento:{" "}
+                  <TextStyle color={light.main2}>
+                    {thousandsSystem(guest?.discount)}
+                  </TextStyle>
+                </TextStyle>
+              )}
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Fecha de registro:{" "}
+                <TextStyle color={light.main2}>
+                  {changeDate(new Date(guest?.start))}
+                </TextStyle>
               </TextStyle>
-            </TextStyle>
-          </TouchableOpacity>
-        ))}
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Fecha de finalización:{" "}
+                <TextStyle color={light.main2}>
+                  {changeDate(new Date(guest?.end))}
+                </TextStyle>
+              </TextStyle>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     );
   };
@@ -743,6 +865,8 @@ const PlaceScreen = ({ route, navigation }) => {
         modalVisible={modalVisiblePeople}
         setModalVisible={setModalVisiblePeople}
         handleSubmit={(data) => saveHosted(data)}
+        type={reservationSelected?.type || null}
+        discount={reservationSelected?.type === "accommodation" || null}
       />
     </Layout>
   );

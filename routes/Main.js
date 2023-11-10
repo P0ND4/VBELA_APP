@@ -60,6 +60,7 @@ import Verification from "@screens/register/Verification";
 import ClientSupplier from "@screens/setting/ClientSupplier";
 import EntryOutputInformation from "@screens/inventory/EntryOutputInformation";
 import InventoryInformation from "@screens/inventory/InventoryInformation";
+import History from "@screens/statistic/History";
 import Wifi from "@screens/setting/Wifi";
 import theme from "@theme";
 
@@ -616,10 +617,7 @@ const Main = () => {
           component={CreateOrder}
           options={{ title: "Vender" }}
         />
-        <Stack.Screen
-          name="CreateProduct"
-          component={CreateProduct}
-        />
+        <Stack.Screen name="CreateProduct" component={CreateProduct} />
         <Stack.Screen
           name="PreviewOrder"
           component={PreviewOrder}
@@ -662,10 +660,7 @@ const Main = () => {
           component={CreateElement}
           options={{ title: "Crear elemento" }}
         />
-        <Stack.Screen
-          name="CreateEntryOutput"
-          component={CreateEntryOutput}
-        />
+        <Stack.Screen name="CreateEntryOutput" component={CreateEntryOutput} />
         <Stack.Screen
           name="EntryOutputInformation"
           component={EntryOutputInformation}
@@ -673,12 +668,17 @@ const Main = () => {
         <Stack.Screen
           name="InventoryInformation"
           component={InventoryInformation}
-          options={{ title: 'Información de inventario' }}
+          options={{ title: "Información de inventario" }}
         />
         <Stack.Screen
           name="CreateGroup"
           component={CreateGroup}
-          options={{ title: 'Crear grupo' }}
+          options={{ title: "Crear grupo" }}
+        />
+        <Stack.Screen
+          name="History"
+          component={History}
+          options={{ title: "Historial" }}
         />
       </Stack.Group>
       <Stack.Screen

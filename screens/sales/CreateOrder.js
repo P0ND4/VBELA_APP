@@ -25,7 +25,7 @@ import {
   edit as editE,
   remove as removeE,
 } from "@features/function/economySlice";
-import { add as addP} from "@features/function/peopleSlice";
+import { add as addP } from "@features/function/peopleSlice";
 import helperNotification from "@helpers/helperNotification";
 import {
   addOrder,
@@ -37,7 +37,7 @@ import {
   removeOrder,
   removeEconomy,
   editUser,
-  addPerson
+  addPerson,
 } from "@api";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
@@ -181,77 +181,98 @@ const CreateOrder = ({ route, navigation }) => {
     };
   };
 
-  const manageEconomy = async ({ editing, lastTotal, total, kitchen }) => {
+  const manageEconomy = ({ editing, lastTotal, total, kitchen, callBack }) => {
     const foundEconomy = economy.find((e) => e.ref === route.params?.ref);
-    if (createClient && !folk.find((p) => p.id === route.params?.ref)) {
-      const idPerson = random(20);
-      const data = {
-        name: route.params?.table,
-        identification: ''
-      };
-      data.id = idPerson;
-      data.type = "customer";
-      data.creationDate = new Date().getTime();
-      data.modificationDate = new Date().getTime();
-      dispatch(addP(data));
-      await addPerson({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        person: data,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-    }
-    if (!foundEconomy) {
-      const id = random(20);
-      let data = {};
-      if (!createClient)
-        data = { ...folk.find((p) => p.id === route.params?.ref) };
-      else data = { id: route.params?.ref, name: route.params.table };
+    const saveEconomy = async ({ payment }) => {
+      if (createClient && !folk.find((p) => p.id === route.params?.ref)) {
+        const data = {
+          name: route.params?.table,
+          identification: "",
+        };
+        data.id = route.params?.ref;
+        data.type = "customer";
+        data.creationDate = new Date().getTime();
+        data.modificationDate = new Date().getTime();
+        dispatch(addP(data));
+        await addPerson({
+          identifier: helperStatus.active
+            ? helperStatus.identifier
+            : user.identifier,
+          person: data,
+          helpers: helperStatus.active
+            ? [helperStatus.id]
+            : user.helpers.map((h) => h.id),
+        });
+      }
+      if (!foundEconomy) {
+        const id = random(20);
+        let data = {};
+        if (!createClient)
+          data = { ...folk.find((p) => p.id === route.params?.ref) };
+        else data = { id: route.params?.ref, name: route.params.table };
 
-      const newEconomy = {
-        id,
-        ref: data.id,
-        owner: {
-          identification: data.identification || "",
-          name: data.name,
+        const newEconomy = {
+          id,
+          ref: data.id,
+          owner: {
+            identification: data.identification || "",
+            name: data.name,
+          },
+          type: "debt",
+          amount: total,
+          name: `Deuda ${data.name}`,
+          payment: payment ? total : 0,
+          creationDate: new Date().getTime(),
+          modificationDate: new Date().getTime(),
+        };
+
+        dispatch(addE(newEconomy));
+        await addEconomy({
+          identifier: helperStatus.active
+            ? helperStatus.identifier
+            : user.identifier,
+          economy: newEconomy,
+          helpers: helperStatus.active
+            ? [helperStatus.id]
+            : user.helpers.map((h) => h.id),
+        });
+      } else {
+        const currentEconomy = { ...foundEconomy };
+        if ((editing || kitchen) && lastTotal)
+          currentEconomy.amount -= lastTotal;
+        currentEconomy.amount += total;
+        if (payment) currentEconomy.payment += total;
+        currentEconomy.modificationDate = new Date().getTime();
+        dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
+        await editEconomy({
+          identifier: helperStatus.active
+            ? helperStatus.identifier
+            : user.identifier,
+          economy: currentEconomy,
+          helpers: helperStatus.active
+            ? [helperStatus.id]
+            : user.helpers.map((h) => h.id),
+        });
+      }
+      await callBack();
+    };
+
+    if (createClient && editing) {
+      Alert.alert("PAGO", "¿El cliente ha pagado el producto/servicio?", [
+        {
+          text: "Cancelar",
+          style: "cancel",
         },
-        type: "debt",
-        amount: total,
-        name: `Deuda ${data.name}`,
-        payment: 0,
-        creationDate: new Date().getTime(),
-        modificationDate: new Date().getTime(),
-      };
-
-      dispatch(addE(newEconomy));
-      await addEconomy({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        economy: newEconomy,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-    } else {
-      const currentEconomy = { ...foundEconomy };
-      if ((editing || kitchen) && lastTotal) currentEconomy.amount -= lastTotal;
-      currentEconomy.amount += total;
-      currentEconomy.modificationDate = new Date().getTime();
-      dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
-      await editEconomy({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        economy: currentEconomy,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-    }
+        {
+          text: "No",
+          onPress: () => saveEconomy({ payment: false }),
+        },
+        {
+          text: "Si",
+          onPress: () => saveEconomy({ payment: true }),
+        },
+      ]);
+    } else saveEconomy({ payment: false });
   };
 
   const saveOrder = async (dat, selection) => {
@@ -278,43 +299,54 @@ const CreateOrder = ({ route, navigation }) => {
     data.total = total;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
-    dispatch(addM(data));
-    const newMenu = menu.map((m) => {
-      const mc = { ...m };
-      const found = selection.find((s) => s.id === m.id);
-      if (found) {
-        mc.quantity -= found.count;
-        return mc;
+
+    const close = async () => {
+      dispatch(addM(data));
+      const newMenu = menu.map((m) => {
+        const mc = { ...m };
+        const found = selection.find((s) => s.id === m.id);
+        if (found) {
+          mc.quantity -= found.count;
+          return mc;
+        }
+        return m;
+      });
+      if (d.pay) {
+        dispatch(changeM(newMenu));
+        navigation.pop();
       }
-      return m;
-    });
-    if (d.pay) {
-      dispatch(changeM(newMenu));
-      navigation.pop();
-    }
-    navigation.replace("OrderCompletion", { data, total });
-    if (person || createClient)
-      manageEconomy({ editing: d.pay, total, kitchen: dat.isSendtoKitchen });
-    if (d.pay) {
-      await editUser({
+      navigation.replace("OrderCompletion", { data, total });
+
+      if (d.pay) {
+        await editUser({
+          identifier: helperStatus.active
+            ? helperStatus.identifier
+            : user.identifier,
+          change: { menu: newMenu },
+          helpers: helperStatus.active
+            ? [helperStatus.id]
+            : user.helpers.map((h) => h.id),
+        });
+      }
+      await addOrder({
         identifier: helperStatus.active
           ? helperStatus.identifier
           : user.identifier,
-        change: { menu: newMenu },
+        order: data,
         helpers: helperStatus.active
           ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
-    }
-    await addOrder({
-      identifier: helperStatus.active
-        ? helperStatus.identifier
-        : user.identifier,
-      order: data,
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
-    });
+    };
+
+    if (person || createClient)
+      await manageEconomy({
+        editing: d.pay,
+        total,
+        kitchen: dat.isSendtoKitchen,
+        callBack: close,
+      });
+    else close();
   };
 
   const updateOrder = async (dat, selection) => {
@@ -337,48 +369,54 @@ const CreateOrder = ({ route, navigation }) => {
     data.total = total;
     data.creationDate = order.creationDate;
     data.modificationDate = new Date().getTime();
-    dispatch(edit({ id: information.id, data }));
-    const newMenu = menu.map((m) => {
-      const mc = { ...m };
-      const found = selection.find((s) => s.id === m.id);
-      if (found) {
-        mc.quantity -= found.count;
-        return mc;
-      }
-      return m;
-    });
-    if (d.pay) {
-      dispatch(changeM(newMenu));
-      navigation.pop();
-    }
-    navigation.replace("OrderCompletion", { data, total });
-    if (person || createClient)
-      manageEconomy({
-        editing: d.pay,
-        total,
-        lastTotal: currentOrder.total,
-        kitchen: dat.isSendtoKitchen,
+
+    const close = async () => {
+      dispatch(edit({ id: information.id, data }));
+      const newMenu = menu.map((m) => {
+        const mc = { ...m };
+        const found = selection.find((s) => s.id === m.id);
+        if (found) {
+          mc.quantity -= found.count;
+          return mc;
+        }
+        return m;
       });
-    if (d.pay) {
-      await editUser({
+      if (d.pay) {
+        dispatch(changeM(newMenu));
+        navigation.pop();
+      }
+      navigation.replace("OrderCompletion", { data, total });
+      if (d.pay) {
+        await editUser({
+          identifier: helperStatus.active
+            ? helperStatus.identifier
+            : user.identifier,
+          change: { menu: newMenu },
+          helpers: helperStatus.active
+            ? [helperStatus.id]
+            : user.helpers.map((h) => h.id),
+        });
+      }
+      await editOrder({
         identifier: helperStatus.active
           ? helperStatus.identifier
           : user.identifier,
-        change: { menu: newMenu },
+        order: data,
         helpers: helperStatus.active
           ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
-    }
-    await editOrder({
-      identifier: helperStatus.active
-        ? helperStatus.identifier
-        : user.identifier,
-      order: data,
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
-    });
+    };
+
+    if (person || createClient)
+      await manageEconomy({
+        editing: d.pay,
+        total,
+        lastTotal: currentOrder.total,
+        kitchen: dat.isSendtoKitchen,
+        callBack: close,
+      })
+    else close();
   };
 
   const sendToKitchen = async (selection, newSelection) => {

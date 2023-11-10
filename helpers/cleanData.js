@@ -1,5 +1,6 @@
 import { clean as cleanUser } from "@features/user/informationSlice";
-import { clean as cleanReservations } from "@features/zones/reservationsSlice";
+import { clean as cleanStandardReservations } from "@features/zones/standardReservationsSlice";
+import { clean as cleanAccommodationReservations } from "@features/zones/accommodationReservationsSlice";
 import { clean as cleanNomenclatures } from "@features/zones/nomenclaturesSlice";
 import { clean as cleanZones } from "@features/zones/informationSlice";
 import { clean as cleanHelpers } from "@features/helpers/informationSlice";
@@ -22,7 +23,8 @@ export default cleanData = (dispatch) => {
   dispatch(inactiveSession());
   dispatch(inactiveGroup());
   dispatch(cleanUser());
-  dispatch(cleanReservations());
+  dispatch(cleanStandardReservations());
+  dispatch(cleanAccommodationReservations());
   dispatch(cleanNomenclatures());
   dispatch(cleanZones());
   dispatch(cleanHelpers());

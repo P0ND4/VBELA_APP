@@ -6,7 +6,8 @@ import {
   remove,
   removeMany as removeManyNomenclature,
 } from "@features/zones/nomenclaturesSlice";
-import { removeMany as removeManyReservation } from "@features/zones/reservationsSlice";
+import { removeMany as removeManyRS } from "@features/zones/standardReservationsSlice";
+import { removeMany as removeManyRA } from "@features/zones/accommodationReservationsSlice";
 import { changeDate, thousandsSystem, getFontSize } from "@helpers/libs";
 import { removeZone, removeNomenclature } from "@api";
 import helperNotification from "@helpers/helperNotification";
@@ -26,7 +27,12 @@ const PlaceInformation = ({ route, navigation }) => {
   const nomenclaturesState = useSelector((state) => state.nomenclatures);
   const nomenclatureState = useSelector((state) => state.nomenclatures);
   const helperStatus = useSelector((state) => state.helperStatus);
-  const reservations = useSelector((state) => state.reservations);
+  const standardReservations = useSelector(
+    (state) => state.standardReservations
+  );
+  const accommodationReservations = useSelector(
+    (state) => state.accommodationReservations
+  );
 
   const [zone, setZone] = useState(null);
   const [nomenclatures, setNomenclatures] = useState([]);
@@ -39,14 +45,15 @@ const PlaceInformation = ({ route, navigation }) => {
   const params = route.params;
 
   useEffect(() => {
-    setNomenclatures(nomenclaturesState.filter((n) => n.ref === route.params.ref));
+    setNomenclatures(
+      nomenclaturesState.filter((n) => n.ref === route.params.ref)
+    );
     setNomenclature(nomenclatureState.find((n) => n.id === route.params.id));
     setZone(zoneState.find((zone) => zone.ref === route.params.ref));
   }, [zoneState, nomenclatureState, nomenclaturesState]);
 
   useEffect(() => {
-    if (params.type === "General")
-      navigation.setOptions({ title: zone?.name });
+    if (params.type === "General") navigation.setOptions({ title: zone?.name });
     else
       navigation.setOptions({
         title: nomenclature?.name
@@ -60,41 +67,42 @@ const PlaceInformation = ({ route, navigation }) => {
     let totalDays = 0;
     let totalPeople = 0;
 
-    const getInformation = (reservations) => {
-      totalMoney += parseInt(
-        reservations.discount > 0
-          ? reservations.amount - reservations.discount
-          : reservations.amount
-      );
+    const getInformation = (reservations, amount) => {
+      totalMoney += amount;
       totalDays += parseInt(reservations.days);
-      totalPeople += parseInt(reservations.hosted.length);
+      totalPeople += parseInt(reservations?.hosted?.length || 1);
+    };
+
+    const eventHandler = (id) => {
+      const date = new Date().getTime();
+      const currentStandardReservations = standardReservations.filter(
+        (r) => r.id === id && r.end > date
+      );
+      const currentAccommodationReservations = accommodationReservations.filter(
+        (r) => r.ref === id && r.end > date
+      );
+
+      for (let h of currentStandardReservations) {
+        const amount = h.discount ? h.amount - h.discount : h.amount;
+        getInformation(h, amount);
+      }
+      for (let h of currentAccommodationReservations) {
+        const amount =
+          h.days * (h?.discount ? h.amount - h.discount : h.amount);
+        getInformation(h, amount);
+      }
     };
 
     if (params.type === "General") {
-      for (let i = 0; i < nomenclatures.length; i++) {
-        const date = new Date().getTime();
-        const generalReservations = reservations.filter(
-          (r) => r.id === nomenclatures[i].id && r.end > date
-        );
-
-        for (let n of generalReservations) {
-          getInformation(n);
-        }
+      for (let n of nomenclatures) {
+        eventHandler(n.id);
       }
-    } else {
-      const date = new Date().getTime();
-      const currentReservations = reservations.filter(
-        (r) => r.id === route.params.id && r.end > date
-      );
+    } else eventHandler(route.params.id);
 
-      for (let i = 0; i < currentReservations.length; i++) {
-        getInformation(currentReservations[i]);
-      }
-    }
     setTotalMoney(totalMoney);
     setTotalDays(totalDays);
     setTotalPeople(totalPeople);
-  }, [nomenclatures]);
+  }, [nomenclatures, standardReservations, accommodationReservations]);
 
   return (
     <Layout
@@ -131,7 +139,11 @@ const PlaceInformation = ({ route, navigation }) => {
             );
           }}
         >
-          <Ionicons name="create-outline" size={getFontSize(31)} color={light.main2} />
+          <Ionicons
+            name="create-outline"
+            size={getFontSize(31)}
+            color={light.main2}
+          />
         </TouchableOpacity>
       </View>
       <TextStyle smallSubtitle color={light.main2}>
@@ -218,12 +230,11 @@ const PlaceInformation = ({ route, navigation }) => {
                 onPress: async () => {
                   if (params.type === "General") {
                     const ids = [];
-                    for (let i = 0; i < nomenclatures.length; i++) {
-                      dispatch(
-                        removeManyReservation({ ref: nomenclatures[i].id })
-                      );
+                    for (let n of nomenclatures) {
+                      dispatch(removeManyRS({ ref: n.id }));
+                      dispatch(removeManyRA({ ref: n.id }));
 
-                      ids.push(nomenclatures[i].id);
+                      ids.push(n.id);
                     }
                     dispatch(removeManyNomenclature({ ref: route.params.ref }));
                     dispatch(removeZoneRedux({ ref: route.params.ref }));
@@ -240,7 +251,8 @@ const PlaceInformation = ({ route, navigation }) => {
                     });
                   } else {
                     dispatch(remove({ id: route.params.id }));
-                    dispatch(removeManyReservation({ ref: route.params.id }));
+                    dispatch(removeManyRS({ ref: route.params.id }));
+                    dispatch(removeManyRA({ ref: route.params.id }));
                     navigation.pop();
                     await removeNomenclature({
                       identifier: helperStatus.active

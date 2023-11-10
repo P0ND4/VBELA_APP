@@ -18,6 +18,7 @@ import {
   editUser,
   editReservation,
 } from "@api";
+import AddPerson from "@components/AddPerson";
 import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
 import Layout from "@components/Layout";
@@ -28,9 +29,10 @@ import {
   removeMany as removeManyEco,
 } from "@features/function/economySlice";
 import {
-  removeManyByOwner as removeMBOR,
-  edit as editR,
-} from "@features/zones/reservationsSlice";
+  removeManyByOwner as removeMBORS,
+  edit as editRS,
+} from "@features/zones/standardReservationsSlice";
+import { removeManyByOwner as removeMBORA } from "@features/zones/standardReservationsSlice";
 import { removeManyByOwner as removeMBOO } from "@features/tables/ordersSlice";
 import { remove as removePer } from "@features/function/peopleSlice";
 
@@ -53,6 +55,11 @@ const People = ({ navigation, userType }) => {
   const [providers, setProviders] = useState([]);
   const [activeFilter, setActiveFilter] = useState(false);
   const [filter, setFilter] = useState("");
+  const [daySelected, setDaySelected] = useState(null);
+  const [nomenclatureSelected, setNomenclatureSelected] = useState(null);
+  const [reservationSelected, setReservationSelected] = useState(null);
+  const [modalVisiblePeople, setModalVisiblePeople] = useState(false);
+  const [key, setKey] = useState(Math.random());
 
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
@@ -60,7 +67,13 @@ const People = ({ navigation, userType }) => {
   const people = useSelector((state) => state.people);
   const economy = useSelector((state) => state.economy);
   const orders = useSelector((state) => state.orders);
-  const reservations = useSelector((state) => state.reservations);
+  const nomenclatures = useSelector((state) => state.nomenclatures);
+  const standardReservations = useSelector(
+    (state) => state.standardReservations
+  );
+  const accommodationReservations = useSelector(
+    (state) => state.accommodationReservations
+  );
 
   const [modalVisible, setModalVisible] = useState(false);
   const [personSelected, setPersonSelected] = useState({});
@@ -91,9 +104,18 @@ const People = ({ navigation, userType }) => {
     delete data.id;
 
     if (userType === "customer") {
-      const reser = reservations.filter(({ hosted }) =>
-        hosted.some(({ owner }) => owner === p.id)
+      let reser = [];
+      reser.push(
+        ...standardReservations.filter(({ hosted }) =>
+          hosted.some(({ owner }) => owner === p.id)
+        )
       );
+      reser.push(
+        ...accommodationReservations
+          .filter(({ owner }) => owner === p.id)
+          .map((r) => ({ ...r, hosted: [r] }))
+      );
+
       const reservationsSorted = reser.map(({ creationDate, hosted }) => {
         const day = new Date(creationDate).getDate();
         const month = new Date(creationDate).getMonth() + 1;
@@ -251,14 +273,26 @@ const People = ({ navigation, userType }) => {
       });
     };
 
-    const newReservations = reservations.reduce((acc, reservation) => {
-      const filteredHosted = reservation.hosted.filter(
-        (hosted) => hosted.owner !== data.personID
-      );
-      return filteredHosted.length
-        ? [...acc, { ...reservation, hosted: filteredHosted }]
-        : acc;
-    }, []);
+    const newStandardReservations = standardReservations.reduce(
+      (acc, reservation) => {
+        const filteredHosted = reservation.hosted.filter(
+          (hosted) => hosted.owner !== data.personID
+        );
+        return filteredHosted.length
+          ? [...acc, { ...reservation, hosted: filteredHosted }]
+          : acc;
+      },
+      []
+    );
+
+    const newAccommodationReservations = accommodationReservations.reduce(
+      (acc, reservation) => {
+        return reservation.owner !== data.personID
+          ? [...acc, { ...reservation }]
+          : acc;
+      },
+      []
+    );
 
     Alert.alert(
       "Oye!",
@@ -274,14 +308,19 @@ const People = ({ navigation, userType }) => {
           text: "Si",
           onPress: () => {
             const economies = economy.filter((e) => e.ref === data.personID);
-            const reservationRef = reservations.some((r) =>
+            const standardReservationRef = standardReservations.some((r) =>
               r.hosted.some((h) => h.owner === data.personID)
             );
+            const accommodationReservationRef = accommodationReservations.some(
+              (r) => r.owner === data.personID
+            );
             if (
-              (userType === "supplier" && !economies.length) ||
-              (userType === "customer" &&
-                !reservationRef &&
-                !orders.filter((o) => o.ref === data.personID).length)
+              (userType === "supplier" ||
+                (userType === "customer" &&
+                  !standardReservationRef &&
+                  !accommodationReservationRef &&
+                  !orders.filter((o) => o.ref === data.personID).length)) &&
+              !economies.length
             ) {
               return removeP();
             }
@@ -329,10 +368,16 @@ const People = ({ navigation, userType }) => {
                                     removeP();
                                     deleteEco();
                                     dispatch(
-                                      removeMBOR({ owner: data.personID })
+                                      removeMBORS({ owner: data.personID })
+                                    );
+                                    dispatch(
+                                      removeMBORA({ owner: data.personID })
                                     );
                                     await sendEditUser({
-                                      reservations: newReservations,
+                                      "reservations.standard":
+                                        newStandardReservations,
+                                      "reservations.accommodation":
+                                        newAccommodationReservations,
                                     });
                                   },
                                 },
@@ -368,11 +413,14 @@ const People = ({ navigation, userType }) => {
                           onPress: async () => {
                             removeP();
                             deleteEco();
-                            dispatch(removeMBOR({ owner: data.personID }));
+                            dispatch(removeMBORS({ owner: data.personID }));
+                            dispatch(removeMBORA({ owner: data.personID }));
                             dispatch(removeMBOO({ ref: data.personID }));
 
                             await sendEditUser({
-                              reservations: newReservations,
+                              "reservations.standard": newStandardReservations,
+                              "reservations.accommodation":
+                                newAccommodationReservations,
                               orders: orders.filter(
                                 (o) => o.ref !== data.personID
                               ),
@@ -432,14 +480,24 @@ const People = ({ navigation, userType }) => {
         {
           text: "Si",
           onPress: async () => {
-            const newReservations = reservations.reduce((acc, reservation) => {
-              const filteredHosted = reservation.hosted.filter(
-                (hosted) => hosted.owner !== data.personID
-              );
-              return filteredHosted.length
-                ? [...acc, { ...reservation, hosted: filteredHosted }]
-                : acc;
-            }, []);
+            const newStandardReservations = standardReservations.reduce(
+              (acc, reservation) => {
+                const filteredHosted = reservation.hosted.filter(
+                  (hosted) => hosted.owner !== data.personID
+                );
+                return filteredHosted.length
+                  ? [...acc, { ...reservation, hosted: filteredHosted }]
+                  : acc;
+              },
+              []
+            );
+
+            const newAccommodationReservations =
+              accommodationReservations.reduce((acc, reservation) => {
+                return reservation.owner !== data.personID
+                  ? [...acc, { ...reservation }]
+                  : acc;
+              }, []);
 
             if (userType === "supplier") return deleteEco();
             Alert.alert(
@@ -461,9 +519,12 @@ const People = ({ navigation, userType }) => {
                           text: "Reservaciones",
                           onPress: async () => {
                             deleteEco();
-                            dispatch(removeMBOR({ owner: data.personID }));
+                            dispatch(removeMBORS({ owner: data.personID }));
+                            dispatch(removeMBORA({ owner: data.personID }));
                             await sendEditUser({
-                              reservations: newReservations,
+                              "reservations.standard": newStandardReservations,
+                              "reservations.accommodation":
+                                newAccommodationReservations,
                             });
                           },
                         },
@@ -492,11 +553,14 @@ const People = ({ navigation, userType }) => {
                   text: "Si",
                   onPress: async () => {
                     deleteEco();
-                    dispatch(removeMBOR({ owner: data.personID }));
+                    dispatch(removeMBORS({ owner: data.personID }));
+                    dispatch(removeMBORA({ owner: data.personID }));
                     dispatch(removeMBOO({ ref: data.personID }));
 
                     await sendEditUser({
-                      reservations: newReservations,
+                      "reservations.standard": newStandardReservations,
+                      "reservations.accommodation":
+                        newAccommodationReservations,
                       orders: orders.filter((o) => o.ref !== data.personID),
                     });
                   },
@@ -511,6 +575,79 @@ const People = ({ navigation, userType }) => {
     );
   };
 
+  const cleanModal = () => {
+    setModalVisible(!modalVisible);
+    setModalVisiblePeople(!modalVisiblePeople);
+    setDaySelected(null);
+    setReservationSelected(null);
+    setNomenclatureSelected(null);
+  };
+
+  const updateHosted = async ({ data, cleanData }) => {
+    data.ref = nomenclatureSelected.id;
+    data.id = random(10, { number: true });
+    data.owner = personSelected.personID;
+    data.checkOut = null;
+
+    if (reservationSelected.type === "accommodation") {
+      const place = nomenclatures.find((n) => n.id === nomenclatureSelected.id);
+      navigation.navigate("CreateReserve", {
+        year: daySelected[0],
+        month: daySelected[1],
+        day: daySelected[2],
+        place,
+        hosted: [data],
+      });
+    }
+    if (reservationSelected.type === "standard") {
+      let reservationREF = standardReservations.find(
+        (r) => r.ref === reservationSelected.ref
+      );
+      if (reservationREF.hosted.some((h) => h.checkOut))
+        data.checkOut = new Date().getTime();
+      reserveUpdated = {
+        ...reservationREF,
+        hosted: [...reservationREF.hosted, data],
+      };
+      dispatch(editRS({ ref: reserveUpdated.ref, data: reserveUpdated }));
+      await editReservation({
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        reservation: {
+          data: reserveUpdated,
+          type: reservationSelected.type,
+        },
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
+    cleanModal();
+    cleanData();
+  };
+
+  const saveHosted = async ({ data, cleanData }) => {
+    const place = nomenclatures.find((n) => n.id === nomenclatureSelected.id);
+
+    const id = random(10, { number: true });
+    data.owner = personSelected.personID;
+    data.checkOut = null;
+    data.ref = nomenclatureSelected.id;
+    data.id = id;
+
+    navigation.navigate("CreateReserve", {
+      year: daySelected[0],
+      month: daySelected[1],
+      day: daySelected[2],
+      place,
+      hosted: [data],
+    });
+
+    cleanModal();
+    cleanData();
+  };
+
   const Provider = ({ item, type }) => {
     const [open, setOpen] = useState(false);
     const [name, setName] = useState(true);
@@ -522,15 +659,24 @@ const People = ({ navigation, userType }) => {
     const [reservationFound, setReservationFound] = useState({});
 
     useEffect(() => {
-      for (let reservation of reservations) {
-        for (let hosted of reservation.hosted) {
-          if (hosted.owner === item.personID) {
-            setExistsAccommodation(hosted);
+      if (!existsAccommodation.id && !reservationFound.id) {
+        for (let reservation of standardReservations) {
+          for (let hosted of reservation.hosted) {
+            if (hosted.owner === item.personID) {
+              setExistsAccommodation(hosted);
+              setReservationFound(reservation);
+            }
+          }
+        }
+
+        for (let reservation of accommodationReservations) {
+          if (reservation.owner === item.personID) {
+            setExistsAccommodation(reservation);
             setReservationFound(reservation);
           }
         }
       }
-    }, [reservations]);
+    }, [standardReservations, accommodationReservations]);
 
     useEffect(() => {
       if (userType === "customer")
@@ -542,7 +688,7 @@ const People = ({ navigation, userType }) => {
 
       setTotal(array.reduce((a, b) => a + b.amount, 0));
       setPaid(array.reduce((a, b) => a + b.payment, 0));
-    }, [userType, orders]);
+    }, [userType, orders, economy]);
 
     const Details = () => {
       return (
@@ -761,11 +907,35 @@ const People = ({ navigation, userType }) => {
                       }
 
                       if (userType === "customer") {
-                        if (existsAccommodation.id)
-                          return navigation.navigate("ReserveInformation", {
-                            ref: reservationFound.ref,
-                            id: reservationFound.id,
+                        if (existsAccommodation.id) {
+                          const place = nomenclatures.find((n) => {
+                            const value =
+                              reservationFound.type === "standard"
+                                ? reservationFound.id
+                                : reservationFound.ref;
+                            return n.id === value;
                           });
+                          let reservation = [];
+
+                          if (reservationFound?.type === "standard") {
+                            const re = standardReservations.find(
+                              (r) => r.ref === reservationFound.ref
+                            );
+                            reservation.push(re);
+                          }
+
+                          if (reservationFound?.type === "accommodation") {
+                            const re = accommodationReservations.find(
+                              (r) => r.id === reservationFound.id
+                            );
+                            reservation.push(re);
+                          }
+
+                          return navigation.navigate("ReserveInformation", {
+                            reservation,
+                            place,
+                          });
+                        }
 
                         setPersonSelected(item);
                         setModalVisible(!modalVisible);
@@ -776,9 +946,7 @@ const People = ({ navigation, userType }) => {
                       paragrahp
                       color={
                         userType === "customer"
-                          ? existsAccommodation.id
-                            ? dark.textWhite
-                            : light.textDark
+                          ? light.textDark
                           : mode === "light"
                           ? dark.textWhite
                           : light.textDark
@@ -1219,100 +1387,40 @@ const People = ({ navigation, userType }) => {
       <ChooseDate
         modalVisible={modalVisible}
         setModalVisible={setModalVisible}
-        onDayPress={({ data, nomenclatureID, markedDates, cleanData }) => {
+        onDayPress={({ data, nomenclatureID, markedDates }) => {
           const reservation = markedDates[data.dateString]?.reservation;
-          const obj = {
-            fullName: personSelected.name,
-            email: "",
-            identification: personSelected.identification,
-            phoneNumber: "",
-            payment: 0,
-            owner: personSelected.personID,
-            checkIn: null,
-            checkOut: null,
-            id: random(20),
-          };
+          const nom = nomenclatures.find((n) => n.id === nomenclatureID);
 
-          if (reservation) {
-            Alert.alert(
-              "Habitación compartida",
-              "¿Deseas compartir la habitación con este cliente?",
-              [
-                {
-                  text: "No",
-                  style: "cancel",
-                },
-                {
-                  text: "Si",
-                  onPress: async () => {
-                    const reservationUpdated = { ...reservation };
-
-                    const updateReservation = async ({ checkIn }) => {
-                      obj.checkIn = checkIn;
-
-                      reservationUpdated.hosted = [
-                        ...reservationUpdated.hosted,
-                        obj,
-                      ];
-                      dispatch(
-                        editR({
-                          ref: reservationUpdated.ref,
-                          data: reservationUpdated,
-                        })
-                      );
-                      cleanData();
-                      setPersonSelected({});
-                      Alert.alert(
-                        "Excelente",
-                        "El cliente ha sido hospedado en una habitación compartida satisfactoriamente"
-                      );
-                      await editReservation({
-                        identifier: helperStatus.active
-                          ? helperStatus.identifier
-                          : user.identifier,
-                        reservation: reservationUpdated,
-                        helpers: helperStatus.active
-                          ? [helperStatus.id]
-                          : user.helpers.map((h) => h.id),
-                      });
-                    };
-
-                    Alert.alert(
-                      "CHECK IN",
-                      "¿El cliente ya ha llegado para hospedarse?",
-                      [
-                        { text: "Cancelar", style: "cancel" },
-                        {
-                          text: "No",
-                          onPress: () => updateReservation({ checkIn: null }),
-                        },
-                        {
-                          text: "Si",
-                          onPress: () =>
-                            updateReservation({
-                              checkIn: new Date().getTime(),
-                            }),
-                        },
-                      ],
-                      { cancelable: true }
-                    );
-                  },
-                },
-              ],
-              { cancelable: true }
+          if (
+            reservation?.type === "standard" &&
+            nom.people === reservation?.hosted?.length
+          )
+            return Alert.alert(
+              "OOPS",
+              "Ha superado el monto máximo de huéspedes permitidos en la habitación"
             );
-          } else {
-            navigation.navigate("CreateReserve", {
-              hosted: [obj],
-              year: data.year,
-              day: data.day,
-              month: data.month,
-              id: nomenclatureID,
-            });
-            cleanData();
-            setPersonSelected({});
-          }
+
+          setKey(Math.random());
+          setNomenclatureSelected(nom);
+          setDaySelected([data.year, data.month, data.day]);
+          setReservationSelected(reservation || null);
+          setModalVisiblePeople(!modalVisiblePeople);
         }}
+      />
+      <AddPerson
+        key={key}
+        modalVisible={modalVisiblePeople}
+        setModalVisible={setModalVisiblePeople}
+        editing={{
+          active: true,
+          fullName: personSelected.name,
+          identification: personSelected?.identification,
+        }}
+        discount={nomenclatureSelected?.type === "accommodation"}
+        handleSubmit={(data) =>
+          !reservationSelected ? saveHosted(data) : updateHosted(data)
+        }
+        type={nomenclatureSelected?.type}
       />
     </Layout>
   );

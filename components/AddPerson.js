@@ -26,6 +26,8 @@ const AddPerson = ({
   editing,
   setEditing,
   handleSubmit,
+  type,
+  discount,
 }) => {
   const {
     register,
@@ -37,32 +39,55 @@ const AddPerson = ({
   const mode = useSelector((state) => state.mode);
 
   const [fullName, setFullName] = useState(
-    editing?.active ? editing?.fullName : ""
+    editing?.active ? editing?.fullName || "" : ""
   );
   const [identification, setIdentification] = useState(
-    editing?.active ? thousandsSystem(editing?.identification) : ""
+    editing?.active ? thousandsSystem(editing?.identification || "") : ""
   );
   const [phoneNumber, setPhoneNumber] = useState(
-    editing?.active ? editing?.phoneNumber : ""
+    editing?.active ? editing?.phoneNumber || "" : ""
   );
-  const [email, setEmail] = useState(editing?.active ? editing?.email : "");
+  const [email, setEmail] = useState(
+    editing?.active ? editing?.email || "" : ""
+  );
+  const [country, setCountry] = useState(
+    editing?.active ? editing?.country || "" : ""
+  );
   const [checkIn, setCheckIn] = useState(
-    editing?.active ? !!editing?.checkIn : false
+    editing?.active ? !!editing?.checkIn || false : false
+  );
+  const [days, setDays] = useState(
+    editing?.active ? String(editing?.days || "") : ""
+  );
+  const [discountInput, setDiscountInput] = useState(
+    editing?.active ? thousandsSystem(editing?.discount || "") : ""
   );
 
   useEffect(() => {
     register("fullName", {
-      value: editing?.active ? editing?.fullName : "",
+      value: editing?.active ? editing?.fullName || "" : "",
       required: true,
     });
-    register("email", { value: editing?.active ? editing?.email : "" });
+    register("email", { value: editing?.active ? editing?.email || "" : "" });
     register("identification", {
-      value: editing?.active ? editing?.identification : "",
+      value: editing?.active ? editing?.identification || "" : "",
     });
     register("phoneNumber", {
-      value: editing?.active ? editing?.phoneNumber : "",
+      value: editing?.active ? editing?.phoneNumber || "" : "",
     });
-    register("checkIn", { value: editing?.active ? editing?.checkIn : null });
+    register("country", {
+      value: editing?.active ? editing?.country || "" : "",
+    });
+    register("days", {
+      value: editing?.active ? editing.days || null : null,
+      required: type === "accommodation",
+    });
+    register("checkIn", {
+      value: editing?.active ? editing?.checkIn || null : null,
+    });
+    register("discount", {
+      value: editing?.active ? editing?.discount || null : null,
+    });
   }, []);
 
   const cleanData = () => {
@@ -70,13 +95,20 @@ const AddPerson = ({
     setEmail("");
     setIdentification("");
     setPhoneNumber("");
+    setCountry("");
+    setDays("");
     setCheckIn(false);
+    setDiscountInput("");
     setValue("fullName", "");
     setValue("email", "");
     setValue("identification", "");
     setValue("phoneNumber", "");
+    setValue("country", "");
+    setValue("days", null);
     setValue("checkIn", null);
-    if (editing && setEditing) setEditing({ key: Math.random(), active: false });
+    setValue("discount", null);
+    if (editing && setEditing)
+      setEditing({ key: Math.random(), active: false });
     setModalVisible(!modalVisible);
   };
 
@@ -195,6 +227,65 @@ const AddPerson = ({
                   setValue("phoneNumber", text);
                 }}
               />
+              <InputStyle
+                value={country}
+                placeholder="País"
+                right={
+                  country
+                    ? () => <TextStyle color={light.main2}>País</TextStyle>
+                    : null
+                }
+                maxLength={30}
+                onChangeText={(text) => {
+                  setCountry(text);
+                  setValue("country", text);
+                }}
+              />
+              {type === "accommodation" && ( //TODO Que el type de AddPerson se aplique para toda la aplicacion
+                <InputStyle
+                  placeholder="Número de días"
+                  value={days}
+                  right={
+                    days
+                      ? () => <TextStyle color={light.main2}>Días</TextStyle>
+                      : null
+                  }
+                  keyboardType="numeric"
+                  onChangeText={(num) => {
+                    setDays(num.replace(/[^0-9]/g, ""));
+                    setValue("days", parseInt(num) || null);
+                  }}
+                  maxLength={3}
+                />
+              )}
+              {hostedErrors.days?.type && (
+                <TextStyle verySmall color={light.main2}>
+                  {hostedErrors.days.type === "required"
+                    ? "Digíte los dias a reservar"
+                    : hostedErrors.days.message}
+                </TextStyle>
+              )}
+              {discount && (
+                <InputStyle
+                  placeholder="Descuento"
+                  value={discountInput}
+                  right={
+                    discountInput
+                      ? () => (
+                          <TextStyle color={light.main2}>Descuento</TextStyle>
+                        )
+                      : null
+                  }
+                  keyboardType="numeric"
+                  onChangeText={(num) => {
+                    const value = num.replace(/[^0-9]/g, "");
+
+                    if (value > editing?.amount) return;
+                    setDiscountInput(thousandsSystem(value));
+                    setValue("discount", parseInt(value) || null);
+                  }}
+                />
+              )}
               <View style={[styles.row, { marginTop: 10 }]}>
                 <TextStyle smallParagraph color={light.main2}>
                   CHECK IN ¿YA LLEGO EL HUÉSPED?

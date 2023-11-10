@@ -1,4 +1,5 @@
-import { change as changeReservations } from "@features/zones/reservationsSlice";
+import { change as changeStandardReservations } from "@features/zones/standardReservationsSlice";
+import { change as changeAccommodationReservations } from "@features/zones/accommodationReservationsSlice";
 import { change as changeNomenclatures } from "@features/zones/nomenclaturesSlice";
 import { change as changeZones } from "@features/zones/informationSlice";
 import { change as changeTables } from "@features/tables/informationSlice";
@@ -16,7 +17,8 @@ import { change as changeGroups } from "@features/sales/groupsSlice";
 
 export default changeGeneralInformation = (dispatch, data) => {
   dispatch(changeZones(data.zones));
-  dispatch(changeReservations(data.reservations));
+  dispatch(changeAccommodationReservations(data.reservations.accommodation));
+  dispatch(changeStandardReservations(data.reservations.standard));
   dispatch(changeNomenclatures(data.nomenclatures));
   dispatch(changeTables(data.tables));
   dispatch(changeOrders(data.orders));

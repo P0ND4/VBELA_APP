@@ -1,7 +1,7 @@
 const { createSlice } = require("@reduxjs/toolkit");
 
-export const reservationsSlice = createSlice({
-  name: "reservations",
+export const standardReservationsSlice = createSlice({
+  name: "standard-reservations",
   initialState: [],
   reducers: {
     change: (state, action) => (state = action.payload),
@@ -47,5 +47,5 @@ export const {
   clean,
   removeMany,
   removeManyByOwner,
-} = reservationsSlice.actions;
-export default reservationsSlice.reducer;
+} = standardReservationsSlice.actions;
+export default standardReservationsSlice.reducer;

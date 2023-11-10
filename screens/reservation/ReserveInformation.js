@@ -23,7 +23,6 @@ import {
   random,
   getFontSize,
 } from "@helpers/libs";
-import { remove as removeR } from "@features/zones/reservationsSlice";
 import {
   removeReservation,
   editReservation,
@@ -31,7 +30,14 @@ import {
   addEconomy,
   removeEconomy,
 } from "@api";
-import { edit as editR } from "@features/zones/reservationsSlice";
+import {
+  edit as editRS,
+  remove as removeRS,
+} from "@features/zones/standardReservationsSlice";
+import {
+  edit as editRA,
+  remove as removeRA,
+} from "@features/zones/accommodationReservationsSlice";
 import {
   add as addE,
   edit as editE,
@@ -51,15 +57,14 @@ const light = theme.colors.light;
 const width = Dimensions.get("screen").width;
 const height = Dimensions.get("screen").height;
 
-const Hosted = ({ item, hostedChangeRef, setTotalToPay, editable }) => {
+const Hosted = ({ name, id, onChangeText, editable, style = {} }) => {
   const mode = useSelector((state) => state.mode);
   const [payment, setPayment] = useState("");
 
   return (
-    <View key={item.id} style={styles.row}>
+    <View key={id} style={[styles.row, style]}>
       <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-        {item?.fullName.slice(0, 14)}
-        {item?.fullName.length >= 14 ? "..." : ""}
+        {name}
       </TextStyle>
       <InputStyle
         editable={editable}
@@ -69,19 +74,7 @@ const Hosted = ({ item, hostedChangeRef, setTotalToPay, editable }) => {
         value={payment}
         onChangeText={(num) => {
           setPayment(thousandsSystem(num.replace(/[^0-9]/g, "")));
-          hostedChangeRef.current = hostedChangeRef.current.map((h) => {
-            if (h.id === item.id) {
-              const nh = { ...h };
-              nh.payment = num ? parseInt(num.replace(/[^0-9]/g, "")) : 0;
-              return nh;
-            }
-            return h;
-          });
-          setTotalToPay(
-            Math.floor(
-              hostedChangeRef.current.reduce((a, b) => a + b.payment, 0)
-            )
-          );
+          onChangeText(num);
         }}
         maxLength={13}
       />
@@ -91,7 +84,12 @@ const Hosted = ({ item, hostedChangeRef, setTotalToPay, editable }) => {
 
 const ReserveInformation = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
-  const reserveState = useSelector((state) => state.reservations);
+  const standardReservations = useSelector(
+    (state) => state.standardReservations
+  );
+  const accommodationReservations = useSelector(
+    (state) => state.accommodationReservations
+  );
   const nomenclatureState = useSelector((state) => state.nomenclatures);
   const helperStatus = useSelector((state) => state.helperStatus);
   const user = useSelector((state) => state.user);
@@ -119,27 +117,96 @@ const ReserveInformation = ({ route, navigation }) => {
   const pickerRef = useRef();
   const navigationStack = useNavigation();
 
+  const place = route.params.place;
+  const reservation = route.params.reservation;
+
   //////////
 
   const [text, setText] = useState("");
 
   useEffect(() => {
-    const reserve = reserveState.find((r) => r.ref === route.params.ref);
-    setReserve(reserve);
-    setNomenclature(nomenclatureState.find((n) => n.id === route.params.id));
-    setAmount(
-      reserve?.discount ? reserve?.amount - reserve?.discount : reserve?.amount
-    );
-    setTotalPayment(
-      Math.floor(
-        reserve?.hosted?.reduce((a, b) => {
+    if (place.type === "accommodation") {
+      const ids = reservation.map((r) => r.id);
+      const reserves = accommodationReservations.filter((r) =>
+        ids.includes(r.id)
+      );
+      const data = {
+        hosted: reserves,
+        days: reserves.map((r) => r.days).every((n) => n === reserves[0]?.days)
+          ? reserves[0]?.days
+          : "Mixto",
+        end: reserves.map((r) => r.end).every((n) => n === reserves[0]?.end)
+          ? reserves[0]?.end
+          : "Mixto",
+        start: reserves
+          .map((r) => r.start)
+          .every((n) => n === reserves[0]?.start)
+          ? reserves[0]?.start
+          : "Mixto",
+        amount: reserves[0]?.amount,
+        discount: reserves
+          .map((r) => r.discount)
+          .every((n) => n === reserves[0]?.discount)
+          ? reserves[0]?.discount
+          : "Mixto",
+        type: reserves[0]?.type,
+        accommodation: reserves[0]?.accommodation,
+        creationDate: reserves
+          .map((r) => r.creationDate)
+          .every((n) => n === reserves[0]?.creationDate)
+          ? reserves[0]?.creationDate
+          : "Mixto",
+        modificationDate: reserves
+          .map((r) => r.modificationDate)
+          .every((n) => n === reserves[0]?.modificationDate)
+          ? reserves[0]?.modificationDate
+          : "Mixto",
+      };
+
+      setReserve(data);
+      const amount = reserves.reduce((a, b) => {
+        const value = b?.discount
+          ? (b?.amount - b?.discount) * b?.days
+          : b?.amount * b?.days;
+
+        return a + value;
+      }, 0);
+
+      setAmount(amount);
+      setTotalPayment(
+        reserves?.reduce((a, b) => {
           if (b.payment === "business") {
-            return a + amount / reserve?.hosted.length;
+            const value = b?.discount
+              ? (b?.amount - b?.discount) * b?.days
+              : b?.amount * b?.days;
+            return a + value;
           } else return a + b.payment;
         }, 0)
-      )
-    );
-  }, [reserveState, nomenclatureState, orders]);
+      );
+    }
+
+    if (place.type === "standard") {
+      const reserve = standardReservations.find(
+        (r) => r.ref === reservation[0]?.ref
+      );
+      setReserve(reserve);
+      const amount = reserve?.discount
+        ? reserve?.amount - reserve?.discount
+        : reserve?.amount;
+
+      setAmount(amount);
+      setTotalPayment(
+        reserve?.payment === "business" ? amount : reserve?.payment
+      );
+    }
+
+    setNomenclature(nomenclatureState.find((n) => n.id === place.id));
+  }, [
+    standardReservations,
+    accommodationReservations,
+    nomenclatureState,
+    orders,
+  ]);
 
   useEffect(() => {
     setTip(amount - totalToPay);
@@ -149,11 +216,15 @@ const ReserveInformation = ({ route, navigation }) => {
 
   useEffect(() => {
     setHostedPayment(
-      reserve?.hosted.reduce((a, b) => {
-        if (b.payment === "business") {
-          return a + amount / reserve?.hosted.length;
-        } else return a + b.payment;
-      }, 0)
+      place.type === "standard"
+        ? reserve?.payment
+        : reserve?.hosted.reduce((a, b) => {
+            if (b.payment === "business") {
+              return a + b?.discount
+                ? (b?.amount - b?.discount) * b?.days
+                : b?.amount * b?.days;
+            } else return a + b.payment;
+          }, 0)
     );
   }, [reserve?.hosted]);
 
@@ -314,7 +385,11 @@ const ReserveInformation = ({ route, navigation }) => {
         </td>
         <td style="text-align: right;">
           <p style="font-size: 28px; font-weight: 600;">
-           ${changeDate(new Date(reserve?.start))}
+           ${
+             reserve?.start === "Mixto"
+               ? "Mixto"
+               : changeDate(new Date(reserve?.start))
+           }
           </p>
         </td>
       </tr>
@@ -324,7 +399,11 @@ const ReserveInformation = ({ route, navigation }) => {
         </td>
         <td style="text-align: right;">
           <p style="font-size: 28px; font-weight: 600;">
-           ${changeDate(new Date(reserve?.end))}
+           ${
+             reserve?.end === "Mixto"
+               ? "Mixto"
+               : changeDate(new Date(reserve?.end))
+           }
           </p>
         </td>
       </tr>
@@ -352,7 +431,7 @@ const ReserveInformation = ({ route, navigation }) => {
       setHosted(hosted);
       hostedChangeRef.current = hosted.map((h) => {
         const newHosted = { ...h };
-        newHosted.payment = amount / reserve?.hosted.length;
+        newHosted.payment = h?.payment;
         return newHosted;
       });
     };
@@ -439,36 +518,40 @@ const ReserveInformation = ({ route, navigation }) => {
           text: "Si",
           onPress: async () => {
             const newReservation = { ...reserve };
-            const newHosted = reserve?.hosted.map((h) => {
-              const hostedChange = hosted.find((hc) => hc.id === h.id);
-              const found = !!hostedChange;
-              const nh = found
-                ? {
-                    ...h,
-                    checkOut: null,
-                    payment: 0,
-                  }
-                : h;
-              return nh;
-            });
-            newReservation.hosted = newHosted;
-            newReservation.payment = newHosted.reduce(
-              (a, b) =>
-                a + b.payment === "business"
-                  ? amount / reserve?.hosted.length
-                  : b.payment,
-              0
-            );
-            dispatch(editR({ ref: reserve.ref, data: newReservation }));
+            const data = [];
+            if (place.type === "accommodation") {
+              for (let h of hosted) {
+                const nh = {
+                  ...h,
+                  checkOut: null,
+                  payment: 0,
+                };
+                data.push(nh);
+                dispatch(editRA({ id: h.id, data: nh }));
+              }
 
-            const ids = hosted.filter((h) => h.owner).map((h) => h.owner);
-            if (ids.length > 0) await deleteEconomy({ ids });
+              const ids = hosted.filter((h) => h.owner).map((h) => h.owner);
+              if (ids.length > 0) await deleteEconomy({ ids });
+            }
+
+            if (place.type === "standard") {
+              const newHosted = reserve?.hosted.map((h) => ({
+                ...h,
+                checkOut: null,
+              }));
+              newReservation.hosted = newHosted;
+              newReservation.payment = 0;
+              dispatch(editRS({ ref: reserve.ref, data: newReservation }));
+            }
 
             await editReservation({
               identifier: helperStatus.active
                 ? helperStatus.identifier
                 : user.identifier,
-              reservation: newReservation,
+              reservation: {
+                data: place.type === "standard" ? newReservation : data,
+                type: place.type,
+              },
               helpers: helperStatus.active
                 ? [helperStatus.id]
                 : user.helpers.map((h) => h.id),
@@ -482,6 +565,7 @@ const ReserveInformation = ({ route, navigation }) => {
   const cleanData = () => {
     setBusinessPayment(false);
     setCheckOutModalVisible(false);
+    setTotalToPay(0);
     setHosted([]);
     hostedChangeRef.current = [];
   };
@@ -546,6 +630,7 @@ const ReserveInformation = ({ route, navigation }) => {
     const [informationModalVisible, setInformationModalVisible] =
       useState(false);
     const [editing, setEditing] = useState(false);
+    const [openMoreInformation, setOpenMoreInformation] = useState(false);
     const [handler, setHandler] = useState({
       active: true,
       key: Math.random(),
@@ -553,26 +638,38 @@ const ReserveInformation = ({ route, navigation }) => {
 
     const updateHosted = async ({ data, cleanData }) => {
       data.id = item.id;
+      data.ref = item.ref;
       data.owner = item.owner;
-      data.payment = item.payment;
       data.checkOut = item.checkOut;
+      let reserveUpdated;
 
-      let reserveUpdated = reserveState.find((r) => r.ref === route.params.ref);
-      reserveUpdated = {
-        ...reserveUpdated,
-        hosted: reserveUpdated.hosted.map((h) => {
-          if (h.id === item.id) return data;
-          return h;
-        }),
-      };
+      if (place.type === "accommodation")
+        dispatch(editRA({ id: item.id, data: { ...item, ...data } }));
+      if (place.type === "standard") {
+        let reservationREF = standardReservations.find(
+          (r) => r.ref === reservation[0]?.ref
+        );
+        reserveUpdated = {
+          ...reservationREF,
+          hosted: reservationREF.hosted.map((h) => {
+            if (h.id === item.id) return data;
+            return h;
+          }),
+        };
+        dispatch(editRS({ ref: reserveUpdated.ref, data: reserveUpdated }));
+      }
+
       cleanData();
       setInformationModalVisible(!informationModalVisible);
-      dispatch(editR({ ref: reserveUpdated.ref, data: reserveUpdated }));
       await editReservation({
         identifier: helperStatus.active
           ? helperStatus.identifier
           : user.identifier,
-        reservation: reserveUpdated,
+        reservation: {
+          data:
+            place.type === "standard" ? reserveUpdated : [{ ...item, ...data }],
+          type: place.type,
+        },
         helpers: helperStatus.active
           ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
@@ -616,29 +713,58 @@ const ReserveInformation = ({ route, navigation }) => {
                   {
                     text: "Si",
                     onPress: async () => {
-                      const newHosted = reserve?.hosted.map((i) => {
-                        if (i.id === item.id) {
-                          const newI = { ...i };
-                          newI.checkIn = i.checkIn
-                            ? null
-                            : new Date().getTime();
-                          newI.checkOut = null;
-                          newI.payment = 0;
-                          return newI;
-                        }
-                        return i;
-                      });
-
                       const newReservation = { ...reserve };
-                      newReservation.hosted = newHosted;
-                      dispatch(
-                        editR({ ref: reserve.ref, data: newReservation })
-                      );
+
+                      if (place.type === "accommodation") {
+                        dispatch(
+                          editRA({
+                            id: item.id,
+                            data: {
+                              ...item,
+                              checkIn: item.checkIn
+                                ? null
+                                : new Date().getTime(),
+                            },
+                          })
+                        );
+                      }
+
+                      if (place.type === "standard") {
+                        const newHosted = reserve?.hosted.map((i) => {
+                          if (i.id === item.id) {
+                            const newI = { ...i };
+                            newI.checkIn = i.checkIn
+                              ? null
+                              : new Date().getTime();
+                            return newI;
+                          }
+                          return i;
+                        });
+
+                        newReservation.hosted = newHosted;
+                        dispatch(
+                          editRS({ ref: reserve.ref, data: newReservation })
+                        );
+                      }
+
                       await editReservation({
                         identifier: helperStatus.active
                           ? helperStatus.identifier
                           : user.identifier,
-                        reservation: newReservation,
+                        reservation: {
+                          data:
+                            place.type === "standard"
+                              ? newReservation
+                              : [
+                                  {
+                                    ...item,
+                                    checkIn: item.checkIn
+                                      ? null
+                                      : new Date().getTime(),
+                                  },
+                                ],
+                          type: place.type,
+                        },
                         helpers: helperStatus.active
                           ? [helperStatus.id]
                           : user.helpers.map((h) => h.id),
@@ -653,6 +779,7 @@ const ReserveInformation = ({ route, navigation }) => {
               styles.table,
               {
                 borderColor: mode === "light" ? light.textDark : dark.textWhite,
+                width: 85,
               },
             ]}
           >
@@ -668,6 +795,7 @@ const ReserveInformation = ({ route, navigation }) => {
               styles.table,
               {
                 borderColor: mode === "light" ? light.textDark : dark.textWhite,
+                width: 90,
               },
             ]}
           >
@@ -680,6 +808,7 @@ const ReserveInformation = ({ route, navigation }) => {
           </View>
           <TouchableOpacity
             onPress={() => {
+              if (place.type === "standard") return;
               if (helperStatus.active && helperStatus.accessToReservations)
                 return;
               if (item.checkOut)
@@ -690,6 +819,7 @@ const ReserveInformation = ({ route, navigation }) => {
               styles.table,
               {
                 borderColor: mode === "light" ? light.textDark : dark.textWhite,
+                width: 85,
               },
             ]}
           >
@@ -700,27 +830,31 @@ const ReserveInformation = ({ route, navigation }) => {
               {item.checkOut ? changeDate(new Date(item.checkOut)) : "NO"}
             </TextStyle>
           </TouchableOpacity>
-          <View
-            style={[
-              styles.table,
-              {
-                borderColor: mode === "light" ? light.textDark : dark.textWhite,
-              },
-            ]}
-          >
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
+          {place.type === "accommodation" && (
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                  width: 100,
+                },
+              ]}
             >
-              {!helperStatus.active || helperStatus.accessToReservations
-                ? !item.payment
-                  ? "EN ESPERA"
-                  : item.payment === "business"
-                  ? "POR EMPRESA"
-                  : thousandsSystem(item.payment)
-                : "PRIVADO"}
-            </TextStyle>
-          </View>
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {!helperStatus.active || helperStatus.accessToReservations
+                  ? !item.payment
+                    ? "EN ESPERA"
+                    : item.payment === "business"
+                    ? "POR EMPRESA"
+                    : thousandsSystem(item.payment)
+                  : "PRIVADO"}
+              </TextStyle>
+            </View>
+          )}
         </View>
         <Modal
           animationType="fade"
@@ -777,7 +911,7 @@ const ReserveInformation = ({ route, navigation }) => {
                   </TouchableOpacity>
                 </View>
               </View>
-              <View style={{ marginTop: 20 }}>
+              <View style={{ marginVertical: 20 }}>
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
@@ -809,6 +943,12 @@ const ReserveInformation = ({ route, navigation }) => {
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
+                  País:{" "}
+                  <TextStyle color={light.main2}>{item.country}</TextStyle>
+                </TextStyle>
+                <TextStyle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
                   CHECK IN:{" "}
                   <TextStyle color={light.main2}>
                     {item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"}
@@ -830,21 +970,254 @@ const ReserveInformation = ({ route, navigation }) => {
                     {item.checkOut ? changeDate(new Date(item.checkOut)) : "NO"}
                   </TextStyle>
                 </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  Pagado:{" "}
-                  <TextStyle color={light.main2}>
-                    {!helperStatus.active || helperStatus.accessToReservations
-                      ? !item.payment
-                        ? "EN ESPERA"
-                        : item.payment === "business"
-                        ? "POR EMPRESA"
-                        : thousandsSystem(item.payment)
-                      : "PRIVADO"}
+                {place.type === "accommodation" && (
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Pagado:{" "}
+                    <TextStyle color={light.main2}>
+                      {!helperStatus.active || helperStatus.accessToReservations
+                        ? !item.payment
+                          ? "EN ESPERA"
+                          : item.payment === "business"
+                          ? "POR EMPRESA"
+                          : thousandsSystem(item.payment)
+                        : "PRIVADO"}
+                    </TextStyle>
                   </TextStyle>
-                </TextStyle>
+                )}
+                {openMoreInformation && (
+                  <View>
+                    {place.type === "accommodation" && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Pago total:{" "}
+                        <TextStyle color={light.main2}>
+                          {thousandsSystem(item.payment || "0")}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {place.type === "accommodation" && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Costo total:{" "}
+                        <TextStyle color={light.main2}>
+                          {thousandsSystem(
+                            item.discount
+                              ? item.days * (item.amount - item.discount)
+                              : item.days * item.amount
+                          )}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {place.type === "accommodation" && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Costo por dia:{" "}
+                        <TextStyle color={light.main2}>
+                          {thousandsSystem(
+                            item.discount
+                              ? item.amount - item.discount
+                              : item.amount
+                          )}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {place.type === "accommodation" && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Costo pagado:{" "}
+                        <TextStyle color={light.main2}>
+                          {thousandsSystem(item.payment)}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {place.type === "accommodation" && item.discount && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Descuento:{" "}
+                        <TextStyle color={light.main2}>
+                          {thousandsSystem(item.discount)}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {place.type === "accommodation" && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Días reservado:{" "}
+                        <TextStyle color={light.main2}>
+                          {thousandsSystem(item.days)}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {place.type === "accommodation" && item.start && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Fecha de registro:{" "}
+                        <TextStyle color={light.main2}>
+                          {changeDate(new Date(item.start))}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                    {place.type === "accommodation" && item.end && (
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Fecha de finalización:{" "}
+                        <TextStyle color={light.main2}>
+                          {changeDate(new Date(item.end))}
+                        </TextStyle>
+                      </TextStyle>
+                    )}
+                  </View>
+                )}
               </View>
+              {place.type === "accommodation" && (
+                <ButtonStyle
+                  backgroundColor={light.main2}
+                  onPress={() => setOpenMoreInformation(!openMoreInformation)}
+                >
+                  <TextStyle center>
+                    {!openMoreInformation ? "Mostrar más" : "Mostrar menos"}
+                  </TextStyle>
+                </ButtonStyle>
+              )}
+              <ButtonStyle
+                backgroundColor={light.main2}
+                onPress={() => {
+                  Alert.alert(
+                    "¿Estás seguro?",
+                    "Se eliminarán todos los datos de este huésped",
+                    [
+                      {
+                        text: "No estoy seguro",
+                        style: "cancel",
+                      },
+                      {
+                        text: "Estoy seguro",
+                        onPress: async () => {
+                          const ids = reserve?.hosted
+                            .filter(
+                              (h) => h.owner && h.checkOut && h.id === item.id
+                            )
+                            .map((h) => h.owner);
+
+                          const send = async () => {
+                            if (reserve?.hosted.length === 1) navigation.pop();
+                            else
+                              setInformationModalVisible(
+                                !informationModalVisible
+                              );
+
+                            if (place.type === "accommodation") {
+                              dispatch(removeRA({ id: item.id }));
+                            }
+
+                            if (place.type === "standard") {
+                              const newReservation = { ...reserve };
+                              const newHosted = reserve?.hosted.filter(
+                                (h) => h.id !== item.id
+                              );
+                              newReservation.hosted = newHosted;
+                              if (reserve?.hosted.length > 1) {
+                                dispatch(
+                                  editRS({
+                                    ref: reserve.ref,
+                                    data: newReservation,
+                                  })
+                                );
+                                await editReservation({
+                                  identifier: helperStatus.active
+                                    ? helperStatus.identifier
+                                    : user.identifier,
+                                  reservation: {
+                                    data: newReservation,
+                                    type: place.type,
+                                  },
+                                  helpers: helperStatus.active
+                                    ? [helperStatus.id]
+                                    : user.helpers.map((h) => h.id),
+                                });
+                              } else {
+                                dispatch(
+                                  removeRS({ ref: reservation[0]?.ref })
+                                );
+                              }
+                            }
+
+                            if (
+                              place.type === "accommodation" ||
+                              reserve?.hosted.length === 1
+                            ) {
+                              await removeReservation({
+                                identifier: helperStatus.active
+                                  ? helperStatus.identifier
+                                  : user.identifier,
+                                reservation: {
+                                  identifier:
+                                    place.type === "standard"
+                                      ? reservation[0]?.ref
+                                      : [item.id],
+                                  type: place.type,
+                                },
+                                helpers: helperStatus.active
+                                  ? [helperStatus.id]
+                                  : user.helpers.map((h) => h.id),
+                              });
+                            }
+                          };
+
+                          if (ids.length > 0) {
+                            Alert.alert(
+                              "ECONOMÍA",
+                              "¿Quiere eliminar la información de economía de los clientes?",
+                              [
+                                {
+                                  text: "No",
+                                  onPress: async () => await send(),
+                                },
+                                {
+                                  text: "Si",
+                                  onPress: async () => {
+                                    await deleteEconomy({ ids });
+                                    await send();
+                                  },
+                                },
+                              ]
+                            );
+                          } else await send();
+                        },
+                      },
+                    ],
+                    { cancelable: true }
+                  );
+                }}
+              >
+                <TextStyle center>Eliminar huésped</TextStyle>
+              </ButtonStyle>
             </View>
           </View>
         </Modal>
@@ -854,7 +1227,9 @@ const ReserveInformation = ({ route, navigation }) => {
           modalVisible={editing}
           setModalVisible={setEditing}
           editing={{ active: true, ...item }}
+          discount={place.type === "accommodation"}
           handleSubmit={(data) => updateHosted(data)}
+          type={place.type}
         />
       </>
     );
@@ -911,31 +1286,33 @@ const ReserveInformation = ({ route, navigation }) => {
                   style={{ marginHorizontal: 5 }}
                 />
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  const date = new Date(reserve.start);
-                  const day = date.getDate();
-                  const month = date.getMonth() + 1;
-                  const year = date.getFullYear();
+              {place.type === "standard" && (
+                <TouchableOpacity
+                  onPress={() => {
+                    const date = new Date(reserve.start);
+                    const day = date.getDate();
+                    const month = date.getMonth() + 1;
+                    const year = date.getFullYear();
 
-                  navigation.navigate("CreateReserve", {
-                    reserve,
-                    ref: route.params.ref,
-                    id: route.params.id,
-                    day,
-                    month,
-                    year,
-                    editing: true,
-                  });
-                }}
-                style={{ marginHorizontal: 5 }}
-              >
-                <Ionicons
-                  name="create-outline"
-                  size={getFontSize(31)}
-                  color={light.main2}
-                />
-              </TouchableOpacity>
+                    navigation.navigate("CreateReserve", {
+                      reserve,
+                      ref: reservation[0]?.ref,
+                      place,
+                      day,
+                      month,
+                      year,
+                      editing: true,
+                    });
+                  }}
+                  style={{ marginHorizontal: 5 }}
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={getFontSize(31)}
+                    color={light.main2}
+                  />
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </View>
@@ -1007,28 +1384,53 @@ const ReserveInformation = ({ route, navigation }) => {
                             {
                               text: "Si",
                               onPress: async () => {
-                                const newHosted = reserve?.hosted.map((i) => {
-                                  const newI = { ...i };
-                                  newI.checkIn =
-                                    quantity < 0 ? new Date().getTime() : null;
-                                  newI.checkOut = null;
-                                  newI.payment = 0;
-                                  return newI;
-                                });
-
                                 const newReservation = { ...reserve };
-                                newReservation.hosted = newHosted;
-                                dispatch(
-                                  editR({
-                                    ref: reserve.ref,
-                                    data: newReservation,
-                                  })
-                                );
+                                let reservations = [];
+
+                                if (place.type === "accommodation") {
+                                  const checkIn =
+                                    quantity < 0 ? new Date().getTime() : null;
+                                  for (let re of reserve.hosted) {
+                                    dispatch(
+                                      editRA({
+                                        id: re.id,
+                                        data: { ...re, checkIn },
+                                      })
+                                    );
+                                    reservations.push({ ...re, checkIn });
+                                  }
+                                }
+
+                                if (place.type === "standard") {
+                                  const newHosted = reserve?.hosted.map((i) => {
+                                    const newI = { ...i };
+                                    newI.checkIn =
+                                      quantity < 0
+                                        ? new Date().getTime()
+                                        : null;
+                                    return newI;
+                                  });
+
+                                  newReservation.hosted = newHosted;
+                                  dispatch(
+                                    editRS({
+                                      ref: reserve.ref,
+                                      data: newReservation,
+                                    })
+                                  );
+                                }
+
                                 await editReservation({
                                   identifier: helperStatus.active
                                     ? helperStatus.identifier
                                     : user.identifier,
-                                  reservation: newReservation,
+                                  reservation: {
+                                    data:
+                                      place.type === "standard"
+                                        ? newReservation
+                                        : reservations,
+                                    type: place.type,
+                                  },
                                   helpers: helperStatus.active
                                     ? [helperStatus.id]
                                     : user.helpers.map((h) => h.id),
@@ -1044,6 +1446,7 @@ const ReserveInformation = ({ route, navigation }) => {
                         {
                           borderColor:
                             mode === "light" ? light.textDark : dark.textWhite,
+                          width: 85,
                         },
                       ]}
                     >
@@ -1057,6 +1460,7 @@ const ReserveInformation = ({ route, navigation }) => {
                         {
                           borderColor:
                             mode === "light" ? light.textDark : dark.textWhite,
+                          width: 90,
                         },
                       ]}
                     >
@@ -1088,6 +1492,7 @@ const ReserveInformation = ({ route, navigation }) => {
                         {
                           borderColor:
                             mode === "light" ? light.textDark : dark.textWhite,
+                          width: 85,
                         },
                       ]}
                     >
@@ -1095,40 +1500,58 @@ const ReserveInformation = ({ route, navigation }) => {
                         CHECK OUT
                       </TextStyle>
                     </TouchableOpacity>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        },
-                      ]}
-                    >
-                      <TextStyle color={light.main2} smallParagraph>
-                        PAGADO
-                      </TextStyle>
-                    </View>
+                    {place.type === "accommodation" && (
+                      <View
+                        style={[
+                          styles.table,
+                          {
+                            borderColor:
+                              mode === "light"
+                                ? light.textDark
+                                : dark.textWhite,
+                            width: 100,
+                          },
+                        ]}
+                      >
+                        <TextStyle color={light.main2} smallParagraph>
+                          PAGADO
+                        </TextStyle>
+                      </View>
+                    )}
                   </View>
                   {reserve?.hosted.map((item) => (
-                    <Table item={item} key={item.id} />
+                    <Table item={item} key={item.id + item.ref} />
                   ))}
                 </View>
               </ScrollView>
-              {reserve?.hosted.some((h) => !h.checkOut) &&
-                (!helperStatus.active || helperStatus.accessToReservations) && (
-                  <ButtonStyle
-                    onPress={() => {
+              {(!helperStatus.active || helperStatus.accessToReservations) && (
+                <ButtonStyle
+                  onPress={() => {
+                    if (
+                      helperStatus.active &&
+                      !helperStatus.accessToReservations
+                    )
+                      return;
+                    if (!reserve?.hosted.some((h) => !h.checkOut)) {
+                      removeCheckOut({
+                        type: "general",
+                        hosted: reserve.hosted,
+                      });
+                    } else {
                       validateCheckOut({
                         type: "general",
                         hosted: reserve.hosted.filter((r) => !r.checkOut),
                       });
-                    }}
-                    style={{ marginBottom: 20 }}
-                    backgroundColor={light.main2}
-                  >
-                    <TextStyle center>CHECK OUT general</TextStyle>
-                  </ButtonStyle>
-                )}
+                    }
+                  }}
+                  style={{ marginBottom: 20 }}
+                  backgroundColor={light.main2}
+                >
+                  <TextStyle center>
+                    {totalPayment !== amount ? "Pago" : "Eliminar pago"}
+                  </TextStyle>
+                </ButtonStyle>
+              )}
             </View>
           )}
           <View>
@@ -1187,7 +1610,7 @@ const ReserveInformation = ({ route, navigation }) => {
               >
                 Tipo de alojamiento:{" "}
                 <TextStyle color={light.main2}>
-                  {reserve?.valueType === "standard"
+                  {reserve?.type === "standard"
                     ? "ESTANDAR"
                     : "POR ACOMODACIÓN"}
                 </TextStyle>
@@ -1216,7 +1639,9 @@ const ReserveInformation = ({ route, navigation }) => {
             >
               Fecha de registro:{" "}
               <TextStyle color={light.main2}>
-                {changeDate(new Date(reserve?.start))}
+                {reserve?.start === "Mixto"
+                  ? "Mixto"
+                  : changeDate(new Date(reserve?.start))}
               </TextStyle>
             </TextStyle>
             <TextStyle
@@ -1224,7 +1649,9 @@ const ReserveInformation = ({ route, navigation }) => {
             >
               Fecha de finalización:{" "}
               <TextStyle color={light.main2}>
-                {changeDate(new Date(reserve?.end))}
+                {reserve?.end === "Mixto"
+                  ? "Mixto"
+                  : changeDate(new Date(reserve?.end))}
               </TextStyle>
             </TextStyle>
           </View>
@@ -1331,13 +1758,28 @@ const ReserveInformation = ({ route, navigation }) => {
                         .map((h) => h.owner);
 
                       const send = async () => {
-                        dispatch(removeR({ ref: route.params.ref }));
+                        if (place.type === "accommodation") {
+                          for (let h of reserve?.hosted) {
+                            dispatch(removeRA({ id: h.id }));
+                          }
+                        }
+
+                        if (place.type === "standard") {
+                          dispatch(removeRS({ ref: reservation[0]?.ref }));
+                        }
+
                         navigation.pop();
                         await removeReservation({
                           identifier: helperStatus.active
                             ? helperStatus.identifier
                             : user.identifier,
-                          ref: route.params.ref,
+                          reservation: {
+                            identifier:
+                              place.type === "standard"
+                                ? reservation[0]?.ref
+                                : reserve?.hosted.map((h) => h.id),
+                            type: place.type,
+                          },
                           helpers: helperStatus.active
                             ? [helperStatus.id]
                             : user.helpers.map((h) => h.id),
@@ -1424,23 +1866,67 @@ const ReserveInformation = ({ route, navigation }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                Añade el pago total de huésped
+                {place.type === "accommodation"
+                  ? "Añade el pago total del huésped"
+                  : "Añade el pago de la reservación"}
               </TextStyle>
             </View>
             <View>
-              <FlatList
-                data={hosted}
-                keyExtractor={(h) => h.id}
-                renderItem={({ item }) => (
-                  <Hosted
-                    item={item}
-                    hostedChangeRef={hostedChangeRef}
-                    setTotalToPay={setTotalToPay}
-                    editable={!businessPayment}
-                  />
-                )}
-                style={{ maxHeight: 200, marginVertical: 10 }}
-              />
+              {place.type === "standard" && (
+                <Hosted
+                  name="Pago general"
+                  id={reserve?.ref}
+                  editable={!businessPayment}
+                  onChangeText={(num) =>
+                    setTotalToPay(num.replace(/[^0-9]/g, "") || 0)
+                  }
+                  style={{ marginVertical: 10 }}
+                />
+              )}
+              {place.type === "accommodation" && (
+                <FlatList
+                  data={hosted}
+                  keyExtractor={(h) => h.id}
+                  renderItem={({ item }) => (
+                    <Hosted
+                      name={`${item?.fullName?.slice(0, 8)}${
+                        place.type === "accommodation"
+                          ? ": " +
+                            thousandsSystem(
+                              item?.discount
+                                ? (item?.amount - item?.discount) * item?.days
+                                : item?.amount * item?.days
+                            )
+                          : ""
+                      }`}
+                      id={item?.id}
+                      onChangeText={(num) => {
+                        hostedChangeRef.current = hostedChangeRef.current.map(
+                          (h) => {
+                            if (h.id === item?.id) {
+                              const nh = { ...h };
+                              nh.payment = num
+                                ? parseInt(num.replace(/[^0-9]/g, ""))
+                                : 0;
+                              return nh;
+                            }
+                            return h;
+                          }
+                        );
+
+                        setTotalToPay(
+                          hostedChangeRef.current.reduce(
+                            (a, b) => a + b.payment,
+                            0
+                          )
+                        );
+                      }}
+                      editable={!businessPayment}
+                    />
+                  )}
+                  style={{ maxHeight: 200, marginVertical: 10 }}
+                />
+              )}
               <View>
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
@@ -1465,8 +1951,14 @@ const ReserveInformation = ({ route, navigation }) => {
                   <TextStyle color={light.main2}>
                     {thousandsSystem(
                       businessPayment
-                        ? Math.floor(amount / reserve?.hosted.length) *
-                            hosted.length
+                        ? place.type === "standard"
+                          ? amount
+                          : hostedChangeRef.current.reduce((a, b) => {
+                              const value = b?.discount
+                                ? (b?.amount - b?.discount) * b?.days
+                                : b?.amount * b?.days;
+                              return a + value;
+                            }, 0)
                         : totalToPay
                     )}
                   </TextStyle>
@@ -1505,42 +1997,65 @@ const ReserveInformation = ({ route, navigation }) => {
 
                   const send = async () => {
                     const newReservation = { ...reserve };
-                    const newHosted = reserve?.hosted.map((h) => {
-                      const hostedChange = hostedChangeRef.current.find(
-                        (hc) => hc.id === h.id
+                    const newData = [];
+                    if (place.type === "accommodation") {
+                      const difference = [];
+
+                      for (let h of hostedChangeRef.current) {
+                        const nh = {
+                          ...h,
+                          checkOut: new Date().getTime(),
+                          checkIn: new Date().getTime(),
+                          payment: businessPayment ? "business" : h.payment,
+                        };
+
+                        const amount = h?.discount
+                          ? (h?.amount - h?.discount) * h?.days
+                          : h?.amount * h?.days;
+
+                        const payment = amount - h.payment;
+                        if (payment !== 0) difference.push(amount - h.payment);
+
+                        newData.push(nh);
+                        dispatch(editRA({ id: h.id, data: nh }));
+                      }
+
+                      const ids = hostedChangeRef.current
+                        .filter((h) => h.owner)
+                        .map((h) => h.owner);
+
+                      if (ids.length > 0)
+                        await manageEconomy({ ids, hosted: newData });
+                    }
+
+                    if (place.type === "standard") {
+                      const newHosted = reserve?.hosted.map((h) => ({
+                        ...h,
+                        checkOut: new Date().getTime(),
+                        checkIn: new Date().getTime(),
+                      }));
+
+                      newReservation.hosted = newHosted;
+                      newReservation.payment = businessPayment
+                        ? "business"
+                        : parseInt(totalToPay);
+
+                      dispatch(
+                        editRS({ ref: reserve.ref, data: newReservation })
                       );
-                      const found = !!hostedChange;
-                      const nh = found
-                        ? {
-                            ...h,
-                            checkOut: new Date().getTime(),
-                            checkIn: new Date().getTime(),
-                            payment: businessPayment
-                              ? "business"
-                              : hostedChange.payment,
-                          }
-                        : h;
-                      return nh;
-                    });
-                    newReservation.hosted = newHosted;
-                    newReservation.payment = businessPayment
-                      ? (amount / reserve?.hosted.length) * hosted.length
-                      : newHosted.reduce((a, b) => a + b.payment, 0);
-                    dispatch(editR({ ref: reserve.ref, data: newReservation }));
-                    const ids = hostedChangeRef.current
-                      .filter((h) => h.owner)
-                      .map((h) => h.owner);
+                    }
 
                     cleanData();
-
-                    if (ids.length > 0)
-                      await manageEconomy({ ids, hosted: newHosted });
 
                     await editReservation({
                       identifier: helperStatus.active
                         ? helperStatus.identifier
                         : user.identifier,
-                      reservation: newReservation,
+                      reservation: {
+                        data:
+                          place.type === "standard" ? newReservation : newData,
+                        type: place.type,
+                      },
                       helpers: helperStatus.active
                         ? [helperStatus.id]
                         : user.helpers.map((h) => h.id),
@@ -1551,7 +2066,8 @@ const ReserveInformation = ({ route, navigation }) => {
 
                   if (
                     isAlertActive &&
-                    (leftover > totalToPay || leftover < totalToPay)
+                    (leftover > totalToPay || leftover < totalToPay) &&
+                    !businessPayment
                   ) {
                     Alert.alert(
                       "ADVERTENCIA",

@@ -79,7 +79,7 @@ const CustomDrawer = (props) => {
       const rooms = helpers?.map((h) => h.id);
       if (rooms.length > 0) socket.emit("leave", { helpers: rooms });
       cleanData(dispatch);
-    }, 300);
+    }, 2000);
   };
 
   return (

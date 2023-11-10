@@ -1,7 +1,7 @@
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { useSelector } from "react-redux";
 import Accommodation from "@screens/reservation/Accommodation";
-import Statistic from "@screens/Statistic";
+import Statistic from "@screens/statistic/Statistic";
 import CreateRoster from "@screens/event/CreateRoster";
 import Helper from "@screens/helper/Helper";
 import Inventory from "@screens/inventory/Inventory";

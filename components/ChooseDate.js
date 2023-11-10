@@ -24,7 +24,8 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
   const mode = useSelector((state) => state.mode);
   const zones = useSelector((state) => state.zones);
   const nomenclatures = useSelector((state) => state.nomenclatures);
-  const reservations = useSelector((state) => state.reservations);
+  const standardReservations = useSelector(state => state.standardReservations);
+  const accommodationReservations = useSelector(state => state.accommodationReservations);
 
   const [nomenclaturesToChoose, setNomenclaturesToChoose] = useState([]);
   const [zoneSelected, setZoneSelected] = useState("");
@@ -33,9 +34,11 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
 
   useEffect(() => {
     if (nomenclaturesToChoose.length > 0) {
-      const nomenclatureReservations = reservations.filter(
-        (r) => r.id === nomenclatureSelected
-      );
+      let nomenclatureReservations = [];
+      const nom = nomenclatures.find(n => n.id === nomenclatureSelected);
+
+      if (nom?.type === 'standard') nomenclatureReservations = standardReservations.filter(r => r.id === nomenclatureSelected);
+      if (nom?.type === 'accommodation') nomenclatureReservations = accommodationReservations.filter(r => r.ref === nomenclatureSelected);
 
       let markedDates = {};
       for (let reservation of nomenclatureReservations) {
@@ -48,8 +51,8 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
           const startISO = start.toISOString().slice(0, 10);
           const endISO = end.toISOString().slice(0, 10);
           markedDates[dateISO] = {
-            startingDay: dateISO === startISO,
-            endingDay: dateISO === endISO,
+            startingDay: nom?.type === 'accommodation' || dateISO === startISO,
+            endingDay: nom?.type === 'accommodation' || dateISO === endISO,
             color: light.main2,
             textColor: "#000000",
             reservation,
@@ -59,7 +62,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
       }
       setMarkedDates(markedDates);
     }
-  }, [nomenclatureSelected, reservations]);
+  }, [nomenclatureSelected, standardReservations, accommodationReservations]);
 
   useEffect(() => {
     if (zones.length > 0) {
