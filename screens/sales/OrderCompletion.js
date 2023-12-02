@@ -14,8 +14,11 @@ const dark = theme.colors.dark;
 const OrderCompletion = ({ route }) => {
   const mode = useSelector((state) => state.mode);
 
-  const data = route.params.data;
+  const extra = route.params.extra;
+  const selection = route.params.selection;
+  const pay = route.params.selection;
   const total = route.params.total;
+  const kitchen = route.params.kitchen;
   const sales = route.params.sales;
 
   const navigation = useNavigation();
@@ -32,7 +35,7 @@ const OrderCompletion = ({ route }) => {
         <View />
         <View style={{ alignItems: "center" }}>
           <Ionicons
-            name={!data.pay ? "time-outline" : "checkmark-circle-outline"}
+            name={!pay ? "time-outline" : "checkmark-circle-outline"}
             size={getFontSize(145)}
             color={light.main2}
           />
@@ -40,31 +43,41 @@ const OrderCompletion = ({ route }) => {
             bigParagraph
             color={mode === "light" ? light.textDark : dark.textWhite}
           >
-            {!data.pay ? "Pedido registrado" : "Hecho"}
+            {kitchen
+              ? "Enviado a cocina"
+              : !pay
+              ? "Pedido registrado"
+              : "Hecho"}
           </TextStyle>
-          <TextStyle
-            smallTitle
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
-            {thousandsSystem(total)}
-          </TextStyle>
+          {!kitchen && (
+            <TextStyle
+              smallTitle
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              {thousandsSystem(total)}
+            </TextStyle>
+          )}
         </View>
         <View style={{ width: "100%" }}>
-          <ButtonStyle
-            backgroundColor={light.main2}
-            onPress={() => navigation.navigate("Invoice", { data })}
-            left={() => (
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Ionicons
-                  name="reader-outline"
-                  color={light.textDark}
-                  size={getFontSize(23)}
-                  style={{ marginRight: 10 }}
-                />
-                <TextStyle bigParagraph>Factura</TextStyle>
-              </View>
-            )}
-          />
+          {!kitchen && (
+            <ButtonStyle
+              backgroundColor={light.main2}
+              onPress={() =>
+                navigation.navigate("Invoice", { selection, total, extra })
+              }
+              left={() => (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Ionicons
+                    name="reader-outline"
+                    color={light.textDark}
+                    size={getFontSize(23)}
+                    style={{ marginRight: 10 }}
+                  />
+                  <TextStyle bigParagraph>Factura</TextStyle>
+                </View>
+              )}
+            />
+          )}
           <ButtonStyle
             backgroundColor="transparent"
             style={{
@@ -74,7 +87,11 @@ const OrderCompletion = ({ route }) => {
             onPress={() => navigation.pop()}
           >
             <TextStyle color={light.main2} center>
-              {sales ? "Vender más servicios/productos" : "Buscar otra mesa"}
+              {kitchen
+                ? "Regresar"
+                : sales
+                ? "Vender más servicios/productos"
+                : "Buscar otra mesa"}
             </TextStyle>
           </ButtonStyle>
         </View>

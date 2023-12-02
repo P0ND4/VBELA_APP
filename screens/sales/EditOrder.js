@@ -204,23 +204,25 @@ const EditOrder = ({ route, navigation }) => {
             stylesContainer={{ width: "60%", marginVertical: 10 }}
             stylesInput={{ textAlign: "center", width: 0 }}
           />
-          <ButtonStyle
-            backgroundColor="transparent"
-            style={{
-              borderWidth: 2,
-              borderColor: light.main2,
-              width: "40%",
-            }}
-            onPress={() => {
-              const remove = selection.filter((item) => item.id !== id);
-              setSelection(remove);
-              navigation.pop();
-            }}
-          >
-            <TextStyle smallParagraph color={light.main2} center>
-              Remover producto
-            </TextStyle>
-          </ButtonStyle>
+          {selection.find((s) => s.id === id).paid === 0 && (
+            <ButtonStyle
+              backgroundColor="transparent"
+              style={{
+                borderWidth: 2,
+                borderColor: light.main2,
+                width: "40%",
+              }}
+              onPress={() => {
+                const remove = selection.filter((item) => item.id !== id);
+                setSelection(remove);
+                navigation.pop();
+              }}
+            >
+              <TextStyle smallParagraph color={light.main2} center>
+                Remover producto
+              </TextStyle>
+            </ButtonStyle>
+          )}
         </View>
         <ButtonStyle
           backgroundColor={light.main2}
@@ -228,7 +230,7 @@ const EditOrder = ({ route, navigation }) => {
             const items = selection.map((item) => {
               const i = { ...item };
               if (i.id === id) {
-                i.count = parseInt(amount.replace(/[^0-9]/g, ""));
+                i.count = parseInt(amount.replace(/[^0-9]/g, "")) + i.paid;
                 i.total = parseInt(amount.replace(/[^0-9]/g, "")) * i.value;
               }
               return i;

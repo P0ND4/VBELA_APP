@@ -6,12 +6,16 @@ import {
   Dimensions,
   Alert,
 } from "react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { getFontSize, changeDate, thousandsSystem } from "@helpers/libs";
 import { remove as removeS } from "@features/sales/salesSlice";
 import { remove as removeO } from "@features/tables/ordersSlice";
-import { removeOrder, removeSale } from "@api";
+import { removeOrder, removeSale, removeEconomy, editEconomy } from "@api";
+import {
+  edit as editE,
+  remove as removeE,
+} from "@features/function/economySlice";
 import TextStyle from "@components/TextStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Layout from "@components/Layout";
@@ -25,6 +29,8 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("screen");
 const History = ({ route }) => {
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
+  const customer = useSelector((state) => state.client);
+  const economy = useSelector((state) => state.economy);
   const mode = useSelector((state) => state.mode);
   const [data, setData] = useState(route.params.item);
 
@@ -37,13 +43,7 @@ const History = ({ route }) => {
 
     return (
       <View>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <View style={styles.row}>
           <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
             <TextStyle color={light.main2} paragrahp>
               {thousandsSystem(item.count)}
@@ -124,6 +124,70 @@ const History = ({ route }) => {
     );
   };
 
+  const getTotal = (totalDiscount = 0, selection = [], tip = 0, tax = 0) =>
+    totalDiscount !== 0
+      ? selection.reduce((a, b) => {
+          const value = b.value * b.paid;
+          const percentage = (value / b.total).toFixed(2);
+          return (
+            a + (b.discount !== 0 ? value - b.discount * percentage : value)
+          );
+        }, 0) -
+        totalDiscount +
+        tip +
+        tax
+      : selection.reduce((a, b) => {
+          const value = b.value * b.paid;
+          const percentage = (value / b.total).toFixed(2);
+          return (
+            a + (b.discount !== 0 ? value - b.discount * percentage : value)
+          );
+        }, 0) +
+        tip +
+        tax;
+
+  const deleteEconomy = async ({ ids, item }) => {
+    const total = getTotal(item.discount, item.selection, item.tip, item.tax);
+
+    for (let ownerRef of ids) {
+      const person =
+        customer.find((p) => p.id === ownerRef) ||
+        customer.find((p) => p?.clientList?.some((c) => c.id === ownerRef));
+
+      const foundEconomy = economy.find((e) => e.ref === person.id);
+
+      if (foundEconomy) {
+        const currentEconomy = { ...foundEconomy };
+        currentEconomy.amount -= total;
+        currentEconomy.payment -= total;
+        currentEconomy.modificationDate = new Date().getTime();
+        if (currentEconomy.amount <= 0) {
+          dispatch(removeE({ id: foundEconomy.id }));
+          await removeEconomy({
+            identifier: helperStatus.active
+              ? helperStatus.identifier
+              : user.identifier,
+            id: foundEconomy.id,
+            helpers: helperStatus.active
+              ? [helperStatus.id]
+              : user.helpers.map((h) => h.id),
+          });
+        } else {
+          dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
+          await editEconomy({
+            identifier: helperStatus.active
+              ? helperStatus.identifier
+              : user.identifier,
+            economy: currentEconomy,
+            helpers: helperStatus.active
+              ? [helperStatus.id]
+              : user.helpers.map((h) => h.id),
+          });
+        }
+      }
+    }
+  };
+
   const deleteSale = ({ item }) => {
     Alert.alert(
       `¿Estás seguro que quieres eliminar la venta?`,
@@ -136,35 +200,56 @@ const History = ({ route }) => {
         {
           text: "Si",
           onPress: async () => {
-            setData(data.filter((d) => d.id !== item.id));
-            dispatch(
-              type === "menu"
-                ? removeO({ id: item.id })
-                : removeS({ id: item.id })
-            );
-            if (type === "menu") {
-              await removeOrder({
-                identifier: helperStatus.active
-                  ? helperStatus.identifier
-                  : user.identifier,
-                id: item.id,
-                helpers: helperStatus.active
-                  ? [helperStatus.id]
-                  : user.helpers.map((h) => h.id),
-              });
-            }
+            const send = async () => {
+              setData(data.filter((d) => d.id !== item.id));
+              dispatch(
+                type === "menu"
+                  ? removeO({ id: item.id })
+                  : removeS({ id: item.id })
+              );
+              if (type === "menu") {
+                await removeOrder({
+                  identifier: helperStatus.active
+                    ? helperStatus.identifier
+                    : user.identifier,
+                  id: item.id,
+                  helpers: helperStatus.active
+                    ? [helperStatus.id]
+                    : user.helpers.map((h) => h.id),
+                });
+              }
 
-            if (type === "sales") {
-              await removeSale({
-                identifier: helperStatus.active
-                  ? helperStatus.identifier
-                  : user.identifier,
-                id: item.id,
-                helpers: helperStatus.active
-                  ? [helperStatus.id]
-                  : user.helpers.map((h) => h.id),
-              });
-            }
+              if (type === "sales") {
+                await removeSale({
+                  identifier: helperStatus.active
+                    ? helperStatus.identifier
+                    : user.identifier,
+                  id: item.id,
+                  helpers: helperStatus.active
+                    ? [helperStatus.id]
+                    : user.helpers.map((h) => h.id),
+                });
+              }
+            };
+            if (item.ref) {
+              Alert.alert(
+                "ECONOMÍA",
+                "¿Quiere eliminar la información de economía de los clientes?",
+                [
+                  {
+                    text: "No",
+                    onPress: async () => await send(),
+                  },
+                  {
+                    text: "Si",
+                    onPress: async () => {
+                      await deleteEconomy({ ids: [item.ref], item });
+                      await send();
+                    },
+                  },
+                ]
+              );
+            } else await send();
           },
         },
       ],
@@ -172,14 +257,39 @@ const History = ({ route }) => {
     );
   };
   const Menu = ({ item }) => {
+    const [open, isOpen] = useState(false);
+    const [methods, setMethods] = useState([]);
     const date = new Date(item.creationDate);
+
+    useEffect(() => {
+      const totalPayment = item?.selection.reduce((a, b) => {
+        return [...a, ...b.method];
+      }, []);
+
+      let simplifiedMethods = [];
+
+      for (let p of totalPayment) { //TODO REFACTORIZAR EL CODIGO
+        if (simplifiedMethods.find((s) => s.method == p.method)) {
+          simplifiedMethods = simplifiedMethods.map((s) => {
+            const i = { ...s };
+            if (s.method === p.method) {
+              i.total += p.total;
+              return i;
+            } else return i;
+          });
+        } else simplifiedMethods.push(p);
+      }
+
+      setMethods(simplifiedMethods);
+    }, [item]);
 
     return (
       <View style={styles.card}>
         <View style={styles.row}>
           <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-            {changeDate(date)} {date.getHours()}:{date.getMinutes()}:
-            {date.getSeconds()}
+            {changeDate(date)} {("0" + date.getHours()).slice(-2)}:
+            {("0" + date.getMinutes()).slice(-2)}:
+            {("0" + date.getSeconds()).slice(-2)}
           </TextStyle>
           <TouchableOpacity onPress={() => deleteSale({ item })}>
             <Ionicons name="trash" color={light.main2} size={getFontSize(18)} />
@@ -187,13 +297,44 @@ const History = ({ route }) => {
         </View>
         <View style={{ marginTop: 6 }}>
           {item.selection.map((item) => (
-            <Observation item={item} />
+            <Observation key={item.id} item={item} />
           ))}
         </View>
-        <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-          Método de pago:{" "}
-          <TextStyle color={light.main2}>{item?.method}</TextStyle>
-        </TextStyle>
+        <View>
+          <View style={styles.row}>
+            <TextStyle
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              Método de pago:{" "}
+              <TextStyle color={light.main2}>
+                {methods.length} utilizados
+              </TextStyle>
+            </TextStyle>
+            <TouchableOpacity onPress={() => isOpen(!open)}>
+              <Ionicons
+                color={light.main2}
+                name={open ? "eye-off" : "eye"}
+                size={getFontSize(18)}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+        {open && (
+          <View style={{ marginLeft: 8 }}>
+            {methods.map((m) => (
+              <TextStyle
+                key={m.method}
+                verySmall
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                <TextStyle color={light.main2} verySmall>
+                  {m.method}:
+                </TextStyle>{" "}
+                {m.total}
+              </TextStyle>
+            ))}
+          </View>
+        )}
         {item?.discount && (
           <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
             Descuento:{" "}
@@ -289,24 +430,22 @@ const History = ({ route }) => {
           )*/}
         </View>
       </View>
-      {
-        <View>
-          {data.length === 0 && (
-            <TextStyle color={light.main2} center smallSubtitle>
-              No hay ventas
-            </TextStyle>
-          )}
-          {data.length > 0 && (
-            <FlatList
-              data={data}
-              keyExtractor={(item) => item.id}
-              style={{ maxHeight: SCREEN_HEIGHT / 1.3 }}
-              showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => <Menu item={item} />}
-            />
-          )}
-        </View>
-      }
+      <View>
+        {data.length === 0 && (
+          <TextStyle color={light.main2} center smallSubtitle>
+            No hay ventas
+          </TextStyle>
+        )}
+        {data.length > 0 && (
+          <FlatList
+            data={data}
+            keyExtractor={(item) => item.id}
+            style={{ maxHeight: SCREEN_HEIGHT / 1.3 }}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => <Menu item={item} />}
+          />
+        )}
+      </View>
     </Layout>
   );
 };

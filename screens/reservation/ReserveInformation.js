@@ -22,6 +22,7 @@ import {
   generatePDF,
   random,
   getFontSize,
+  addDays,
 } from "@helpers/libs";
 import {
   removeReservation,
@@ -95,7 +96,7 @@ const ReserveInformation = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
   const orders = useSelector((state) => state.orders);
   const economy = useSelector((state) => state.economy);
-  const folk = useSelector((state) => state.people);
+  const customer = useSelector((state) => state.client);
 
   const [reserve, setReserve] = useState(null);
   const [totalPayment, setTotalPayment] = useState(0);
@@ -425,6 +426,75 @@ const ReserveInformation = ({ route, navigation }) => {
 </html>
 `;
 
+  const checkInEvent = ({ item }) => {
+    if (helperStatus.active && !helperStatus.accessToReservations) return;
+
+    Alert.alert(
+      "CAMBIAR",
+      `¿El cliente ${item.checkIn ? "no " : ""} ha llegado?`,
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Si",
+          onPress: async () => {
+            const newReservation = { ...reserve };
+
+            if (place.type === "accommodation") {
+              dispatch(
+                editRA({
+                  id: item.id,
+                  data: {
+                    ...item,
+                    checkIn: item.checkIn ? null : new Date().getTime(),
+                  },
+                })
+              );
+            }
+
+            if (place.type === "standard") {
+              const newHosted = reserve?.hosted.map((i) => {
+                if (i.id === item.id) {
+                  const newI = { ...i };
+                  newI.checkIn = i.checkIn ? null : new Date().getTime();
+                  return newI;
+                }
+                return i;
+              });
+
+              newReservation.hosted = newHosted;
+              dispatch(editRS({ ref: reserve.ref, data: newReservation }));
+            }
+
+            await editReservation({
+              identifier: helperStatus.active
+                ? helperStatus.identifier
+                : user.identifier,
+              reservation: {
+                data:
+                  place.type === "standard"
+                    ? newReservation
+                    : [
+                        {
+                          ...item,
+                          checkIn: item.checkIn ? null : new Date().getTime(),
+                        },
+                      ],
+                type: place.type,
+              },
+              helpers: helperStatus.active
+                ? [helperStatus.id]
+                : user.helpers.map((h) => h.id),
+            });
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   const validateCheckOut = ({ type, hosted }) => {
     const active = () => {
       setCheckOutModalVisible(!checkOutModalVisible);
@@ -466,9 +536,12 @@ const ReserveInformation = ({ route, navigation }) => {
 
   const deleteEconomy = async ({ ids }) => {
     for (let ownerRef of ids) {
-      const foundEconomy = economy.find((e) => e.ref === ownerRef);
+      const person =
+        customer.find((p) => p.id === ownerRef) ||
+        customer.find((p) => p?.clientList?.some((c) => c.id === ownerRef));
+
+      const foundEconomy = economy.find((e) => e.ref === person.id);
       const client = reserve?.hosted.find((h) => h.owner === ownerRef);
-      const person = folk.find((p) => p.id === ownerRef);
 
       if (client.payment === "business" || client.payment === 0 || !person)
         continue;
@@ -572,19 +645,22 @@ const ReserveInformation = ({ route, navigation }) => {
 
   const manageEconomy = async ({ ids, hosted }) => {
     for (let ownerRef of ids) {
-      const foundEconomy = economy.find((e) => e.ref === ownerRef);
+      const person =
+        customer.find((p) => p.id === ownerRef) ||
+        customer.find((p) => p?.clientList?.some((c) => c.id === ownerRef));
+
       const client = hosted.find((h) => h.owner === ownerRef);
-      const person = folk.find((p) => p.id === ownerRef);
 
       if (client.payment === "business" || client.payment === 0 || !person)
         continue;
 
+      const foundEconomy = economy.find((e) => e.ref === person.id);
       if (!foundEconomy) {
         const id = random(20);
 
         const newEconomy = {
           id,
-          ref: ownerRef,
+          ref: person.id,
           owner: {
             identification: person.identification,
             name: person.name,
@@ -643,8 +719,18 @@ const ReserveInformation = ({ route, navigation }) => {
       data.checkOut = item.checkOut;
       let reserveUpdated;
 
-      if (place.type === "accommodation")
-        dispatch(editRA({ id: item.id, data: { ...item, ...data } }));
+      if (place.type === "accommodation") {
+        const date = new Date(item.start);
+        const day = date.getDate();
+        const month = date.getMonth();
+        const year = date.getFullYear();
+
+        const end = addDays(
+          new Date(year, month, day),
+          parseInt(data.days - 1)
+        ).getTime();
+        dispatch(editRA({ id: item.id, data: { ...item, ...data, end } }));
+      }
       if (place.type === "standard") {
         let reservationREF = standardReservations.find(
           (r) => r.ref === reservation[0]?.ref
@@ -698,83 +784,7 @@ const ReserveInformation = ({ route, navigation }) => {
             </TextStyle>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => {
-              if (helperStatus.active && !helperStatus.accessToReservations)
-                return;
-
-              Alert.alert(
-                "CAMBIAR",
-                `¿El cliente ${item.checkIn ? "no " : ""} ha llegado?`,
-                [
-                  {
-                    text: "Cancelar",
-                    style: "cancel",
-                  },
-                  {
-                    text: "Si",
-                    onPress: async () => {
-                      const newReservation = { ...reserve };
-
-                      if (place.type === "accommodation") {
-                        dispatch(
-                          editRA({
-                            id: item.id,
-                            data: {
-                              ...item,
-                              checkIn: item.checkIn
-                                ? null
-                                : new Date().getTime(),
-                            },
-                          })
-                        );
-                      }
-
-                      if (place.type === "standard") {
-                        const newHosted = reserve?.hosted.map((i) => {
-                          if (i.id === item.id) {
-                            const newI = { ...i };
-                            newI.checkIn = i.checkIn
-                              ? null
-                              : new Date().getTime();
-                            return newI;
-                          }
-                          return i;
-                        });
-
-                        newReservation.hosted = newHosted;
-                        dispatch(
-                          editRS({ ref: reserve.ref, data: newReservation })
-                        );
-                      }
-
-                      await editReservation({
-                        identifier: helperStatus.active
-                          ? helperStatus.identifier
-                          : user.identifier,
-                        reservation: {
-                          data:
-                            place.type === "standard"
-                              ? newReservation
-                              : [
-                                  {
-                                    ...item,
-                                    checkIn: item.checkIn
-                                      ? null
-                                      : new Date().getTime(),
-                                  },
-                                ],
-                          type: place.type,
-                        },
-                        helpers: helperStatus.active
-                          ? [helperStatus.id]
-                          : user.helpers.map((h) => h.id),
-                      });
-                    },
-                  },
-                ],
-                { cancelable: true }
-              );
-            }}
+            onPress={() => checkInEvent({ item })}
             style={[
               styles.table,
               {
@@ -946,14 +956,18 @@ const ReserveInformation = ({ route, navigation }) => {
                   País:{" "}
                   <TextStyle color={light.main2}>{item.country}</TextStyle>
                 </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  CHECK IN:{" "}
-                  <TextStyle color={light.main2}>
-                    {item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"}
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    CHECK IN:{" "}
                   </TextStyle>
-                </TextStyle>
+                  <TouchableOpacity onPress={() => checkInEvent({ item })}>
+                    <TextStyle color={light.main2}>
+                      {item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"}
+                    </TextStyle>
+                  </TouchableOpacity>
+                </View>
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
@@ -962,14 +976,32 @@ const ReserveInformation = ({ route, navigation }) => {
                     {item.owner ? "SI" : "NO"}
                   </TextStyle>
                 </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  CHECK OUT:{" "}
-                  <TextStyle color={light.main2}>
-                    {item.checkOut ? changeDate(new Date(item.checkOut)) : "NO"}
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    CHECK OUT:{" "}
                   </TextStyle>
-                </TextStyle>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (place.type === "standard") return;
+                      if (
+                        helperStatus.active &&
+                        helperStatus.accessToReservations
+                      )
+                        return;
+                      if (item.checkOut)
+                        removeCheckOut({ type: "unique", hosted: [item] });
+                      else validateCheckOut({ type: "unique", hosted: [item] });
+                    }}
+                  >
+                    <TextStyle color={light.main2}>
+                      {item.checkOut
+                        ? changeDate(new Date(item.checkOut))
+                        : "NO"}
+                    </TextStyle>
+                  </TouchableOpacity>
+                </View>
                 {place.type === "accommodation" && (
                   <TextStyle
                     color={mode === "light" ? light.textDark : dark.textWhite}
@@ -996,7 +1028,7 @@ const ReserveInformation = ({ route, navigation }) => {
                       >
                         Pago total:{" "}
                         <TextStyle color={light.main2}>
-                          {thousandsSystem(item.payment || "0")}
+                          {thousandsSystem(item.payment === 'business' ? 'POR EMPRESA' : item.payment)}
                         </TextStyle>
                       </TextStyle>
                     )}
@@ -1040,7 +1072,7 @@ const ReserveInformation = ({ route, navigation }) => {
                       >
                         Costo pagado:{" "}
                         <TextStyle color={light.main2}>
-                          {thousandsSystem(item.payment)}
+                          {thousandsSystem(item.payment === 'business' ? 'POR EMPRESA' : item.payment)}
                         </TextStyle>
                       </TextStyle>
                     )}
@@ -2024,8 +2056,61 @@ const ReserveInformation = ({ route, navigation }) => {
                         .filter((h) => h.owner)
                         .map((h) => h.owner);
 
+                      // --------- //TODO VER SI SE PUEDE REFACTORIZAR
+                      // Esto es por si existe mas de una persona en accommodation para no crear 2 o mas economy para una persona
+
+                      let clients = customer // VEMOS LOS CLIENTES PARA VER SI ESTA DENTRO DE UN CLIENTLIST
+                        .filter((p) =>
+                          p?.clientList?.some((c) => ids.includes(c.id))
+                        )
+                        .map((c) => ({ clientID: c.id, hosted: c.clientList })); // AGARRAMOS LO QUE NOS INTERESA
+
+                      let hash = {};
+                      clients = clients.filter(
+                        (
+                          c //FILTRAMOS PARA QUE NO HAYA OBJETOS DUPLICADOS
+                        ) => (hash[c.id] ? false : (hash[c.id] = true))
+                      );
+
+                      const hostedREF = newData.map((h) => {
+                        let client = {};
+                        for (let c of clients) {
+                          const exists = c?.hosted?.find(
+                            (c) => c.id === h.owner
+                          );
+                          if (exists) {
+                            client = { ...exists, clientID: c.clientID };
+                            break;
+                          }
+                        }
+                        if (client) return { ...h, clientID: client.clientID };
+                        else return h;
+                      });
+
+                      const manageEconomyHosted = [];
+
+                      for (let h of hostedREF) {
+                        if (h.payment === "business" || h.payment === 0)
+                          continue;
+                        const index = manageEconomyHosted.findIndex(
+                          (m) => m.clientID === h?.clientID
+                        );
+                        if (index !== -1) {
+                          manageEconomyHosted[index].payment += h.payment;
+                          const indexID = ids.findIndex((id) => id === h.id);
+                          ids.splice(indexID, 1);
+                        } else manageEconomyHosted.push(h);
+                      }
+
+                      //console.log(manageEconomyHosted[0].payment)
+
+                      // ---------
+
                       if (ids.length > 0)
-                        await manageEconomy({ ids, hosted: newData });
+                        await manageEconomy({
+                          ids,
+                          hosted: manageEconomyHosted,
+                        });
                     }
 
                     if (place.type === "standard") {

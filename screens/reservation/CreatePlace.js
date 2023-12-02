@@ -70,6 +70,12 @@ const CreatePlace = ({ route, navigation }) => {
 
   const mode = useSelector((state) => state.mode);
   const nomenclaturesState = useSelector((state) => state.nomenclatures);
+  const standardReservations = useSelector(
+    (state) => state.standardReservations
+  );
+  const accommodationReservations = useSelector(
+    (state) => state.accommodationReservations
+  );
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
   const accommodationState = useSelector((state) => state.accommodation);
@@ -106,13 +112,21 @@ const CreatePlace = ({ route, navigation }) => {
     useState(null);
   const [accommodationName, setAccommodationName] = useState("");
   const [accommodationSelected, setAccommodationSelected] = useState(
-    editing ? place.accommodation || {} : {}
+    editing ? place.accommodation || [] : []
   );
   const [accommodation, setAccommodation] = useState([]);
   const [editingAccommodation, setEditingAccommodation] = useState({
     editing: false,
     item: null,
   });
+  const [hosted, setHosted] = useState([]);
+
+  useEffect(() => {
+    if (place?.type === "standard")
+      setHosted(standardReservations.filter((r) => r.id === place.id));
+    if (place?.type === "accommodation")
+      setHosted(accommodationReservations.filter((r) => r.ref === place.id));
+  }, [place]);
 
   useEffect(() => {
     setNomenclatures(
@@ -156,11 +170,11 @@ const CreatePlace = ({ route, navigation }) => {
     });
     placeRegister("accommodation", {
       value: validation("accommodation") ? place?.accommodation : null,
-      validate: (obj) => {
-        const ref = obj || {};
+      validate: (arr) => {
+        const ref = arr || [];
 
         if (value === "accommodation") {
-          return Object.keys(ref).length !== 0 || "Debe colocar la acomodación";
+          return ref.length !== 0 || "Debe colocar la acomodación";
         }
       },
     });
@@ -376,10 +390,7 @@ const CreatePlace = ({ route, navigation }) => {
                 Creación de espacios
               </TextStyle>
               {editing && (
-                <TextStyle
-                  center
-                  color={light.main2}
-                >
+                <TextStyle center color={light.main2}>
                   {place.type === "standard" ? "Estandar" : "Acomodación"}
                 </TextStyle>
               )}
@@ -424,7 +435,12 @@ const CreatePlace = ({ route, navigation }) => {
                 }}
               />
               <View>
-                {!editing && (
+                {hosted.length > 0 && (
+                  <TextStyle verySmall color={light.main2}>
+                    Para cambiar el tipo la habitación tiene que estar vacia
+                  </TextStyle>
+                )}
+                {(hosted.length === 0 || !editing) && (
                   <ButtonStyle
                     backgroundColor={
                       mode === "light" ? light.main5 : dark.main2
@@ -492,8 +508,8 @@ const CreatePlace = ({ route, navigation }) => {
                       setPlaceValue("type", value);
                       setAccommodationSelected(
                         validation("accommodation")
-                          ? place?.accommodation || {}
-                          : {}
+                          ? place?.accommodation || []
+                          : []
                       );
                       eventHandler(value);
                     }}
@@ -538,13 +554,8 @@ const CreatePlace = ({ route, navigation }) => {
                     }
                   >
                     <TextStyle>
-                      {accommodationSelected?.id
-                        ? `Acomodación (${accommodationSelected?.name.slice(
-                            0,
-                            14
-                          )}${
-                            accommodationSelected.name.length > 14 ? "..." : ""
-                          })`
+                      {accommodationSelected.length > 0
+                        ? `(${accommodationSelected.length}) Acomodaciones seleccionadas`
                         : "Agregar acomodación"}
                     </TextStyle>
                     <Ionicons
@@ -626,8 +637,8 @@ const CreatePlace = ({ route, navigation }) => {
                   Valor por persona:{" "}
                   <TextStyle color={light.main2} smallSubtitle>
                     {thousandsSystem(
-                      accommodationSelected?.accommodation?.reduce(
-                        (a, b) => a + b.value,
+                      accommodationSelected?.reduce(
+                        (a, b) => a + b.accommodation.reduce((a,b) => a + b.value, 0),
                         0
                       ) || 0
                     )}
@@ -922,9 +933,15 @@ const CreatePlace = ({ route, navigation }) => {
                 <View style={{ marginTop: 20 }}>
                   <ScrollView style={{ maxHeight: 200 }}>
                     {accommodationState.map((item) => {
+                      const exists = accommodationSelected.find(
+                        (a) => a.id === item.id
+                      );
+
                       return (
                         <TouchableOpacity
                           onPress={() => {
+                            if (exists) return;
+
                             Alert.alert(
                               "SELECCIÓN",
                               `¿Vas a elegir la acomodación ${item.name}?`,
@@ -936,12 +953,9 @@ const CreatePlace = ({ route, navigation }) => {
                                 {
                                   text: "Si",
                                   onPress: () => {
-                                    setAccommodationSelected(item);
-                                    setPlaceValue("accommodation", item);
-                                    cleanDataAccommodation();
-                                    setModalVisibleAccommodation(
-                                      !modalVisibleAccommodation
-                                    );
+                                    const value = [...accommodationSelected, item]
+                                    setAccommodationSelected(value);
+                                    setPlaceValue("accommodation", value);
                                   },
                                 },
                               ],
@@ -983,7 +997,9 @@ const CreatePlace = ({ route, navigation }) => {
                             </TouchableOpacity>
                             <TextStyle
                               color={
-                                mode === "light"
+                                exists
+                                  ? light.main2
+                                  : mode === "light"
                                   ? light.textDark
                                   : dark.textWhite
                               }
@@ -992,29 +1008,48 @@ const CreatePlace = ({ route, navigation }) => {
                               {item.name.length > 20 ? "..." : ""}
                             </TextStyle>
                           </View>
-                          <TouchableOpacity
-                            onPress={() => {
-                              setEditingAccommodation({ editing: true, item });
-                              setAccommodation(item.accommodation);
-                              setAccommodationName(item.name);
-                              setAccommodationValue(
-                                "accommodation",
-                                item.accommodation
-                              );
-                              setAccommodationValue("name", item.name);
-                              scrollViewAccommodationRef.current?.scrollTo({
-                                x: SCREEN_WIDTH * 2,
-                                animated: true,
-                              });
-                            }}
-                          >
-                            <Ionicons
-                              name="create-outline"
-                              color={light.main2}
-                              size={getFontSize(23)}
-                              style={{ marginHorizontal: 5 }}
-                            />
-                          </TouchableOpacity>
+                          {exists && (
+                            <TouchableOpacity onPress={() => {
+                              const value = accommodationSelected.filter(a => a.id !== item.id);
+                              setAccommodationSelected(value);
+                              setPlaceValue("accommodation", value);
+                            }}>
+                              <Ionicons
+                                name="close"
+                                color={light.main2}
+                                size={getFontSize(23)}
+                                style={{ marginHorizontal: 5 }}
+                              />
+                            </TouchableOpacity>
+                          )}
+                          {!exists && (
+                            <TouchableOpacity
+                              onPress={() => {
+                                setEditingAccommodation({
+                                  editing: true,
+                                  item,
+                                });
+                                setAccommodation(item.accommodation);
+                                setAccommodationName(item.name);
+                                setAccommodationValue(
+                                  "accommodation",
+                                  item.accommodation
+                                );
+                                setAccommodationValue("name", item.name);
+                                scrollViewAccommodationRef.current?.scrollTo({
+                                  x: SCREEN_WIDTH * 2,
+                                  animated: true,
+                                });
+                              }}
+                            >
+                              <Ionicons
+                                name="create-outline"
+                                color={light.main2}
+                                size={getFontSize(23)}
+                                style={{ marginHorizontal: 5 }}
+                              />
+                            </TouchableOpacity>
+                          )}
                         </TouchableOpacity>
                       );
                     })}

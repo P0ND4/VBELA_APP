@@ -49,8 +49,11 @@ const PeopleInformation = ({ route, navigation }) => {
     (state) => state.accommodationReservations
   );
   const orders = useSelector((state) => state.orders);
+  const sales = useSelector((state) => state.sales);
   const user = useSelector((state) => state.user);
-  const people = useSelector((state) => state.people);
+  const client = useSelector((state) => state.client);
+  const supplier = useSelector((state) => state.supplier);
+  const nomenclatures = useSelector(state => state.nomenclatures)
 
   const [registers, setRegisters] = useState([]);
   const [textSupplier, setTextSupplier] = useState("");
@@ -66,95 +69,99 @@ const PeopleInformation = ({ route, navigation }) => {
       [
         ...filter.map((e) => {
           const eco = { ...e };
-          const standard = standardReservations.filter(({ hosted }) =>
-            hosted.some(({ owner }) => owner === e.ref)
-          );
-          const accommodation = accommodationReservations.filter(
-            (r) => r.owner === e.ref
-          );
-          const reser = [...standard, ...accommodation];
+          const { clientList } = client?.find((c) => c.id === e.ref);
 
-          const reservationsSorted = reser.map((r) => {
-            const day = new Date(r.creationDate).getDate();
-            const month = new Date(r.creationDate).getMonth() + 1;
-            const client =
-              r.type === "standard"
-                ? r?.hosted.find((h) => h.owner === e.ref)
-                : r;
+          const standardReservationsSorted = standardReservations
+            .filter(({ hosted }) =>
+              hosted.some(
+                ({ owner }) =>
+                  owner === e.ref || clientList?.some((c) => c.id === owner)
+              )
+            )
+            .map((reservation) => {
+              return {
+                reservation,
+                quantity: reservation?.hosted?.length,
+                date: reservation.creationDate,
+                total: reservation.hosted.reduce(
+                  (a, b) => (a + b.payment === "business" ? 0 : b.payment),
+                  0
+                ),
+                type: "standard-reservations",
+              };
+            });
 
-            return {
-              quantity: r?.hosted?.length || 1,
-              date: `${("0" + day).slice(-2)}-${("0" + month).slice(-2)}`,
-              total:
-                client.payment === 0
-                  ? "EN ESPERA"
-                  : client.payment === "business"
-                  ? "POR EMPRESA"
-                  : client.payment,
-              type: "reservations",
-            };
-          });
+          const accommodationReservationsSorted = accommodationReservations
+            .filter(
+              ({ owner }) =>
+                owner === e.ref || clientList?.some((c) => c.id === owner)
+            )
+            .map((hosted) => {
+              return {
+                hosted,
+                quantity: 1,
+                date: hosted.creationDate,
+                total:
+                  hosted.payment === 0
+                    ? "EN ESPERA"
+                    : hosted.payment === "business"
+                    ? "POR EMPRESA"
+                    : hosted.payment,
+                type: "accommodation-reservations",
+              };
+            });
 
           const ordersSorted = orders
-            .filter((o) => o.ref === eco.ref)
-            .map(({ creationDate, selection }) => {
-              const day = new Date(creationDate).getDate();
-              const month = new Date(creationDate).getMonth() + 1;
+            .filter((o) => o.ref === e.ref)
+            .map((order) => {
               return {
-                quantity: selection.reduce(
+                data: order,
+                quantity: order.selection.reduce(
                   (a, { count }) => a + parseInt(count),
                   0
                 ),
-                date: `${("0" + day).slice(-2)}-${("0" + month).slice(-2)}`,
-                total: selection.reduce(
-                  (a, { total }) => a + parseInt(total),
+                date: order.creationDate,
+                total: order.selection.reduce(
+                  (a, { paid, value }) => a + paid * value,
                   0
                 ),
                 type: "orders",
               };
             });
 
-          const union = [...reservationsSorted, ...ordersSorted];
-
-          const details = union.reduce((acc, item) => {
-            const found = acc.findIndex((d) => d.date === item.date);
-
-            if (found === -1) {
-              const data = {
-                date: item.date,
-                [item.type]: {
-                  quantity: item.quantity,
-                  total: item.total,
-                },
+          const salesSorted = sales
+            .filter((s) => s.ref === e.ref)
+            .map((sale) => {
+              return {
+                data: sale,
+                quantity: sale.selection.reduce(
+                  (a, { count }) => a + parseInt(count),
+                  0
+                ),
+                date: sale.creationDate,
+                total: sale.selection.reduce((a, { total }) => a + total, 0),
+                type: "sales",
               };
-              acc.push(data);
-            } else {
-              const type = acc[found][item.type];
-              acc[found] = {
-                ...acc[found],
-                [item.type]: {
-                  quantity: type
-                    ? type.quantity + item.quantity
-                    : item.quantity,
-                  total: type ? type.total + item.total : item.total,
-                },
-              };
-            }
-            return acc;
-          }, []);
+            });
 
-          eco.details = details.sort((a, b) => a.date > b.date);
-          eco.people = reser.reduce((a, b) => {
-            const value = b.hosted?.length || 1;
-            return a + value;
-          }, 0);
-          eco.orders = details.reduce(
-            (a, b) => a + parseInt(b.orders?.total),
-            0
+          const union = [
+            ...accommodationReservationsSorted,
+            ...ordersSorted,
+            ...salesSorted,
+            ...standardReservationsSorted,
+          ];
+
+          eco.details = union.sort(
+            (a, b) => new Date(b.date) - new Date(a.date)
           );
-          eco.reservations = reservationsSorted.length;
-          eco.ordersFinished = ordersSorted.length;
-
+          eco.people = accommodationReservationsSorted?.length + standardReservationsSorted.reduce((a,b)=> a + b.hosted.length,0);
+          eco.orders = ordersSorted?.length;
+          eco.sales = salesSorted?.length;
+          eco.reservations = accommodationReservationsSorted?.length + standardReservationsSorted?.length;
+          eco.ordersFinished = ordersSorted.reduce((a, b) => {
+            const value = b.paid === b.count ? 1 : 0;
+            return a + value
+          },0);
           return eco;
         }),
       ].reverse()
@@ -181,7 +188,9 @@ const PeopleInformation = ({ route, navigation }) => {
   }, [economy, type, standardReservations, accommodationReservations]);
 
   const customerDataRemove = async (economy) => {
-    const person = people.find((p) => p.id === economy.ref);
+    const clientREF = client.find((p) => p.id === economy.ref);
+    const supplierREF = supplier.find((p) => p.id === economy.ref);
+    const person = clientREF || supplierREF;
     dispatch(removeMBORS({ owner: person.id }));
     dispatch(removeMBORA({ owner: person.id }));
     dispatch(removeMBOO({ ref: person.id }));
@@ -227,82 +236,172 @@ const PeopleInformation = ({ route, navigation }) => {
 
     const Details = () => {
       return (
-        <View>
-          <View style={[styles.row, styles.details]}>
-            <TextStyle smallParagraph color={light.main2}>
-              Fecha
-            </TextStyle>
-            <TextStyle smallParagraph color={light.main2}>
-              Cantidad
-            </TextStyle>
-            <TextStyle smallParagraph color={light.main2}>
-              Detalle
-            </TextStyle>
-            <TextStyle smallParagraph color={light.main2}>
-              Valor
-            </TextStyle>
-          </View>
-          {item.details.map((item) => (
-            <View key={item.date} style={[styles.row, styles.details]}>
+        <View style={{ marginVertical: 15 }}>
+          <View style={{ flexDirection: "row" }}>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
               <TextStyle
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                {item.date}
+                Fecha
               </TextStyle>
-              <View style={{ alignItems: "center" }}>
-                {item.orders && (
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    {item?.orders?.quantity}
-                  </TextStyle>
-                )}
-                {item.reservations && (
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    {item?.reservations?.quantity}
-                  </TextStyle>
-                )}
+            </View>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Cantidad
+              </TextStyle>
+            </View>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Detalle
+              </TextStyle>
+            </View>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Valor
+              </TextStyle>
+            </View>
+          </View>
+          {item.details.map((item) => (
+            <View key={item.id} style={{ flexDirection: "row" }}>
+              <View
+                style={[
+                  styles.table,
+                  {
+                    borderColor:
+                      mode === "light" ? light.textDark : dark.textWhite,
+                  },
+                ]}
+              >
+                <TextStyle
+                  verySmall
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  {changeDate(new Date(item.date))}
+                </TextStyle>
               </View>
-              <View style={{ alignItems: "center" }}>
-                {item?.orders && (
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Comida
-                  </TextStyle>
-                )}
-                {item?.reservations && (
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Alojamiento
-                  </TextStyle>
-                )}
+              <View
+                style={[
+                  styles.table,
+                  {
+                    borderColor:
+                      mode === "light" ? light.textDark : dark.textWhite,
+                  },
+                ]}
+              >
+                <TextStyle
+                  verySmall
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  {item.quantity}
+                </TextStyle>
               </View>
-              <View style={{ alignItems: "center" }}>
-                {item.orders && (
-                  <TextStyle
-                    verySmall
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    {thousandsSystem(item?.orders?.total || 0)}
-                  </TextStyle>
-                )}
-                {item.reservations && (
-                  <TextStyle
-                    verySmall
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    {thousandsSystem(item?.reservations?.total || 0)}
-                  </TextStyle>
-                )}
+              <TouchableOpacity
+                style={[
+                  styles.table,
+                  {
+                    borderColor:
+                      mode === "light" ? light.textDark : dark.textWhite,
+                  },
+                ]}
+                onPress={() => {
+                  const accommodation =
+                    item.type === "accommodation-reservations";
+                  const standard = item.type === "standard-reservations";
+                  const orders = item.type === "orders";
+                  const sales = item.type === "sales";
+                  if (orders || sales) {
+                    navigation.navigate("History", {
+                      item: [item.data],
+                      type: sales ? "sales" : "menu",
+                    });
+                  }
+                  if (accommodation || standard) {
+                    const place = nomenclatures.find((n) => {
+                      const id = accommodation
+                        ? item.hosted.ref
+                        : item.reservation.id;
+                      return n.id === id;
+                    });
+                    let reservation = [];
+                    if (standard) reservation.push(item.reservation);
+                    if (accommodation) reservation.push(item.hosted);
+                    navigation.navigate("ReserveInformation", {
+                      reservation,
+                      place,
+                    });
+                  }
+                }}
+              >
+                <TextStyle
+                  verySmall
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  {item.type === "sales"
+                    ? "P&S"
+                    : item.type === "orders"
+                    ? "Mesa"
+                    : item.type === "accommodation-reservations"
+                    ? "Acomodación"
+                    : "Estandar"}
+                </TextStyle>
+              </TouchableOpacity>
+              <View
+                style={[
+                  styles.table,
+                  {
+                    borderColor:
+                      mode === "light" ? light.textDark : dark.textWhite,
+                  },
+                ]}
+              >
+                <TextStyle
+                  verySmall
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  {thousandsSystem(item.total)}
+                </TextStyle>
               </View>
             </View>
           ))}
@@ -434,11 +533,39 @@ const PeopleInformation = ({ route, navigation }) => {
               <TextStyle
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                Pedidos realizados:
+                Ordenes realizadas:
               </TextStyle>
               <TextStyle color={light.main2}>
-                {item.ordersFinished
+                {item.orders
+                  ? thousandsSystem(item.orders)
+                  : "0"}
+              </TextStyle>
+            </View>
+          )}
+          {item.type === "debt" && (
+            <View style={styles.row}>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Ordenes finalizados:
+              </TextStyle>
+              <TextStyle color={light.main2}>
+                {item.orders
                   ? thousandsSystem(item.ordersFinished)
+                  : "0"}
+              </TextStyle>
+            </View>
+          )}
+          {item.type === "debt" && (
+            <View style={styles.row}>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Compras realizadas/finalizadas:
+              </TextStyle>
+              <TextStyle color={light.main2}>
+                {item.sales
+                  ? thousandsSystem(item.sales)
                   : "0"}
               </TextStyle>
             </View>
@@ -657,7 +784,7 @@ const PeopleInformation = ({ route, navigation }) => {
           </td>
           <td style="text-align: right;">
             <p style="font-size: 22px; font-weight: 600;">
-              ${item.owner?.identification}
+              ${thousandsSystem(item.owner?.identification)}
             </p>
           </td>
         </tr>
@@ -725,7 +852,7 @@ const PeopleInformation = ({ route, navigation }) => {
           </td>
           <td style="text-align: right;">
             <p style="font-size: 22px; font-weight: 600;">
-              ${item.owner?.identification}
+              ${thousandsSystem(item.owner?.identification)}
             </p>
           </td>
         </tr>
@@ -1012,6 +1139,12 @@ const styles = StyleSheet.create({
     borderColor: light.main2,
     borderRadius: 8,
     borderWidth: 1,
+  },
+  table: {
+    width: 83,
+    paddingHorizontal: 5,
+    paddingVertical: 4,
+    borderWidth: 0.2,
   },
 });
 

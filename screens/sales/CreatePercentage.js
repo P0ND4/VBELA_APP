@@ -40,8 +40,9 @@ const CreatePercentage = ({ route, navigation }) => {
           onPress={() => {
             if (discount.id) {
               const newBuy = selection.map((b) => {
-                if (b.id === discount.id) b.discount = 0;
-                return b;
+                const i = { ...b };
+                if (i.id === discount.id) i.discount = 0;
+                return i;
               });
               setSelection(newBuy);
             } else setTotalDiscount(0);
@@ -146,7 +147,7 @@ const CreatePercentage = ({ route, navigation }) => {
                 const newSelection = selection.map((item) => {
                   const b = { ...item };
                   if (b.id === discount.id)
-                    b.discount = discountInAmount.replace(/[^0-9]/g, "");
+                    b.discount = parseInt(discountInAmount.replace(/[^0-9]/g, ""));
                   return b;
                 });
                 setTotalDiscount(0);

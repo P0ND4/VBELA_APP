@@ -29,6 +29,10 @@ import groupsSlice from "@features/sales/groupsSlice";
 import standardReservationsSlice from "@features/zones/standardReservationsSlice";
 import accommodationReservationsSlice from "@features/zones/accommodationReservationsSlice"; 
 
+// PEOPLE //
+import clientSlice from "@features/people/clientSlice";
+import supplierSlice from "@features/people/supplierSlice";
+
 const reducers = combineReducers({
   mode: modeSlice, // Mode light and dark
   user: informationUserSlice,
@@ -55,7 +59,10 @@ const reducers = combineReducers({
   products: productsSlice, // PRODUCTOS O SERVICIOS DE VENTAS
   sales: salesSlice, // VENTAS REALIZADAS DE SERVICIOS O VENTAS
   accommodation: accommodationSlice, // GRUPOS DE ACOMODACION DE RESERVACIONES
-  groups: groupsSlice // GRUPOS DE DE VENTAS
+  groups: groupsSlice, // GRUPOS DE DE VENTAS
+  // PEOPLE //
+  client: clientSlice,
+  supplier: supplierSlice
 });
 
 const persistConfig = {

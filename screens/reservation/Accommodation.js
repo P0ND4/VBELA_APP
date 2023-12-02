@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -9,6 +9,7 @@ import {
   TouchableWithoutFeedback,
   Alert,
   FlatList,
+  Switch,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
@@ -31,6 +32,7 @@ import {
   addDays,
 } from "@helpers/libs";
 import {
+  add as addE,
   edit as editE,
   remove as removeE,
 } from "@features/function/economySlice";
@@ -40,6 +42,7 @@ import {
   editEconomy,
   removeReservation,
   addReservation,
+  addEconomy
 } from "@api";
 import Layout from "@components/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -69,7 +72,7 @@ const Accommodation = ({ navigation }) => {
   const helperStatus = useSelector((state) => state.helperStatus);
   const orders = useSelector((state) => state.orders);
   const economy = useSelector((state) => state.economy);
-  const folk = useSelector((state) => state.people);
+  const customer = useSelector((state) => state.client);
 
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
@@ -85,6 +88,85 @@ const Accommodation = ({ navigation }) => {
   const [daySelected, setDaySelected] = useState(null);
 
   const dispatch = useDispatch();
+
+  const checkInEvent = ({ guest }) => {
+    if (helperStatus.active && !helperStatus.accessToReservations) return;
+
+    Alert.alert(
+      "CAMBIAR",
+      `¿El cliente ${guest.checkIn ? "no " : ""} ha llegado?`,
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Si",
+          onPress: async () => {
+            let newReservation;
+
+            if (guest.type === "accommodation") {
+              dispatch(
+                editRA({
+                  id: guest.id,
+                  data: {
+                    ...guest,
+                    checkIn: guest.checkIn ? null : new Date().getTime(),
+                  },
+                })
+              );
+            }
+
+            if (guest.type === "standard") {
+              newReservation = {
+                ...standardReservations.find(
+                  (r) => r.ref === guest.reservationID
+                ),
+              };
+              const newHosted = newReservation?.hosted.map((i) => {
+                if (i.id === guest.id) {
+                  const newI = { ...i };
+                  newI.checkIn = i.checkIn ? null : new Date().getTime();
+                  return newI;
+                }
+                return i;
+              });
+
+              newReservation.hosted = newHosted;
+              dispatch(
+                editRS({
+                  ref: guest.reservationID,
+                  data: newReservation,
+                })
+              );
+            }
+
+            await editReservation({
+              identifier: helperStatus.active
+                ? helperStatus.identifier
+                : user.identifier,
+              reservation: {
+                data:
+                  guest.type === "standard"
+                    ? newReservation
+                    : [
+                        {
+                          ...guest,
+                          checkIn: guest.checkIn ? null : new Date().getTime(),
+                        },
+                      ],
+                type: guest.type,
+              },
+              helpers: helperStatus.active
+                ? [helperStatus.id]
+                : user.helpers.map((h) => h.id),
+            });
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   const saveHosted = async ({ data, cleanData }) => {
     const id = random(10, { number: true });
@@ -159,11 +241,73 @@ const Accommodation = ({ navigation }) => {
     setDays(Array.from({ length: days }, (_, i) => i + 1));
   }, [month, year]);
 
+  const manageEconomy = async ({ ids, hosted }) => {
+    for (let ownerRef of ids) {
+      const person =
+        customer.find((p) => p.id === ownerRef) ||
+        customer.find((p) => p?.clientList?.some((c) => c.id === ownerRef));
+
+      const client = hosted.find((h) => h.owner === ownerRef);
+
+      if (client.payment === "business" || client.payment === 0 || !person)
+        continue;
+
+      const foundEconomy = economy.find((e) => e.ref === person.id);
+      if (!foundEconomy) {
+        const id = random(20);
+
+        const newEconomy = {
+          id,
+          ref: person.id,
+          owner: {
+            identification: person.identification,
+            name: person.name,
+          },
+          type: "debt",
+          amount: client.payment,
+          name: `Deuda ${person.name}`,
+          payment: client.payment,
+          creationDate: new Date().getTime(),
+          modificationDate: new Date().getTime(),
+        };
+
+        dispatch(addE(newEconomy));
+        await addEconomy({
+          identifier: helperStatus.active
+            ? helperStatus.identifier
+            : user.identifier,
+          economy: newEconomy,
+          helpers: helperStatus.active
+            ? [helperStatus.id]
+            : user.helpers.map((h) => h.id),
+        });
+      } else {
+        const currentEconomy = { ...foundEconomy };
+        currentEconomy.amount += client.payment;
+        currentEconomy.payment += client.payment;
+        currentEconomy.modificationDate = new Date().getTime();
+        dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
+        await editEconomy({
+          identifier: helperStatus.active
+            ? helperStatus.identifier
+            : user.identifier,
+          economy: currentEconomy,
+          helpers: helperStatus.active
+            ? [helperStatus.id]
+            : user.helpers.map((h) => h.id),
+        });
+      }
+    }
+  };
+
   const deleteEconomy = async ({ ids, hosted }) => {
     for (let ownerRef of ids) {
-      const foundEconomy = economy.find((e) => e.ref === ownerRef);
+      const person =
+        customer.find((p) => p.id === ownerRef) ||
+        customer.find((p) => p?.clientList?.some((c) => c.id === ownerRef));
+
+      const foundEconomy = economy.find((e) => e.ref === person.id);
       const client = hosted.find((h) => h.owner === ownerRef);
-      const person = folk.find((p) => p.id === ownerRef);
 
       if (client.payment === "business" || client.payment === 0 || !person)
         continue;
@@ -218,14 +362,95 @@ const Accommodation = ({ navigation }) => {
     const [openMoreInformation, setOpenMoreInformation] = useState(false);
     const [editing, setEditing] = useState(false);
     const [OF, setOF] = useState(null);
+    const [checkOutModalVisible, setCheckOutModalVisible] = useState(false);
+    const [businessPayment, setBusinessPayment] = useState(false);
+    const [totalToPay, setTotalToPay] = useState(0);
+    const [payment, setPayment] = useState("");
+    const [tip, setTip] = useState(0);
+
     const [handler, setHandler] = useState({
       active: true,
       key: Math.random(),
     });
 
+    const total = useRef(
+      item?.discount
+        ? (item?.amount - item?.discount) * item?.days
+        : item?.amount * item?.days
+    );
+    const hostedChangeRef = useRef(null);
+
+    useEffect(() => {
+      setTip(total.current - totalToPay);
+    }, [totalToPay, total]);
+
     useEffect(() => {
       setOF(orders.find((o) => o.ref === item.id && !o.pay));
     }, [orders]);
+
+    const validateCheckOut = ({ hosted }) => {
+      const active = () => {
+        setCheckOutModalVisible(!checkOutModalVisible);
+        hostedChangeRef.current = { ...hosted, payment: hosted.payment };
+      };
+
+      if (!hosted.checkIn) {
+        Alert.alert(
+          `NO HA LLEGADO`,
+          `El huésped no ha llegado, ¿Quiere continuar? El CHECK IN se activará`,
+          [
+            {
+              text: "Cancelar",
+              style: "cancel",
+            },
+            {
+              text: "Si",
+              onPress: () => active(),
+            },
+          ],
+          { cancelable: true }
+        );
+      } else active();
+    };
+
+    const removeCheckOut = ({ hosted }) => {
+      Alert.alert("DESHACER", `¿Quieres remover CHECK OUT?`, [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Si",
+          onPress: async () => {
+            const data = [
+              {
+                ...hosted,
+                checkOut: null,
+                payment: 0,
+              },
+            ];
+
+            dispatch(editRA({ id: hosted.id, data: data[0] }));
+            const ids = item?.owner ? [item.owner] : [];
+            console.log(ids)
+            if (ids.length > 0) await deleteEconomy({ ids, hosted: [item] });
+
+            await editReservation({
+              identifier: helperStatus.active
+                ? helperStatus.identifier
+                : user.identifier,
+              reservation: {
+                data,
+                type: "accommodation",
+              },
+              helpers: helperStatus.active
+                ? [helperStatus.id]
+                : user.helpers.map((h) => h.id),
+            });
+          },
+        },
+      ]);
+    };
 
     const updateHosted = async ({ data, cleanData }) => {
       data.id = item.id;
@@ -236,8 +461,19 @@ const Accommodation = ({ navigation }) => {
       let guest;
 
       if (item.type === "accommodation") {
-        guest = accommodationReservations.find((r) => r.id === item.reservationID);
-        dispatch(editRA({ id: guest.id, data: { ...guest, ...data } }));
+        guest = accommodationReservations.find(
+          (r) => r.id === item.reservationID
+        );
+        const date = new Date(guest.start);
+        const day = date.getDate();
+        const month = date.getMonth();
+        const year = date.getFullYear();
+
+        const end = addDays(
+          new Date(year, month, day),
+          parseInt(data.days - 1)
+        ).getTime();
+        dispatch(editRA({ id: guest.id, data: { ...guest, ...data, end } }));
       }
       if (item.type === "standard") {
         let reservationREF = standardReservations.find(
@@ -268,6 +504,14 @@ const Accommodation = ({ navigation }) => {
           ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
+    };
+
+    const cleanData = () => {
+      setBusinessPayment(false);
+      setCheckOutModalVisible(false);
+      setTotalToPay(0);
+      setPayment("");
+      hostedChangeRef.current = null;
     };
 
     return (
@@ -304,7 +548,7 @@ const Accommodation = ({ navigation }) => {
                 <TextStyle color={light.main2} bigSubtitle>
                   INFORMACIÓN
                 </TextStyle>
-                <View style={{ flexDirection: "row" }}>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <TouchableOpacity onPress={() => setEditing(!editing)}>
                     <Ionicons
                       name="create-outline"
@@ -377,14 +621,20 @@ const Accommodation = ({ navigation }) => {
                     {item.type === "accommodation" ? "Acomodación" : "Estandar"}
                   </TextStyle>
                 </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  CHECK IN:{" "}
-                  <TextStyle color={light.main2}>
-                    {item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"}
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    CHECK IN:{" "}
                   </TextStyle>
-                </TextStyle>
+                  <TouchableOpacity
+                    onPress={() => checkInEvent({ guest: item })}
+                  >
+                    <TextStyle color={light.main2}>
+                      {item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"}
+                    </TextStyle>
+                  </TouchableOpacity>
+                </View>
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
@@ -393,14 +643,43 @@ const Accommodation = ({ navigation }) => {
                     {item.owner ? "SI" : "NO"}
                   </TextStyle>
                 </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  CHECK OUT:{" "}
-                  <TextStyle color={light.main2}>
-                    {item.checkOut ? changeDate(new Date(item.checkOut)) : "NO"}
+
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    CHECK OUT:{" "}
                   </TextStyle>
-                </TextStyle>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (item.type === "standard")
+                        return navigation.navigate("ReserveInformation", {
+                          reservation: [
+                            standardReservations.find(
+                              (r) => r.ref === item.reservationID
+                            ),
+                          ],
+                          place: nomenclatures.find(
+                            (n) => n.id === item.nomenclatureID
+                          ),
+                        });
+                      if (
+                        helperStatus.active &&
+                        helperStatus.accessToReservations
+                      )
+                        return;
+                      if (item.checkOut) removeCheckOut({ hosted: item });
+                      else validateCheckOut({ hosted: item });
+                    }}
+                  >
+                    <TextStyle color={light.main2}>
+                      {item.checkOut
+                        ? changeDate(new Date(item.checkOut))
+                        : "NO"}
+                    </TextStyle>
+                  </TouchableOpacity>
+                </View>
+
                 {item.type === "accommodation" && (
                   <TextStyle
                     color={mode === "light" ? light.textDark : dark.textWhite}
@@ -427,7 +706,11 @@ const Accommodation = ({ navigation }) => {
                       >
                         Pago total:{" "}
                         <TextStyle color={light.main2}>
-                          {thousandsSystem(item.payment || "0")}
+                          {thousandsSystem(
+                            item.payment === "business"
+                              ? "POR EMPRESA"
+                              : item.payment
+                          )}
                         </TextStyle>
                       </TextStyle>
                     )}
@@ -471,7 +754,11 @@ const Accommodation = ({ navigation }) => {
                       >
                         Costo pagado:{" "}
                         <TextStyle color={light.main2}>
-                          {thousandsSystem(item.payment)}
+                          {thousandsSystem(
+                            item.payment === "business"
+                              ? "POR EMPRESA"
+                              : item.payment
+                          )}
                         </TextStyle>
                       </TextStyle>
                     )}
@@ -720,6 +1007,193 @@ const Accommodation = ({ navigation }) => {
             </View>
           </View>
         </Modal>
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={checkOutModalVisible}
+          onRequestClose={() => cleanData()}
+        >
+          <TouchableWithoutFeedback onPress={() => cleanData()}>
+            <View style={{ backgroundColor: "#0005", height: "100%" }} />
+          </TouchableWithoutFeedback>
+          <View
+            style={[
+              StyleSheet.absoluteFillObject,
+              {
+                justifyContent: "center",
+                alignItems: "center",
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: mode === "light" ? light.main4 : dark.main1,
+                },
+              ]}
+            >
+              <View>
+                <View style={styles.row}>
+                  <TextStyle color={light.main2} bigSubtitle>
+                    CHECK OUT
+                  </TextStyle>
+                  <TouchableOpacity onPress={() => cleanData()}>
+                    <Ionicons
+                      name="close"
+                      size={getFontSize(28)}
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <TextStyle
+                  smallParagraph
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  Añade el pago total del huésped
+                </TextStyle>
+              </View>
+              <View>
+                <View style={[styles.row, { marginVertical: 10 }]}>
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    {item?.fullName?.slice(0, 8)}:{" "}
+                    {thousandsSystem(total.current)}
+                  </TextStyle>
+                  <InputStyle
+                    editable={!businessPayment}
+                    stylesContainer={{
+                      width: width / 2.6,
+                      opacity: !businessPayment ? 1 : 0.5,
+                    }}
+                    placeholder="Pagado"
+                    keyboardType="numeric"
+                    value={payment}
+                    onChangeText={(num) => {
+                      setPayment(thousandsSystem(num.replace(/[^0-9]/g, "")));
+                      setTotalToPay(parseInt(num.replace(/[^0-9]/g, "")) || 0);
+                    }}
+                    maxLength={13}
+                  />
+                </View>
+                <View>
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Monto faltante:{" "}
+                    <TextStyle color={light.main2}>
+                      {thousandsSystem(total.current)}
+                    </TextStyle>
+                  </TextStyle>
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Monto a pagar:{" "}
+                    <TextStyle color={light.main2}>
+                      {thousandsSystem(
+                        businessPayment ? total.current : totalToPay
+                      )}
+                    </TextStyle>
+                  </TextStyle>
+                  {tip < 0 && (
+                    <TextStyle
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    >
+                      Propina:{" "}
+                      <TextStyle color={light.main2}>
+                        {thousandsSystem(Math.abs(tip))}
+                      </TextStyle>
+                    </TextStyle>
+                  )}
+                </View>
+                <View style={[styles.row, { marginVertical: 10 }]}>
+                  <TextStyle smallParagraph color={light.main2}>
+                    Lo pago la empresa
+                  </TextStyle>
+                  <Switch
+                    trackColor={{ false: dark.main2, true: light.main2 }}
+                    thumbColor={light.main4}
+                    ios_backgroundColor="#3e3e3e"
+                    onValueChange={() => setBusinessPayment(!businessPayment)}
+                    value={businessPayment}
+                  />
+                </View>
+                <ButtonStyle
+                  backgroundColor={light.main2}
+                  onPress={async () => {
+                    const send = async () => {
+                      const debugItem = { ...item };
+                      delete debugItem.groupID;
+                      delete debugItem.nomenclatureID;
+                      delete debugItem.reservationID;
+                      delete debugItem.zone;
+                      delete debugItem.nomenclature;
+
+                      const newData = [
+                        {
+                          ...debugItem,
+                          checkOut: new Date().getTime(),
+                          checkIn: new Date().getTime(),
+                          payment: businessPayment ? "business" : totalToPay,
+                        },
+                      ];
+                      dispatch(editRA({ id: item.id, data: newData[0] }));
+                      const ids = item?.owner ? [item.owner] : [];
+
+                      if (ids.length > 0)
+                        await manageEconomy({ ids, hosted: newData });
+                      cleanData();
+
+                      await editReservation({
+                        identifier: helperStatus.active
+                          ? helperStatus.identifier
+                          : user.identifier,
+                        reservation: {
+                          data: newData,
+                          type: "accommodation",
+                        },
+                        helpers: helperStatus.active
+                          ? [helperStatus.id]
+                          : user.helpers.map((h) => h.id),
+                      });
+                    };
+
+                    const leftover = total.current - totalToPay;
+
+                    if (leftover !== 0 && !businessPayment) {
+                      Alert.alert(
+                        "ADVERTENCIA",
+                        `El huésped ${
+                          totalToPay < total.current
+                            ? `debe ${thousandsSystem(
+                                total.current - totalToPay
+                              )}`
+                            : `te dio una propina de ${thousandsSystem(
+                                Math.abs(tip)
+                              )}`
+                        } ¿Estás seguro que desea continuar?`,
+                        [
+                          {
+                            text: "Cancelar",
+                            style: "cancel",
+                          },
+                          {
+                            text: "Si",
+                            onPress: async () => await send(),
+                          },
+                        ],
+                        { cancelable: true }
+                      );
+                    } else await send();
+                  }}
+                >
+                  <TextStyle center>Guardar</TextStyle>
+                </ButtonStyle>
+              </View>
+            </View>
+          </View>
+        </Modal>
         <AddPerson
           key={handler.key}
           setEditing={setHandler}
@@ -817,7 +1291,6 @@ const Accommodation = ({ navigation }) => {
           .map((person) => ({
             ...person,
             type: item.type,
-            accommodation: item?.accommodation?.name || "Estandar",
             groupID: ref,
             nomenclatureID: item.id,
             reservationID: item.ref,
@@ -845,14 +1318,11 @@ const Accommodation = ({ navigation }) => {
 
           return {
             ...item,
-            accommodation: item?.accommodation?.name || "Estandar",
             groupID: ref,
             nomenclatureID: item.ref,
             reservationID: item.id,
-            days: item.days,
             zone,
             nomenclature,
-            creationDate: item.creationDate,
           };
         });
 
@@ -863,7 +1333,7 @@ const Accommodation = ({ navigation }) => {
         return 0;
       });
 
-      //TODO solo cambiar los que cambiaron :) en chageDispatch
+      //TODO solo cambiar los que cambiaron :) en changeGeneralInformation para no saturar el guardado
 
       if (search || filters.active) {
         const hostedWithSearch = hosted.filter((h) => {
@@ -919,6 +1389,7 @@ const Accommodation = ({ navigation }) => {
               style={[
                 styles.table,
                 {
+                  width: 85,
                   borderColor:
                     mode === "light" ? light.textDark : dark.textWhite,
                 },
@@ -932,91 +1403,7 @@ const Accommodation = ({ navigation }) => {
               </TextStyle>
             </View>
             <TouchableOpacity
-              onPress={() => {
-                if (helperStatus.active && !helperStatus.accessToReservations)
-                  return;
-
-                Alert.alert(
-                  "CAMBIAR",
-                  `¿El cliente ${guest.checkIn ? "no " : ""} ha llegado?`,
-                  [
-                    {
-                      text: "Cancelar",
-                      style: "cancel",
-                    },
-                    {
-                      text: "Si",
-                      onPress: async () => {
-                        let newReservation;
-
-                        if (guest.type === "accommodation") {
-                          dispatch(
-                            editRA({
-                              id: guest.id,
-                              data: {
-                                ...guest,
-                                checkIn: guest.checkIn
-                                  ? null
-                                  : new Date().getTime(),
-                              },
-                            })
-                          );
-                        }
-
-                        if (guest.type === "standard") {
-                          newReservation = {
-                            ...standardReservations.find(
-                              (r) => r.ref === guest.reservationID
-                            ),
-                          };
-                          const newHosted = newReservation?.hosted.map((i) => {
-                            if (i.id === guest.id) {
-                              const newI = { ...i };
-                              newI.checkIn = i.checkIn
-                                ? null
-                                : new Date().getTime();
-                              return newI;
-                            }
-                            return i;
-                          });
-
-                          newReservation.hosted = newHosted;
-                          dispatch(
-                            editRS({
-                              ref: guest.reservationID,
-                              data: newReservation,
-                            })
-                          );
-                        }
-
-                        await editReservation({
-                          identifier: helperStatus.active
-                            ? helperStatus.identifier
-                            : user.identifier,
-                          reservation: {
-                            data:
-                              guest.type === "standard"
-                                ? newReservation
-                                : [
-                                    {
-                                      ...guest,
-                                      checkIn: guest.checkIn
-                                        ? null
-                                        : new Date().getTime(),
-                                    },
-                                  ],
-                            type: guest.type,
-                          },
-                          helpers: helperStatus.active
-                            ? [helperStatus.id]
-                            : user.helpers.map((h) => h.id),
-                        });
-                      },
-                    },
-                  ],
-                  { cancelable: true }
-                );
-              }}
+              onPress={() => checkInEvent()}
               style={[
                 styles.table,
                 {
@@ -1075,7 +1462,9 @@ const Accommodation = ({ navigation }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                {guest.fullName}
+                {`${guest.fullName.slice(0, 13)}${
+                  guest.fullName.length > 13 ? "..." : ""
+                }`}
               </TextStyle>
             </TouchableOpacity>
             <View
@@ -1187,6 +1576,7 @@ const Accommodation = ({ navigation }) => {
                   style={[
                     styles.table,
                     {
+                      width: 85,
                       borderColor:
                         mode === "light" ? light.textDark : dark.textWhite,
                     },
@@ -1196,7 +1586,7 @@ const Accommodation = ({ navigation }) => {
                     smallParagraph
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   >
-                    FECHA/RESERVA
+                    FECHA
                   </TextStyle>
                 </View>
                 <View
@@ -1845,7 +2235,6 @@ const Accommodation = ({ navigation }) => {
         return item.hosted.map((person) => ({
           ...person,
           type: item.type,
-          accommodation: item?.accommodation?.name || "Estandar",
           groupID: ref,
           nomenclatureID: item.id,
           reservationID: item.ref,
@@ -1865,14 +2254,11 @@ const Accommodation = ({ navigation }) => {
 
         return {
           ...item,
-          accommodation: item?.accommodation?.name || "Estandar",
           groupID: ref,
           nomenclatureID: item.ref,
           reservationID: item.id,
-          days: item.days,
           zone,
           nomenclature,
-          creationDate: item.creationDate,
         };
       });
 
@@ -1942,6 +2328,7 @@ const Accommodation = ({ navigation }) => {
               style={[
                 styles.table,
                 {
+                  width: 85,
                   borderColor:
                     mode === "light" ? light.textDark : dark.textWhite,
                 },
@@ -1955,91 +2342,7 @@ const Accommodation = ({ navigation }) => {
               </TextStyle>
             </View>
             <TouchableOpacity
-              onPress={() => {
-                if (helperStatus.active && !helperStatus.accessToReservations)
-                  return;
-
-                Alert.alert(
-                  "CAMBIAR",
-                  `¿El cliente ${guest.checkIn ? "no " : ""} ha llegado?`,
-                  [
-                    {
-                      text: "Cancelar",
-                      style: "cancel",
-                    },
-                    {
-                      text: "Si",
-                      onPress: async () => {
-                        let newReservation;
-
-                        if (guest.type === "accommodation") {
-                          dispatch(
-                            editRA({
-                              id: guest.id,
-                              data: {
-                                ...guest,
-                                checkIn: guest.checkIn
-                                  ? null
-                                  : new Date().getTime(),
-                              },
-                            })
-                          );
-                        }
-
-                        if (guest.type === "standard") {
-                          newReservation = {
-                            ...standardReservations.find(
-                              (r) => r.ref === guest.reservationID
-                            ),
-                          };
-                          const newHosted = newReservation?.hosted.map((i) => {
-                            if (i.id === guest.id) {
-                              const newI = { ...i };
-                              newI.checkIn = i.checkIn
-                                ? null
-                                : new Date().getTime();
-                              return newI;
-                            }
-                            return i;
-                          });
-
-                          newReservation.hosted = newHosted;
-                          dispatch(
-                            editRS({
-                              ref: guest.reservationID,
-                              data: newReservation,
-                            })
-                          );
-                        }
-
-                        await editReservation({
-                          identifier: helperStatus.active
-                            ? helperStatus.identifier
-                            : user.identifier,
-                          reservation: {
-                            data:
-                              guest.type === "standard"
-                                ? newReservation
-                                : [
-                                    {
-                                      ...guest,
-                                      checkIn: guest.checkIn
-                                        ? null
-                                        : new Date().getTime(),
-                                    },
-                                  ],
-                            type: guest.type,
-                          },
-                          helpers: helperStatus.active
-                            ? [helperStatus.id]
-                            : user.helpers.map((h) => h.id),
-                        });
-                      },
-                    },
-                  ],
-                  { cancelable: true }
-                );
-              }}
+              onPress={() => checkInEvent({ guest })}
               style={[
                 styles.table,
                 {
@@ -2098,7 +2401,9 @@ const Accommodation = ({ navigation }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                {guest.fullName}
+                {`${guest.fullName.slice(0, 13)}${
+                  guest.fullName.length > 13 ? "..." : ""
+                }`}
               </TextStyle>
             </TouchableOpacity>
             <View
@@ -2198,6 +2503,7 @@ const Accommodation = ({ navigation }) => {
                         style={[
                           styles.table,
                           {
+                            width: 85,
                             borderColor:
                               mode === "light"
                                 ? light.textDark
@@ -2211,7 +2517,7 @@ const Accommodation = ({ navigation }) => {
                             mode === "light" ? light.textDark : dark.textWhite
                           }
                         >
-                          FECHA/RESERVA
+                          FECHA
                         </TextStyle>
                       </View>
                       <View

@@ -16,7 +16,7 @@ import {
   changeDate,
   generatePDF,
   print,
-  getFontSize
+  getFontSize,
 } from "@helpers/libs";
 
 import ViewShot from "react-native-view-shot";
@@ -32,9 +32,13 @@ const Invoice = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const invoice = useSelector((state) => state.invoice);
   const [text, setText] = useState("");
+  const [discount, setDiscount] = useState({ price: 0, percentage: 0 });
+  const [tax, setTax] = useState({ price: 0, percentage: 0 });
+  const [tip, setTip] = useState({ price: 0, percentage: 0 });
 
-  const selection = route.params.data.selection;
-  const total = route.params.data.total;
+  const extra = route.params.extra;
+  const selection = route.params.selection;
+  const total = route.params.total;
   const code = useRef(random(6, { number: true })).current;
   const date = useRef(new Date()).current;
   const viewShotRef = useRef();
@@ -46,6 +50,29 @@ const Invoice = ({ route, navigation }) => {
   const color = () => (mode === "light" ? light.textDark : dark.textWhite);
 
   useEffect(() => {
+    const selectionTotal = selection.reduce((a, b) => {
+      const value = b.value * b.paid;
+      const percentage = (value / b.total).toFixed(2);
+      return a + (b.discount !== 0 ? value - b.discount * percentage : value);
+    }, 0);
+
+    setDiscount({
+      price: Math.abs(Math.round(parseInt(total) - selectionTotal)),
+      percentage: Math.abs(
+        Math.round(((parseInt(total) - selectionTotal) / selectionTotal) * 100)
+      ),
+    });
+    setTax({
+      price: extra.tax,
+      percentage: Math.round((extra.tax / (selectionTotal + extra.tax) * 100)),
+    });
+    setTip({
+      price: extra.tip,
+      percentage: Math.round((extra.tip / (selectionTotal + extra.tip) * 100)),
+    });
+  }, [selection, extra]);
+
+  useEffect(() => {
     setText("");
     const text = selection.reduce((a, item) => {
       return (
@@ -53,17 +80,20 @@ const Invoice = ({ route, navigation }) => {
         `<tr>
             <td style="text-align: left;">
               <p style="font-size: 28px; font-weight: 600;">${thousandsSystem(
-                item.count
+                item.paid
               )}x ${item.name}</p>
             </td>
             <td style="text-align: right;">
               <p style="font-size: 28px; font-weight: 600;">
               ${thousandsSystem(
                 item.discount !== 0
-                  ? item.total - item.discount
+                  ? item.paid * item.value - item.discount
                   : selection.reduce((a, b) => {
                       if (b.id === item.id) {
-                        return a + (b.discount !== 0 ? b.discount : b.total);
+                        return (
+                          a +
+                          (b.discount !== 0 ? b.discount : item.paid * b.value)
+                        );
                       }
                       return (a = a);
                     }, 0)
@@ -115,28 +145,55 @@ const Invoice = ({ route, navigation }) => {
       </p>
     </view>
     <p style="font-size: 32px; font-weight: 600; color: #444444; margin-bottom: 12px;">${selection.reduce(
-      (a, b) => a + b.count,
+      (a, b) => a + b.paid,
       0
     )} Artículos</p>
     <view>
       <table style="width: 100%">
         ${text.replace(/,/g, "")}
       </table>
-          
-      <p style="text-align: center; font-size: 30px; font-weight: 600; margin-top: 20px;">Total: ${thousandsSystem(
+      <view style="margin-top: 20px;">
+      ${
+        extra.discount
+          ? `<p style="text-align: right; font-size: 30px; font-weight: 600;">
+            Descuento: ${thousandsSystem(discount.price)} (${
+              discount.percentage
+            }%)
+          </p>`
+          : ""
+      }
+      ${
+        extra.tip
+          ? `<p style="text-align: right; font-size: 30px; font-weight: 600;">
+            Propina: ${thousandsSystem(tip.price)} (${tip.percentage}%)
+          </p>`
+          : ""
+      }
+      ${
+        extra.tax
+          ? `<p style="text-align: right; font-size: 30px; font-weight: 600;">
+            Impuesto: ${thousandsSystem(tax.price)} (${tax.percentage}%)
+          </p>`
+          : ""
+      }
+      <p style="text-align: right; font-size: 30px; font-weight: 600;">Total: ${thousandsSystem(
         total
       )}</p>
-      
+      </view>
     </view>
     <p style="text-align: center; font-size: 30px; font-weight: 600;">${changeDate(
       date
-    )} ${("0" + date.getHours()).slice(-2)}:
-    ${("0" + date.getMinutes()).slice(-2)}</p>
+    )} ${("0" + date.getHours()).slice(-2)}:${("0" + date.getMinutes()).slice(
+    -2
+  )}</p>
   </view>
 </body>
 
 </html>
 `;
+
+  //TODO CUANDO HAY MUCHOS PEDIDOS Y SE LE COLOCA DESCUENTOS IMPUESTOS PROPINA DESCUENTO EN LOS PRODUCTOS ALGO PASA
+  //TODO CANDO SE CAMBIA LA CANTIDAD PERO YA PAGO VARIOS OCURRE UN BUG, AL IGUAL QUE EL DESCUENTO, LAS OBSERVACIONES NO SABRIA
 
   const share = async () => {
     const imageURI = await viewShotRef.current.capture();
@@ -199,59 +256,72 @@ const Invoice = ({ route, navigation }) => {
                 {invoice?.complement && `- ${invoice?.complement}`}
               </TextStyle>
               <TextStyle color={color()} smallParagraph>
-                {selection.reduce((a, b) => a + b.count, 0)} Artículos
+                {selection.reduce((a, b) => a + b.paid, 0)} Artículos
               </TextStyle>
               <View style={styles.orders}>
                 <ScrollView style={{ maxHeight: SCREEN_HEIGHT / 4 }}>
-                  {selection.map((item) => (
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                      }}
-                      key={item.id}
-                    >
-                      <TextStyle
-                        paragrahp
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
+                  {selection.map((item) => {
+                    const value = item.value * item.paid;
+                    const percentage = (value / item.total).toFixed(2);
+
+                    return (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                        }}
+                        key={item.id}
                       >
-                        <TextStyle color={light.main2} paragrahp>
-                          {thousandsSystem(item.count)}
+                        <TextStyle
+                          paragrahp
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                        >
+                          <TextStyle color={light.main2} paragrahp>
+                            {thousandsSystem(item.paid)}
+                          </TextStyle>
+                          x {item.name}
                         </TextStyle>
-                        x {item.name}
-                      </TextStyle>
-                      <TextStyle
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        {thousandsSystem(
-                          item.discount !== 0
-                            ? item.total - item.discount
-                            : selection.reduce((a, b) => {
-                                if (b.id === item.id) {
-                                  return (
-                                    a +
-                                    (b.discount !== 0 ? b.discount : b.total)
-                                  );
-                                }
-                                return (a = a);
-                              }, 0)
-                        )}
-                      </TextStyle>
-                    </View>
-                  ))}
+                        <TextStyle
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                        >
+                          {thousandsSystem(
+                            item.discount !== 0
+                              ? Math.round(value - item.discount * percentage)
+                              : value
+                          )}
+                        </TextStyle>
+                      </View>
+                    );
+                  })}
                 </ScrollView>
 
-                <TextStyle
-                  right
-                  color={light.main2}
-                  customStyle={{ marginTop: 20 }}
-                >
-                  Total: {thousandsSystem(total)}
-                </TextStyle>
+                <View style={{ marginTop: 20 }}>
+                  {extra.discount && (
+                    <TextStyle right color={light.main2}>
+                      Descuento: {thousandsSystem(discount?.price)} (
+                      {discount?.percentage}%)
+                    </TextStyle>
+                  )}
+                  {extra.tip && (
+                    <TextStyle right color={light.main2}>
+                      Propina: {thousandsSystem(tip.price)} ({tip?.percentage}%)
+                    </TextStyle>
+                  )}
+                  {extra.tax && (
+                    <TextStyle right color={light.main2}>
+                      Impuesto: {thousandsSystem(tax.price)} ({tax?.percentage}
+                      %)
+                    </TextStyle>
+                  )}
+
+                  <TextStyle right color={light.main2}>
+                    Total: {thousandsSystem(total)}
+                  </TextStyle>
+                </View>
               </View>
               <TextStyle center color={color()} smallParagraph>
                 {changeDate(date)} {("0" + date.getHours()).slice(-2)}:
@@ -281,7 +351,8 @@ const Invoice = ({ route, navigation }) => {
           onPress={() =>
             navigation.navigate("InvoiceByEmail", {
               code,
-              data: route.params.data,
+              selection,
+              total,
               date,
             })
           }

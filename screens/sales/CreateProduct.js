@@ -135,7 +135,6 @@ const CreateProduct = ({ route, navigation }) => {
     if (menu.find((m) => m.id === id) && !sales) return onSubmitCreate(data);
     if (products.find((p) => p.id === id) && sales) return onSubmitCreate(data);
     data.id = id;
-    data.group = null;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
     if (sales) {

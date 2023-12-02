@@ -28,6 +28,16 @@ const AddPerson = ({
   handleSubmit,
   type,
   discount,
+  subtitle = 'Añade la persona que quieres alojar',
+  options = {
+    email: true,
+    identification: true,
+    phoneNumber: true,
+    country: true,
+    days: true,
+    checkIn: true,
+    discount: true,
+  },
 }) => {
   const {
     register,
@@ -156,7 +166,7 @@ const AddPerson = ({
               smallParagraph
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
-              Añade la persona que quieres alojar
+              {subtitle}
             </TextStyle>
           </View>
           <View>
@@ -177,71 +187,81 @@ const AddPerson = ({
               />
               {hostedErrors.fullName?.type && (
                 <TextStyle verySmall color={light.main2}>
-                  Nombre completo obligatorio
+                  El nombre completo obligatorio
                 </TextStyle>
               )}
-              <InputStyle
-                value={email}
-                placeholder="Correo electrónico"
-                right={
-                  email
-                    ? () => <TextStyle color={light.main2}>Correo</TextStyle>
-                    : null
-                }
-                maxLength={40}
-                keyboardType="email-address"
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setValue("email", text);
-                }}
-              />
-              <InputStyle
-                value={identification}
-                placeholder="Cédula"
-                maxLength={15}
-                right={
-                  identification
-                    ? () => <TextStyle color={light.main2}>Cédula</TextStyle>
-                    : null
-                }
-                keyboardType="numeric"
-                onChangeText={(text) => {
-                  setIdentification(
-                    thousandsSystem(text.replace(/[^0-9]/g, ""))
-                  );
-                  setValue("identification", text.replace(/[^0-9]/g, ""));
-                }}
-              />
-              <InputStyle
-                value={phoneNumber}
-                placeholder="Número de teléfono"
-                right={
-                  phoneNumber
-                    ? () => <TextStyle color={light.main2}>Teléfono</TextStyle>
-                    : null
-                }
-                keyboardType="numeric"
-                maxLength={15}
-                onChangeText={(text) => {
-                  setPhoneNumber(text);
-                  setValue("phoneNumber", text);
-                }}
-              />
-              <InputStyle
-                value={country}
-                placeholder="País"
-                right={
-                  country
-                    ? () => <TextStyle color={light.main2}>País</TextStyle>
-                    : null
-                }
-                maxLength={30}
-                onChangeText={(text) => {
-                  setCountry(text);
-                  setValue("country", text);
-                }}
-              />
-              {type === "accommodation" && ( //TODO Que el type de AddPerson se aplique para toda la aplicacion
+              {options.email && (
+                <InputStyle
+                  value={email}
+                  placeholder="Correo electrónico"
+                  right={
+                    email
+                      ? () => <TextStyle color={light.main2}>Correo</TextStyle>
+                      : null
+                  }
+                  maxLength={40}
+                  keyboardType="email-address"
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setValue("email", text);
+                  }}
+                />
+              )}
+              {options.identification && (
+                <InputStyle
+                  value={identification}
+                  placeholder="Cédula"
+                  maxLength={15}
+                  right={
+                    identification
+                      ? () => <TextStyle color={light.main2}>Cédula</TextStyle>
+                      : null
+                  }
+                  keyboardType="numeric"
+                  onChangeText={(text) => {
+                    setIdentification(
+                      thousandsSystem(text.replace(/[^0-9]/g, ""))
+                    );
+                    setValue("identification", text.replace(/[^0-9]/g, ""));
+                  }}
+                />
+              )}
+              {options.phoneNumber && (
+                <InputStyle
+                  value={phoneNumber}
+                  placeholder="Número de teléfono"
+                  right={
+                    phoneNumber
+                      ? () => (
+                          <TextStyle color={light.main2}>Teléfono</TextStyle>
+                        )
+                      : null
+                  }
+                  keyboardType="numeric"
+                  maxLength={15}
+                  onChangeText={(text) => {
+                    setPhoneNumber(text);
+                    setValue("phoneNumber", text);
+                  }}
+                />
+              )}
+              {options.country && (
+                <InputStyle
+                  value={country}
+                  placeholder="País"
+                  right={
+                    country
+                      ? () => <TextStyle color={light.main2}>País</TextStyle>
+                      : null
+                  }
+                  maxLength={30}
+                  onChangeText={(text) => {
+                    setCountry(text);
+                    setValue("country", text);
+                  }}
+                />
+              )}
+              {type === "accommodation" && (
                 <InputStyle
                   placeholder="Número de días"
                   value={days}
@@ -286,21 +306,26 @@ const AddPerson = ({
                   }}
                 />
               )}
-              <View style={[styles.row, { marginTop: 10 }]}>
-                <TextStyle smallParagraph color={light.main2}>
-                  CHECK IN ¿YA LLEGO EL HUÉSPED?
-                </TextStyle>
-                <Switch
-                  trackColor={{ false: dark.main2, true: light.main2 }}
-                  thumbColor={light.main4}
-                  ios_backgroundColor="#3e3e3e"
-                  onValueChange={() => {
-                    setCheckIn(!checkIn);
-                    setValue("checkIn", !checkIn ? new Date().getTime() : null);
-                  }}
-                  value={checkIn}
-                />
-              </View>
+              {options.checkIn && (
+                <View style={[styles.row, { marginTop: 10 }]}>
+                  <TextStyle smallParagraph color={light.main2}>
+                    CHECK IN ¿YA LLEGO EL HUÉSPED?
+                  </TextStyle>
+                  <Switch
+                    trackColor={{ false: dark.main2, true: light.main2 }}
+                    thumbColor={light.main4}
+                    ios_backgroundColor="#3e3e3e"
+                    onValueChange={() => {
+                      setCheckIn(!checkIn);
+                      setValue(
+                        "checkIn",
+                        !checkIn ? new Date().getTime() : null
+                      );
+                    }}
+                    value={checkIn}
+                  />
+                </View>
+              )}
             </ScrollView>
           </View>
           <ButtonStyle

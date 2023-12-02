@@ -41,7 +41,7 @@ const Sales = ({ route }) => {
   const sales = useSelector((state) => state.sales);
   const groupsREF = useSelector((state) => state.groups);
   const economy = useSelector((state) => state.economy);
-  const folk = useSelector((state) => state.people);
+  const client = useSelector((state) => state.client);
 
   const initialState = {
     active: false,
@@ -193,10 +193,10 @@ const Sales = ({ route }) => {
     }
   }, [productsRef, search, filters, categorySelected, subcategorySelected]);
 
-  const manageEconomy = ({ total, callBack }) => {
-    const foundEconomy = economy.find((e) => e.ref === ref);
+  const manageEconomy = ({ total, callBack, person }) => {
+    const foundEconomy = economy.find((e) => e.ref === person.id);
     const saveEconomy = async ({ payment }) => {
-      if (createClient && !folk.find((p) => p.id === ref)) {
+      if (createClient && !person) {
         const data = {
           name: route.params?.name,
           identification: "",
@@ -219,8 +219,8 @@ const Sales = ({ route }) => {
       if (!foundEconomy) {
         const id = random(20);
         let data = {};
-        if (!createClient) data = { ...folk.find((p) => p.id === ref) };
-        else data = { id: route.params?.ref, name: route.params?.name };
+        if (!createClient) data = { ...person };
+        else data = { id: person.id, name: person.name };
 
         const newEconomy = {
           id,
@@ -267,79 +267,75 @@ const Sales = ({ route }) => {
     };
 
     if (createClient) {
-      Alert.alert(
-        "PAGO",
-        "¿El cliente ha pagado el producto/servicio?",
-        [
-          {
-            text: "Cancelar",
-            style: 'cancel'
-          },
-          {
-            text: "No",
-            onPress: () => saveEconomy({ payment: false }),
-          },
-          {
-            text: "Si",
-            onPress: () => saveEconomy({ payment: true }),
-          },
-        ]
-      );
+      Alert.alert("PAGO", "¿El cliente ha pagado el producto/servicio?", [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "No",
+          onPress: () => saveEconomy({ payment: false }),
+        },
+        {
+          text: "Si",
+          onPress: () => saveEconomy({ payment: true }),
+        },
+      ]);
     } else saveEconomy({ payment: false });
   };
 
-  const getTotal = (totalDiscount, selection, tip, tax) =>
+  const getTotal = (totalDiscount = 0, selection = [], tip = 0, tax = 0) =>
     totalDiscount !== 0
-      ? selection.reduce(
-          (a, b) =>
-            a +
-            (parseInt(b.discount) !== 0
-              ? b.total - parseInt(b.discount)
-              : b.total),
-          0
-        ) -
+      ? selection.reduce((a, b) => {
+          const value = b.value * b.paid;
+          const percentage = (value / b.total).toFixed(2);
+          return (
+            a + (b.discount !== 0 ? value - b.discount * percentage : value)
+          );
+        }, 0) -
         totalDiscount +
-        tip -
+        tip +
         tax
-      : selection.reduce(
-          (a, b) =>
-            a +
-            (parseInt(b.discount) !== 0
-              ? b.total - parseInt(b.discount)
-              : b.total),
-          0
-        ) +
-        tip -
+      : selection.reduce((a, b) => {
+          const value = b.value * b.paid;
+          const percentage = (value / b.total).toFixed(2);
+          return (
+            a + (b.discount !== 0 ? value - b.discount * percentage : value)
+          );
+        }, 0) +
+        tip +
         tax;
 
-  const extractObject = (d) => {
-    return {
-      pay: d.pay,
-      discount: !d.discount ? null : d.discount,
-      tax: !d.tax ? null : d.tax,
-      tip: !d.tip ? null : d.tip,
-      method: !d.method ? null : d.method,
-      ID: !d.ID ? null : d.ID,
-    };
-  };
+  const saveOrder = async ({
+    data: dat,
+    completeSelection,
+    totalPaid,
+    currentSelection,
+  }) => {
+    const id = dat.ID ? dat.ID : random(20);
 
-  const saveOrder = async (dat, selection) => {
-    const d = extractObject(dat);
-    const id = d.ID ? d.ID : random(20);
+    const person =
+      client.find((p) => p.id === ref) ||
+      client.find((p) => p?.clientList?.some((c) => c.id === ref));
 
-    const person = folk.find((p) => p.id === ref);
-
-    if (sales.find((sale) => sale.id === id)) return saveOrder(dat, selection);
+    if (sales.find((sale) => sale.id === id))
+      return saveOrder({
+        data: dat,
+        completeSelection,
+        totalPaid,
+        currentSelection,
+        back,
+      });
     const data = {};
-    const total = getTotal(d.discount, selection, d.tip, d.tax);
+    const total = getTotal(dat.discount, completeSelection, dat.tip, dat.tax);
 
     data.id = id;
-    data.selection = selection;
-    data.pay = d.pay;
-    data.discount = d.discount;
-    data.tax = d.tax;
-    data.tip = d.tip;
-    data.method = d.method;
+    data.ref = ref || null;
+    data.selection = completeSelection;
+    data.pay = dat.pay;
+    data.discount = dat.discount || null;
+    data.tax = dat.tax || null;
+    data.tip = dat.tip || null;
     data.total = total;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
@@ -358,8 +354,18 @@ const Sales = ({ route }) => {
         return p;
       });
       dispatch(changeP(newProducts));
-      if (d.pay) navigation.pop();
-      navigation.navigate("OrderCompletion", { data, total, sales: true });
+      if (dat.pay) navigation.pop();
+      navigation.navigate("OrderCompletion", {
+        selection: currentSelection,
+        pay: data.pay,
+        total: totalPaid,
+        sales: true,
+        extra: {
+          discount: dat.discount || null,
+          tax: dat.tax || null,
+          tip: dat.tip || null
+        }
+      });
       await editUser({
         identifier: helperStatus.active
           ? helperStatus.identifier
@@ -374,7 +380,7 @@ const Sales = ({ route }) => {
       });
     };
 
-    if (person || createClient) await manageEconomy({ total, callBack: close });
+    if (person || createClient) await manageEconomy({ total, callBack: close, person });
     else close();
   };
 
@@ -635,7 +641,9 @@ const Sales = ({ route }) => {
                       ...item,
                       count,
                       total: item.value * count,
+                      paid: 0,
                       discount: 0,
+                      method: [],
                     };
 
                     if (index !== -1) {

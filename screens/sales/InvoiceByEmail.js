@@ -25,10 +25,10 @@ const InvoiceByEmail = ({ navigation, route }) => {
   const invoice = useSelector((state) => state.invoice);
 
   const [text, setText] = useState("");
-  const [email, setEmail] = useState();
+  const [email, setEmail] = useState("");
 
-  const selection = route.params.data.selection;
-  const total = route.params.data.total;
+  const selection = route.params.selection;
+  const total = route.params.total;
   const code = route.params.code;
   const date = route.params.date;
 
@@ -162,7 +162,9 @@ const InvoiceByEmail = ({ navigation, route }) => {
         onPress={handleSubmit(sendEmail)}
         backgroundColor={light.main2}
       >
-        <TextStyle color={light.textDark} center>Enviar</TextStyle>
+        <TextStyle color={light.textDark} center>
+          Enviar
+        </TextStyle>
       </ButtonStyle>
     </Layout>
   );

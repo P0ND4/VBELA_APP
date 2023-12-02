@@ -11,6 +11,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
   FlatList,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { thousandsSystem, random, months, getFontSize } from "@helpers/libs";
@@ -59,7 +60,7 @@ const CreateOrder = ({ route, navigation }) => {
   const menu = useSelector((state) => state.menu);
   const mode = useSelector((state) => state.mode);
   const economy = useSelector((state) => state.economy);
-  const folk = useSelector((state) => state.people);
+  const client = useSelector((state) => state.client);
   const groupsREF = useSelector((state) => state.groups);
 
   const initialState = {
@@ -146,45 +147,39 @@ const CreateOrder = ({ route, navigation }) => {
     }
   }, []);
 
-  const getTotal = (totalDiscount, selection, tip, tax) =>
+  const getTotal = (totalDiscount = 0, selection = [], tip = 0, tax = 0) =>
     totalDiscount !== 0
-      ? selection.reduce(
-          (a, b) =>
-            a +
-            (parseInt(b.discount) !== 0
-              ? b.total - parseInt(b.discount)
-              : b.total),
-          0
-        ) -
+      ? selection.reduce((a, b) => {
+          const value = b.value * b.paid;
+          const percentage = (value / b.total).toFixed(2);
+          return (
+            a + (b.discount !== 0 ? value - b.discount * percentage : value)
+          );
+        }, 0) -
         totalDiscount +
-        tip -
+        tip +
         tax
-      : selection.reduce(
-          (a, b) =>
-            a +
-            (parseInt(b.discount) !== 0
-              ? b.total - parseInt(b.discount)
-              : b.total),
-          0
-        ) +
-        tip -
+      : selection.reduce((a, b) => {
+          const value = b.value * b.paid;
+          const percentage = (value / b.total).toFixed(2);
+          return (
+            a + (b.discount !== 0 ? value - b.discount * percentage : value)
+          );
+        }, 0) +
+        tip +
         tax;
 
-  const extractObject = (d) => {
-    return {
-      pay: d.pay,
-      discount: !d.discount ? null : d.discount,
-      tax: !d.tax ? null : d.tax,
-      tip: !d.tip ? null : d.tip,
-      method: !d.method ? null : d.method,
-      ID: !d.ID ? null : d.ID,
-    };
-  };
-
-  const manageEconomy = ({ editing, lastTotal, total, kitchen, callBack }) => {
-    const foundEconomy = economy.find((e) => e.ref === route.params?.ref);
+  const manageEconomy = ({
+    editing,
+    lastTotal,
+    total,
+    kitchen,
+    callBack,
+    person,
+  }) => {
+    const foundEconomy = economy.find((e) => e.ref === person.id);
     const saveEconomy = async ({ payment }) => {
-      if (createClient && !folk.find((p) => p.id === route.params?.ref)) {
+      if (createClient && !person) {
         const data = {
           name: route.params?.table,
           identification: "",
@@ -207,9 +202,8 @@ const CreateOrder = ({ route, navigation }) => {
       if (!foundEconomy) {
         const id = random(20);
         let data = {};
-        if (!createClient)
-          data = { ...folk.find((p) => p.id === route.params?.ref) };
-        else data = { id: route.params?.ref, name: route.params.table };
+        if (!createClient) data = { ...person };
+        else data = { id: person.id, name: person.name };
 
         const newEconomy = {
           id,
@@ -275,27 +269,38 @@ const CreateOrder = ({ route, navigation }) => {
     } else saveEconomy({ payment: false });
   };
 
-  const saveOrder = async (dat, selection) => {
-    const d = extractObject(dat);
-    const id = d.ID ? d.ID : random(20);
-
-    const person = folk.find((p) => p.id === route.params.ref);
+  const saveOrder = async ({
+    data: dat,
+    completeSelection,
+    totalPaid,
+    currentSelection,
+    back = false,
+  }) => {
+    const id = dat.ID || random(20);
+    const person =
+      client.find((p) => p.id === route.params.ref) ||
+      client.find((p) => p?.clientList?.some((c) => c.id === route.params.ref));
 
     if (orders.find((order) => order.id === id))
-      return saveOrder(dat, selection);
+      return saveOrder({
+        data: dat,
+        completeSelection,
+        totalPaid,
+        currentSelection,
+        back,
+      });
     const data = {};
-    const total = getTotal(d.discount, selection, d.tip, d.tax);
+    const total = getTotal(dat.discount, completeSelection, dat.tip, dat.tax);
 
     data.id = id;
     data.ref = route.params.ref;
     data.table = information.table;
     data.reservation = reservation;
-    data.selection = selection;
-    data.pay = d.pay;
-    data.discount = d.discount;
-    data.tax = d.tax;
-    data.tip = d.tip;
-    data.method = d.method;
+    data.selection = completeSelection;
+    data.pay = dat.pay;
+    data.discount = dat.discount || null;
+    data.tax = dat.tax || null;
+    data.tip = dat.tip || null;
     data.total = total;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
@@ -304,20 +309,28 @@ const CreateOrder = ({ route, navigation }) => {
       dispatch(addM(data));
       const newMenu = menu.map((m) => {
         const mc = { ...m };
-        const found = selection.find((s) => s.id === m.id);
+        const found = completeSelection.find((s) => s.id === m.id);
         if (found) {
           mc.quantity -= found.count;
           return mc;
         }
         return m;
       });
-      if (d.pay) {
-        dispatch(changeM(newMenu));
-        navigation.pop();
-      }
-      navigation.replace("OrderCompletion", { data, total });
+      if (dat.pay) dispatch(changeM(newMenu));
+      if (back) navigation.pop();
+      navigation.replace("OrderCompletion", {
+        selection: currentSelection,
+        pay: data.pay,
+        kitchen: dat.isSendtoKitchen,
+        total: totalPaid,
+        extra: {
+          discount: dat.discount || null,
+          tax: dat.tax || null,
+          tip: dat.tip || null,
+        },
+      });
 
-      if (d.pay) {
+      if (dat.pay) {
         await editUser({
           identifier: helperStatus.active
             ? helperStatus.identifier
@@ -341,31 +354,38 @@ const CreateOrder = ({ route, navigation }) => {
 
     if (person || createClient)
       await manageEconomy({
-        editing: d.pay,
+        editing: dat.pay,
         total,
         kitchen: dat.isSendtoKitchen,
         callBack: close,
+        person,
       });
     else close();
   };
 
-  const updateOrder = async (dat, selection) => {
+  const updateOrder = async ({
+    data: dat,
+    completeSelection,
+    totalPaid,
+    currentSelection,
+    back = false,
+  }) => {
     const data = {};
-    const d = extractObject(dat);
-    const total = getTotal(d.discount, selection, d.tip, d.tax);
-    const person = folk.find((p) => p.id === route.params.ref);
+    const total = getTotal(dat.discount, completeSelection, dat.tip, dat.tax);
+    const person =
+      client.find((p) => p.id === route.params.ref) ||
+      client.find((p) => p?.clientList?.some((c) => c.id === route.params.ref));
     const currentOrder = orders.find((o) => o.id === route.params.id);
 
     data.id = route.params.id;
     data.ref = route.params.ref;
     data.table = information.table;
     data.reservation = reservation;
-    data.selection = selection;
-    data.pay = d.pay;
-    data.discount = d.discount;
-    data.tax = d.tax;
-    data.tip = d.tip;
-    data.method = d.method;
+    data.selection = completeSelection;
+    data.pay = dat.pay;
+    data.discount = dat.discount || null;
+    data.tax = dat.tax || null;
+    data.tip = dat.tip || null;
     data.total = total;
     data.creationDate = order.creationDate;
     data.modificationDate = new Date().getTime();
@@ -374,19 +394,27 @@ const CreateOrder = ({ route, navigation }) => {
       dispatch(edit({ id: information.id, data }));
       const newMenu = menu.map((m) => {
         const mc = { ...m };
-        const found = selection.find((s) => s.id === m.id);
+        const found = completeSelection.find((s) => s.id === m.id);
         if (found) {
           mc.quantity -= found.count;
           return mc;
         }
         return m;
       });
-      if (d.pay) {
-        dispatch(changeM(newMenu));
-        navigation.pop();
-      }
-      navigation.replace("OrderCompletion", { data, total });
-      if (d.pay) {
+      if (dat.pay) dispatch(changeM(newMenu));
+      if (back) navigation.pop();
+      navigation.replace("OrderCompletion", {
+        total: totalPaid,
+        selection: currentSelection,
+        kitchen: dat.isSendtoKitchen,
+        pay: data.pay,
+        extra: {
+          discount: dat.discount || null,
+          tax: dat.tax || null,
+          tip: dat.tip || null,
+        },
+      });
+      if (dat.pay) {
         await editUser({
           identifier: helperStatus.active
             ? helperStatus.identifier
@@ -410,16 +438,17 @@ const CreateOrder = ({ route, navigation }) => {
 
     if (person || createClient)
       await manageEconomy({
-        editing: d.pay,
+        editing: dat.pay,
         total,
         lastTotal: currentOrder.total,
         kitchen: dat.isSendtoKitchen,
         callBack: close,
-      })
+        person,
+      });
     else close();
   };
 
-  const sendToKitchen = async (selection, newSelection) => {
+  const sendToKitchen = async ({ selection, newSelection, back }) => {
     if (newSelection.length > 0) {
       const orderID = route.params.id ? route.params.id : random(20);
       const kitchenID = random(20);
@@ -438,13 +467,23 @@ const CreateOrder = ({ route, navigation }) => {
 
       dispatch(addK(obj));
 
+      const params = {
+        completeSelection: selection,
+        currentSelection: selection,
+        totalPaid: null,
+        back,
+      };
+
       if (information.editing)
-        await updateOrder({ pay: false, isSendtoKitchen: true }, selection);
+        await updateOrder({
+          data: { pay: false, isSendtoKitchen: true },
+          ...params,
+        });
       else
-        await saveOrder(
-          { pay: false, ID: orderID, isSendtoKitchen: true },
-          selection
-        );
+        await saveOrder({
+          data: { pay: false, ID: orderID, isSendtoKitchen: true },
+          ...params,
+        });
       await addKitchen({
         identifier: helperStatus.active
           ? helperStatus.identifier
@@ -616,418 +655,459 @@ const CreateOrder = ({ route, navigation }) => {
   };
 
   return (
-    <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
-      <View>
-        <View style={styles.title}>
-          <TextStyle
-            smallSubtitle
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
-            {reservation ? reservation : "Mesa"}:{" "}
-            <TextStyle smallSubtitle color={light.main2}>
-              {information.table.slice(0, 10)}
-              {information.table.length > 10 ? "..." : ""}
-            </TextStyle>
-          </TextStyle>
-          <ButtonStyle
-            backgroundColor="transparent"
-            style={{
-              borderWidth: 2,
-              borderColor: light.main2,
-              width: "40%",
-            }}
-            onPress={async () => sendToKitchen(selection, newSelection)}
-          >
-            <TextStyle center verySmall color={light.main2}>
-              Enviar a cocina
-            </TextStyle>
-          </ButtonStyle>
-        </View>
-      </View>
-      <View style={styles.secondHeader}>
-        {!activeSearch && (
-          <TouchableOpacity
-            onPress={() => {
-              setActiveSearch(true);
-              setTimeout(() => searchRef.current.focus());
-            }}
-          >
-            <Ionicons
-              name="search"
-              size={getFontSize(21)}
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            />
-          </TouchableOpacity>
-        )}
-        {activeSearch && (
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "100%",
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => {
-                setSearch("");
-                setActiveSearch(false);
-                setFilters(initialState);
-              }}
-            >
-              <Ionicons
-                name="close"
-                size={getFontSize(24)}
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              />
-            </TouchableOpacity>
-            <InputStyle
-              innerRef={searchRef}
-              placeholder="Producto, valor"
-              value={search}
-              onChangeText={(text) => setSearch(text)}
-              stylesContainer={{ width: "78%", marginVertical: 0 }}
-              stylesInput={{
-                paddingHorizontal: 6,
-                paddingVertical: 5,
-                fontSize: 18,
-              }}
-            />
-            <TouchableOpacity onPress={() => setActiveFilter(!activeFilter)}>
-              <Ionicons
-                name="filter"
-                size={getFontSize(24)}
-                color={light.main2}
-              />
-            </TouchableOpacity>
-          </View>
-        )}
-        {!activeSearch && (
-          <TouchableOpacity
-            style={{
-              borderWidth: 1,
-              borderRadius: 2,
-              borderColor: mode === "light" ? light.textDark : dark.textWhite,
-              paddingHorizontal: 10,
-              paddingVertical: 2,
-            }}
-            onPress={() =>
-              navigation.navigate("EditOrder", {
-                data: "count",
-                count: count.toString(),
-                setCount,
-              })
-            }
-          >
-            <TextStyle
-              verySmall
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              {count} X
-            </TextStyle>
-          </TouchableOpacity>
-        )}
-      </View>
-      <View>
-        <View style={styles.header}>
-          <FlatList
-            key={keyCategory}
-            data={groups}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
-              return (
+    <Layout style={{ marginTop: 0 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          <View style={{ justifyContent: "space-between", flexGrow: 1 }}>
+            <View>
+              <View style={styles.title}>
+                <TextStyle
+                  smallSubtitle
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                >
+                  {reservation ? reservation : "Mesa"}:{" "}
+                  <TextStyle smallSubtitle color={light.main2}>
+                    {information.table.slice(0, 10)}
+                    {information.table.length > 10 ? "..." : ""}
+                  </TextStyle>
+                </TextStyle>
+                <ButtonStyle
+                  backgroundColor="transparent"
+                  style={{
+                    borderWidth: 2,
+                    borderColor: light.main2,
+                    width: "40%",
+                  }}
+                  onPress={async () =>
+                    sendToKitchen({ selection, newSelection })
+                  }
+                >
+                  <TextStyle center verySmall color={light.main2}>
+                    Enviar a cocina
+                  </TextStyle>
+                </ButtonStyle>
+              </View>
+            </View>
+            <View style={styles.secondHeader}>
+              {!activeSearch && (
                 <TouchableOpacity
                   onPress={() => {
-                    setCategorySelected(item);
-                    setSubcategorySelected("");
+                    setActiveSearch(true);
+                    setTimeout(() => searchRef.current.focus());
                   }}
-                  onLongPress={() => {
-                    if (item.id !== "everything") {
-                      navigation.navigate("CreateGroup", {
-                        editing: true,
-                        item,
-                      });
-                    }
+                >
+                  <Ionicons
+                    name="search"
+                    size={getFontSize(21)}
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  />
+                </TouchableOpacity>
+              )}
+              {activeSearch && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
                   }}
-                  style={[
-                    styles.category,
-                    {
-                      backgroundColor:
-                        categorySelected.id === item.id
-                          ? light.main2
-                          : mode === "light"
-                          ? light.main5
-                          : dark.main2,
-                    },
-                  ]}
+                >
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSearch("");
+                      setActiveSearch(false);
+                      setFilters(initialState);
+                    }}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={getFontSize(24)}
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    />
+                  </TouchableOpacity>
+                  <InputStyle
+                    innerRef={searchRef}
+                    placeholder="Producto, valor"
+                    value={search}
+                    onChangeText={(text) => setSearch(text)}
+                    stylesContainer={{ width: "78%", marginVertical: 0 }}
+                    stylesInput={{
+                      paddingHorizontal: 6,
+                      paddingVertical: 5,
+                      fontSize: 18,
+                    }}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setActiveFilter(!activeFilter)}
+                  >
+                    <Ionicons
+                      name="filter"
+                      size={getFontSize(24)}
+                      color={light.main2}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+              {!activeSearch && (
+                <TouchableOpacity
+                  style={{
+                    borderWidth: 1,
+                    borderRadius: 2,
+                    borderColor:
+                      mode === "light" ? light.textDark : dark.textWhite,
+                    paddingHorizontal: 10,
+                    paddingVertical: 2,
+                  }}
+                  onPress={() =>
+                    navigation.navigate("EditOrder", {
+                      data: "count",
+                      count: count.toString(),
+                      setCount,
+                    })
+                  }
                 >
                   <TextStyle
-                    smallParagraph
-                    color={
-                      categorySelected.id === item.id
-                        ? light.textDark
-                        : mode === "light"
-                        ? light.textDark
-                        : dark.textWhite
-                    }
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
                   >
-                    {item.category}
+                    {count} X
                   </TextStyle>
                 </TouchableOpacity>
-              );
-            }}
-          />
-          <TouchableOpacity
-            onPress={() => navigation.navigate("CreateGroup", { type: "menu" })}
-          >
-            <Ionicons
-              name="add-circle"
-              color={light.main2}
-              size={getFontSize(24)}
-            />
-          </TouchableOpacity>
-        </View>
-        <FlatList
-          key={keySubcategory}
-          data={categorySelected?.subcategory}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginTop: categorySelected?.subcategory.length ? 8 : 0 }}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => {
-            return (
-              <TouchableOpacity
-                onPress={() =>
-                  setSubcategorySelected(
-                    subcategorySelected?.id === item.id ? null : item
-                  )
-                }
-                onLongPress={() =>
-                  navigation.navigate("CreateGroup", {
-                    editing: true,
-                    item: categorySelected,
-                  })
-                }
-                style={[
-                  styles.category,
-                  {
-                    backgroundColor:
-                      subcategorySelected === item
-                        ? light.main2
-                        : mode === "light"
-                        ? light.main5
-                        : dark.main2,
-                  },
-                ]}
-              >
-                <TextStyle
-                  smallParagraph
-                  color={
-                    subcategorySelected === item
-                      ? light.textDark
-                      : mode === "light"
-                      ? light.textDark
-                      : dark.textWhite
-                  }
-                >
-                  {item.subcategory}
-                </TextStyle>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      </View>
-      <View style={{ marginVertical: 10 }}>
-        <ScrollView
-          style={{ height: SCREEN_HEIGHT / 1.7 }}
-          contentContainerStyle={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          {products.map((item, index) => {
-            return (
-              <TouchableNativeFeedback
-                key={item.id ? item.id : index}
-                onLongPress={() => {
-                  if (item.id)
-                    return navigation.navigate("CreateProduct", {
-                      editing: true,
-                      item,
-                      setSelection,
-                      selection,
-                    });
-
-                  navigation.navigate("CreateProduct", {
-                    setSelection,
-                    selection,
-                  });
-                }}
-                onPress={() => {
-                  if (item?.id) {
-                    const index = selection.findIndex((s) => s.id === item.id);
-                    const newIndex = newSelection.findIndex(
-                      (s) => s.id === item.id
-                    );
-
-                    if (newIndex !== -1) {
-                      newSelection[newIndex].count += count;
-                      setNewSelection([...newSelection]);
-                    } else
-                      setNewSelection([...newSelection, { ...item, count }]);
-
-                    const object = {
-                      ...item,
-                      count,
-                      total: item.value * count,
-                      discount: 0,
-                    };
-
-                    if (index !== -1) {
-                      let selected = { ...selection[index] };
-                      selected.count += count;
-                      selected.total += item.value * count;
-                      const changed = selection.map((s) => {
-                        if (s.id === selected.id) return selected;
-                        return s;
-                      });
-                      setSelection(changed);
-                    } else setSelection([...selection, object]);
-                  } else {
-                    navigation.navigate("CreateProduct");
-                  }
-                }}
-              >
-                <View
-                  style={[
-                    styles.catalogue,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                >
-                  {item.id && (
-                    <View style={{ flex: 1, justifyContent: "space-between" }}>
-                      <View
-                        style={{
-                          justifyContent: "center",
-                          alignItems: "center",
-                          height: "60%",
+              )}
+            </View>
+            <View style={{ marginVertical: 8 }}>
+              <View style={styles.header}>
+                <FlatList
+                  key={keyCategory}
+                  data={groups}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => {
+                    return (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setCategorySelected(item);
+                          setSubcategorySelected("");
                         }}
+                        onLongPress={() => {
+                          if (item.id !== "everything") {
+                            navigation.navigate("CreateGroup", {
+                              editing: true,
+                              item,
+                            });
+                          }
+                        }}
+                        style={[
+                          styles.category,
+                          {
+                            backgroundColor:
+                              categorySelected.id === item.id
+                                ? light.main2
+                                : mode === "light"
+                                ? light.main5
+                                : dark.main2,
+                          },
+                        ]}
                       >
                         <TextStyle
                           smallParagraph
                           color={
-                            mode === "light" ? light.textDark : dark.textWhite
+                            categorySelected.id === item.id
+                              ? light.textDark
+                              : mode === "light"
+                              ? light.textDark
+                              : dark.textWhite
                           }
                         >
-                          {item.name}
+                          {item.category}
                         </TextStyle>
-                        <View style={{ flexDirection: "row" }}>
-                          <TextStyle
-                            verySmall
-                            color={
-                              item.quantity < item.reorder
-                                ? "#F70000"
-                                : light.main2
-                            }
-                          >
-                            {item.quantity < 0 ? "-" : ""}
-                            {thousandsSystem(Math.abs(item.quantity))}/
-                          </TextStyle>
-                          <TextStyle
-                            verySmall
-                            color={
-                              mode === "light" ? light.textDark : dark.textWhite
-                            }
-                          >
-                            {thousandsSystem(item.reorder)}
-                          </TextStyle>
-                        </View>
-                      </View>
+                      </TouchableOpacity>
+                    );
+                  }}
+                />
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.navigate("CreateGroup", { type: "menu" })
+                  }
+                >
+                  <Ionicons
+                    name="add-circle"
+                    color={light.main2}
+                    size={getFontSize(24)}
+                  />
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                key={keySubcategory}
+                data={categorySelected?.subcategory}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{
+                  marginTop: categorySelected?.subcategory.length ? 8 : 0,
+                }}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => {
+                  return (
+                    <TouchableOpacity
+                      onPress={() =>
+                        setSubcategorySelected(
+                          subcategorySelected?.id === item.id ? null : item
+                        )
+                      }
+                      onLongPress={() =>
+                        navigation.navigate("CreateGroup", {
+                          editing: true,
+                          item: categorySelected,
+                        })
+                      }
+                      style={[
+                        styles.category,
+                        {
+                          backgroundColor:
+                            subcategorySelected === item
+                              ? light.main2
+                              : mode === "light"
+                              ? light.main5
+                              : dark.main2,
+                        },
+                      ]}
+                    >
+                      <TextStyle
+                        smallParagraph
+                        color={
+                          subcategorySelected === item
+                            ? light.textDark
+                            : mode === "light"
+                            ? light.textDark
+                            : dark.textWhite
+                        }
+                      >
+                        {item.subcategory}
+                      </TextStyle>
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            </View>
+            <View style={{ marginVertical: 5 }}>
+              <ScrollView
+                style={{ height: SCREEN_HEIGHT / 1.75 }}
+                contentContainerStyle={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                }}
+                showsVerticalScrollIndicator={false}
+              >
+                {products.map((item, index) => {
+                  return (
+                    <TouchableNativeFeedback
+                      key={item.id ? item.id : index}
+                      onLongPress={() => {
+                        if (item.id)
+                          return navigation.navigate("CreateProduct", {
+                            editing: true,
+                            item,
+                            setSelection,
+                            selection,
+                          });
+
+                        navigation.navigate("CreateProduct", {
+                          setSelection,
+                          selection,
+                        });
+                      }}
+                      onPress={() => {
+                        if (item?.id) {
+                          const index = selection.findIndex(
+                            (s) => s.id === item.id
+                          );
+                          const newIndex = newSelection.findIndex(
+                            (s) => s.id === item.id
+                          );
+
+                          if (newIndex !== -1) {
+                            newSelection[newIndex].count += count;
+                            setNewSelection([...newSelection]);
+                          } else
+                            setNewSelection([
+                              ...newSelection,
+                              { ...item, count },
+                            ]);
+
+                          const object = {
+                            ...item,
+                            count,
+                            total: item.value * count,
+                            paid: 0,
+                            discount: 0, //TODO SI QUITO ESTO SE CAE TODO
+                            method: [],
+                          };
+
+                          if (index !== -1) {
+                            let selected = { ...selection[index] };
+                            selected.count += count;
+                            selected.total += item.value * count;
+                            const changed = selection.map((s) => {
+                              if (s.id === selected.id) return selected;
+                              return s;
+                            });
+                            setSelection(changed);
+                          } else setSelection([...selection, object]);
+                        } else {
+                          navigation.navigate("CreateProduct");
+                        }
+                      }}
+                    >
                       <View
                         style={[
-                          styles.footerCatalogue,
+                          styles.catalogue,
                           {
-                            width: Math.floor(SCREEN_WIDTH / 3.5),
-                            paddingHorizontal: 4,
+                            backgroundColor:
+                              mode === "light" ? light.main5 : dark.main2,
                           },
                         ]}
                       >
-                        <TextStyle verySmall>{item.identifier}</TextStyle>
-                        <View style={[styles.header, { flexWrap: "wrap" }]}>
-                          <TextStyle verySmall>
-                            {thousandsSystem(item.value)}
-                          </TextStyle>
-                          <TextStyle verySmall>{item.unit}</TextStyle>
-                        </View>
+                        {item.id && (
+                          <View
+                            style={{ flex: 1, justifyContent: "space-between" }}
+                          >
+                            <View
+                              style={{
+                                justifyContent: "center",
+                                alignItems: "center",
+                                height: "60%",
+                              }}
+                            >
+                              <TextStyle
+                                smallParagraph
+                                color={
+                                  mode === "light"
+                                    ? light.textDark
+                                    : dark.textWhite
+                                }
+                              >
+                                {item.name}
+                              </TextStyle>
+                              <View style={{ flexDirection: "row" }}>
+                                <TextStyle
+                                  verySmall
+                                  color={
+                                    item.quantity < item.reorder
+                                      ? "#F70000"
+                                      : light.main2
+                                  }
+                                >
+                                  {item.quantity < 0 ? "-" : ""}
+                                  {thousandsSystem(Math.abs(item.quantity))}/
+                                </TextStyle>
+                                <TextStyle
+                                  verySmall
+                                  color={
+                                    mode === "light"
+                                      ? light.textDark
+                                      : dark.textWhite
+                                  }
+                                >
+                                  {thousandsSystem(item.reorder)}
+                                </TextStyle>
+                              </View>
+                            </View>
+                            <View
+                              style={[
+                                styles.footerCatalogue,
+                                {
+                                  width: Math.floor(SCREEN_WIDTH / 3.5),
+                                  paddingHorizontal: 4,
+                                },
+                              ]}
+                            >
+                              <TextStyle verySmall>{item.identifier}</TextStyle>
+                              <View
+                                style={[styles.header, { flexWrap: "wrap" }]}
+                              >
+                                <TextStyle verySmall>
+                                  {thousandsSystem(item.value)}
+                                </TextStyle>
+                                <TextStyle verySmall>{item.unit}</TextStyle>
+                              </View>
+                            </View>
+                          </View>
+                        )}
+                        {!item?.id &&
+                          index ===
+                            products.filter((p) => typeof p !== "number")
+                              .length && (
+                            <Ionicons
+                              name="add"
+                              size={getFontSize(45)}
+                              color={mode === "light" ? "#BBBBBB" : dark.main1}
+                            />
+                          )}
                       </View>
-                    </View>
-                  )}
-                  {!item?.id &&
-                    index ===
-                      products.filter((p) => typeof p !== "number").length && (
-                      <Ionicons
-                        name="add"
-                        size={getFontSize(45)}
-                        color={mode === "light" ? "#BBBBBB" : dark.main1}
-                      />
-                    )}
-                </View>
-              </TouchableNativeFeedback>
-            );
-          })}
+                    </TouchableNativeFeedback>
+                  );
+                })}
+              </ScrollView>
+            </View>
+            <View>
+              {information.editing && (
+                <ButtonStyle
+                  backgroundColor={light.main2}
+                  onPress={() => removeO()}
+                >
+                  <TextStyle center smallParagraph>
+                    Eliminar pedido
+                  </TextStyle>
+                </ButtonStyle>
+              )}
+              <ButtonStyle
+                backgroundColor="transparent"
+                style={{
+                  borderWidth: 2,
+                  borderColor: light.main2,
+                }}
+                onPress={() => {
+                  if (selection.length === 0)
+                    Alert.alert(
+                      "El carrito está vacío",
+                      "Precisa adicionar un producto al carrito para poder velor"
+                    );
+                  else
+                    navigation.navigate("PreviewOrder", {
+                      selection,
+                      setSelection,
+                      setNewSelection,
+                      newSelection,
+                      saveOrder,
+                      updateOrder,
+                      sendToKitchen,
+                      editing: information.editing,
+                    });
+                }}
+              >
+                <TextStyle color={light.main2} center smallParagraph>
+                  {selection.length === 0
+                    ? "Ningún ítem"
+                    : `${thousandsSystem(
+                        selection
+                          .filter((s) => s.count !== s.paid)
+                          .reduce((a, b) => a + b.count - b.paid, 0)
+                      )} ítem = ${thousandsSystem(
+                        selection
+                          .filter((s) => s.count !== s.paid)
+                          .reduce((a, b) => a + (b.count - b.paid) * b.value, 0)
+                      )}`}
+                </TextStyle>
+              </ButtonStyle>
+            </View>
+          </View>
         </ScrollView>
-      </View>
-      <View>
-        {information.editing && (
-          <ButtonStyle backgroundColor={light.main2} onPress={() => removeO()}>
-            <TextStyle center smallParagraph>
-              Eliminar pedido
-            </TextStyle>
-          </ButtonStyle>
-        )}
-        <ButtonStyle
-          backgroundColor="transparent"
-          style={{
-            borderWidth: 2,
-            borderColor: light.main2,
-          }}
-          onPress={() => {
-            if (selection.length === 0)
-              Alert.alert(
-                "El carrito está vacío",
-                "Precisa adicionar un producto al carrito para poder velor"
-              );
-            else
-              navigation.navigate("PreviewOrder", {
-                selection,
-                setSelection,
-                setNewSelection,
-                newSelection,
-                saveOrder,
-                updateOrder,
-                sendToKitchen,
-                editing: information.editing,
-              });
-          }}
-        >
-          <TextStyle color={light.main2} center smallParagraph>
-            {selection.length === 0
-              ? "Ningún ítem"
-              : `${thousandsSystem(
-                  selection.reduce((a, b) => a + b.count, 0)
-                )} ítem = ${thousandsSystem(
-                  selection.reduce((a, b) => a + b.total, 0)
-                )}`}
-          </TextStyle>
-        </ButtonStyle>
-      </View>
+      </KeyboardAvoidingView>
       <Modal
         animationType="fade"
         transparent={true}

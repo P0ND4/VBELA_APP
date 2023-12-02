@@ -98,10 +98,10 @@ const CreateReserve = ({ route, navigation }) => {
       const amount =
         place.type === "standard"
           ? place.value * days
-          : accommodationSelected?.accommodation?.reduce(
-              (a, b) => a + b.value,
-              0
-            );
+          : accommodationSelected?.reduce(
+            (a, b) => a + b.accommodation.reduce((a,b) => a + b.value, 0),
+            0
+          ) || 0;
 
       setAmount(amount);
       if (discount)
