@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "VBELA",
     slug: "vbela",
-    version: "3.4.0",
+    version: "3.4.1",
     orientation: "portrait",
     icon: "./assets/logo.png",
     userInterfaceStyle: "light",
