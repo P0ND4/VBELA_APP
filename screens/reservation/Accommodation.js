@@ -1403,7 +1403,7 @@ const Accommodation = ({ navigation }) => {
               </TextStyle>
             </View>
             <TouchableOpacity
-              onPress={() => checkInEvent()}
+              onPress={() => checkInEvent({ guest })}
               style={[
                 styles.table,
                 {

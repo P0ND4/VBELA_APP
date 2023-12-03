@@ -83,10 +83,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 reservation,
                 quantity: reservation?.hosted?.length,
                 date: reservation.creationDate,
-                total: reservation.hosted.reduce(
-                  (a, b) => (a + b.payment === "business" ? 0 : b.payment),
-                  0
-                ),
+                total: reservation.payment,
                 type: "standard-reservations",
               };
             });
@@ -112,7 +109,7 @@ const PeopleInformation = ({ route, navigation }) => {
             });
 
           const ordersSorted = orders
-            .filter((o) => o.ref === e.ref)
+            .filter((o) => o.ref === e.ref || clientList?.some((c) => c.id === o.ref))
             .map((order) => {
               return {
                 data: order,
@@ -130,7 +127,7 @@ const PeopleInformation = ({ route, navigation }) => {
             });
 
           const salesSorted = sales
-            .filter((s) => s.ref === e.ref)
+            .filter((s) => s.ref === e.ref || clientList?.some((c) => c.id === s.ref))
             .map((sale) => {
               return {
                 data: sale,
@@ -154,14 +151,10 @@ const PeopleInformation = ({ route, navigation }) => {
           eco.details = union.sort(
             (a, b) => new Date(b.date) - new Date(a.date)
           );
-          eco.people = accommodationReservationsSorted?.length + standardReservationsSorted.reduce((a,b)=> a + b.hosted.length,0);
+          eco.people = accommodationReservationsSorted?.length + standardReservationsSorted.reduce((a,b)=> a + b.reservation?.hosted?.length,0)
           eco.orders = ordersSorted?.length;
           eco.sales = salesSorted?.length;
           eco.reservations = accommodationReservationsSorted?.length + standardReservationsSorted?.length;
-          eco.ordersFinished = ordersSorted.reduce((a, b) => {
-            const value = b.paid === b.count ? 1 : 0;
-            return a + value
-          },0);
           return eco;
         }),
       ].reverse()
@@ -303,8 +296,8 @@ const PeopleInformation = ({ route, navigation }) => {
               </TextStyle>
             </View>
           </View>
-          {item.details.map((item) => (
-            <View key={item.id} style={{ flexDirection: "row" }}>
+          {item.details.map((item, index) => (
+            <View key={item.date + index} style={{ flexDirection: "row" }}>
               <View
                 style={[
                   styles.table,
@@ -497,18 +490,6 @@ const PeopleInformation = ({ route, navigation }) => {
               <TextStyle
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                Comida:
-              </TextStyle>
-              <TextStyle color={light.main2}>
-                {item.orders ? thousandsSystem(item.orders || 0) : "0"}
-              </TextStyle>
-            </View>
-          )}
-          {item.type === "debt" && (
-            <View style={styles.row}>
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
                 Alojamiento:
               </TextStyle>
               <TextStyle color={light.main2}>
@@ -533,25 +514,11 @@ const PeopleInformation = ({ route, navigation }) => {
               <TextStyle
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                Ordenes realizadas:
+                Ordenes realizadas/finalizadas:
               </TextStyle>
               <TextStyle color={light.main2}>
                 {item.orders
                   ? thousandsSystem(item.orders)
-                  : "0"}
-              </TextStyle>
-            </View>
-          )}
-          {item.type === "debt" && (
-            <View style={styles.row}>
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                Ordenes finalizados:
-              </TextStyle>
-              <TextStyle color={light.main2}>
-                {item.orders
-                  ? thousandsSystem(item.ordersFinished)
                   : "0"}
               </TextStyle>
             </View>
@@ -884,16 +851,6 @@ const PeopleInformation = ({ route, navigation }) => {
         </tr>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">Comida</p>
-          </td>
-          <td style="text-align: right;">
-            <p style="font-size: 22px; font-weight: 600;">
-              ${thousandsSystem(item.orders || 0)}
-            </p>
-          </td>
-        </tr>
-        <tr>
-          <td style="text-align: left;">
             <p style="font-size: 22px; font-weight: 600;">Alojamiento</p>
           </td>
           <td style="text-align: right;">
@@ -914,11 +871,21 @@ const PeopleInformation = ({ route, navigation }) => {
         </tr>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">Pedidos realizados</p>
+            <p style="font-size: 22px; font-weight: 600;">Ordenes realizadas/finalizadas</p>
           </td>
           <td style="text-align: right;">
             <p style="font-size: 22px; font-weight: 600;">
-              ${thousandsSystem(item.ordersFinished)}
+              ${thousandsSystem(item.orders || 0)}
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: left;">
+            <p style="font-size: 22px; font-weight: 600;">Compras realizadas/finalizadas</p>
+          </td>
+          <td style="text-align: right;">
+            <p style="font-size: 22px; font-weight: 600;">
+              ${thousandsSystem(item.sales || 0)}
             </p>
           </td>
         </tr>

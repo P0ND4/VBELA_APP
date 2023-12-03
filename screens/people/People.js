@@ -124,10 +124,7 @@ const People = ({ navigation, userType }) => {
             reservation,
             quantity: reservation?.hosted?.length,
             date: reservation.creationDate,
-            total: reservation.hosted.reduce(
-              (a, b) => (a + b.payment === "business" ? 0 : b.payment),
-              0
-            ),
+            total: reservation.payment,
             type: "standard-reservations",
           };
         });
@@ -153,7 +150,7 @@ const People = ({ navigation, userType }) => {
         });
 
       const ordersSorted = orders
-        .filter((o) => o.ref === information.ref)
+        .filter((o) => o.ref === information.ref || clientList?.some((c) => c.id === o.ref))
         .map((order) => {
           return {
             data: order,
@@ -171,7 +168,7 @@ const People = ({ navigation, userType }) => {
         });
 
       const salesSorted = sales
-        .filter((s) => s.ref === information.ref)
+        .filter((s) => s.ref === information.ref || clientList?.some((c) => c.id === s.ref))
         .map(sale => {
           return {
             data: sale,
@@ -637,8 +634,6 @@ const People = ({ navigation, userType }) => {
     );
   };
 
-  //TODO Eliminar reservaciones y ordenes pedidos por clientes especiales
-
   const cleanModal = () => {
     setModalVisible(!modalVisible);
     setModalVisiblePeople(!modalVisiblePeople);
@@ -970,8 +965,8 @@ const People = ({ navigation, userType }) => {
               <TextStyle
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                {item.name?.slice(0, 10)}
-                {item.name.length > 10 ? "..." : ""}
+                {item.name?.slice(0, 8)}
+                {item.name.length > 8 ? "..." : ""}
               </TextStyle>
             )}
             {!isName && (

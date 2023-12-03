@@ -644,6 +644,7 @@ const ReserveInformation = ({ route, navigation }) => {
   };
 
   const manageEconomy = async ({ ids, hosted }) => {
+    if (hosted.length === 0) return;
     for (let ownerRef of ids) {
       const person =
         customer.find((p) => p.id === ownerRef) ||
@@ -2031,8 +2032,6 @@ const ReserveInformation = ({ route, navigation }) => {
                     const newReservation = { ...reserve };
                     const newData = [];
                     if (place.type === "accommodation") {
-                      const difference = [];
-
                       for (let h of hostedChangeRef.current) {
                         const nh = {
                           ...h,
@@ -2041,14 +2040,6 @@ const ReserveInformation = ({ route, navigation }) => {
                           payment: businessPayment ? "business" : h.payment,
                         };
 
-                        const amount = h?.discount
-                          ? (h?.amount - h?.discount) * h?.days
-                          : h?.amount * h?.days;
-
-                        const payment = amount - h.payment;
-                        if (payment !== 0) difference.push(amount - h.payment);
-
-                        newData.push(nh);
                         dispatch(editRA({ id: h.id, data: nh }));
                       }
 
@@ -2090,8 +2081,7 @@ const ReserveInformation = ({ route, navigation }) => {
                       const manageEconomyHosted = [];
 
                       for (let h of hostedREF) {
-                        if (h.payment === "business" || h.payment === 0)
-                          continue;
+                        if (h.payment === "business" || h.payment === 0) continue;
                         const index = manageEconomyHosted.findIndex(
                           (m) => m.clientID === h?.clientID
                         );
@@ -2101,8 +2091,6 @@ const ReserveInformation = ({ route, navigation }) => {
                           ids.splice(indexID, 1);
                         } else manageEconomyHosted.push(h);
                       }
-
-                      //console.log(manageEconomyHosted[0].payment)
 
                       // ---------
 

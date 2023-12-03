@@ -595,12 +595,15 @@ const CreateOrder = ({ route, navigation }) => {
       {
         text: "Si",
         onPress: async () => {
-          const foundEconomy = economy.find((e) => e.ref === route.params.ref);
+          const person =
+            client.find((p) => p.id === route.params.ref) ||
+            client.find((p) => p?.clientList?.some((c) => c.id === route.params.ref));
+          const foundEconomy = economy.find((e) => e.ref === person.id);
 
           dispatch(removeManyK({ ref: route.params.id }));
           dispatch(remove({ id: information.id }));
           navigation.pop();
-          if (foundEconomy) {
+          if (foundEconomy) { //TODO CUANDO HAY UN PEDIDO EN COCINA NO SE LE COBRA PERO SI SE ELIMINA SI SE LE DESCUENTA
             const currentEconomy = { ...foundEconomy };
             currentEconomy.amount -= route.params.selection.reduce(
               (a, b) => a + b.total,

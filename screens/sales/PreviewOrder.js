@@ -128,27 +128,23 @@ const PreviewOrder = ({ route, navigation }) => {
   useEffect(() => {
     setGeneralPrice(
       totalDiscount !== 0
-        ? thousandsSystem(
-            selection
-              .filter((s) => s.count !== s.paid)
-              .reduce((a, b) => {
-                const value = (b.count - b.paid) * b.value;
-                return a + (b.discount !== 0 ? value - b.discount : value);
-              }, 0) -
-              totalDiscount +
-              tip +
-              tax
-          )
-        : thousandsSystem(
-            selection
-              .filter((s) => s.count !== s.paid)
-              .reduce((a, b) => {
-                const value = (b.count - b.paid) * b.value;
-                return a + (b.discount !== 0 ? value - b.discount : value);
-              }, 0) +
-              tip +
-              tax
-          )
+        ? selection
+            .filter((s) => s.count !== s.paid)
+            .reduce((a, b) => {
+              const value = (b.count - b.paid) * b.value;
+              return a + (b.discount !== 0 ? value - b.discount : value);
+            }, 0) -
+            totalDiscount +
+            tip +
+            tax
+        : selection
+            .filter((s) => s.count !== s.paid)
+            .reduce((a, b) => {
+              const value = (b.count - b.paid) * b.value;
+              return a + (b.discount !== 0 ? value - b.discount : value);
+            }, 0) +
+            tip +
+            tax
     );
   }, [totalDiscount, selection, tip, tax]);
 
@@ -459,7 +455,7 @@ const PreviewOrder = ({ route, navigation }) => {
             </TextStyle>
           </TouchableOpacity>
           <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-            TOTAL: {generalPrice}
+            TOTAL: {thousandsSystem(generalPrice)}
           </TextStyle>
         </View>
       </View>

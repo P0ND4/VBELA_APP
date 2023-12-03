@@ -131,9 +131,9 @@ const Statistic = ({ navigation }) => {
 
     for (let reservation of standardReservations) {
       const date = new Date(reservation.creationDate);
-      const calculatedAmount = reservation?.payment;
+      const calculatedAmount = reservation?.amount;
       if (reservation?.hosted?.some(r => !r.checkOut)) continue
-      amount += calculatedAmount;
+      if (reservation.payment !== 'business') amount += calculatedAmount;
       if (dateValidation(date)) continue;
       people += reservation.hosted.length;
 
@@ -148,12 +148,11 @@ const Statistic = ({ navigation }) => {
 
     for (let reservation of accommodationReservations) {
       const date = new Date(reservation.creationDate);
-      const value = reservation?.payment;
+      const value = reservation?.amount;
 
       if (dateValidation(date) || !reservation.checkOut) continue;
-      if (!dateValidation(new Date(reservation.checkOut))) {
-        amount +=
-          reservation.payment === "business" ? value : reservation.payment;
+      if (!dateValidation(new Date(reservation.checkOut)) &&  reservation.payment !== "business") {
+        amount += reservation.payment;
       }
 
       people += 1;
