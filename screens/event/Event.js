@@ -70,11 +70,11 @@ const Event = ({ route, navigation }) => {
             justify
             smallParagraph
           >
-            !Hola querido usuario! estás usando una versión que actualmente se
+            !Hola querido usuario! estás usando una versión que actualmente sé
             encuentra obsoleta y es necesaria su actualización, las
             actualizaciones traen mejoras, arreglos de bugs o errores,
             implementación de nuevos servicios y mucho más para que pueda
-            apreciar se la mejor manera a VBELA, si no es necesaria la
+            apreciar de la mejor manera a VBELA, si no es necesaria la
             actualización no te aparecerá esta ventana
           </TextStyle>
         </View>

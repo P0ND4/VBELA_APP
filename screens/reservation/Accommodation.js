@@ -42,7 +42,7 @@ import {
   editEconomy,
   removeReservation,
   addReservation,
-  addEconomy
+  addEconomy,
 } from "@api";
 import Layout from "@components/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -432,7 +432,7 @@ const Accommodation = ({ navigation }) => {
 
             dispatch(editRA({ id: hosted.id, data: data[0] }));
             const ids = item?.owner ? [item.owner] : [];
-            console.log(ids)
+            console.log(ids);
             if (ids.length > 0) await deleteEconomy({ ids, hosted: [item] });
 
             await editReservation({
@@ -1107,20 +1107,23 @@ const Accommodation = ({ navigation }) => {
                     </TextStyle>
                   )}
                 </View>
-                <View style={[styles.row, { marginVertical: 10 }]}>
-                  <TextStyle smallParagraph color={light.main2}>
-                    Lo pago la empresa
-                  </TextStyle>
-                  <Switch
-                    trackColor={{ false: dark.main2, true: light.main2 }}
-                    thumbColor={light.main4}
-                    ios_backgroundColor="#3e3e3e"
-                    onValueChange={() => setBusinessPayment(!businessPayment)}
-                    value={businessPayment}
-                  />
-                </View>
+                {!item?.owner && (
+                  <View style={[styles.row, { marginVertical: 10 }]}>
+                    <TextStyle smallParagraph color={light.main2}>
+                      Lo pago la empresa
+                    </TextStyle>
+                    <Switch
+                      trackColor={{ false: dark.main2, true: light.main2 }}
+                      thumbColor={light.main4}
+                      ios_backgroundColor="#3e3e3e"
+                      onValueChange={() => setBusinessPayment(!businessPayment)}
+                      value={businessPayment}
+                    />
+                  </View>
+                )}
                 <ButtonStyle
                   backgroundColor={light.main2}
+                  style={{ marginTop: item?.owner ? 20 : 0 }}
                   onPress={async () => {
                     const send = async () => {
                       const debugItem = { ...item };
@@ -1229,6 +1232,10 @@ const Accommodation = ({ navigation }) => {
     const [years, setYears] = useState([]);
     const [nomenclaturesToChoose, setNomenclaturesToChoose] = useState([]);
 
+    const dayRef = useRef();
+    const monthRef = useRef();
+    const yearRef = useRef();
+
     useEffect(() => {
       if (zones.length > 0) {
         const nomenclaturesFound = nomenclatures.filter(
@@ -1332,8 +1339,6 @@ const Accommodation = ({ navigation }) => {
         if (a.start > b.start) return 1;
         return 0;
       });
-
-      //TODO solo cambiar los que cambiaron :) en changeGeneralInformation para no saturar el guardado
 
       if (search || filters.active) {
         const hostedWithSearch = hosted.filter((h) => {
@@ -1953,49 +1958,56 @@ const Accommodation = ({ navigation }) => {
                   </View>
                 </View>
                 <View style={[styles.row, { marginTop: 10 }]}>
-                  <View
-                    style={[
-                      styles.cardPicker,
-                      {
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                      },
-                    ]}
-                  >
-                    <Picker
-                      mode="dropdown"
-                      selectedValue={filters.day}
-                      dropdownIconColor={
-                        mode === "light" ? light.textDark : dark.textWhite
+                  <View>
+                    <ButtonStyle
+                      backgroundColor={
+                        mode === "light" ? light.main5 : dark.main2
                       }
-                      onValueChange={(itemValue) =>
-                        setFilters({ ...filters, day: itemValue })
-                      }
-                      style={{
-                        width: width / 4.3,
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                        fontSize: 20,
-                      }}
+                      style={{ width: width / 4.5, paddingVertical: 16 }}
+                      onPress={() => dayRef.current?.focus()}
                     >
-                      <Picker.Item
-                        label="Día"
-                        value="all"
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
+                      <View style={styles.row}>
+                        <TextStyle
+                          color={
+                            filters.day !== "all"
+                              ? mode === "light"
+                                ? light.textDark
+                                : dark.textWhite
+                              : "#888888"
+                          }
+                          smallParagraph
+                        >
+                          {filters.day !== 'all' ? filters.day : 'Día'}
+                        </TextStyle>
+                        <Ionicons
+                          color={
+                            filters.day !== "all"
+                              ? mode === "light"
+                                ? light.textDark
+                                : dark.textWhite
+                              : "#888888"
+                          }
+                          size={getFontSize(10)}
+                          name="caret-down"
+                        />
+                      </View>
+                    </ButtonStyle>
+
+                    <View style={{ display: "none" }}>
+                      <Picker
+                        ref={dayRef}
+                        mode="dropdown"
+                        selectedValue={filters.day}
+                        onValueChange={(itemValue) =>
+                          setFilters({ ...filters, day: itemValue })
                         }
-                      />
-                      {days.map((day) => (
+                        style={{
+                          color: mode === "light" ? light.textDark : dark.textWhite,
+                        }}
+                      >
                         <Picker.Item
-                          key={day}
-                          label={`${day}`}
-                          value={day}
+                          label="Día"
+                          value="all"
                           style={{
                             backgroundColor:
                               mode === "light" ? light.main5 : dark.main2,
@@ -2004,52 +2016,72 @@ const Accommodation = ({ navigation }) => {
                             mode === "light" ? light.textDark : dark.textWhite
                           }
                         />
-                      ))}
-                    </Picker>
+                        {days.map((day) => (
+                          <Picker.Item
+                            key={day}
+                            label={`${day}`}
+                            value={day}
+                            style={{
+                              backgroundColor:
+                                mode === "light" ? light.main5 : dark.main2,
+                            }}
+                            color={
+                              mode === "light" ? light.textDark : dark.textWhite
+                            }
+                          />
+                        ))}
+                      </Picker>
+                    </View>
                   </View>
-                  <View
-                    style={[
-                      styles.cardPicker,
-                      {
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                      },
-                    ]}
-                  >
-                    <Picker
-                      mode="dropdown"
-                      selectedValue={filters.month}
-                      onValueChange={(itemValue) =>
-                        setFilters({ ...filters, month: itemValue })
+                  <View>
+                    <ButtonStyle
+                      backgroundColor={
+                        mode === "light" ? light.main5 : dark.main2
                       }
-                      dropdownIconColor={
-                        mode === "light" ? light.textDark : dark.textWhite
-                      }
-                      style={{
-                        width: width / 4.3,
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                        fontSize: 20,
-                      }}
+                      style={{ width: width / 3.6, paddingVertical: 16 }}
+                      onPress={() => monthRef.current?.focus()}
                     >
-                      <Picker.Item
-                        label="Mes"
-                        value="all"
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
+                      <View style={styles.row}>
+                        <TextStyle
+                          color={
+                            filters.month !== "all"
+                              ? mode === "light"
+                                ? light.textDark
+                                : dark.textWhite
+                              : "#888888"
+                          }
+                          smallParagraph
+                        >
+                          {filters.month !== 'all' ? months[filters.month - 1] : 'Mes'}
+                        </TextStyle>
+                        <Ionicons
+                          color={
+                            filters.month !== "all"
+                              ? mode === "light"
+                                ? light.textDark
+                                : dark.textWhite
+                              : "#888888"
+                          }
+                          size={getFontSize(10)}
+                          name="caret-down"
+                        />
+                      </View>
+                    </ButtonStyle>
+                    <View style={{ display: "none" }}>
+                      <Picker
+                        ref={monthRef}
+                        mode="dropdown"
+                        selectedValue={filters.month}
+                        onValueChange={(itemValue) =>
+                          setFilters({ ...filters, month: itemValue })
                         }
-                      />
-                      {months.map((month, index) => (
+                        style={{
+                          color: mode === "light" ? light.textDark : dark.textWhite,
+                        }}
+                      >
                         <Picker.Item
-                          key={month}
-                          label={month}
-                          value={index + 1}
+                          label="Mes"
+                          value="all"
                           style={{
                             backgroundColor:
                               mode === "light" ? light.main5 : dark.main2,
@@ -2058,52 +2090,72 @@ const Accommodation = ({ navigation }) => {
                             mode === "light" ? light.textDark : dark.textWhite
                           }
                         />
-                      ))}
-                    </Picker>
+                        {months.map((month, index) => (
+                          <Picker.Item
+                            key={month}
+                            label={month}
+                            value={index + 1}
+                            style={{
+                              backgroundColor:
+                                mode === "light" ? light.main5 : dark.main2,
+                            }}
+                            color={
+                              mode === "light" ? light.textDark : dark.textWhite
+                            }
+                          />
+                        ))}
+                      </Picker>
+                    </View>
                   </View>
-                  <View
-                    style={[
-                      styles.cardPicker,
-                      {
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                      },
-                    ]}
-                  >
-                    <Picker
-                      mode="dropdown"
-                      selectedValue={filters.year}
-                      onValueChange={(itemValue) =>
-                        setFilters({ ...filters, year: itemValue })
+                  <View>
+                    <ButtonStyle
+                      backgroundColor={
+                        mode === "light" ? light.main5 : dark.main2
                       }
-                      dropdownIconColor={
-                        mode === "light" ? light.textDark : dark.textWhite
-                      }
-                      style={{
-                        width: width / 4.3,
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                        fontSize: 20,
-                      }}
+                      style={{ width: width / 4.5, paddingVertical: 16 }}
+                      onPress={() => yearRef.current?.focus()}
                     >
-                      <Picker.Item
-                        label="Año"
-                        value="all"
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
+                      <View style={styles.row}>
+                        <TextStyle
+                          color={
+                            filters.year !== "all"
+                              ? mode === "light"
+                                ? light.textDark
+                                : dark.textWhite
+                              : "#888888"
+                          }
+                          smallParagraph
+                        >
+                          {filters.year !== 'all' ? filters.year : 'Año'}
+                        </TextStyle>
+                        <Ionicons
+                          color={
+                            filters.year !== "all"
+                              ? mode === "light"
+                                ? light.textDark
+                                : dark.textWhite
+                              : "#888888"
+                          }
+                          size={getFontSize(10)}
+                          name="caret-down"
+                        />
+                      </View>
+                    </ButtonStyle>
+                    <View style={{ display: "none" }}>
+                      <Picker
+                        ref={yearRef}
+                        mode="dropdown"
+                        selectedValue={filters.year}
+                        onValueChange={(itemValue) =>
+                          setFilters({ ...filters, year: itemValue })
                         }
-                      />
-                      {years.map((year, index) => (
+                        style={{
+                          color: mode === "light" ? light.textDark : dark.textWhite,
+                        }}
+                      >
                         <Picker.Item
-                          key={year}
-                          label={`${year}`}
-                          value={year}
+                          label="Año"
+                          value="all"
                           style={{
                             backgroundColor:
                               mode === "light" ? light.main5 : dark.main2,
@@ -2112,8 +2164,22 @@ const Accommodation = ({ navigation }) => {
                             mode === "light" ? light.textDark : dark.textWhite
                           }
                         />
-                      ))}
-                    </Picker>
+                        {years.map((year, index) => (
+                          <Picker.Item
+                            key={year}
+                            label={`${year}`}
+                            value={year}
+                            style={{
+                              backgroundColor:
+                                mode === "light" ? light.main5 : dark.main2,
+                            }}
+                            color={
+                              mode === "light" ? light.textDark : dark.textWhite
+                            }
+                          />
+                        ))}
+                      </Picker>
+                    </View>
                   </View>
                 </View>
               </View>
@@ -2189,6 +2255,10 @@ const Accommodation = ({ navigation }) => {
 
     const [days, setDays] = useState([]);
     const [years, setYears] = useState([]);
+
+    const dayRef = useRef();
+    const monthRef = useRef();
+    const yearRef = useRef();
 
     useEffect(() => {
       const date = new Date();
@@ -2709,49 +2779,56 @@ const Accommodation = ({ navigation }) => {
                   </View>
                 </View>
                 <View style={[styles.row, { marginTop: 10 }]}>
-                  <View
-                    style={[
-                      styles.cardPicker,
-                      {
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                      },
-                    ]}
-                  >
-                    <Picker
-                      mode="dropdown"
-                      selectedValue={filters.day}
-                      dropdownIconColor={
-                        mode === "light" ? light.textDark : dark.textWhite
+                  <View>
+                    <ButtonStyle
+                      backgroundColor={
+                        mode === "light" ? light.main5 : dark.main2
                       }
-                      onValueChange={(itemValue) =>
-                        setFilters({ ...filters, day: itemValue })
-                      }
-                      style={{
-                        width: width / 4.3,
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                        fontSize: 20,
-                      }}
+                      style={{ width: width / 4.5, paddingVertical: 16 }}
+                      onPress={() => dayRef.current?.focus()}
                     >
-                      <Picker.Item
-                        label="Día"
-                        value="all"
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
+                      <View style={styles.row}>
+                        <TextStyle
+                          color={
+                            filters.day !== "all"
+                              ? mode === "light"
+                                ? light.textDark
+                                : dark.textWhite
+                              : "#888888"
+                          }
+                          smallParagraph
+                        >
+                          {filters.day !== 'all' ? filters.day : 'Día'}
+                        </TextStyle>
+                        <Ionicons
+                          color={
+                            filters.day !== "all"
+                              ? mode === "light"
+                                ? light.textDark
+                                : dark.textWhite
+                              : "#888888"
+                          }
+                          size={getFontSize(10)}
+                          name="caret-down"
+                        />
+                      </View>
+                    </ButtonStyle>
+
+                    <View style={{ display: "none" }}>
+                      <Picker
+                        ref={dayRef}
+                        mode="dropdown"
+                        selectedValue={filters.day}
+                        onValueChange={(itemValue) =>
+                          setFilters({ ...filters, day: itemValue })
                         }
-                      />
-                      {days.map((day) => (
+                        style={{
+                          color: mode === "light" ? light.textDark : dark.textWhite,
+                        }}
+                      >
                         <Picker.Item
-                          key={day}
-                          label={`${day}`}
-                          value={day}
+                          label="Día"
+                          value="all"
                           style={{
                             backgroundColor:
                               mode === "light" ? light.main5 : dark.main2,
@@ -2760,52 +2837,72 @@ const Accommodation = ({ navigation }) => {
                             mode === "light" ? light.textDark : dark.textWhite
                           }
                         />
-                      ))}
-                    </Picker>
+                        {days.map((day) => (
+                          <Picker.Item
+                            key={day}
+                            label={`${day}`}
+                            value={day}
+                            style={{
+                              backgroundColor:
+                                mode === "light" ? light.main5 : dark.main2,
+                            }}
+                            color={
+                              mode === "light" ? light.textDark : dark.textWhite
+                            }
+                          />
+                        ))}
+                      </Picker>
+                    </View>
                   </View>
-                  <View
-                    style={[
-                      styles.cardPicker,
-                      {
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                      },
-                    ]}
-                  >
-                    <Picker
-                      mode="dropdown"
-                      selectedValue={filters.month}
-                      onValueChange={(itemValue) =>
-                        setFilters({ ...filters, month: itemValue })
+                  <View>
+                    <ButtonStyle
+                      backgroundColor={
+                        mode === "light" ? light.main5 : dark.main2
                       }
-                      dropdownIconColor={
-                        mode === "light" ? light.textDark : dark.textWhite
-                      }
-                      style={{
-                        width: width / 4.3,
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                        fontSize: 20,
-                      }}
+                      style={{ width: width / 3.6, paddingVertical: 16 }}
+                      onPress={() => monthRef.current?.focus()}
                     >
-                      <Picker.Item
-                        label="Mes"
-                        value="all"
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
+                      <View style={styles.row}>
+                        <TextStyle
+                          color={
+                            filters.month !== "all"
+                              ? mode === "light"
+                                ? light.textDark
+                                : dark.textWhite
+                              : "#888888"
+                          }
+                          smallParagraph
+                        >
+                          {filters.month !== 'all' ? months[filters.month - 1] : 'Mes'}
+                        </TextStyle>
+                        <Ionicons
+                          color={
+                            filters.month !== "all"
+                              ? mode === "light"
+                                ? light.textDark
+                                : dark.textWhite
+                              : "#888888"
+                          }
+                          size={getFontSize(10)}
+                          name="caret-down"
+                        />
+                      </View>
+                    </ButtonStyle>
+                    <View style={{ display: "none" }}>
+                      <Picker
+                        ref={monthRef}
+                        mode="dropdown"
+                        selectedValue={filters.month}
+                        onValueChange={(itemValue) =>
+                          setFilters({ ...filters, month: itemValue })
                         }
-                      />
-                      {months.map((month, index) => (
+                        style={{
+                          color: mode === "light" ? light.textDark : dark.textWhite,
+                        }}
+                      >
                         <Picker.Item
-                          key={month}
-                          label={month}
-                          value={index + 1}
+                          label="Mes"
+                          value="all"
                           style={{
                             backgroundColor:
                               mode === "light" ? light.main5 : dark.main2,
@@ -2814,52 +2911,72 @@ const Accommodation = ({ navigation }) => {
                             mode === "light" ? light.textDark : dark.textWhite
                           }
                         />
-                      ))}
-                    </Picker>
+                        {months.map((month, index) => (
+                          <Picker.Item
+                            key={month}
+                            label={month}
+                            value={index + 1}
+                            style={{
+                              backgroundColor:
+                                mode === "light" ? light.main5 : dark.main2,
+                            }}
+                            color={
+                              mode === "light" ? light.textDark : dark.textWhite
+                            }
+                          />
+                        ))}
+                      </Picker>
+                    </View>
                   </View>
-                  <View
-                    style={[
-                      styles.cardPicker,
-                      {
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                      },
-                    ]}
-                  >
-                    <Picker
-                      mode="dropdown"
-                      selectedValue={filters.year}
-                      onValueChange={(itemValue) =>
-                        setFilters({ ...filters, year: itemValue })
+                  <View>
+                    <ButtonStyle
+                      backgroundColor={
+                        mode === "light" ? light.main5 : dark.main2
                       }
-                      dropdownIconColor={
-                        mode === "light" ? light.textDark : dark.textWhite
-                      }
-                      style={{
-                        width: width / 4.3,
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                        fontSize: 20,
-                      }}
+                      style={{ width: width / 4.5, paddingVertical: 16 }}
+                      onPress={() => yearRef.current?.focus()}
                     >
-                      <Picker.Item
-                        label="Año"
-                        value="all"
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
+                      <View style={styles.row}>
+                        <TextStyle
+                          color={
+                            filters.year !== "all"
+                              ? mode === "light"
+                                ? light.textDark
+                                : dark.textWhite
+                              : "#888888"
+                          }
+                          smallParagraph
+                        >
+                          {filters.year !== 'all' ? filters.year : 'Año'}
+                        </TextStyle>
+                        <Ionicons
+                          color={
+                            filters.year !== "all"
+                              ? mode === "light"
+                                ? light.textDark
+                                : dark.textWhite
+                              : "#888888"
+                          }
+                          size={getFontSize(10)}
+                          name="caret-down"
+                        />
+                      </View>
+                    </ButtonStyle>
+                    <View style={{ display: "none" }}>
+                      <Picker
+                        ref={yearRef}
+                        mode="dropdown"
+                        selectedValue={filters.year}
+                        onValueChange={(itemValue) =>
+                          setFilters({ ...filters, year: itemValue })
                         }
-                      />
-                      {years.map((year, index) => (
+                        style={{
+                          color: mode === "light" ? light.textDark : dark.textWhite,
+                        }}
+                      >
                         <Picker.Item
-                          key={year}
-                          label={`${year}`}
-                          value={year}
+                          label="Año"
+                          value="all"
                           style={{
                             backgroundColor:
                               mode === "light" ? light.main5 : dark.main2,
@@ -2868,8 +2985,22 @@ const Accommodation = ({ navigation }) => {
                             mode === "light" ? light.textDark : dark.textWhite
                           }
                         />
-                      ))}
-                    </Picker>
+                        {years.map((year, index) => (
+                          <Picker.Item
+                            key={year}
+                            label={`${year}`}
+                            value={year}
+                            style={{
+                              backgroundColor:
+                                mode === "light" ? light.main5 : dark.main2,
+                            }}
+                            color={
+                              mode === "light" ? light.textDark : dark.textWhite
+                            }
+                          />
+                        ))}
+                      </Picker>
+                    </View>
                   </View>
                 </View>
               </View>

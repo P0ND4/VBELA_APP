@@ -143,8 +143,8 @@ export const generatePDF = async ({
 export const print = async ({ html }) => {
   const { uri } = await Print.printToFileAsync({
     html,
-    width: 400,
-    height: 520,
+    width: 425,
+    height: 570,
     base64: true,
   });
   await Sharing.shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });

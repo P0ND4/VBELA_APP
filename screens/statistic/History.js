@@ -5,6 +5,9 @@ import {
   FlatList,
   Dimensions,
   Alert,
+  Modal,
+  TouchableWithoutFeedback,
+  ScrollView,
 } from "react-native";
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -257,8 +260,9 @@ const History = ({ route }) => {
     );
   };
   const Menu = ({ item }) => {
-    const [open, isOpen] = useState(false);
+    const [openInformationCard, isOpenInformationCard] = useState(false);
     const [methods, setMethods] = useState([]);
+    const [modalVisible, setModalVisible] = useState(false);
     const date = new Date(item.creationDate);
 
     useEffect(() => {
@@ -268,7 +272,8 @@ const History = ({ route }) => {
 
       let simplifiedMethods = [];
 
-      for (let p of totalPayment) { //TODO REFACTORIZAR EL CODIGO
+      for (let p of totalPayment) {
+        //TODO REFACTORIZAR EL CODIGO
         if (simplifiedMethods.find((s) => s.method == p.method)) {
           simplifiedMethods = simplifiedMethods.map((s) => {
             const i = { ...s };
@@ -291,86 +296,184 @@ const History = ({ route }) => {
             {("0" + date.getMinutes()).slice(-2)}:
             {("0" + date.getSeconds()).slice(-2)}
           </TextStyle>
-          <TouchableOpacity onPress={() => deleteSale({ item })}>
-            <Ionicons name="trash" color={light.main2} size={getFontSize(18)} />
-          </TouchableOpacity>
-        </View>
-        <View style={{ marginTop: 6 }}>
-          {item.selection.map((item) => (
-            <Observation key={item.id} item={item} />
-          ))}
-        </View>
-        <View>
-          <View style={styles.row}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
             <TextStyle
               color={mode === "light" ? light.textDark : dark.textWhite}
+              customStyle={{ marginRight: 6 }}
             >
-              Método de pago:{" "}
-              <TextStyle color={light.main2}>
-                {methods.length} utilizados
-              </TextStyle>
+              {thousandsSystem(item?.total)}
             </TextStyle>
-            <TouchableOpacity onPress={() => isOpen(!open)}>
+            <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
               <Ionicons
+                name="information-circle-outline"
                 color={light.main2}
-                name={open ? "eye-off" : "eye"}
+                size={getFontSize(22)}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => deleteSale({ item })}>
+              <Ionicons
+                name="trash"
+                color={light.main2}
                 size={getFontSize(18)}
               />
             </TouchableOpacity>
           </View>
         </View>
-        {open && (
-          <View style={{ marginLeft: 8 }}>
-            {methods.map((m) => (
-              <TextStyle
-                key={m.method}
-                verySmall
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                <TextStyle color={light.main2} verySmall>
-                  {m.method}:
-                </TextStyle>{" "}
-                {m.total}
-              </TextStyle>
-            ))}
+        {item.selection.map((item) => (
+          <Observation key={item.id} item={item} />
+        ))}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => {
+            setModalVisible(!modalVisible);
+            isOpenInformationCard(false);
+          }}
+        >
+          <TouchableWithoutFeedback
+            onPress={() => {
+              setModalVisible(!modalVisible);
+              isOpenInformationCard(false);
+            }}
+          >
+            <View style={{ backgroundColor: "#0005", height: "100%" }} />
+          </TouchableWithoutFeedback>
+          <View
+            style={[
+              StyleSheet.absoluteFillObject,
+              {
+                justifyContent: "center",
+                alignItems: "center",
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.cardInformation,
+                {
+                  backgroundColor: mode === "light" ? light.main4 : dark.main1,
+                },
+              ]}
+            >
+              <View style={styles.row}>
+                <TextStyle color={light.main2} bigSubtitle>
+                  INFORMACIÓN
+                </TextStyle>
+                <TouchableOpacity
+                  onPress={() => {
+                    setModalVisible(!modalVisible);
+                    isOpenInformationCard(false);
+                  }}
+                >
+                  <Ionicons
+                    name="close"
+                    size={getFontSize(28)}
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={{ marginTop: 15 }}>
+                <ScrollView style={{ maxHeight: 400 }}>
+                  <View style={{ marginRight: 5 }}>
+                    {item.selection.map((item) => (
+                      <Observation key={item.id} item={item} />
+                    ))}
+                  </View>
+                  <View style={{ marginRight: 5 }}>
+                    <View style={styles.row}>
+                      <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Método de pago:{" "}
+                        <TextStyle color={light.main2}>
+                          {methods.length} utilizados
+                        </TextStyle>
+                      </TextStyle>
+                      <TouchableOpacity
+                        onPress={() =>
+                          isOpenInformationCard(!openInformationCard)
+                        }
+                      >
+                        <Ionicons
+                          color={light.main2}
+                          name={openInformationCard ? "eye-off" : "eye"}
+                          size={getFontSize(18)}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  {openInformationCard && (
+                    <View style={{ marginLeft: 8 }}>
+                      {methods.map((m) => (
+                        <TextStyle
+                          key={m.method}
+                          verySmall
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                        >
+                          <TextStyle color={light.main2} verySmall>
+                            {m.method}:
+                          </TextStyle>{" "}
+                          {m.total}
+                        </TextStyle>
+                      ))}
+                    </View>
+                  )}
+                  {item?.discount && (
+                    <TextStyle
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    >
+                      Descuento:{" "}
+                      <TextStyle color={light.main2}>
+                        {thousandsSystem(item?.discount)}
+                      </TextStyle>
+                    </TextStyle>
+                  )}
+                  {item?.tax && (
+                    <TextStyle
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    >
+                      Impuestos:{" "}
+                      <TextStyle color={light.main2}>
+                        {thousandsSystem(item?.tax)}
+                      </TextStyle>
+                    </TextStyle>
+                  )}
+                  {item?.tip && (
+                    <TextStyle
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    >
+                      Propina:{" "}
+                      <TextStyle color={light.main2}>
+                        {thousandsSystem(item?.tip)}
+                      </TextStyle>
+                    </TextStyle>
+                  )}
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Pagado:{" "}
+                    <TextStyle color={light.main2}>
+                      {item?.pay ? "Si" : "Pendiente"}
+                    </TextStyle>
+                  </TextStyle>
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Total:{" "}
+                    <TextStyle color={light.main2}>
+                      {thousandsSystem(item?.total)}
+                    </TextStyle>
+                  </TextStyle>
+                </ScrollView>
+              </View>
+            </View>
           </View>
-        )}
-        {item?.discount && (
-          <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-            Descuento:{" "}
-            <TextStyle color={light.main2}>
-              {thousandsSystem(item?.discount)}
-            </TextStyle>
-          </TextStyle>
-        )}
-        {item?.tax && (
-          <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-            Impuestos:{" "}
-            <TextStyle color={light.main2}>
-              {thousandsSystem(item?.tax)}
-            </TextStyle>
-          </TextStyle>
-        )}
-        {item?.tip && (
-          <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-            Propina:{" "}
-            <TextStyle color={light.main2}>
-              {thousandsSystem(item?.tip)}
-            </TextStyle>
-          </TextStyle>
-        )}
-        <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-          Pagado:{" "}
-          <TextStyle color={light.main2}>
-            {item?.pay ? "Si" : "Pendiente"}
-          </TextStyle>
-        </TextStyle>
-        <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-          Total:{" "}
-          <TextStyle color={light.main2}>
-            {thousandsSystem(item?.total)}
-          </TextStyle>
-        </TextStyle>
+        </Modal>
       </View>
     );
   };
@@ -466,6 +569,11 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 1,
     borderColor: light.main2,
+  },
+  cardInformation: {
+    width: "90%",
+    borderRadius: 8,
+    padding: 30,
   },
 });
 

@@ -11,6 +11,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
   FlatList,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { thousandsSystem, random, months, getFontSize } from "@helpers/libs";
@@ -71,6 +72,10 @@ const Sales = ({ route }) => {
   const [years, setYears] = useState([]);
   const [keyCategory, setKeyCategory] = useState(Math.random());
   const [keySubcategory, setKeySubcategory] = useState(Math.random());
+
+  const dayRef = useRef();
+  const monthRef = useRef();
+  const yearRef = useRef();
 
   useEffect(() => {
     setKeySubcategory(Math.random());
@@ -363,8 +368,8 @@ const Sales = ({ route }) => {
         extra: {
           discount: dat.discount || null,
           tax: dat.tax || null,
-          tip: dat.tip || null
-        }
+          tip: dat.tip || null,
+        },
       });
       await editUser({
         identifier: helperStatus.active
@@ -380,398 +385,427 @@ const Sales = ({ route }) => {
       });
     };
 
-    if (person || createClient) await manageEconomy({ total, callBack: close, person });
+    if (person || createClient)
+      await manageEconomy({ total, callBack: close, person });
     else close();
   };
 
   return (
-    <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
-      {ref && (
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TextStyle smallSubtitle color={light.main2}>
-            <TextStyle
-              smallSubtitle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Cliente:
-            </TextStyle>{" "}
-            {name}
-          </TextStyle>
-          <TouchableOpacity
-            onPress={() => navigation.setParams({ ref: null, name: null })}
-          >
-            <Ionicons
-              style={{ marginLeft: 5 }}
-              name="close-circle"
-              size={getFontSize(24)}
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            />
-          </TouchableOpacity>
-        </View>
-      )}
-      <View style={styles.secondHeader}>
-        {!activeSearch && (
-          <TouchableOpacity
-            onPress={() => {
-              setActiveSearch(true);
-              setTimeout(() => searchRef.current.focus());
-            }}
-          >
-            <Ionicons
-              name="search"
-              size={getFontSize(21)}
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            />
-          </TouchableOpacity>
-        )}
-        {activeSearch && (
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "100%",
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => {
-                setSearch("");
-                setActiveSearch(false);
-                setFilters(initialState);
-              }}
-            >
-              <Ionicons
-                name="close"
-                size={getFontSize(24)}
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              />
-            </TouchableOpacity>
-            <InputStyle
-              innerRef={searchRef}
-              placeholder="Producto, valor"
-              value={search}
-              onChangeText={(text) => setSearch(text)}
-              stylesContainer={{ width: "78%", marginVertical: 0 }}
-              stylesInput={{
-                paddingHorizontal: 6,
-                paddingVertical: 5,
-                fontSize: 18,
-              }}
-            />
-            <TouchableOpacity onPress={() => setActiveFilter(!activeFilter)}>
-              <Ionicons
-                name="filter"
-                size={getFontSize(24)}
-                color={light.main2}
-              />
-            </TouchableOpacity>
-          </View>
-        )}
-        {!activeSearch && (
-          <TouchableOpacity
-            style={{
-              borderWidth: 1,
-              borderRadius: 2,
-              borderColor: mode === "light" ? light.textDark : dark.textWhite,
-              paddingHorizontal: 10,
-              paddingVertical: 2,
-            }}
-            onPress={() =>
-              navigation.navigate("EditOrder", {
-                data: "count",
-                count: count.toString(),
-                setCount,
-              })
-            }
-          >
-            <TextStyle
-              verySmall
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              {count} X
-            </TextStyle>
-          </TouchableOpacity>
-        )}
-      </View>
-      <View>
-        <View style={styles.header}>
-          <FlatList
-            key={keyCategory}
-            data={groups}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
-              return (
-                <TouchableOpacity
-                  onPress={() => {
-                    setCategorySelected(item);
-                    setSubcategorySelected("");
-                  }}
-                  onLongPress={() => {
-                    if (item.id !== "everything") {
-                      navigation.navigate("CreateGroup", {
-                        editing: true,
-                        item,
-                      });
-                    }
-                  }}
-                  style={[
-                    styles.category,
-                    {
-                      backgroundColor:
-                        categorySelected.id === item.id
-                          ? light.main2
-                          : mode === "light"
-                          ? light.main5
-                          : dark.main2,
-                    },
-                  ]}
-                >
+    <Layout style={{ marginTop: 0 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          <View style={{ justifyContent: "space-between", flexGrow: 1 }}>
+            {ref && (
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <TextStyle smallSubtitle color={light.main2}>
                   <TextStyle
-                    smallParagraph
-                    color={
-                      categorySelected.id === item.id
-                        ? light.textDark
-                        : mode === "light"
-                        ? light.textDark
-                        : dark.textWhite
-                    }
+                    smallSubtitle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
                   >
-                    {item.category}
-                  </TextStyle>
-                </TouchableOpacity>
-              );
-            }}
-          />
-          <TouchableOpacity
-            style={{ marginLeft: 8 }}
-            onPress={() =>
-              navigation.navigate("CreateGroup", { type: "sales" })
-            }
-          >
-            <Ionicons
-              name="add-circle"
-              color={light.main2}
-              size={getFontSize(24)}
-            />
-          </TouchableOpacity>
-        </View>
-        <FlatList
-          key={keySubcategory}
-          data={categorySelected?.subcategory}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginTop: categorySelected?.subcategory.length ? 8 : 0 }}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => {
-            return (
-              <TouchableOpacity
-                onPress={() =>
-                  setSubcategorySelected(
-                    subcategorySelected?.id === item.id ? null : item
-                  )
-                }
-                onLongPress={() =>
-                  navigation.navigate("CreateGroup", {
-                    editing: true,
-                    item: categorySelected,
-                  })
-                }
-                style={[
-                  styles.category,
-                  {
-                    backgroundColor:
-                      subcategorySelected === item
-                        ? light.main2
-                        : mode === "light"
-                        ? light.main5
-                        : dark.main2,
-                  },
-                ]}
-              >
-                <TextStyle
-                  smallParagraph
-                  color={
-                    subcategorySelected === item
-                      ? light.textDark
-                      : mode === "light"
-                      ? light.textDark
-                      : dark.textWhite
+                    Cliente:
+                  </TextStyle>{" "}
+                  {name}
+                </TextStyle>
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.setParams({ ref: null, name: null })
                   }
                 >
-                  {item.subcategory}
-                </TextStyle>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      </View>
-      <View style={{ marginVertical: 10 }}>
-        <ScrollView
-          style={{ maxHeight: SCREEN_HEIGHT / 1.7 }}
-          contentContainerStyle={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          {products.map((item, index) => {
-            return (
-              <TouchableNativeFeedback
-                key={item.id ? item.id : item}
-                onLongPress={() => {
-                  if (item.id)
-                    return navigation.navigate("CreateProduct", {
-                      sales: true,
-                      editing: true,
-                      item,
-                      setSelection,
-                      selection,
-                    });
-
-                  navigation.navigate("CreateProduct", { sales: true });
-                }}
-                onPress={() => {
-                  if (item?.id) {
-                    const index = selection.findIndex((s) => s.id === item.id);
-
-                    const object = {
-                      ...item,
-                      count,
-                      total: item.value * count,
-                      paid: 0,
-                      discount: 0,
-                      method: [],
-                    };
-
-                    if (index !== -1) {
-                      let selected = { ...selection[index] };
-                      selected.count += count;
-                      selected.total += item.value * count;
-                      const changed = selection.map((s) => {
-                        if (s.id === selected.id) return selected;
-                        return s;
-                      });
-                      setSelection(changed);
-                    } else setSelection([...selection, object]);
-                  } else navigation.navigate("CreateProduct", { sales: true });
-                }}
-              >
-                <View
-                  style={[
-                    styles.catalogue,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
+                  <Ionicons
+                    style={{ marginLeft: 5 }}
+                    name="close-circle"
+                    size={getFontSize(24)}
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={styles.secondHeader}>
+              {!activeSearch && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setActiveSearch(true);
+                    setTimeout(() => searchRef.current.focus());
+                  }}
                 >
-                  {item.id && (
-                    <View style={{ flex: 1, justifyContent: "space-between" }}>
-                      <View
-                        style={{
-                          justifyContent: "center",
-                          alignItems: "center",
-                          height: "60%",
+                  <Ionicons
+                    name="search"
+                    size={getFontSize(21)}
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  />
+                </TouchableOpacity>
+              )}
+              {activeSearch && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSearch("");
+                      setActiveSearch(false);
+                      setFilters(initialState);
+                    }}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={getFontSize(24)}
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    />
+                  </TouchableOpacity>
+                  <InputStyle
+                    innerRef={searchRef}
+                    placeholder="Producto, valor"
+                    value={search}
+                    onChangeText={(text) => setSearch(text)}
+                    stylesContainer={{ width: "78%", marginVertical: 0 }}
+                    stylesInput={{
+                      paddingHorizontal: 6,
+                      paddingVertical: 5,
+                      fontSize: 18,
+                    }}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setActiveFilter(!activeFilter)}
+                  >
+                    <Ionicons
+                      name="filter"
+                      size={getFontSize(24)}
+                      color={light.main2}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+              {!activeSearch && (
+                <TouchableOpacity
+                  style={{
+                    borderWidth: 1,
+                    borderRadius: 2,
+                    borderColor:
+                      mode === "light" ? light.textDark : dark.textWhite,
+                    paddingHorizontal: 10,
+                    paddingVertical: 2,
+                  }}
+                  onPress={() =>
+                    navigation.navigate("EditOrder", {
+                      data: "count",
+                      count: count.toString(),
+                      setCount,
+                    })
+                  }
+                >
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    {count} X
+                  </TextStyle>
+                </TouchableOpacity>
+              )}
+            </View>
+            <View>
+              <View style={styles.header}>
+                <FlatList
+                  key={keyCategory}
+                  data={groups}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => {
+                    return (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setCategorySelected(item);
+                          setSubcategorySelected("");
                         }}
+                        onLongPress={() => {
+                          if (item.id !== "everything") {
+                            navigation.navigate("CreateGroup", {
+                              editing: true,
+                              item,
+                            });
+                          }
+                        }}
+                        style={[
+                          styles.category,
+                          {
+                            backgroundColor:
+                              categorySelected.id === item.id
+                                ? light.main2
+                                : mode === "light"
+                                ? light.main5
+                                : dark.main2,
+                          },
+                        ]}
                       >
                         <TextStyle
                           smallParagraph
                           color={
-                            mode === "light" ? light.textDark : dark.textWhite
+                            categorySelected.id === item.id
+                              ? light.textDark
+                              : mode === "light"
+                              ? light.textDark
+                              : dark.textWhite
                           }
                         >
-                          {item.name}
+                          {item.category}
                         </TextStyle>
-                        <View style={{ flexDirection: "row" }}>
-                          <TextStyle
-                            verySmall
-                            color={
-                              item.quantity < item.reorder
-                                ? "#F70000"
-                                : light.main2
-                            }
-                          >
-                            {item.quantity < 0 ? "-" : ""}
-                            {thousandsSystem(Math.abs(item.quantity))}/
-                          </TextStyle>
-                          <TextStyle
-                            verySmall
-                            color={
-                              mode === "light" ? light.textDark : dark.textWhite
-                            }
-                          >
-                            {thousandsSystem(item.reorder)}
-                          </TextStyle>
-                        </View>
-                      </View>
+                      </TouchableOpacity>
+                    );
+                  }}
+                />
+                <TouchableOpacity
+                  style={{ marginLeft: 8 }}
+                  onPress={() =>
+                    navigation.navigate("CreateGroup", { type: "sales" })
+                  }
+                >
+                  <Ionicons
+                    name="add-circle"
+                    color={light.main2}
+                    size={getFontSize(24)}
+                  />
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                key={keySubcategory}
+                data={categorySelected?.subcategory}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{
+                  marginTop: categorySelected?.subcategory.length ? 8 : 0,
+                }}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => {
+                  return (
+                    <TouchableOpacity
+                      onPress={() =>
+                        setSubcategorySelected(
+                          subcategorySelected?.id === item.id ? null : item
+                        )
+                      }
+                      onLongPress={() =>
+                        navigation.navigate("CreateGroup", {
+                          editing: true,
+                          item: categorySelected,
+                        })
+                      }
+                      style={[
+                        styles.category,
+                        {
+                          backgroundColor:
+                            subcategorySelected === item
+                              ? light.main2
+                              : mode === "light"
+                              ? light.main5
+                              : dark.main2,
+                        },
+                      ]}
+                    >
+                      <TextStyle
+                        smallParagraph
+                        color={
+                          subcategorySelected === item
+                            ? light.textDark
+                            : mode === "light"
+                            ? light.textDark
+                            : dark.textWhite
+                        }
+                      >
+                        {item.subcategory}
+                      </TextStyle>
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            </View>
+            <View style={{ marginVertical: 10 }}>
+              <ScrollView
+                style={{ maxHeight: SCREEN_HEIGHT / 1.7 }}
+                contentContainerStyle={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                }}
+                showsVerticalScrollIndicator={false}
+              >
+                {products.map((item, index) => {
+                  return (
+                    <TouchableNativeFeedback
+                      key={item.id ? item.id : item}
+                      onLongPress={() => {
+                        if (item.id)
+                          return navigation.navigate("CreateProduct", {
+                            sales: true,
+                            editing: true,
+                            item,
+                            setSelection,
+                            selection,
+                          });
+
+                        navigation.navigate("CreateProduct", { sales: true });
+                      }}
+                      onPress={() => {
+                        if (item?.id) {
+                          const index = selection.findIndex(
+                            (s) => s.id === item.id
+                          );
+
+                          const object = {
+                            ...item,
+                            count,
+                            total: item.value * count,
+                            paid: 0,
+                            discount: 0,
+                            method: [],
+                          };
+
+                          if (index !== -1) {
+                            let selected = { ...selection[index] };
+                            selected.count += count;
+                            selected.total += item.value * count;
+                            const changed = selection.map((s) => {
+                              if (s.id === selected.id) return selected;
+                              return s;
+                            });
+                            setSelection(changed);
+                          } else setSelection([...selection, object]);
+                        } else
+                          navigation.navigate("CreateProduct", { sales: true });
+                      }}
+                    >
                       <View
                         style={[
-                          styles.footerCatalogue,
+                          styles.catalogue,
                           {
-                            width: Math.floor(SCREEN_WIDTH / 3.5),
-                            paddingHorizontal: 4,
+                            backgroundColor:
+                              mode === "light" ? light.main5 : dark.main2,
                           },
                         ]}
                       >
-                        <TextStyle verySmall>{item.identifier}</TextStyle>
-                        <View style={[styles.header, { flexWrap: "wrap" }]}>
-                          <TextStyle verySmall>
-                            {thousandsSystem(item.value)}
-                          </TextStyle>
-                          <TextStyle verySmall>{item.unit}</TextStyle>
-                        </View>
+                        {item.id && (
+                          <View
+                            style={{ flex: 1, justifyContent: "space-between" }}
+                          >
+                            <View
+                              style={{
+                                justifyContent: "center",
+                                alignItems: "center",
+                                height: "60%",
+                              }}
+                            >
+                              <TextStyle
+                                smallParagraph
+                                color={
+                                  mode === "light"
+                                    ? light.textDark
+                                    : dark.textWhite
+                                }
+                              >
+                                {item.name}
+                              </TextStyle>
+                              <View style={{ flexDirection: "row" }}>
+                                <TextStyle
+                                  verySmall
+                                  color={
+                                    item.quantity < item.reorder
+                                      ? "#F70000"
+                                      : light.main2
+                                  }
+                                >
+                                  {item.quantity < 0 ? "-" : ""}
+                                  {thousandsSystem(Math.abs(item.quantity))}/
+                                </TextStyle>
+                                <TextStyle
+                                  verySmall
+                                  color={
+                                    mode === "light"
+                                      ? light.textDark
+                                      : dark.textWhite
+                                  }
+                                >
+                                  {thousandsSystem(item.reorder)}
+                                </TextStyle>
+                              </View>
+                            </View>
+                            <View
+                              style={[
+                                styles.footerCatalogue,
+                                {
+                                  width: Math.floor(SCREEN_WIDTH / 3.5),
+                                  paddingHorizontal: 4,
+                                },
+                              ]}
+                            >
+                              <TextStyle verySmall>{item.identifier}</TextStyle>
+                              <View
+                                style={[styles.header, { flexWrap: "wrap" }]}
+                              >
+                                <TextStyle verySmall>
+                                  {thousandsSystem(item.value)}
+                                </TextStyle>
+                                <TextStyle verySmall>{item.unit}</TextStyle>
+                              </View>
+                            </View>
+                          </View>
+                        )}
+                        {!item?.id &&
+                          index ===
+                            products.filter((p) => typeof p !== "number")
+                              .length && (
+                            <Ionicons
+                              name="add"
+                              size={getFontSize(45)}
+                              color={mode === "light" ? "#BBBBBB" : dark.main1}
+                            />
+                          )}
                       </View>
-                    </View>
-                  )}
-                  {!item?.id &&
-                    index ===
-                      products.filter((p) => typeof p !== "number").length && (
-                      <Ionicons
-                        name="add"
-                        size={getFontSize(45)}
-                        color={mode === "light" ? "#BBBBBB" : dark.main1}
-                      />
-                    )}
-                </View>
-              </TouchableNativeFeedback>
-            );
-          })}
+                    </TouchableNativeFeedback>
+                  );
+                })}
+              </ScrollView>
+            </View>
+            <ButtonStyle
+              backgroundColor="transparent"
+              style={{
+                borderWidth: 2,
+                borderColor: light.main2,
+              }}
+              onPress={() => {
+                if (selection.length === 0)
+                  Alert.alert(
+                    "El carrito está vacío",
+                    "Precisa adicionar un producto/servicio al carrito para poder velor"
+                  );
+                else
+                  navigation.navigate("PreviewOrder", {
+                    selection,
+                    setSelection,
+                    sales: true,
+                    saveOrder,
+                  });
+              }}
+            >
+              <TextStyle color={light.main2} center smallParagraph>
+                {selection.length === 0
+                  ? "Ningún ítem"
+                  : `${thousandsSystem(
+                      selection.reduce((a, b) => a + b.count, 0)
+                    )} ítem = ${thousandsSystem(
+                      selection.reduce((a, b) => a + b.total, 0)
+                    )}`}
+              </TextStyle>
+            </ButtonStyle>
+          </View>
         </ScrollView>
-      </View>
-      <ButtonStyle
-        backgroundColor="transparent"
-        style={{
-          borderWidth: 2,
-          borderColor: light.main2,
-        }}
-        onPress={() => {
-          if (selection.length === 0)
-            Alert.alert(
-              "El carrito está vacío",
-              "Precisa adicionar un producto/servicio al carrito para poder velor"
-            );
-          else
-            navigation.navigate("PreviewOrder", {
-              selection,
-              setSelection,
-              sales: true,
-              saveOrder,
-            });
-        }}
-      >
-        <TextStyle color={light.main2} center smallParagraph>
-          {selection.length === 0
-            ? "Ningún ítem"
-            : `${thousandsSystem(
-                selection.reduce((a, b) => a + b.count, 0)
-              )} ítem = ${thousandsSystem(
-                selection.reduce((a, b) => a + b.total, 0)
-              )}`}
-        </TextStyle>
-      </ButtonStyle>
+      </KeyboardAvoidingView>
       <Modal
         animationType="fade"
         transparent={true}
@@ -871,47 +905,58 @@ const Sales = ({ route }) => {
                   />
                 </View>
               </View>
-              <View style={[styles.header, { marginTop: 15 }]}>
-                <View
-                  style={[
-                    styles.cardPicker,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                >
-                  <Picker
-                    mode="dropdown"
-                    selectedValue={filters.day}
-                    dropdownIconColor={
-                      mode === "light" ? light.textDark : dark.textWhite
+              <View style={[styles.header, { marginTop: 10 }]}>
+                <View>
+                  <ButtonStyle
+                    backgroundColor={
+                      mode === "light" ? light.main5 : dark.main2
                     }
-                    onValueChange={(itemValue) =>
-                      setFilters({ ...filters, day: itemValue })
-                    }
-                    style={{
-                      width: SCREEN_WIDTH / 4.3,
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                      color: mode === "light" ? light.textDark : dark.textWhite,
-                      fontSize: 20,
-                    }}
+                    style={{ width: SCREEN_WIDTH / 4.5, paddingVertical: 16 }}
+                    onPress={() => dayRef.current?.focus()}
                   >
-                    <Picker.Item
-                      label="Día"
-                      value="all"
+                    <View style={styles.header}>
+                      <TextStyle
+                        color={
+                          filters.day !== "all"
+                            ? mode === "light"
+                              ? light.textDark
+                              : dark.textWhite
+                            : "#888888"
+                        }
+                        smallParagraph
+                      >
+                        {filters.day !== "all" ? filters.day : "Día"}
+                      </TextStyle>
+                      <Ionicons
+                        color={
+                          filters.day !== "all"
+                            ? mode === "light"
+                              ? light.textDark
+                              : dark.textWhite
+                            : "#888888"
+                        }
+                        size={getFontSize(10)}
+                        name="caret-down"
+                      />
+                    </View>
+                  </ButtonStyle>
+
+                  <View style={{ display: "none" }}>
+                    <Picker
+                      ref={dayRef}
+                      mode="dropdown"
+                      selectedValue={filters.day}
+                      onValueChange={(itemValue) =>
+                        setFilters({ ...filters, day: itemValue })
+                      }
                       style={{
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
+                        color:
+                          mode === "light" ? light.textDark : dark.textWhite,
                       }}
-                      color={mode === "light" ? light.textDark : dark.textWhite}
-                    />
-                    {days.map((day) => (
+                    >
                       <Picker.Item
-                        key={day}
-                        label={`${day}`}
-                        value={day}
+                        label="Día"
+                        value="all"
                         style={{
                           backgroundColor:
                             mode === "light" ? light.main5 : dark.main2,
@@ -920,49 +965,75 @@ const Sales = ({ route }) => {
                           mode === "light" ? light.textDark : dark.textWhite
                         }
                       />
-                    ))}
-                  </Picker>
+                      {days.map((day) => (
+                        <Picker.Item
+                          key={day}
+                          label={`${day}`}
+                          value={day}
+                          style={{
+                            backgroundColor:
+                              mode === "light" ? light.main5 : dark.main2,
+                          }}
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                        />
+                      ))}
+                    </Picker>
+                  </View>
                 </View>
-                <View
-                  style={[
-                    styles.cardPicker,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                >
-                  <Picker
-                    mode="dropdown"
-                    selectedValue={filters.month}
-                    onValueChange={(itemValue) =>
-                      setFilters({ ...filters, month: itemValue })
+                <View>
+                  <ButtonStyle
+                    backgroundColor={
+                      mode === "light" ? light.main5 : dark.main2
                     }
-                    dropdownIconColor={
-                      mode === "light" ? light.textDark : dark.textWhite
-                    }
-                    style={{
-                      width: SCREEN_WIDTH / 4.3,
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                      color: mode === "light" ? light.textDark : dark.textWhite,
-                      fontSize: 20,
-                    }}
+                    style={{ width: SCREEN_WIDTH / 3.6, paddingVertical: 16 }}
+                    onPress={() => monthRef.current?.focus()}
                   >
-                    <Picker.Item
-                      label="Mes"
-                      value="all"
+                    <View style={styles.header}>
+                      <TextStyle
+                        color={
+                          filters.month !== "all"
+                            ? mode === "light"
+                              ? light.textDark
+                              : dark.textWhite
+                            : "#888888"
+                        }
+                        smallParagraph
+                      >
+                        {filters.month !== "all"
+                          ? months[filters.month - 1]
+                          : "Mes"}
+                      </TextStyle>
+                      <Ionicons
+                        color={
+                          filters.month !== "all"
+                            ? mode === "light"
+                              ? light.textDark
+                              : dark.textWhite
+                            : "#888888"
+                        }
+                        size={getFontSize(10)}
+                        name="caret-down"
+                      />
+                    </View>
+                  </ButtonStyle>
+                  <View style={{ display: "none" }}>
+                    <Picker
+                      ref={monthRef}
+                      mode="dropdown"
+                      selectedValue={filters.month}
+                      onValueChange={(itemValue) =>
+                        setFilters({ ...filters, month: itemValue })
+                      }
                       style={{
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
+                        color:
+                          mode === "light" ? light.textDark : dark.textWhite,
                       }}
-                      color={mode === "light" ? light.textDark : dark.textWhite}
-                    />
-                    {months.map((month, index) => (
+                    >
                       <Picker.Item
-                        key={month}
-                        label={month}
-                        value={index + 1}
+                        label="Mes"
+                        value="all"
                         style={{
                           backgroundColor:
                             mode === "light" ? light.main5 : dark.main2,
@@ -971,49 +1042,73 @@ const Sales = ({ route }) => {
                           mode === "light" ? light.textDark : dark.textWhite
                         }
                       />
-                    ))}
-                  </Picker>
+                      {months.map((month, index) => (
+                        <Picker.Item
+                          key={month}
+                          label={month}
+                          value={index + 1}
+                          style={{
+                            backgroundColor:
+                              mode === "light" ? light.main5 : dark.main2,
+                          }}
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                        />
+                      ))}
+                    </Picker>
+                  </View>
                 </View>
-                <View
-                  style={[
-                    styles.cardPicker,
-                    {
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    },
-                  ]}
-                >
-                  <Picker
-                    mode="dropdown"
-                    selectedValue={filters.year}
-                    onValueChange={(itemValue) =>
-                      setFilters({ ...filters, year: itemValue })
+                <View>
+                  <ButtonStyle
+                    backgroundColor={
+                      mode === "light" ? light.main5 : dark.main2
                     }
-                    dropdownIconColor={
-                      mode === "light" ? light.textDark : dark.textWhite
-                    }
-                    style={{
-                      width: SCREEN_WIDTH / 4.3,
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                      color: mode === "light" ? light.textDark : dark.textWhite,
-                      fontSize: 20,
-                    }}
+                    style={{ width: SCREEN_WIDTH / 4.5, paddingVertical: 16 }}
+                    onPress={() => yearRef.current?.focus()}
                   >
-                    <Picker.Item
-                      label="Año"
-                      value="all"
+                    <View style={styles.header}>
+                      <TextStyle
+                        color={
+                          filters.year !== "all"
+                            ? mode === "light"
+                              ? light.textDark
+                              : dark.textWhite
+                            : "#888888"
+                        }
+                        smallParagraph
+                      >
+                        {filters.year !== "all" ? filters.year : "Año"}
+                      </TextStyle>
+                      <Ionicons
+                        color={
+                          filters.year !== "all"
+                            ? mode === "light"
+                              ? light.textDark
+                              : dark.textWhite
+                            : "#888888"
+                        }
+                        size={getFontSize(10)}
+                        name="caret-down"
+                      />
+                    </View>
+                  </ButtonStyle>
+                  <View style={{ display: "none" }}>
+                    <Picker
+                      ref={yearRef}
+                      mode="dropdown"
+                      selectedValue={filters.year}
+                      onValueChange={(itemValue) =>
+                        setFilters({ ...filters, year: itemValue })
+                      }
                       style={{
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
+                        color:
+                          mode === "light" ? light.textDark : dark.textWhite,
                       }}
-                      color={mode === "light" ? light.textDark : dark.textWhite}
-                    />
-                    {years.map((year, index) => (
+                    >
                       <Picker.Item
-                        key={year}
-                        label={`${year}`}
-                        value={year}
+                        label="Año"
+                        value="all"
                         style={{
                           backgroundColor:
                             mode === "light" ? light.main5 : dark.main2,
@@ -1022,8 +1117,22 @@ const Sales = ({ route }) => {
                           mode === "light" ? light.textDark : dark.textWhite
                         }
                       />
-                    ))}
-                  </Picker>
+                      {years.map((year, index) => (
+                        <Picker.Item
+                          key={year}
+                          label={`${year}`}
+                          value={year}
+                          style={{
+                            backgroundColor:
+                              mode === "light" ? light.main5 : dark.main2,
+                          }}
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                        />
+                      ))}
+                    </Picker>
+                  </View>
                 </View>
               </View>
             </View>

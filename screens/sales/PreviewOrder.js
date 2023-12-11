@@ -8,8 +8,16 @@ import {
   Dimensions,
   Alert,
   FlatList,
+  Image,
 } from "react-native";
-import { thousandsSystem, getFontSize } from "@helpers/libs";
+import {
+  thousandsSystem,
+  getFontSize,
+  random,
+  changeDate,
+  print,
+} from "@helpers/libs";
+import Logo from "@assets/logo.png";
 import Information from "@components/Information";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
@@ -96,6 +104,7 @@ const Selection = ({ item, setIndividualPayment, individualPayment }) => {
 
 const PreviewOrder = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
+  const invoice = useSelector((state) => state.invoice);
   const mainSelection = route.params.selection;
   const saveOrder = route.params.saveOrder;
   const updateOrder = route.params.updateOrder;
@@ -147,6 +156,155 @@ const PreviewOrder = ({ route, navigation }) => {
             tax
     );
   }, [totalDiscount, selection, tip, tax]);
+
+  const generateHTML = ({ selection, total, type }) => {
+    const date = new Date();
+    const text = selection.reduce((a, item) => {
+      const count = type === "general" ? item.count - item.paid : item.paid;
+      return (
+        a +
+        `<tr>
+            <td style="text-align: left;">
+              <p style="font-size: 28px; font-weight: 600;">${thousandsSystem(
+                count
+              )}x ${item.name}</p>
+            </td>
+            <td style="text-align: right;">
+              <p style="font-size: 28px; font-weight: 600;">
+              ${thousandsSystem(
+                item.discount !== 0
+                  ? count * item.value - item.discount
+                  : selection.reduce((a, b) => {
+                      if (b.id === item.id) {
+                        return (
+                          a + (b.discount !== 0 ? b.discount : count * b.value)
+                        );
+                      }
+                      return (a = a);
+                    }, 0)
+              )}
+              </p>
+            </td>
+          </tr>`
+      );
+    }, "");
+
+    return `
+    <html lang="en">
+  
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style type="text/css">
+      * {
+        padding: 0;
+        margin: 0;
+        box-sizing: 'border-box';
+        font-family: sans-serif;
+        color: #444444
+      }
+  
+      @page { margin: 20px; } 
+    </style>
+  </head>
+  
+  <body>
+  <view style="padding: 20px; width: 100vw; display: block; margin: 20px auto; background-color: #FFFFFF;">
+      <view>
+        <img
+        src="${Image.resolveAssetSource(Logo).uri}"
+        style="width: 22vw; display: block; margin: 0 auto; border-radius: 8px" />
+        <p style="font-size: 30px; text-align: center">vbelapp.com</p>
+      </view>
+      <p style="font-size: 30px; text-align: center; margin: 20px 0; background-color: #444444; padding: 10px 0; color: #FFFFFF">ALQUILERES Y RESTAURANTES</p>
+        
+      <p style="font-size: 25px; font-weight: 600;">
+        ${invoice?.name ? invoice?.name : ""} ${
+      invoice?.address ? `- ${invoice?.address}` : ""
+    } ${invoice?.number ? `- ${invoice?.number}` : ""} ${
+      invoice?.complement ? `- ${invoice?.complement}` : ""
+    }
+      </p>
+        <p style="text-align: center; color: #444444; font-size: 40px; font-weight: 800; margin-top: 20px">
+          ${invoice?.name ? invoice?.name : "Sin nombre"}
+        </p>
+        <p style="text-align: center; color: #444444; font-size: 30px; font-weight: 800; margin-bottom: 20px">
+          TICKET N°: ${random(6, { number: true })}
+        </p>
+      <view>
+        <table style="width: 95vw">
+          <tr>
+            <td>
+              <p style="font-size: 25px; font-weight: 600; color: #444444; margin-bottom: 12px;">${selection.reduce(
+                (a, b) => {
+                  const value = type === "general" ? b.count - b.paid : b.paid;
+                  return a + value;
+                },
+                0
+              )} Artículos
+              </p>
+            </td>
+            <td>
+              <p style="font-size: 25px; font-weight: 600; color: #444444; margin-bottom: 12px; text-align: center">
+                Fecha: ${changeDate(date)}
+              </p>
+            </td>
+            <td>
+              <p style="font-size: 25px; font-weight: 600; color: #444444; margin-bottom: 12px; text-align: right">
+              Hora: ${("0" + date.getHours()).slice(-2)}:${(
+      "0" + date.getMinutes()
+    ).slice(-2)}:${("0" + date.getSeconds()).slice(-2)}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </view>
+      <hr/>
+      <view>
+        <table style="width: 95vw; margin: 10px 0;">
+          ${text.replace(/,/g, "")}
+        </table>
+      </view>
+      <hr/>
+      <view style="width: 94vw">
+      <p style="margin-top: 10px;"/>
+      ${
+        totalDiscount
+          ? `<p style="text-align: right; font-size: 30px; font-weight: 600; width: 95vw;">
+            Descuento: ${thousandsSystem(totalDiscount)}
+          </p>`
+          : ""
+      }
+      ${
+        tip
+          ? `<p style="text-align: right; font-size: 30px; font-weight: 600; width: 95vw;">
+            Propina: ${thousandsSystem(tip)}
+          </p>`
+          : ""
+      }
+      ${
+        tax
+          ? `<p style="text-align: right; font-size: 30px; font-weight: 600; width: 95vw;">
+            Impuesto: ${thousandsSystem(tax)}
+          </p>`
+          : ""
+      }
+      <p style="text-align: right; font-size: 30px; font-weight: 600; margin-bottom: 10px; width: 95vw;">Total: ${thousandsSystem(
+        total
+      )}</p>
+      </view>
+      <hr/>
+      <p style="text-align: center; font-size: 25px; font-weight: 600; margin-top: 15px; width: 95vw;">ESTA ES UNA PRE-FACTURA HECHA POR ${
+        invoice?.name ? invoice?.name : "Sin nombre"
+      } RECUERDE VISITAR vbelapp.com</p>
+    </view>
+  </body>
+  
+  </html>
+    `;
+  };
 
   return (
     <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
@@ -460,6 +618,30 @@ const PreviewOrder = ({ route, navigation }) => {
         </View>
       </View>
       <View>
+        {!sales && (
+          <ButtonStyle
+            backgroundColor={light.main2}
+            onPress={() => {
+              const html = generateHTML({
+                selection,
+                total: generalPrice,
+                type: "general",
+              });
+              print({ html });
+            }}
+            left={() => (
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons
+                  name="reader-outline"
+                  color={light.textDark}
+                  size={getFontSize(16)}
+                  style={{ marginRight: 10 }}
+                />
+                <TextStyle bigParagraph>PRE - Factura</TextStyle>
+              </View>
+            )}
+          />
+        )}
         <View
           style={{
             flexDirection: "row",
@@ -762,55 +944,83 @@ const PreviewOrder = ({ route, navigation }) => {
                   </TextStyle>
                 )}
               </View>
-              <ButtonStyle
-                backgroundColor={light.main2}
-                style={{ marginTop: 15, opacity: total !== 0 ? 1 : 0.6 }}
-                onPress={() => {
-                  if (total === 0) return;
-                  const quantitySelected = individualPayment.reduce(
-                    (a, b) => a + b.paid,
-                    0
-                  );
-
-                  const obj = {
-                    pay: totalQuantity === quantitySelected,
-                    discount: totalDiscount,
-                    tax,
-                    tip,
-                  };
-                  const currentSelection = [];
-                  for (let se of selection) {
-                    const individual = individualPayment.find(
-                      (i) => i.id === se.id
+              <View style={{ marginTop: 15 }}>
+                <ButtonStyle
+                  backgroundColor={light.main2}
+                  style={{ opacity: total !== 0 ? 1 : 0.6 }}
+                  onPress={() => {
+                    if (total === 0) return;
+                    const html = generateHTML({
+                      selection: individualPayment,
+                      total: totalToPay,
+                      type: "individual",
+                    });
+                    print({ html });
+                  }}
+                  left={() => (
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Ionicons
+                        name="reader-outline"
+                        color={light.textDark}
+                        size={getFontSize(16)}
+                        style={{ marginRight: 10 }}
+                      />
+                      <TextStyle bigParagraph>PRE - Factura</TextStyle>
+                    </View>
+                  )}
+                />
+                <ButtonStyle
+                  backgroundColor={light.main2}
+                  style={{ opacity: total !== 0 ? 1 : 0.6 }}
+                  onPress={() => {
+                    if (total === 0) return;
+                    const quantitySelected = individualPayment.reduce(
+                      (a, b) => a + b.paid,
+                      0
                     );
-                    if (se.id === individual?.id && se.count !== se.paid) {
-                      const securrent = { ...se };
-                      securrent.paid += individual.paid;
-                      securrent.method = [
-                        ...securrent.method,
-                        {
-                          method: paymentMethod,
-                          total: individual.paid * securrent.value,
-                        },
-                      ];
-                      currentSelection.push(securrent);
-                    } else currentSelection.push(se);
-                  }
 
-                  const params = {
-                    data: obj,
-                    completeSelection: currentSelection,
-                    totalPaid: totalToPay,
-                    currentSelection: individualPayment,
-                    back: true,
-                  };
+                    const obj = {
+                      pay: totalQuantity === quantitySelected,
+                      discount: totalDiscount,
+                      tax,
+                      tip,
+                    };
+                    const currentSelection = [];
+                    for (let se of selection) {
+                      const individual = individualPayment.find(
+                        (i) => i.id === se.id
+                      );
+                      if (se.id === individual?.id && se.count !== se.paid) {
+                        const securrent = { ...se };
+                        securrent.paid += individual.paid;
+                        securrent.method = [
+                          ...securrent.method,
+                          {
+                            method: paymentMethod,
+                            total: individual.paid * securrent.value,
+                          },
+                        ];
+                        currentSelection.push(securrent);
+                      } else currentSelection.push(se);
+                    }
 
-                  if (editing) updateOrder(params);
-                  else saveOrder(params);
-                }}
-              >
-                <TextStyle center>Pagar</TextStyle>
-              </ButtonStyle>
+                    const params = {
+                      data: obj,
+                      completeSelection: currentSelection,
+                      totalPaid: totalToPay,
+                      currentSelection: individualPayment,
+                      back: true,
+                    };
+
+                    if (editing) updateOrder(params);
+                    else saveOrder(params);
+                  }}
+                >
+                  <TextStyle center>Pagar</TextStyle>
+                </ButtonStyle>
+              </View>
             </View>
           );
         }}
@@ -849,7 +1059,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: Math.floor(SCREEN_WIDTH / 3.8),
     height: Math.floor(SCREEN_WIDTH / 5),
-    marginHorizontal: 5,
   },
 });
 

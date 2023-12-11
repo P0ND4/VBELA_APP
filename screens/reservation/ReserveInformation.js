@@ -106,7 +106,11 @@ const ReserveInformation = ({ route, navigation }) => {
 
   //////////
 
-  const [checkOutModalVisible, setCheckOutModalVisible] = useState(false);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [paymentOptions, setPaymentOptions] = useState({
+    checkIn: false,
+    checkOut: false,
+  });
   const [hosted, setHosted] = useState([]);
   const [hostedPayment, setHostedPayment] = useState(0);
   const [businessPayment, setBusinessPayment] = useState(false);
@@ -227,7 +231,7 @@ const ReserveInformation = ({ route, navigation }) => {
             } else return a + b.payment;
           }, 0)
     );
-  }, [reserve?.hosted]);
+  }, [reserve]);
 
   useEffect(() => {
     setText("");
@@ -426,12 +430,12 @@ const ReserveInformation = ({ route, navigation }) => {
 </html>
 `;
 
-  const checkInEvent = ({ item }) => {
-    if (helperStatus.active && !helperStatus.accessToReservations) return;
-
+  const removePayment = ({ type, hosted }) => {
     Alert.alert(
-      "CAMBIAR",
-      `¿El cliente ${item.checkIn ? "no " : ""} ha llegado?`,
+      "REMOVER",
+      `¿Quieres remover ${type === "general" ? "todos los" : "el"} PAGO${
+        type === "general" ? "S" : ""
+      }?`,
       [
         {
           text: "Cancelar",
@@ -441,30 +445,20 @@ const ReserveInformation = ({ route, navigation }) => {
           text: "Si",
           onPress: async () => {
             const newReservation = { ...reserve };
-
+            const data = [];
             if (place.type === "accommodation") {
-              dispatch(
-                editRA({
-                  id: item.id,
-                  data: {
-                    ...item,
-                    checkIn: item.checkIn ? null : new Date().getTime(),
-                  },
-                })
-              );
+              for (let h of hosted) {
+                const nh = { ...h, payment: 0 };
+                data.push(nh);
+                dispatch(editRA({ id: h.id, data: nh }));
+              }
+
+              const ids = hosted.filter((h) => h.owner).map((h) => h.owner);
+              if (ids.length > 0) await deleteEconomy({ ids });
             }
 
             if (place.type === "standard") {
-              const newHosted = reserve?.hosted.map((i) => {
-                if (i.id === item.id) {
-                  const newI = { ...i };
-                  newI.checkIn = i.checkIn ? null : new Date().getTime();
-                  return newI;
-                }
-                return i;
-              });
-
-              newReservation.hosted = newHosted;
+              newReservation.payment = 0;
               dispatch(editRS({ ref: reserve.ref, data: newReservation }));
             }
 
@@ -473,15 +467,7 @@ const ReserveInformation = ({ route, navigation }) => {
                 ? helperStatus.identifier
                 : user.identifier,
               reservation: {
-                data:
-                  place.type === "standard"
-                    ? newReservation
-                    : [
-                        {
-                          ...item,
-                          checkIn: item.checkIn ? null : new Date().getTime(),
-                        },
-                      ],
+                data: place.type === "standard" ? newReservation : data,
                 type: place.type,
               },
               helpers: helperStatus.active
@@ -495,43 +481,143 @@ const ReserveInformation = ({ route, navigation }) => {
     );
   };
 
-  const validateCheckOut = ({ type, hosted }) => {
-    const active = () => {
-      setCheckOutModalVisible(!checkOutModalVisible);
-      setHosted(hosted);
-      hostedChangeRef.current = hosted.map((h) => {
+  const paymentEvent = ({ callBack, hosted, options }) => {
+    if (helperStatus.active && !helperStatus.accessToReservations) return;
+
+    const event = () => {
+      const accommodation = !hosted.some((h) => h.payment === 0 && h.payment !== "business");
+      const standard = !(reserve?.payment === 0 && reserve?.payment !== "business");
+      if (
+        (place.type === "accommodation" && accommodation) ||
+        (place.type === "standard" && standard)
+      ) {
+        return removePayment({
+          type: hosted.length > 1 && place.type !== 'standard' ? "general" : "unique",
+          hosted,
+        });
+      }
+
+      const hostedFiltered = hosted.filter(
+        (r) => r.payment === 0 && r.payment !== "business"
+      );
+      setPaymentModalVisible(!paymentModalVisible);
+      setHosted(hostedFiltered);
+      if (options) setPaymentOptions({ ...paymentOptions, ...options });
+      hostedChangeRef.current = hostedFiltered.map((h) => {
         const newHosted = { ...h };
         newHosted.payment = h?.payment;
         return newHosted;
       });
     };
 
-    const validation =
-      type === "unique"
-        ? !hosted[0].checkIn
-        : reserve?.hosted.some((item) => !item.checkIn);
-
-    if (validation) {
+    if (callBack) {
       Alert.alert(
-        `NO HA${type === "general" ? "N" : ""} LLEGADO`,
-        `${
-          type === "general"
-            ? "Algunos huéspedes no han llegado"
-            : "El huésped no ha llegado"
-        }, ¿Quiere continuar? El CHECK IN se activará`,
+        "PAGO",
+        `¿${
+          place.type === "standard" && reserve?.hosted?.length > 1
+            ? "Los huéspedes han"
+            : "El huésped ha"
+        } pagado?`,
         [
           {
             text: "Cancelar",
             style: "cancel",
           },
           {
+            text: "No",
+            onPress: () => callBack(),
+          },
+          {
             text: "Si",
-            onPress: () => active(),
+            onPress: () => event(),
           },
         ],
         { cancelable: true }
       );
-    } else active();
+    } else event();
+  };
+
+  const checkInEvent = ({ item }) => {
+    if (helperStatus.active && !helperStatus.accessToReservations) return;
+
+    Alert.alert(
+      "CAMBIAR",
+      `¿El cliente ${item.checkIn ? "no " : ""} ha llegado?`,
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Si",
+          onPress: () => {
+            const event = async () => {
+              const newReservation = { ...reserve };
+
+              if (place.type === "accommodation") {
+                dispatch(
+                  editRA({
+                    id: item.id,
+                    data: {
+                      ...item,
+                      checkIn: item.checkIn ? null : new Date().getTime(),
+                    },
+                  })
+                );
+              }
+
+              if (place.type === "standard") {
+                const newHosted = reserve?.hosted.map((i) => {
+                  if (i.id === item.id) {
+                    const newI = { ...i };
+                    newI.checkIn = i.checkIn ? null : new Date().getTime();
+                    return newI;
+                  }
+                  return i;
+                });
+
+                newReservation.hosted = newHosted;
+                dispatch(editRS({ ref: reserve.ref, data: newReservation }));
+              }
+
+              await editReservation({
+                identifier: helperStatus.active
+                  ? helperStatus.identifier
+                  : user.identifier,
+                reservation: {
+                  data:
+                    place.type === "standard"
+                      ? newReservation
+                      : [
+                          {
+                            ...item,
+                            checkIn: item.checkIn ? null : new Date().getTime(),
+                          },
+                        ],
+                  type: place.type,
+                },
+                helpers: helperStatus.active
+                  ? [helperStatus.id]
+                  : user.helpers.map((h) => h.id),
+              });
+            };
+
+            if (
+              !item.checkIn &&
+              item?.payment === 0 &&
+              item?.payment !== "business"
+            )
+              paymentEvent({
+                callBack: event,
+                hosted: [item],
+                options: { checkIn: true },
+              });
+            else event();
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const deleteEconomy = async ({ ids }) => {
@@ -578,10 +664,12 @@ const ReserveInformation = ({ route, navigation }) => {
     }
   };
 
-  const removeCheckOut = ({ type, hosted }) => {
+  const checkOutEvent = ({ item }) => {
+    if (helperStatus.active && !helperStatus.accessToReservations) return;
+
     Alert.alert(
-      "DESHACER",
-      `¿Quieres remover ${type === "general" ? "todos los" : "el"}  CHECK OUT?`,
+      "CAMBIAR",
+      `¿El cliente ${item.checkOut ? "no " : ""} se ha ido?`,
       [
         {
           text: "Cancelar",
@@ -589,55 +677,112 @@ const ReserveInformation = ({ route, navigation }) => {
         },
         {
           text: "Si",
-          onPress: async () => {
-            const newReservation = { ...reserve };
-            const data = [];
-            if (place.type === "accommodation") {
-              for (let h of hosted) {
-                const nh = {
-                  ...h,
-                  checkOut: null,
-                  payment: 0,
-                };
-                data.push(nh);
-                dispatch(editRA({ id: h.id, data: nh }));
-              }
+          onPress: () => {
+            const mainEvent = ({ checkIn }) => {
+              const event = async () => {
+                const newReservation = { ...reserve };
 
-              const ids = hosted.filter((h) => h.owner).map((h) => h.owner);
-              if (ids.length > 0) await deleteEconomy({ ids });
-            }
+                if (place.type === "accommodation") {
+                  dispatch(
+                    editRA({
+                      id: item.id,
+                      data: {
+                        ...item,
+                        checkIn: checkIn ? new Date().getTime() : item.checkIn,
+                        checkOut: item.checkOut ? null : new Date().getTime(),
+                      },
+                    })
+                  );
+                }
 
-            if (place.type === "standard") {
-              const newHosted = reserve?.hosted.map((h) => ({
-                ...h,
-                checkOut: null,
-              }));
-              newReservation.hosted = newHosted;
-              newReservation.payment = 0;
-              dispatch(editRS({ ref: reserve.ref, data: newReservation }));
-            }
+                if (place.type === "standard") {
+                  const newHosted = reserve?.hosted.map((i) => {
+                    if (i.id === item.id) {
+                      const newI = { ...i };
+                      (newI.checkIn = checkIn
+                        ? new Date().getTime()
+                        : item.checkIn),
+                        (newI.checkOut = i.checkOut
+                          ? null
+                          : new Date().getTime());
+                      return newI;
+                    }
+                    return i;
+                  });
 
-            await editReservation({
-              identifier: helperStatus.active
-                ? helperStatus.identifier
-                : user.identifier,
-              reservation: {
-                data: place.type === "standard" ? newReservation : data,
-                type: place.type,
-              },
-              helpers: helperStatus.active
-                ? [helperStatus.id]
-                : user.helpers.map((h) => h.id),
-            });
+                  newReservation.hosted = newHosted;
+                  dispatch(editRS({ ref: reserve.ref, data: newReservation }));
+                }
+
+                await editReservation({
+                  identifier: helperStatus.active
+                    ? helperStatus.identifier
+                    : user.identifier,
+                  reservation: {
+                    data:
+                      place.type === "standard"
+                        ? newReservation
+                        : [
+                            {
+                              ...item,
+                              checkOut: item.checkOut
+                                ? null
+                                : new Date().getTime(),
+                            },
+                          ],
+                    type: place.type,
+                  },
+                  helpers: helperStatus.active
+                    ? [helperStatus.id]
+                    : user.helpers.map((h) => h.id),
+                });
+              };
+
+              if (
+                !item.checkOut &&
+                item.payment === 0 &&
+                item.payment !== "business"
+              )
+                paymentEvent({
+                  callBack: event,
+                  hosted: [item],
+                  options: { checkIn, checkOut: true },
+                });
+              else event();
+            };
+
+            if (!item.checkIn && !item.checkOut) {
+              Alert.alert(
+                "NO HA LLEGADO",
+                "¿El huésped no ha llegado, desea activar el CHECK IN?",
+                [
+                  {
+                    text: "Cancelar",
+                    style: "cancel",
+                  },
+                  {
+                    text: "No",
+                    onPress: () => mainEvent({ checkIn: false }),
+                  },
+                  {
+                    text: "Si",
+                    onPress: () => mainEvent({ checkIn: true }),
+                  },
+                ],
+                { cancelable: true }
+              );
+            } else mainEvent({ checkIn: false });
           },
         },
-      ]
+      ],
+      { cancelable: true }
     );
   };
 
   const cleanData = () => {
+    setPaymentOptions({ checkIn: false, checkOut: false });
     setBusinessPayment(false);
-    setCheckOutModalVisible(false);
+    setPaymentModalVisible(false);
     setTotalToPay(0);
     setHosted([]);
     hostedChangeRef.current = [];
@@ -818,14 +963,7 @@ const ReserveInformation = ({ route, navigation }) => {
             </TextStyle>
           </View>
           <TouchableOpacity
-            onPress={() => {
-              if (place.type === "standard") return;
-              if (helperStatus.active && helperStatus.accessToReservations)
-                return;
-              if (item.checkOut)
-                removeCheckOut({ type: "unique", hosted: [item] });
-              else validateCheckOut({ type: "unique", hosted: [item] });
-            }}
+            onPress={() => checkOutEvent({ item })}
             style={[
               styles.table,
               {
@@ -842,7 +980,8 @@ const ReserveInformation = ({ route, navigation }) => {
             </TextStyle>
           </TouchableOpacity>
           {place.type === "accommodation" && (
-            <View
+            <TouchableOpacity
+              onPress={() => paymentEvent({ hosted: [item] })}
               style={[
                 styles.table,
                 {
@@ -864,7 +1003,7 @@ const ReserveInformation = ({ route, navigation }) => {
                     : thousandsSystem(item.payment)
                   : "PRIVADO"}
               </TextStyle>
-            </View>
+            </TouchableOpacity>
           )}
         </View>
         <Modal
@@ -983,19 +1122,7 @@ const ReserveInformation = ({ route, navigation }) => {
                   >
                     CHECK OUT:{" "}
                   </TextStyle>
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (place.type === "standard") return;
-                      if (
-                        helperStatus.active &&
-                        helperStatus.accessToReservations
-                      )
-                        return;
-                      if (item.checkOut)
-                        removeCheckOut({ type: "unique", hosted: [item] });
-                      else validateCheckOut({ type: "unique", hosted: [item] });
-                    }}
-                  >
+                  <TouchableOpacity onPress={() => checkOutEvent({ item })}>
                     <TextStyle color={light.main2}>
                       {item.checkOut
                         ? changeDate(new Date(item.checkOut))
@@ -1004,20 +1131,27 @@ const ReserveInformation = ({ route, navigation }) => {
                   </TouchableOpacity>
                 </View>
                 {place.type === "accommodation" && (
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Pagado:{" "}
-                    <TextStyle color={light.main2}>
-                      {!helperStatus.active || helperStatus.accessToReservations
-                        ? !item.payment
-                          ? "EN ESPERA"
-                          : item.payment === "business"
-                          ? "POR EMPRESA"
-                          : thousandsSystem(item.payment)
-                        : "PRIVADO"}
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <TextStyle
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    >
+                      Pagado:{" "}
                     </TextStyle>
-                  </TextStyle>
+                    <TouchableOpacity
+                      onPress={() => paymentEvent({ hosted: [item] })}
+                    >
+                      <TextStyle color={light.main2}>
+                        {!helperStatus.active ||
+                        helperStatus.accessToReservations
+                          ? !item.payment
+                            ? "EN ESPERA"
+                            : item.payment === "business"
+                            ? "POR EMPRESA"
+                            : thousandsSystem(item.payment)
+                          : "PRIVADO"}
+                      </TextStyle>
+                    </TouchableOpacity>
+                  </View>
                 )}
                 {openMoreInformation && (
                   <View>
@@ -1029,7 +1163,11 @@ const ReserveInformation = ({ route, navigation }) => {
                       >
                         Pago total:{" "}
                         <TextStyle color={light.main2}>
-                          {thousandsSystem(item.payment === 'business' ? 'POR EMPRESA' : item.payment)}
+                          {thousandsSystem(
+                            item.payment === "business"
+                              ? "POR EMPRESA"
+                              : item.payment
+                          )}
                         </TextStyle>
                       </TextStyle>
                     )}
@@ -1073,7 +1211,11 @@ const ReserveInformation = ({ route, navigation }) => {
                       >
                         Costo pagado:{" "}
                         <TextStyle color={light.main2}>
-                          {thousandsSystem(item.payment === 'business' ? 'POR EMPRESA' : item.payment)}
+                          {thousandsSystem(
+                            item.payment === "business"
+                              ? "POR EMPRESA"
+                              : item.payment
+                          )}
                         </TextStyle>
                       </TextStyle>
                     )}
@@ -1416,58 +1558,76 @@ const ReserveInformation = ({ route, navigation }) => {
                             },
                             {
                               text: "Si",
-                              onPress: async () => {
+                              onPress: () => {
                                 const newReservation = { ...reserve };
                                 let reservations = [];
 
-                                if (place.type === "accommodation") {
-                                  const checkIn =
-                                    quantity < 0 ? new Date().getTime() : null;
-                                  for (let re of reserve.hosted) {
-                                    dispatch(
-                                      editRA({
-                                        id: re.id,
-                                        data: { ...re, checkIn },
-                                      })
-                                    );
-                                    reservations.push({ ...re, checkIn });
-                                  }
-                                }
-
-                                if (place.type === "standard") {
-                                  const newHosted = reserve?.hosted.map((i) => {
-                                    const newI = { ...i };
-                                    newI.checkIn =
+                                const event = async () => {
+                                  if (place.type === "accommodation") {
+                                    const checkIn =
                                       quantity < 0
                                         ? new Date().getTime()
                                         : null;
-                                    return newI;
+                                    for (let re of reserve.hosted) {
+                                      dispatch(
+                                        editRA({
+                                          id: re.id,
+                                          data: { ...re, checkIn },
+                                        })
+                                      );
+                                      reservations.push({ ...re, checkIn });
+                                    }
+                                  }
+
+                                  if (place.type === "standard") {
+                                    const newHosted = reserve?.hosted.map(
+                                      (i) => {
+                                        const newI = { ...i };
+                                        newI.checkIn =
+                                          quantity < 0
+                                            ? new Date().getTime()
+                                            : null;
+                                        return newI;
+                                      }
+                                    );
+
+                                    newReservation.hosted = newHosted;
+                                    dispatch(
+                                      editRS({
+                                        ref: reserve.ref,
+                                        data: newReservation,
+                                      })
+                                    );
+                                  }
+
+                                  await editReservation({
+                                    identifier: helperStatus.active
+                                      ? helperStatus.identifier
+                                      : user.identifier,
+                                    reservation: {
+                                      data:
+                                        place.type === "standard"
+                                          ? newReservation
+                                          : reservations,
+                                      type: place.type,
+                                    },
+                                    helpers: helperStatus.active
+                                      ? [helperStatus.id]
+                                      : user.helpers.map((h) => h.id),
                                   });
+                                };
 
-                                  newReservation.hosted = newHosted;
-                                  dispatch(
-                                    editRS({
-                                      ref: reserve.ref,
-                                      data: newReservation,
-                                    })
-                                  );
-                                }
-
-                                await editReservation({
-                                  identifier: helperStatus.active
-                                    ? helperStatus.identifier
-                                    : user.identifier,
-                                  reservation: {
-                                    data:
-                                      place.type === "standard"
-                                        ? newReservation
-                                        : reservations,
-                                    type: place.type,
-                                  },
-                                  helpers: helperStatus.active
-                                    ? [helperStatus.id]
-                                    : user.helpers.map((h) => h.id),
-                                });
+                                const payment = reserve?.hosted.some(
+                                  (h) =>
+                                    h.payment === 0 && h.payment !== "business"
+                                );
+                                if (quantity < 0 && payment)
+                                  paymentEvent({
+                                    callBack: event,
+                                    hosted: reserve?.hosted,
+                                    options: { checkIn: true },
+                                  });
+                                else event();
                               },
                             },
                           ],
@@ -1508,17 +1668,147 @@ const ReserveInformation = ({ route, navigation }) => {
                           !helperStatus.accessToReservations
                         )
                           return;
-                        if (!reserve?.hosted.some((h) => !h.checkOut)) {
-                          removeCheckOut({
-                            type: "general",
-                            hosted: reserve.hosted,
-                          });
-                        } else {
-                          validateCheckOut({
-                            type: "general",
-                            hosted: reserve.hosted.filter((r) => !r.checkOut),
-                          });
-                        }
+                        const quantity = reserve?.hosted.reduce((a, b) => {
+                          const bc = b.checkOut ? 1 : -1;
+                          return a + bc;
+                        }, 0);
+                        Alert.alert(
+                          "CAMBIAR",
+                          `¿Pasar a todos los huéspedes que ${
+                            quantity >= 0 ? "no" : ""
+                          } se han ido?`,
+                          [
+                            {
+                              text: "Cancelar",
+                              style: "cancel",
+                            },
+                            {
+                              text: "Si",
+                              onPress: async () => {
+                                const newReservation = { ...reserve };
+                                let reservations = [];
+
+                                const mainEvent = ({ checkIn }) => {
+                                  const event = async () => {
+                                    if (place.type === "accommodation") {
+                                      const checkOut =
+                                        quantity < 0
+                                          ? new Date().getTime()
+                                          : null;
+                                      for (let re of reserve.hosted) {
+                                        dispatch(
+                                          editRA({
+                                            id: re.id,
+                                            data: {
+                                              ...re,
+                                              checkOut,
+                                              checkIn: checkIn
+                                                ? new Date().getTime()
+                                                : re.checkIn,
+                                            },
+                                          })
+                                        );
+                                        reservations.push({
+                                          ...re,
+                                          checkOut,
+                                          checkIn: checkIn
+                                            ? new Date().getTime()
+                                            : re.checkIn,
+                                        });
+                                      }
+                                    }
+
+                                    if (place.type === "standard") {
+                                      const newHosted = reserve?.hosted.map(
+                                        (i) => {
+                                          const newI = { ...i };
+
+                                          newI.checkOut =
+                                            quantity < 0
+                                              ? new Date().getTime()
+                                              : null;
+                                          newI.checkIn = checkIn
+                                            ? new Date().getTime()
+                                            : newI.checkIn;
+                                          return newI;
+                                        }
+                                      );
+
+                                      newReservation.hosted = newHosted;
+                                      dispatch(
+                                        editRS({
+                                          ref: reserve.ref,
+                                          data: newReservation,
+                                        })
+                                      );
+                                    }
+
+                                    await editReservation({
+                                      identifier: helperStatus.active
+                                        ? helperStatus.identifier
+                                        : user.identifier,
+                                      reservation: {
+                                        data:
+                                          place.type === "standard"
+                                            ? newReservation
+                                            : reservations,
+                                        type: place.type,
+                                      },
+                                      helpers: helperStatus.active
+                                        ? [helperStatus.id]
+                                        : user.helpers.map((h) => h.id),
+                                    });
+                                  };
+
+                                  const payment = reserve?.hosted.some(
+                                    (h) =>
+                                      h.payment === 0 &&
+                                      h.payment !== "business"
+                                  );
+                                  if (quantity < 0 && payment)
+                                    paymentEvent({
+                                      callBack: event,
+                                      hosted: reserve?.hosted,
+                                      options: { checkIn, checkOut: true },
+                                    });
+                                  else event();
+                                };
+
+                                const quantityCheckIn = reserve?.hosted.reduce(
+                                  (a, b) => {
+                                    if (!b.checkIn) return a + 1;
+                                    return a;
+                                  },
+                                  0
+                                );
+                                if (quantityCheckIn > 1 && quantity < 0) {
+                                  Alert.alert(
+                                    "NO HAN LLEGADO",
+                                    "¿Algunos huéspedes no han llegado, desea activar sus CHECK IN?",
+                                    [
+                                      {
+                                        text: "Cancelar",
+                                        style: "cancel",
+                                      },
+                                      {
+                                        text: "No",
+                                        onPress: () =>
+                                          mainEvent({ checkIn: false }),
+                                      },
+                                      {
+                                        text: "Si",
+                                        onPress: () =>
+                                          mainEvent({ checkIn: true }),
+                                      },
+                                    ],
+                                    { cancelable: true }
+                                  );
+                                } else mainEvent({ checkIn: false });
+                              },
+                            },
+                          ],
+                          { cancelable: true }
+                        );
                       }}
                       style={[
                         styles.table,
@@ -1534,7 +1824,10 @@ const ReserveInformation = ({ route, navigation }) => {
                       </TextStyle>
                     </TouchableOpacity>
                     {place.type === "accommodation" && (
-                      <View
+                      <TouchableOpacity
+                        onPress={() =>
+                          paymentEvent({ hosted: reserve?.hosted })
+                        }
                         style={[
                           styles.table,
                           {
@@ -1549,7 +1842,7 @@ const ReserveInformation = ({ route, navigation }) => {
                         <TextStyle color={light.main2} smallParagraph>
                           PAGADO
                         </TextStyle>
-                      </View>
+                      </TouchableOpacity>
                     )}
                   </View>
                   {reserve?.hosted.map((item) => (
@@ -1559,24 +1852,7 @@ const ReserveInformation = ({ route, navigation }) => {
               </ScrollView>
               {(!helperStatus.active || helperStatus.accessToReservations) && (
                 <ButtonStyle
-                  onPress={() => {
-                    if (
-                      helperStatus.active &&
-                      !helperStatus.accessToReservations
-                    )
-                      return;
-                    if (!reserve?.hosted.some((h) => !h.checkOut)) {
-                      removeCheckOut({
-                        type: "general",
-                        hosted: reserve.hosted,
-                      });
-                    } else {
-                      validateCheckOut({
-                        type: "general",
-                        hosted: reserve.hosted.filter((r) => !r.checkOut),
-                      });
-                    }
-                  }}
+                  onPress={() => paymentEvent({ hosted: reserve.hosted })}
                   style={{ marginBottom: 20 }}
                   backgroundColor={light.main2}
                 >
@@ -1859,7 +2135,7 @@ const ReserveInformation = ({ route, navigation }) => {
       <Modal
         animationType="fade"
         transparent={true}
-        visible={checkOutModalVisible}
+        visible={paymentModalVisible}
         onRequestClose={() => cleanData()}
       >
         <TouchableWithoutFeedback onPress={() => cleanData()}>
@@ -1885,7 +2161,7 @@ const ReserveInformation = ({ route, navigation }) => {
             <View>
               <View style={styles.row}>
                 <TextStyle color={light.main2} bigSubtitle>
-                  CHECK OUT
+                  PAGO
                 </TextStyle>
                 <TouchableOpacity onPress={() => cleanData()}>
                   <Ionicons
@@ -2007,20 +2283,29 @@ const ReserveInformation = ({ route, navigation }) => {
                   </TextStyle>
                 )}
               </View>
-              <View style={[styles.row, { marginVertical: 10 }]}>
-                <TextStyle smallParagraph color={light.main2}>
-                  Lo pago la empresa
-                </TextStyle>
-                <Switch
-                  trackColor={{ false: dark.main2, true: light.main2 }}
-                  thumbColor={light.main4}
-                  ios_backgroundColor="#3e3e3e"
-                  onValueChange={() => setBusinessPayment(!businessPayment)}
-                  value={businessPayment}
-                />
-              </View>
+              {(place.type === "standard" || !hosted.some((h) => h?.owner)) && (
+                <View style={[styles.row, { marginVertical: 10 }]}>
+                  <TextStyle smallParagraph color={light.main2}>
+                    Lo pago la empresa
+                  </TextStyle>
+                  <Switch
+                    trackColor={{ false: dark.main2, true: light.main2 }}
+                    thumbColor={light.main4}
+                    ios_backgroundColor="#3e3e3e"
+                    onValueChange={() => setBusinessPayment(!businessPayment)}
+                    value={businessPayment}
+                  />
+                </View>
+              )}
               <ButtonStyle
                 backgroundColor={light.main2}
+                style={{
+                  marginTop:
+                    place.type === "accommodation" &&
+                    hosted.some((h) => h?.owner)
+                      ? 20
+                      : 0,
+                }}
                 onPress={async () => {
                   const checkOutActive = reserve?.hosted.reduce((a, b) => {
                     if (b.checkOut) return a;
@@ -2035,8 +2320,12 @@ const ReserveInformation = ({ route, navigation }) => {
                       for (let h of hostedChangeRef.current) {
                         const nh = {
                           ...h,
-                          checkOut: new Date().getTime(),
-                          checkIn: new Date().getTime(),
+                          checkOut: paymentOptions.checkOut
+                            ? new Date().getTime()
+                            : h.checkOut,
+                          checkIn: paymentOptions.checkIn
+                            ? new Date().getTime()
+                            : h.checkIn,
                           payment: businessPayment ? "business" : h.payment,
                         };
 
@@ -2081,7 +2370,8 @@ const ReserveInformation = ({ route, navigation }) => {
                       const manageEconomyHosted = [];
 
                       for (let h of hostedREF) {
-                        if (h.payment === "business" || h.payment === 0) continue;
+                        if (h.payment === "business" || h.payment === 0)
+                          continue;
                         const index = manageEconomyHosted.findIndex(
                           (m) => m.clientID === h?.clientID
                         );
@@ -2104,8 +2394,12 @@ const ReserveInformation = ({ route, navigation }) => {
                     if (place.type === "standard") {
                       const newHosted = reserve?.hosted.map((h) => ({
                         ...h,
-                        checkOut: new Date().getTime(),
-                        checkIn: new Date().getTime(),
+                        checkOut: paymentOptions.checkOut
+                          ? new Date().getTime()
+                          : h.checkOut,
+                        checkIn: paymentOptions.checkIn
+                          ? new Date().getTime()
+                          : h.checkIn,
                       }));
 
                       newReservation.hosted = newHosted;
