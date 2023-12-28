@@ -51,9 +51,9 @@ const PeopleInformation = ({ route, navigation }) => {
   const orders = useSelector((state) => state.orders);
   const sales = useSelector((state) => state.sales);
   const user = useSelector((state) => state.user);
-  const client = useSelector((state) => state.client);
-  const supplier = useSelector((state) => state.supplier);
-  const nomenclatures = useSelector(state => state.nomenclatures)
+  const customers = useSelector((state) => state.client);
+  const suppliers = useSelector((state) => state.supplier);
+  const nomenclatures = useSelector((state) => state.nomenclatures);
 
   const [registers, setRegisters] = useState([]);
   const [textSupplier, setTextSupplier] = useState("");
@@ -69,13 +69,14 @@ const PeopleInformation = ({ route, navigation }) => {
       [
         ...filter.map((e) => {
           const eco = { ...e };
-          const { clientList } = client?.find((c) => c.id === e.ref);
+          const clientFound = customers?.find((c) => c.id === e.ref);
 
           const standardReservationsSorted = standardReservations
             .filter(({ hosted }) =>
               hosted.some(
                 ({ owner }) =>
-                  owner === e.ref || clientList?.some((c) => c.id === owner)
+                  owner === e.ref ||
+                  clientFound?.clientList?.some((c) => c.id === owner)
               )
             )
             .map((reservation) => {
@@ -91,7 +92,8 @@ const PeopleInformation = ({ route, navigation }) => {
           const accommodationReservationsSorted = accommodationReservations
             .filter(
               ({ owner }) =>
-                owner === e.ref || clientList?.some((c) => c.id === owner)
+                owner === e.ref ||
+                clientFound?.clientList?.some((c) => c.id === owner)
             )
             .map((hosted) => {
               return {
@@ -109,7 +111,11 @@ const PeopleInformation = ({ route, navigation }) => {
             });
 
           const ordersSorted = orders
-            .filter((o) => o.ref === e.ref || clientList?.some((c) => c.id === o.ref))
+            .filter(
+              (o) =>
+                o.ref === e.ref ||
+                clientFound?.clientList?.some((c) => c.id === o.ref)
+            )
             .map((order) => {
               return {
                 data: order,
@@ -127,7 +133,11 @@ const PeopleInformation = ({ route, navigation }) => {
             });
 
           const salesSorted = sales
-            .filter((s) => s.ref === e.ref || clientList?.some((c) => c.id === s.ref))
+            .filter(
+              (s) =>
+                s.ref === e.ref ||
+                clientFound?.clientList?.some((c) => c.id === s.ref)
+            )
             .map((sale) => {
               return {
                 data: sale,
@@ -151,10 +161,17 @@ const PeopleInformation = ({ route, navigation }) => {
           eco.details = union.sort(
             (a, b) => new Date(b.date) - new Date(a.date)
           );
-          eco.people = accommodationReservationsSorted?.length + standardReservationsSorted.reduce((a,b)=> a + b.reservation?.hosted?.length,0)
+          eco.people =
+            accommodationReservationsSorted?.length +
+            standardReservationsSorted.reduce(
+              (a, b) => a + b.reservation?.hosted?.length,
+              0
+            );
           eco.orders = ordersSorted?.length;
           eco.sales = salesSorted?.length;
-          eco.reservations = accommodationReservationsSorted?.length + standardReservationsSorted?.length;
+          eco.reservations =
+            accommodationReservationsSorted?.length +
+            standardReservationsSorted?.length;
           return eco;
         }),
       ].reverse()
@@ -181,12 +198,12 @@ const PeopleInformation = ({ route, navigation }) => {
   }, [economy, type, standardReservations, accommodationReservations]);
 
   const customerDataRemove = async (economy) => {
-    const clientREF = client.find((p) => p.id === economy.ref);
-    const supplierREF = supplier.find((p) => p.id === economy.ref);
+    const clientREF = customers.find((p) => p.id === economy.ref);
+    const supplierREF = suppliers.find((p) => p.id === economy.ref);
     const person = clientREF || supplierREF;
-    dispatch(removeMBORS({ owner: person.id }));
-    dispatch(removeMBORA({ owner: person.id }));
-    dispatch(removeMBOO({ ref: person.id }));
+    dispatch(removeMBORS({ owner: person?.id }));
+    dispatch(removeMBORA({ owner: person?.id }));
+    dispatch(removeMBOO({ ref: person?.id }));
     const newStandardReservations = standardReservations.reduce(
       (acc, reservation) => {
         const filteredHosted = reservation.hosted.filter(
@@ -517,9 +534,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 Ordenes realizadas/finalizadas:
               </TextStyle>
               <TextStyle color={light.main2}>
-                {item.orders
-                  ? thousandsSystem(item.orders)
-                  : "0"}
+                {item.orders ? thousandsSystem(item.orders) : "0"}
               </TextStyle>
             </View>
           )}
@@ -531,9 +546,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 Compras realizadas/finalizadas:
               </TextStyle>
               <TextStyle color={light.main2}>
-                {item.sales
-                  ? thousandsSystem(item.sales)
-                  : "0"}
+                {item.sales ? thousandsSystem(item.sales) : "0"}
               </TextStyle>
             </View>
           )}
@@ -607,27 +620,24 @@ const PeopleInformation = ({ route, navigation }) => {
             },
           ]}
         >
-          <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-            {name
-              ? item.name?.slice(0, 15) +
-                `${item.name?.length >= 15 ? "..." : ""}`
-              : item.name
-              ? thousandsSystem(item.owner?.identification)
-              : "DESCONOCIDO"}
-          </TextStyle>
+          <TouchableOpacity
+            onPress={() => {
+              if (!item?.identification) return;
+              setName(!name);
+            }}
+          >
+            <TextStyle
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              {name
+                ? item.name?.slice(0, 15) +
+                  `${item.name?.length >= 15 ? "..." : ""}`
+                : item.name
+                ? thousandsSystem(item.owner?.identification)
+                : "DESCONOCIDO"}
+            </TextStyle>
+          </TouchableOpacity>
           <View style={styles.events}>
-            {item?.identification && (
-              <TouchableOpacity
-                onPress={() => setName(!name)}
-                style={{ marginHorizontal: 3 }}
-              >
-                <Ionicons
-                  name="git-compare"
-                  size={getFontSize(21)}
-                  color={mode === "light" ? dark.main2 : light.main5}
-                />
-              </TouchableOpacity>
-            )}
             <TouchableOpacity
               style={{ marginHorizontal: 3 }}
               onPress={() => deleteEconomy(item)}

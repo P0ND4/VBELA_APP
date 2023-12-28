@@ -26,7 +26,7 @@ import {
   edit as editE,
   remove as removeE,
 } from "@features/function/economySlice";
-import { add as addP } from "@features/function/peopleSlice";
+import { add as addClient } from "@features/people/clientSlice";
 import helperNotification from "@helpers/helperNotification";
 import {
   addOrder,
@@ -39,7 +39,10 @@ import {
   removeEconomy,
   editUser,
   addPerson,
+  editReservation,
 } from "@api";
+import { edit as editRS } from "@features/zones/standardReservationsSlice";
+import { edit as editRA } from "@features/zones/accommodationReservationsSlice";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -173,7 +176,7 @@ const CreateOrder = ({ route, navigation }) => {
         tip +
         tax;
 
-  const manageEconomy = ({
+  const manageEconomy = async ({
     editing,
     lastTotal,
     total,
@@ -181,96 +184,109 @@ const CreateOrder = ({ route, navigation }) => {
     callBack,
     person,
   }) => {
-    const foundEconomy = economy.find((e) => e.ref === person.id);
-    const saveEconomy = async ({ payment }) => {
-      if (createClient && !person) {
-        const data = {
-          name: route.params?.table,
-          identification: "",
-        };
-        data.id = route.params?.ref;
-        data.type = "customer";
-        data.creationDate = new Date().getTime();
-        data.modificationDate = new Date().getTime();
-        dispatch(addP(data));
-        await addPerson({
-          identifier: helperStatus.active
-            ? helperStatus.identifier
-            : user.identifier,
-          person: data,
-          helpers: helperStatus.active
-            ? [helperStatus.id]
-            : user.helpers.map((h) => h.id),
-        });
+    const foundEconomy = economy.find((e) => e.ref === person?.id);
+    const clientID = random(20);
+    const hosted = createClient?.hosted?.find(h => (h.id || h.owner) === route.params.ref)
+    if (createClient && !person) {
+      //TODO ---------------------------------- ACOMODAR PONER BONITO
+      //TODO ---------------------------------- HAY MUCHAS PETICIONES AL SERVIDOR CAMBIARLO A FUTURO
+      const data = {
+        name: hosted.fullName,
+        identification: hosted.identification,
+      };
+      data.id = clientID;
+      data.type = "customer";
+      data.creationDate = new Date().getTime();
+      data.modificationDate = new Date().getTime();
+      dispatch(addClient(data));
+
+      const newReservation = { ...createClient };
+      const newHosted = { ...hosted, owner: clientID };
+
+      if (createClient.type === 'accommodation') dispatch(editRA({ id: hosted.id, data: newHosted }))
+      if (createClient.type === "standard") {
+        const reservationUpdated = createClient?.hosted.map(h => {
+          if ((h.id || h.owner) === route.params.ref) return { ...h, owner: clientID };
+          return h;
+        })
+        newReservation.hosted = reservationUpdated;
+        dispatch(editRS({ ref: createClient.ref, data: newReservation }));
       }
-      if (!foundEconomy) {
-        const id = random(20);
-        let data = {};
-        if (!createClient) data = { ...person };
-        else data = { id: person.id, name: person.name };
 
-        const newEconomy = {
-          id,
-          ref: data.id,
-          owner: {
-            identification: data.identification || "",
-            name: data.name,
-          },
-          type: "debt",
-          amount: total,
-          name: `Deuda ${data.name}`,
-          payment: payment ? total : 0,
-          creationDate: new Date().getTime(),
-          modificationDate: new Date().getTime(),
-        };
+      await editReservation({ //TODO  1
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        reservation: {
+          data: createClient.type === "standard" ? newReservation : [newHosted],
+          type: createClient.type,
+        },
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
 
-        dispatch(addE(newEconomy));
-        await addEconomy({
-          identifier: helperStatus.active
-            ? helperStatus.identifier
-            : user.identifier,
-          economy: newEconomy,
-          helpers: helperStatus.active
-            ? [helperStatus.id]
-            : user.helpers.map((h) => h.id),
-        });
-      } else {
-        const currentEconomy = { ...foundEconomy };
-        if ((editing || kitchen) && lastTotal)
-          currentEconomy.amount -= lastTotal;
-        currentEconomy.amount += total;
-        if (payment) currentEconomy.payment += total;
-        currentEconomy.modificationDate = new Date().getTime();
-        dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
-        await editEconomy({
-          identifier: helperStatus.active
-            ? helperStatus.identifier
-            : user.identifier,
-          economy: currentEconomy,
-          helpers: helperStatus.active
-            ? [helperStatus.id]
-            : user.helpers.map((h) => h.id),
-        });
-      }
-      await callBack();
-    };
+      await addPerson({ //TODO  2
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        person: { type: 'customer', data },
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
 
-    if (createClient && editing) {
-      Alert.alert("PAGO", "¿El cliente ha pagado el producto/servicio?", [
-        {
-          text: "Cancelar",
-          style: "cancel",
+      //TODO ---------------------------------- ACOMODAR PONER BONITO
+    }
+
+    if (!foundEconomy) {
+      const id = random(20);
+      let data = {};
+      if (!createClient) data = { ...person };
+      else data = { ...hosted, name: hosted.fullName, id: clientID };
+
+      const newEconomy = {
+        id,
+        ref: data.id,
+        owner: {
+          identification: data.identification || "",
+          name: data.name,
         },
-        {
-          text: "No",
-          onPress: () => saveEconomy({ payment: false }),
-        },
-        {
-          text: "Si",
-          onPress: () => saveEconomy({ payment: true }),
-        },
-      ]);
-    } else saveEconomy({ payment: false });
+        type: "debt",
+        amount: total,
+        name: `Deuda ${data.name}`,
+        payment: 0,
+        creationDate: new Date().getTime(),
+        modificationDate: new Date().getTime(),
+      };
+
+      dispatch(addE(newEconomy));
+      await addEconomy({ //TODO  3
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        economy: newEconomy,
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+    } else {
+      const currentEconomy = { ...foundEconomy };
+      if ((editing || kitchen) && lastTotal) currentEconomy.amount -= lastTotal;
+      currentEconomy.amount += total;
+      currentEconomy.modificationDate = new Date().getTime();
+      dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
+      await editEconomy({ //TODO  3
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        economy: currentEconomy,
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+    }
+    await callBack();
   };
 
   const saveOrder = async ({
@@ -284,7 +300,7 @@ const CreateOrder = ({ route, navigation }) => {
     const person =
       client.find((p) => p.id === route.params.ref) ||
       client.find((p) => p?.clientList?.some((c) => c.id === route.params.ref));
-
+      
     if (orders.find((order) => order.id === id))
       return saveOrder({
         data: dat,
@@ -335,7 +351,7 @@ const CreateOrder = ({ route, navigation }) => {
       });
 
       if (dat.pay) {
-        await editUser({
+        await editUser({ //TODO 4
           identifier: helperStatus.active
             ? helperStatus.identifier
             : user.identifier,
@@ -345,7 +361,7 @@ const CreateOrder = ({ route, navigation }) => {
             : user.helpers.map((h) => h.id),
         });
       }
-      await addOrder({
+      await addOrder({ //TODO  5
         identifier: helperStatus.active
           ? helperStatus.identifier
           : user.identifier,
@@ -379,7 +395,6 @@ const CreateOrder = ({ route, navigation }) => {
     const person =
       client.find((p) => p.id === route.params.ref) ||
       client.find((p) => p?.clientList?.some((c) => c.id === route.params.ref));
-    const currentOrder = orders.find((o) => o.id === route.params.id);
 
     data.id = route.params.id;
     data.ref = route.params.ref;
@@ -444,7 +459,6 @@ const CreateOrder = ({ route, navigation }) => {
       await manageEconomy({
         editing: dat.pay,
         total,
-        lastTotal: currentOrder.total,
         kitchen: dat.isSendtoKitchen,
         callBack: close,
         person,
@@ -610,10 +624,9 @@ const CreateOrder = ({ route, navigation }) => {
           dispatch(remove({ id: information.id }));
           navigation.pop();
           if (foundEconomy) {
-            //TODO CUANDO HAY UN PEDIDO EN COCINA NO SE LE COBRA PERO SI SE ELIMINA SI SE LE DESCUENTA
             const currentEconomy = { ...foundEconomy };
             currentEconomy.amount -= route.params.selection.reduce(
-              (a, b) => a + b.total,
+              (a, b) => a + b.paid * b.value,
               0
             );
             if (currentEconomy.amount === 0) {

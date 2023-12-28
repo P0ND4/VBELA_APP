@@ -96,7 +96,7 @@ const ReserveInformation = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
   const orders = useSelector((state) => state.orders);
   const economy = useSelector((state) => state.economy);
-  const customer = useSelector((state) => state.client);
+  const customers = useSelector((state) => state.client);
 
   const [reserve, setReserve] = useState(null);
   const [totalPayment, setTotalPayment] = useState(0);
@@ -452,9 +452,6 @@ const ReserveInformation = ({ route, navigation }) => {
                 data.push(nh);
                 dispatch(editRA({ id: h.id, data: nh }));
               }
-
-              const ids = hosted.filter((h) => h.owner).map((h) => h.owner);
-              if (ids.length > 0) await deleteEconomy({ ids });
             }
 
             if (place.type === "standard") {
@@ -485,14 +482,21 @@ const ReserveInformation = ({ route, navigation }) => {
     if (helperStatus.active && !helperStatus.accessToReservations) return;
 
     const event = () => {
-      const accommodation = !hosted.some((h) => h.payment === 0 && h.payment !== "business");
-      const standard = !(reserve?.payment === 0 && reserve?.payment !== "business");
+      const accommodation = !hosted.some(
+        (h) => h.payment === 0 && h.payment !== "business"
+      );
+      const standard = !(
+        reserve?.payment === 0 && reserve?.payment !== "business"
+      );
       if (
         (place.type === "accommodation" && accommodation) ||
         (place.type === "standard" && standard)
       ) {
         return removePayment({
-          type: hosted.length > 1 && place.type !== 'standard' ? "general" : "unique",
+          type:
+            hosted.length > 1 && place.type !== "standard"
+              ? "general"
+              : "unique",
           hosted,
         });
       }
@@ -620,22 +624,58 @@ const ReserveInformation = ({ route, navigation }) => {
     );
   };
 
+  const debugHosted = ({ current, ids }) => {
+    const manageEconomyHosted = ids
+      .map((owner) => ({
+        clientID: customers.find(
+          (p) => p?.id === owner || p?.clientList?.some((c) => c.id === owner)
+        )?.id,
+        hosted: reserve?.hosted?.find((h) => h.owner === owner),
+      }))
+      .filter(({ clientID }) => clientID); // Aqui analizamos los ids que nos pasaron, si no existe el cliente que no lo pase
+
+    const duplicates = manageEconomyHosted.filter(
+      // Vemos si los datos obtenidos tenemos duplicados >= 2
+      (s, i, arr) => arr.filter((m) => m.clientID === s.clientID).length >= 2
+    );
+    const person = duplicates.find((d) => d.hosted?.owner === current); // Vemos cual es el usuario que se esta buscando
+
+    const amountGeneral = duplicates // Aqui vemos si dentro de los duplicados existe
+      .filter((d) => d.clientID === person.clientID)
+      .reduce((a, b) => a + b.hosted.amount * b.hosted.days, 0);
+
+    const currentHosted = reserve?.hosted?.find((h) => h.owner === current); // Si no hay duplicados pasaremos el valor normal
+    const amountUnique = currentHosted.amount * currentHosted.days;
+
+    return person ? amountGeneral : amountUnique;
+  };
+
   const deleteEconomy = async ({ ids }) => {
-    for (let ownerRef of ids) {
-      const person =
-        customer.find((p) => p.id === ownerRef) ||
-        customer.find((p) => p?.clientList?.some((c) => c.id === ownerRef));
+    const manageEconomyHosted = [];
+    for (let owner of ids) {
+      const found = customers.find((p) => p?.clientList?.some((c) => c.id === owner) || p?.id === owner);
+      if (!found) continue;
+      if (!manageEconomyHosted.some((h) => h?.clientID === found?.id)) {
+        manageEconomyHosted.push({ clientID: found?.id, owner });
+      }
+    }
+    const owners = manageEconomyHosted.map((m) => m?.owner);
+
+    for (let ownerRef of owners) {
+      const person = customers.find(
+        (p) =>
+          p.id === ownerRef || p?.clientList?.some((c) => c.id === ownerRef)
+      );
 
       const foundEconomy = economy.find((e) => e.ref === person.id);
-      const client = reserve?.hosted.find((h) => h.owner === ownerRef);
+      const checkedAmount = debugHosted({ current: ownerRef, ids });
 
-      if (client.payment === "business" || client.payment === 0 || !person)
-        continue;
+      if (!person) continue;
 
       if (foundEconomy) {
         const currentEconomy = { ...foundEconomy };
-        currentEconomy.amount -= client.payment;
-        currentEconomy.payment -= client.payment;
+        currentEconomy.amount -=
+          place.type === "accommodation" ? checkedAmount : amount; //TODO CAMBIAR AMOUNT
         currentEconomy.modificationDate = new Date().getTime();
         if (currentEconomy.amount <= 0) {
           dispatch(removeE({ id: foundEconomy.id }));
@@ -714,6 +754,11 @@ const ReserveInformation = ({ route, navigation }) => {
                   dispatch(editRS({ ref: reserve.ref, data: newReservation }));
                 }
 
+                if (item.owner) {
+                  if (item.checkOut) await deleteEconomy({ ids: [item.owner] });
+                  else await manageEconomy({ ids: [item.owner] });
+                }
+
                 await editReservation({
                   identifier: helperStatus.active
                     ? helperStatus.identifier
@@ -788,17 +833,27 @@ const ReserveInformation = ({ route, navigation }) => {
     hostedChangeRef.current = [];
   };
 
-  const manageEconomy = async ({ ids, hosted }) => {
-    if (hosted.length === 0) return;
-    for (let ownerRef of ids) {
-      const person =
-        customer.find((p) => p.id === ownerRef) ||
-        customer.find((p) => p?.clientList?.some((c) => c.id === ownerRef));
+  const manageEconomy = async ({ ids }) => {
+    const manageEconomyHosted = []; //Esto es por si existe mas de un sub-cliente para no crear 2 o mas economy para un cliente
+    for (let owner of ids) {
+      const found = customers.find(
+        (p) => p?.id === owner || p?.clientList?.some((c) => c.id === owner)
+      );
+      if (!found) continue;
+      if (!manageEconomyHosted.some((h) => h?.clientID === found?.id)) {
+        manageEconomyHosted.push({ clientID: found?.id, owner });
+      }
+    }
+    const owners = manageEconomyHosted.map((m) => m?.owner);
 
-      const client = hosted.find((h) => h.owner === ownerRef);
+    for (let ownerRef of owners) {
+      const person = customers.find(
+        (p) =>
+          p.id === ownerRef || p?.clientList?.some((c) => c.id === ownerRef)
+      );
 
-      if (client.payment === "business" || client.payment === 0 || !person)
-        continue;
+      const checkedAmount = debugHosted({ current: ownerRef, ids });
+      if (!person) continue;
 
       const foundEconomy = economy.find((e) => e.ref === person.id);
       if (!foundEconomy) {
@@ -812,9 +867,9 @@ const ReserveInformation = ({ route, navigation }) => {
             name: person.name,
           },
           type: "debt",
-          amount: client.payment,
+          amount: place.type === "accommodation" ? checkedAmount : amount, //TODO CAMBIAR AMOUNT
           name: `Deuda ${person.name}`,
-          payment: client.payment,
+          payment: 0,
           creationDate: new Date().getTime(),
           modificationDate: new Date().getTime(),
         };
@@ -831,8 +886,8 @@ const ReserveInformation = ({ route, navigation }) => {
         });
       } else {
         const currentEconomy = { ...foundEconomy };
-        currentEconomy.amount += client.payment;
-        currentEconomy.payment += client.payment;
+        currentEconomy.amount +=
+          place.type === "accommodation" ? checkedAmount : amount; //TODO CAMBIAR AMOUNT
         currentEconomy.modificationDate = new Date().getTime();
         dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
         await editEconomy({
@@ -1368,7 +1423,7 @@ const ReserveInformation = ({ route, navigation }) => {
                           if (ids.length > 0) {
                             Alert.alert(
                               "ECONOMÍA",
-                              "¿Quiere eliminar la información de economía de los clientes?",
+                              "¿Quiere eliminar la información de economía del cliente?",
                               [
                                 {
                                   text: "No",
@@ -1690,11 +1745,11 @@ const ReserveInformation = ({ route, navigation }) => {
 
                                 const mainEvent = ({ checkIn }) => {
                                   const event = async () => {
+                                    const checkOut =
+                                      quantity < 0
+                                        ? new Date().getTime()
+                                        : null;
                                     if (place.type === "accommodation") {
-                                      const checkOut =
-                                        quantity < 0
-                                          ? new Date().getTime()
-                                          : null;
                                       for (let re of reserve.hosted) {
                                         dispatch(
                                           editRA({
@@ -1723,10 +1778,7 @@ const ReserveInformation = ({ route, navigation }) => {
                                         (i) => {
                                           const newI = { ...i };
 
-                                          newI.checkOut =
-                                            quantity < 0
-                                              ? new Date().getTime()
-                                              : null;
+                                          newI.checkOut = checkOut;
                                           newI.checkIn = checkIn
                                             ? new Date().getTime()
                                             : newI.checkIn;
@@ -1742,6 +1794,10 @@ const ReserveInformation = ({ route, navigation }) => {
                                         })
                                       );
                                     }
+
+                                    const ids = reserve.hosted.filter((h) => h.owner).map(h => h.owner);
+                                    if (checkOut) await manageEconomy({ ids });
+                                    else await deleteEconomy({ ids });
 
                                     await editReservation({
                                       identifier: helperStatus.active
@@ -2000,28 +2056,52 @@ const ReserveInformation = ({ route, navigation }) => {
               color: mode === "light" ? light.textDark : dark.textWhite,
             }}
             onValueChange={(hosted) => {
-              if (selectedSale === "sale") {
-                navigation.navigate("Sales", {
-                  ref: hosted.id,
-                  name: hosted.fullName,
-                  createClient: true,
-                });
-              }
+              const navigate = ({ createClient }) => {
+                if (selectedSale === "sale") {
+                  navigation.navigate("Sales", {
+                    ref: hosted.owner || hosted.id,
+                    name: hosted.fullName,
+                    createClient: createClient ? reserve : undefined,
+                  });
+                }
 
-              if (selectedSale === "menu") {
-                const OF = orders.find(
-                  (o) => o.ref === hosted.id && o.pay === false
+                if (selectedSale === "menu") {
+                  const OF = orders.find(
+                    (o) =>
+                      o.ref === (hosted.owner || hosted.id) && o.pay === false
+                  );
+                  navigationStack.navigate("CreateOrder", {
+                    editing: OF ? true : false,
+                    id: OF ? OF.id : undefined,
+                    ref: hosted.owner || hosted.id,
+                    table: hosted.fullName,
+                    selection: OF ? OF.selection : [],
+                    reservation: "Cliente",
+                    createClient: createClient ? reserve : undefined,
+                  });
+                }
+              };
+
+              if (!hosted.owner) {
+                Alert.alert(
+                  "NO REGISTRADO",
+                  "¿El huésped no esta registrado como cliente, desea registrarlo?",
+                  [
+                    {
+                      text: "Cancelar",
+                      style: "cancel",
+                    },
+                    {
+                      text: "No",
+                      onPress: () => navigate({ createClient: false }),
+                    },
+                    {
+                      text: "Si",
+                      onPress: () => navigate({ createClient: true }),
+                    },
+                  ]
                 );
-                navigationStack.navigate("CreateOrder", {
-                  editing: OF ? true : false,
-                  id: OF ? OF.id : undefined,
-                  ref: hosted.id,
-                  table: hosted.fullName,
-                  selection: OF ? OF.selection : [],
-                  reservation: "Cliente",
-                  createClient: true,
-                });
-              }
+              } else navigate({ createClient: false });
             }}
             onBlur={() => setSelectedSale("")}
           >
@@ -2283,7 +2363,7 @@ const ReserveInformation = ({ route, navigation }) => {
                   </TextStyle>
                 )}
               </View>
-              {(place.type === "standard" || !hosted.some((h) => h?.owner)) && (
+              {!hosted.some((h) => h?.owner) && (
                 <View style={[styles.row, { marginVertical: 10 }]}>
                   <TextStyle smallParagraph color={light.main2}>
                     Lo pago la empresa
@@ -2329,66 +2409,9 @@ const ReserveInformation = ({ route, navigation }) => {
                           payment: businessPayment ? "business" : h.payment,
                         };
 
+                        newData.push(nh);
                         dispatch(editRA({ id: h.id, data: nh }));
                       }
-
-                      const ids = hostedChangeRef.current
-                        .filter((h) => h.owner)
-                        .map((h) => h.owner);
-
-                      // --------- //TODO VER SI SE PUEDE REFACTORIZAR
-                      // Esto es por si existe mas de una persona en accommodation para no crear 2 o mas economy para una persona
-
-                      let clients = customer // VEMOS LOS CLIENTES PARA VER SI ESTA DENTRO DE UN CLIENTLIST
-                        .filter((p) =>
-                          p?.clientList?.some((c) => ids.includes(c.id))
-                        )
-                        .map((c) => ({ clientID: c.id, hosted: c.clientList })); // AGARRAMOS LO QUE NOS INTERESA
-
-                      let hash = {};
-                      clients = clients.filter(
-                        (
-                          c //FILTRAMOS PARA QUE NO HAYA OBJETOS DUPLICADOS
-                        ) => (hash[c.id] ? false : (hash[c.id] = true))
-                      );
-
-                      const hostedREF = newData.map((h) => {
-                        let client = {};
-                        for (let c of clients) {
-                          const exists = c?.hosted?.find(
-                            (c) => c.id === h.owner
-                          );
-                          if (exists) {
-                            client = { ...exists, clientID: c.clientID };
-                            break;
-                          }
-                        }
-                        if (client) return { ...h, clientID: client.clientID };
-                        else return h;
-                      });
-
-                      const manageEconomyHosted = [];
-
-                      for (let h of hostedREF) {
-                        if (h.payment === "business" || h.payment === 0)
-                          continue;
-                        const index = manageEconomyHosted.findIndex(
-                          (m) => m.clientID === h?.clientID
-                        );
-                        if (index !== -1) {
-                          manageEconomyHosted[index].payment += h.payment;
-                          const indexID = ids.findIndex((id) => id === h.id);
-                          ids.splice(indexID, 1);
-                        } else manageEconomyHosted.push(h);
-                      }
-
-                      // ---------
-
-                      if (ids.length > 0)
-                        await manageEconomy({
-                          ids,
-                          hosted: manageEconomyHosted,
-                        });
                     }
 
                     if (place.type === "standard") {
@@ -2412,6 +2435,13 @@ const ReserveInformation = ({ route, navigation }) => {
                       );
                     }
 
+                    if (paymentOptions.checkIn || paymentOptions.checkOut) {
+                      await manageEconomy({
+                        ids: hostedChangeRef.current //TODO VER SI ESTA BIEN PARA STANDARD
+                          .filter((h) => h.owner)
+                          .map((h) => h.owner),
+                      });
+                    }
                     cleanData();
 
                     await editReservation({

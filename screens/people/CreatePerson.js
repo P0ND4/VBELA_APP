@@ -222,7 +222,7 @@ const CreatePerson = ({ route, navigation }) => {
         {type === "customer" && (
           <View style={[styles.row, { marginBottom: 5 }]}>
             <TextStyle smallParagraph color={light.main2}>
-              CLIENTES ESPECIALES
+              MODO AGENCIA
             </TextStyle>
             <Switch
               trackColor={{ false: dark.main2, true: light.main2 }}
