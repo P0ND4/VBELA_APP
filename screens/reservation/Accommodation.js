@@ -92,19 +92,6 @@ const Accommodation = ({ navigation }) => {
 
   const [daySelected, setDaySelected] = useState(null);
 
-  const [activeFilter, setActiveFilter] = useState(false);
-  const initialState = {
-    active: true,
-    zone: "",
-    nomenclature: "",
-    type: "",
-    minDays: "",
-    maxDays: "",
-    day: new Date().getDate(),
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear(),
-  };
-  const [filters, setFilters] = useState(initialState);
   const [checkOutModalVisible, setCheckOutModalVisible] = useState({
     active: false,
   });
@@ -118,16 +105,10 @@ const Accommodation = ({ navigation }) => {
     setTip(total - totalToPay);
   }, [totalToPay, total]);
 
-  useEffect(() => {
-    if (!route) setFilters(initialState);
-  }, [route]);
-
   const dispatch = useDispatch();
 
   const navigateToReservation = (guest) => {
-    const place = nomenclatures.find(
-      (n) => n.id === guest.nomenclatureID
-    );
+    const place = nomenclatures.find((n) => n.id === guest.nomenclatureID);
     let reservation = [];
 
     if (guest?.type === "standard") {
@@ -148,7 +129,7 @@ const Accommodation = ({ navigation }) => {
       reservation,
       place,
     });
-  }
+  };
 
   const cleanHosted = (hosted) => {
     const debugItem = { ...hosted };
@@ -158,6 +139,7 @@ const Accommodation = ({ navigation }) => {
     delete debugItem.reservationID;
     delete debugItem.zone;
     delete debugItem.nomenclature;
+    delete debugItem.client;
     return debugItem;
   };
 
@@ -335,12 +317,16 @@ const Accommodation = ({ navigation }) => {
 
   const deleteEconomy = async ({ ids }) => {
     for (let ownerRef of ids) {
-      const person = customers.find(p => p.id === ownerRef || p?.clientList?.some(c => c.id === ownerRef));
+      const person = customers.find(
+        (p) =>
+          p.id === ownerRef || p?.clientList?.some((c) => c.id === ownerRef)
+      );
 
       const foundEconomy = economy.find((e) => e.ref === person.id);
       const reservation =
-        standardReservations.find((s) => s.hosted.some((h) => h.owner === ownerRef)) || 
-        accommodationReservations.find((a) => a.owner === ownerRef);
+        standardReservations.find((s) =>
+          s.hosted.some((h) => h.owner === ownerRef)
+        ) || accommodationReservations.find((a) => a.owner === ownerRef);
       const hosted = reservation?.hosted || [reservation];
       const client = hosted.find((h) => h.owner === ownerRef);
 
@@ -454,11 +440,15 @@ const Accommodation = ({ navigation }) => {
   const manageEconomy = async ({ ids, hosted }) => {
     if (hosted.length === 0) return;
     for (let ownerRef of ids) {
-      const person = customers.find(p => p.id === ownerRef || p?.clientList?.some(c => c.id === ownerRef));
+      const person = customers.find(
+        (p) =>
+          p.id === ownerRef || p?.clientList?.some((c) => c.id === ownerRef)
+      );
 
       const reservation =
-        standardReservations.find((s) => s.hosted.some((h) => h.owner === ownerRef)) || 
-        accommodationReservations.find((a) => a.owner === ownerRef);
+        standardReservations.find((s) =>
+          s.hosted.some((h) => h.owner === ownerRef)
+        ) || accommodationReservations.find((a) => a.owner === ownerRef);
       const client = hosted.find((h) => h.owner === ownerRef);
       if (!person) continue;
 
@@ -621,7 +611,10 @@ const Accommodation = ({ navigation }) => {
                         accommodationReservations.find(
                           (a) => a.id === item.reservationID
                         );
-                      await manageEconomy({ ids: [item.owner], hosted: reservation.hosted || [reservation] });
+                      await manageEconomy({
+                        ids: [item.owner],
+                        hosted: reservation.hosted || [reservation],
+                      });
                     }
                   }
 
@@ -863,15 +856,31 @@ const Accommodation = ({ navigation }) => {
                     </TextStyle>
                   </TouchableOpacity>
                 </View>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  Cliente registrado:{" "}
-                  <TextStyle color={light.main2}>
-                    {item.owner ? "SI" : "NO"}
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Cliente registrado:{" "}
                   </TextStyle>
-                </TextStyle>
-
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (!item.client) return;
+                      navigation.navigate("PeopleInformation", {
+                        type: "person",
+                        userType: "customer",
+                        ref: item.client.id,
+                      });
+                    }}
+                  >
+                    <TextStyle color={light.main2}>
+                      {!item.client
+                        ? "No"
+                        : item.client.special
+                        ? "Agencia"
+                        : "Individual"}
+                    </TextStyle>
+                  </TouchableOpacity>
+                </View>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <TextStyle
                     color={mode === "light" ? light.textDark : dark.textWhite}
@@ -888,23 +897,26 @@ const Accommodation = ({ navigation }) => {
                 </View>
 
                 {item.type === "accommodation" && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <TextStyle
                       color={mode === "light" ? light.textDark : dark.textWhite}
                     >
                       Pagado:{" "}
+                    </TextStyle>
+                    <TouchableOpacity
+                      onPress={() => paymentEvent({ hosted: item })}
+                    >
+                      <TextStyle color={light.main2}>
+                        {!helperStatus.active ||
+                        helperStatus.accessToReservations
+                          ? !item.payment
+                            ? "EN ESPERA"
+                            : item.payment === "business"
+                            ? "POR EMPRESA"
+                            : thousandsSystem(item.payment)
+                          : "PRIVADO"}
                       </TextStyle>
-                      <TouchableOpacity onPress={() => paymentEvent({ hosted: item })}>
-                        <TextStyle color={light.main2}>
-                          {!helperStatus.active || helperStatus.accessToReservations
-                            ? !item.payment
-                              ? "EN ESPERA"
-                              : item.payment === "business"
-                              ? "POR EMPRESA"
-                              : thousandsSystem(item.payment)
-                            : "PRIVADO"}
-                        </TextStyle>
-                      </TouchableOpacity>
+                    </TouchableOpacity>
                   </View>
                 )}
                 {openMoreInformation && (
@@ -1234,6 +1246,26 @@ const Accommodation = ({ navigation }) => {
     const [search, setSearch] = useState("");
     const [hosted, setHosted] = useState([]);
 
+    const [activeFilter, setActiveFilter] = useState(false);
+    const initialState = {
+      active: false,
+      zone: "",
+      nomenclature: "",
+      type: "",
+      minDays: "",
+      maxDays: "",
+      day: "all",
+      month: "all",
+      year: "all",
+    };
+    const [filters, setFilters] = useState({
+      ...filters,
+      active: type === "hosted",
+      day: type === "hosted" ? new Date().getDate() : "all",
+      month: type === "hosted" ? new Date().getMonth() + 1 : "all",
+      year: type === "hosted" ? new Date().getFullYear() : "all",
+    });
+
     const [days, setDays] = useState([]);
     const [years, setYears] = useState([]);
     const [nomenclaturesToChoose, setNomenclaturesToChoose] = useState([]);
@@ -1252,12 +1284,13 @@ const Accommodation = ({ navigation }) => {
     }, [filters.zone]);
 
     useEffect(() => {
-      const date = new Date();
-      let years = [date.getFullYear()];
-
-      for (let i = 5; i >= 0; i--) {
-        years.push(years[years.length - 1] - 1);
-      }
+      const years = Array.from(
+        { length: 10 },
+        (_, i) => {
+          const fiveYearsAgo = new Date().setFullYear(new Date().getFullYear() - 5);
+          return new Date(fiveYearsAgo).getFullYear() + i
+        }
+      );
 
       setYears(years);
     }, []);
@@ -1301,18 +1334,34 @@ const Accommodation = ({ navigation }) => {
               ? !r.checkOut && r.checkIn
               : true
           )
-          .map((person) => ({
-            ...person,
-            type: item.type,
-            groupID: ref,
-            nomenclatureID: item.id,
-            reservationID: item.ref,
-            days: item.days,
-            zone,
-            nomenclature,
-            creationDate: item.creationDate,
-            start: item.start,
-          }));
+          .map((person) => {
+            let client = null;
+            if (person.owner) {
+              // Vemos si tiene afiliacion con cliente
+              const individual = customers.find((p) => p.id === person.owner); // Buscamos si es un cliente individual
+              if (!individual) {
+                // Comprovamos si lo es
+                const agency = customers.find((p) =>
+                  p?.clientList?.some((c) => c.id === person.owner)
+                ); // Buscamos si es un cliente de agencia
+                if (agency) client = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
+              } else client = individual; // Si lo es pasamos el dato al cliente
+            }
+
+            return {
+              ...person,
+              type: item.type,
+              groupID: ref,
+              nomenclatureID: item.id,
+              reservationID: item.ref,
+              days: item.days,
+              zone,
+              nomenclature,
+              creationDate: item.creationDate,
+              start: item.start,
+              client: person.owner ? client : null,
+            };
+          });
       });
 
       const accommodation = accommodationReservations
@@ -1328,6 +1377,18 @@ const Accommodation = ({ navigation }) => {
             (n) => n.id === item.ref
           );
           const { name: zone } = zones.find((g) => g.ref === ref);
+          let client = null;
+          if (item.owner) {
+            // Vemos si tiene afiliacion con cliente
+            const individual = customers.find((p) => p.id === item.owner); // Buscamos si es un cliente individual
+            if (!individual) {
+              // Comprovamos si lo es
+              const agency = customers.find((p) =>
+                p?.clientList?.some((c) => c.id === item.owner)
+              ); // Buscamos si es un cliente de agencia
+              if (agency) client = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
+            } else client = individual; // Si lo es pasamos el dato al cliente
+          }
 
           return {
             ...item,
@@ -1336,6 +1397,7 @@ const Accommodation = ({ navigation }) => {
             reservationID: item.id,
             zone,
             nomenclature,
+            client: item.owner ? client : null,
           };
         });
 
@@ -1490,7 +1552,37 @@ const Accommodation = ({ navigation }) => {
             </View>
             <TouchableOpacity
               onPress={() => {
-                if (guest.type === 'standard') return navigateToReservation(guest)
+                if (!guest.client) return;
+                navigation.navigate("PeopleInformation", {
+                  type: "person",
+                  userType: "customer",
+                  ref: guest.client.id,
+                });
+              }}
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                  width: 70,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {!guest.client
+                  ? "No"
+                  : guest.client.special
+                  ? "Agencia"
+                  : "Individual"}
+              </TextStyle>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                if (guest.type === "standard")
+                  return navigateToReservation(guest);
                 paymentEvent({ hosted: guest });
               }}
               style={[
@@ -1654,6 +1746,23 @@ const Accommodation = ({ navigation }) => {
                     {
                       borderColor:
                         mode === "light" ? light.textDark : dark.textWhite,
+                      width: 70,
+                    },
+                  ]}
+                >
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                    smallParagraph
+                  >
+                    CLIENTE
+                  </TextStyle>
+                </View>
+                <View
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
                       width: 100,
                     },
                   ]}
@@ -1673,10 +1782,7 @@ const Accommodation = ({ navigation }) => {
           animationType="fade"
           transparent={true}
           visible={activeFilter}
-          onRequestClose={() => {
-            setActiveFilter(!activeFilter);
-            setFilters(initialState);
-          }}
+          onRequestClose={() => setActiveFilter(!activeFilter)}
         >
           <TouchableWithoutFeedback
             onPress={() => setActiveFilter(!activeFilter)}
@@ -1706,10 +1812,7 @@ const Accommodation = ({ navigation }) => {
                     FILTRA
                   </TextStyle>
                   <TouchableOpacity
-                    onPress={() => {
-                      setActiveFilter(false);
-                      setFilters(initialState);
-                    }}
+                    onPress={() => setActiveFilter(!activeFilter)}
                   >
                     <Ionicons
                       name="close"
@@ -2188,7 +2291,7 @@ const Accommodation = ({ navigation }) => {
                       mode === "light" ? light.main5 : dark.main2
                     }
                     onPress={() => {
-                      setActiveFilter(false);
+                      setActiveFilter(!activeFilter);
                       setFilters(initialState);
                     }}
                   >
@@ -2232,6 +2335,24 @@ const Accommodation = ({ navigation }) => {
     const [search, setSearch] = useState("");
     const [location, setLocation] = useState([]);
 
+    const [activeFilter, setActiveFilter] = useState(false);
+    const initialState = {
+      active: false,
+      minDays: "",
+      maxDays: "",
+      type: "",
+      day: "all",
+      month: "all",
+      year: "all",
+    };
+    const [filters, setFilters] = useState({
+      ...filters,
+      active: true,
+      day: new Date().getDate(),
+      month: new Date().getMonth() + 1,
+      year: new Date().getFullYear(),
+    });
+
     const [days, setDays] = useState([]);
     const [years, setYears] = useState([]);
 
@@ -2240,12 +2361,13 @@ const Accommodation = ({ navigation }) => {
     const yearRef = useRef();
 
     useEffect(() => {
-      const date = new Date();
-      let years = [date.getFullYear()];
-
-      for (let i = 5; i >= 0; i--) {
-        years.push(years[years.length - 1] - 1);
-      }
+      const years = Array.from(
+        { length: 10 },
+        (_, i) => {
+          const fiveYearsAgo = new Date().setFullYear(new Date().getFullYear() - 5);
+          return new Date(fiveYearsAgo).getFullYear() + i
+        }
+      );
 
       setYears(years);
     }, []);
@@ -2281,18 +2403,34 @@ const Accommodation = ({ navigation }) => {
         );
         const { name: zone } = zones.find((g) => g.ref === ref);
 
-        return item.hosted.map((person) => ({
-          ...person,
-          type: item.type,
-          groupID: ref,
-          nomenclatureID: item.id,
-          reservationID: item.ref,
-          days: item.days,
-          zone,
-          nomenclature,
-          creationDate: item.creationDate,
-          start: item.start,
-        }));
+        return item.hosted.map((person) => {
+          let client = null;
+          if (person.owner) {
+            // Vemos si tiene afiliacion con cliente
+            const individual = customers.find((p) => p.id === person.owner); // Buscamos si es un cliente individual
+            if (!individual) {
+              // Comprovamos si lo es
+              const agency = customers.find((p) =>
+                p?.clientList?.some((c) => c.id === person.owner)
+              ); // Buscamos si es un cliente de agencia
+              if (agency) client = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
+            } else client = individual; // Si lo es pasamos el dato al cliente
+          }
+
+          return {
+            ...person,
+            type: item.type,
+            groupID: ref,
+            nomenclatureID: item.id,
+            reservationID: item.ref,
+            days: item.days,
+            zone,
+            nomenclature,
+            creationDate: item.creationDate,
+            start: item.start,
+            client: person.owner ? client : null,
+          };
+        });
       });
 
       const accommodation = accommodationReservations.flatMap((item) => {
@@ -2300,6 +2438,18 @@ const Accommodation = ({ navigation }) => {
           (n) => n.id === item.ref
         );
         const { name: zone } = zones.find((g) => g.ref === ref);
+        let client = null;
+        if (item.owner) {
+          // Vemos si tiene afiliacion con cliente
+          const individual = customers.find((p) => p.id === item.owner); // Buscamos si es un cliente individual
+          if (!individual) {
+            // Comprovamos si lo es
+            const agency = customers.find((p) =>
+              p?.clientList?.some((c) => c.id === item.owner)
+            ); // Buscamos si es un cliente de agencia
+            if (agency) client = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
+          } else client = individual; // Si lo es pasamos el dato al cliente
+        }
 
         return {
           ...item,
@@ -2308,6 +2458,7 @@ const Accommodation = ({ navigation }) => {
           reservationID: item.id,
           zone,
           nomenclature,
+          client: item.owner ? client : null,
         };
       });
 
@@ -2450,7 +2601,37 @@ const Accommodation = ({ navigation }) => {
             </View>
             <TouchableOpacity
               onPress={() => {
-                if (guest.type === 'standard') return navigateToReservation(guest)
+                if (!guest.client) return;
+                navigation.navigate("PeopleInformation", {
+                  type: "person",
+                  userType: "customer",
+                  ref: guest.client.id,
+                });
+              }}
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                  width: 70,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {!guest.client
+                  ? "No"
+                  : guest.client.special
+                  ? "Agencia"
+                  : "Individual"}
+              </TextStyle>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                if (guest.type === "standard")
+                  return navigateToReservation(guest);
                 paymentEvent({ hosted: guest });
               }}
               style={[
@@ -2620,6 +2801,27 @@ const Accommodation = ({ navigation }) => {
                               mode === "light"
                                 ? light.textDark
                                 : dark.textWhite,
+                            width: 70,
+                          },
+                        ]}
+                      >
+                        <TextStyle
+                          color={
+                            mode === "light" ? light.textDark : dark.textWhite
+                          }
+                          smallParagraph
+                        >
+                          CLIENTE
+                        </TextStyle>
+                      </View>
+                      <View
+                        style={[
+                          styles.table,
+                          {
+                            borderColor:
+                              mode === "light"
+                                ? light.textDark
+                                : dark.textWhite,
                             width: 100,
                           },
                         ]}
@@ -2642,10 +2844,7 @@ const Accommodation = ({ navigation }) => {
           animationType="fade"
           transparent={true}
           visible={activeFilter}
-          onRequestClose={() => {
-            setActiveFilter(!activeFilter);
-            setFilters(initialState);
-          }}
+          onRequestClose={() => setActiveFilter(!activeFilter)}
         >
           <TouchableWithoutFeedback
             onPress={() => setActiveFilter(!activeFilter)}
@@ -2675,10 +2874,7 @@ const Accommodation = ({ navigation }) => {
                     FILTRA
                   </TextStyle>
                   <TouchableOpacity
-                    onPress={() => {
-                      setActiveFilter(false);
-                      setFilters(initialState);
-                    }}
+                    onPress={() => setActiveFilter(!activeFilter)}
                   >
                     <Ionicons
                       name="close"
@@ -2982,7 +3178,7 @@ const Accommodation = ({ navigation }) => {
                       mode === "light" ? light.main5 : dark.main2
                     }
                     onPress={() => {
-                      setActiveFilter(false);
+                      setActiveFilter(!activeFilter);
                       setFilters(initialState);
                     }}
                   >
@@ -3165,7 +3361,7 @@ const Accommodation = ({ navigation }) => {
                     smallParagraph
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   >
-                    Alojados:{" "}
+                    Alojados actuales:{" "}
                     <TextStyle smallParagraph color={light.main2}>
                       {hosted || 0}
                     </TextStyle>
@@ -3531,7 +3727,9 @@ const Accommodation = ({ navigation }) => {
                       checkIn: paymentOptions.checkIn
                         ? new Date().getTime()
                         : debugItem.checkIn,
-                      payment: businessPayment ? "business" : parseInt(totalToPay),
+                      payment: businessPayment
+                        ? "business"
+                        : parseInt(totalToPay),
                     };
                     if (checkOutModalVisible.type === "accommodation")
                       dispatch(editRA({ id: debugItem.id, data: newData }));
@@ -3567,7 +3765,10 @@ const Accommodation = ({ navigation }) => {
                         accommodationReservations.find(
                           (a) => a.id === checkOutModalVisible.reservationID
                         );
-                      await manageEconomy({ ids: [debugItem.owner], hosted: reservation.hosted || [reservation] });
+                      await manageEconomy({
+                        ids: [debugItem.owner],
+                        hosted: reservation.hosted || [reservation],
+                      });
                     }
                     cleanData();
 
@@ -3588,10 +3789,7 @@ const Accommodation = ({ navigation }) => {
                     });
                   };
 
-                  if (
-                    totalToPay !== total &&
-                    !businessPayment
-                  ) {
+                  if (totalToPay !== total && !businessPayment) {
                     Alert.alert(
                       "ADVERTENCIA",
                       `Los hospédados ${

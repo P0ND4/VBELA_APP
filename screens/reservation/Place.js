@@ -846,8 +846,11 @@ const PlaceScreen = ({ route, navigation }) => {
           onValueChange={(value) => setYear(value)}
         >
           {Array.from(
-            { length: 5 },
-            (_, i) => new Date().getFullYear() + i
+            { length: 10 },
+            (_, i) => {
+              const fiveYearsAgo = new Date().setFullYear(new Date().getFullYear() - 5);
+              return new Date(fiveYearsAgo).getFullYear() + i
+            }
           ).map((item, i) => (
             <Picker.Item
               key={item}

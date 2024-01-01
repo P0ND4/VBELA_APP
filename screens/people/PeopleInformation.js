@@ -195,7 +195,14 @@ const PeopleInformation = ({ route, navigation }) => {
         findCustomer(filter);
       }
     }
-  }, [economy, type, standardReservations, accommodationReservations]);
+  }, [
+    economy,
+    type,
+    standardReservations,
+    accommodationReservations,
+    orders,
+    sales,
+  ]);
 
   const customerDataRemove = async (economy) => {
     const clientREF = customers.find((p) => p.id === economy.ref);
@@ -261,7 +268,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                Fecha
+                FECHA
               </TextStyle>
             </View>
             <View
@@ -277,7 +284,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                Cantidad
+                CANTIDAD
               </TextStyle>
             </View>
             <View
@@ -293,7 +300,7 @@ const PeopleInformation = ({ route, navigation }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                Detalle
+                DETALLE
               </TextStyle>
             </View>
             <View
@@ -309,112 +316,187 @@ const PeopleInformation = ({ route, navigation }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                Valor
+                VALOR
+              </TextStyle>
+            </View>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                DEUDA
               </TextStyle>
             </View>
           </View>
-          {item.details.map((item, index) => (
-            <View key={item.date + index} style={{ flexDirection: "row" }}>
-              <View
-                style={[
-                  styles.table,
-                  {
-                    borderColor:
-                      mode === "light" ? light.textDark : dark.textWhite,
-                  },
-                ]}
-              >
-                <TextStyle
-                  verySmall
-                  color={mode === "light" ? light.textDark : dark.textWhite}
+          {item.details.map((item, index) => {
+            let debt = 0;
+
+            if (
+              item.type === "accommodation-reservations" ||
+              item.type === "standard-reservations"
+            ) {
+              const reservation =
+                item.type === "accommodation-reservations"
+                  ? item.hosted
+                  : item.reservation;
+              const amount = reservation?.discount
+                ? reservation?.amount - reservation?.discount
+                : reservation?.amount;
+
+              debt = amount * reservation.days - reservation.payment;
+            }
+
+            if (
+              (item.type === "sales" || item.type === "orders") &&
+              !item.data.pay
+            ) {
+              debt = item.data.selection.reduce(
+                (a, s) => a + (s.count - s.paid) * s.value,
+                0
+              );
+            }
+
+            const navigateToDetail = () => {
+              const accommodation = item.type === "accommodation-reservations";
+              const standard = item.type === "standard-reservations";
+              const orders = item.type === "orders";
+              const sales = item.type === "sales";
+              if (orders || sales) {
+                navigation.navigate("History", {
+                  item: [item.data],
+                  type: sales ? "sales" : "menu",
+                });
+              }
+              if (accommodation || standard) {
+                const place = nomenclatures.find((n) => {
+                  const id = accommodation
+                    ? item.hosted.ref
+                    : item.reservation.id;
+                  return n.id === id;
+                });
+                let reservation = [];
+                if (standard) reservation.push(item.reservation);
+                if (accommodation) reservation.push(item.hosted);
+                navigation.navigate("ReserveInformation", {
+                  reservation,
+                  place,
+                });
+              }
+            };
+
+            return (
+              <View key={item.date + index} style={{ flexDirection: "row" }}>
+                <View
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                    },
+                  ]}
                 >
-                  {changeDate(new Date(item.date))}
-                </TextStyle>
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    {changeDate(new Date(item.date))}
+                  </TextStyle>
+                </View>
+                <View
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                    },
+                  ]}
+                >
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    {item.quantity}
+                  </TextStyle>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                    },
+                  ]}
+                  onPress={() => navigateToDetail()}
+                >
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    {item.type === "sales"
+                      ? "P&S"
+                      : item.type === "orders"
+                      ? "Mesa"
+                      : item.type === "accommodation-reservations"
+                      ? "Acomodación"
+                      : "Estandar"}
+                  </TextStyle>
+                </TouchableOpacity>
+                <View
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                    },
+                  ]}
+                >
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    {thousandsSystem(item.total)}
+                  </TextStyle>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (!debt) return;
+                    if (item.type === "orders") {
+                      navigation.navigate("CreateOrder", {
+                        editing: true,
+                        id: item.data?.id,
+                        ref: item.data?.ref,
+                        table: item.data?.table,
+                        selection: item.data?.selection,
+                        reservation: "Cliente",
+                      });
+                    } else navigateToDetail();
+                  }}
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                    },
+                  ]}
+                >
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    {!debt ? "SIN DEUDA" : thousandsSystem(debt)}
+                  </TextStyle>
+                </TouchableOpacity>
               </View>
-              <View
-                style={[
-                  styles.table,
-                  {
-                    borderColor:
-                      mode === "light" ? light.textDark : dark.textWhite,
-                  },
-                ]}
-              >
-                <TextStyle
-                  verySmall
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  {item.quantity}
-                </TextStyle>
-              </View>
-              <TouchableOpacity
-                style={[
-                  styles.table,
-                  {
-                    borderColor:
-                      mode === "light" ? light.textDark : dark.textWhite,
-                  },
-                ]}
-                onPress={() => {
-                  const accommodation =
-                    item.type === "accommodation-reservations";
-                  const standard = item.type === "standard-reservations";
-                  const orders = item.type === "orders";
-                  const sales = item.type === "sales";
-                  if (orders || sales) {
-                    navigation.navigate("History", {
-                      item: [item.data],
-                      type: sales ? "sales" : "menu",
-                    });
-                  }
-                  if (accommodation || standard) {
-                    const place = nomenclatures.find((n) => {
-                      const id = accommodation
-                        ? item.hosted.ref
-                        : item.reservation.id;
-                      return n.id === id;
-                    });
-                    let reservation = [];
-                    if (standard) reservation.push(item.reservation);
-                    if (accommodation) reservation.push(item.hosted);
-                    navigation.navigate("ReserveInformation", {
-                      reservation,
-                      place,
-                    });
-                  }
-                }}
-              >
-                <TextStyle
-                  verySmall
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  {item.type === "sales"
-                    ? "P&S"
-                    : item.type === "orders"
-                    ? "Mesa"
-                    : item.type === "accommodation-reservations"
-                    ? "Acomodación"
-                    : "Estandar"}
-                </TextStyle>
-              </TouchableOpacity>
-              <View
-                style={[
-                  styles.table,
-                  {
-                    borderColor:
-                      mode === "light" ? light.textDark : dark.textWhite,
-                  },
-                ]}
-              >
-                <TextStyle
-                  verySmall
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  {thousandsSystem(item.total)}
-                </TextStyle>
-              </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       );
     };
@@ -585,7 +667,16 @@ const PeopleInformation = ({ route, navigation }) => {
             </View>
           )}
           <View>
-            {openDatails && <Details />}
+            {openDatails && (
+              <ScrollView
+                style={{ maxHeight: 300 }}
+                showsVerticalScrollIndicator={false}
+              >
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <Details />
+                </ScrollView>
+              </ScrollView>
+            )}
             {item?.details?.length > 0 && (
               <ButtonStyle
                 style={{ marginVertical: 10 }}

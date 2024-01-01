@@ -178,7 +178,6 @@ const CreateOrder = ({ route, navigation }) => {
 
   const manageEconomy = async ({
     editing,
-    lastTotal,
     total,
     kitchen,
     callBack,
@@ -272,7 +271,6 @@ const CreateOrder = ({ route, navigation }) => {
       });
     } else {
       const currentEconomy = { ...foundEconomy };
-      if ((editing || kitchen) && lastTotal) currentEconomy.amount -= lastTotal;
       currentEconomy.amount += total;
       currentEconomy.modificationDate = new Date().getTime();
       dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
@@ -375,10 +373,10 @@ const CreateOrder = ({ route, navigation }) => {
     if (person || createClient)
       await manageEconomy({
         editing: dat.pay,
-        total,
+        total: totalPaid,
         kitchen: dat.isSendtoKitchen,
         callBack: close,
-        person,
+        person
       });
     else close();
   };
@@ -458,7 +456,7 @@ const CreateOrder = ({ route, navigation }) => {
     if (person || createClient)
       await manageEconomy({
         editing: dat.pay,
-        total,
+        total: totalPaid,
         kitchen: dat.isSendtoKitchen,
         callBack: close,
         person,

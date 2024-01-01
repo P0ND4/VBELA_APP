@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "VBELA",
     slug: "vbela",
-    version: "3.5.1",
+    version: "3.5.2",
     orientation: "portrait",
     icon: "./assets/logo.png",
     userInterfaceStyle: "light",
@@ -50,7 +50,7 @@ export default {
     android: {
       googleServicesFile: process.env.EXPO_PUBLIC_GOOGLE_SERVICES,
       package: "com.app.vbela",
-      versionCode: 51,
+      versionCode: 52,
     },
     extra: { eas: { projectId: "0dd838a6-95db-4883-9a7f-7e6112496cd0" } },
     owner: "lmacml",

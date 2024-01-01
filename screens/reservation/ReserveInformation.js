@@ -653,7 +653,9 @@ const ReserveInformation = ({ route, navigation }) => {
   const deleteEconomy = async ({ ids }) => {
     const manageEconomyHosted = [];
     for (let owner of ids) {
-      const found = customers.find((p) => p?.clientList?.some((c) => c.id === owner) || p?.id === owner);
+      const found = customers.find(
+        (p) => p?.clientList?.some((c) => c.id === owner) || p?.id === owner
+      );
       if (!found) continue;
       if (!manageEconomyHosted.some((h) => h?.clientID === found?.id)) {
         manageEconomyHosted.push({ clientID: found?.id, owner });
@@ -904,6 +906,7 @@ const ReserveInformation = ({ route, navigation }) => {
   };
 
   const Table = ({ item }) => {
+    const [client, setClient] = useState(null); //TODO QUE NO SE CAMBIE A CADA RATO
     const [informationModalVisible, setInformationModalVisible] =
       useState(false);
     const [editing, setEditing] = useState(false);
@@ -912,6 +915,20 @@ const ReserveInformation = ({ route, navigation }) => {
       active: true,
       key: Math.random(),
     });
+
+    useEffect(() => {
+      if (item.owner) {
+        // Vemos si tiene afiliacion con cliente
+        const individual = customers.find((p) => p.id === item.owner); // Buscamos si es un cliente individual
+        if (!individual) {
+          // Comprovamos si lo es
+          const agency = customers.find((p) =>
+            p?.clientList?.some((c) => c.id === item.owner)
+          ); // Buscamos si es un cliente de agencia
+          if (agency) setClient(agency); // Si lo es que lo guarde en clientes si no el parametro cliente queda null
+        } else setClient(individual); // Si lo es pasamos el dato al cliente
+      }
+    },[item]);
 
     const updateHosted = async ({ data, cleanData }) => {
       data.id = item.id;
@@ -1001,12 +1018,20 @@ const ReserveInformation = ({ route, navigation }) => {
               {item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"}
             </TextStyle>
           </TouchableOpacity>
-          <View
+          <TouchableOpacity
+            onPress={() => {
+              if (!client) return;
+              navigation.navigate("PeopleInformation", {
+                type: "person",
+                userType: "customer",
+                ref: client.id,
+              });
+            }}
             style={[
               styles.table,
               {
                 borderColor: mode === "light" ? light.textDark : dark.textWhite,
-                width: 90,
+                width: 70,
               },
             ]}
           >
@@ -1014,9 +1039,9 @@ const ReserveInformation = ({ route, navigation }) => {
               smallParagraph
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
-              {item.owner ? "SI" : "NO"}
+              {!client ? 'No' : client.special ? 'Agencia' : 'Individual'}
             </TextStyle>
-          </View>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => checkOutEvent({ item })}
             style={[
@@ -1163,14 +1188,31 @@ const ReserveInformation = ({ route, navigation }) => {
                     </TextStyle>
                   </TouchableOpacity>
                 </View>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  Cliente registrado:{" "}
-                  <TextStyle color={light.main2}>
-                    {item.owner ? "SI" : "NO"}
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Cliente registrado:{" "}
                   </TextStyle>
-                </TextStyle>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (!client) return;
+                      navigation.navigate("PeopleInformation", {
+                        type: "person",
+                        userType: "customer",
+                        ref: client.id,
+                      });
+                    }}
+                  >
+                    <TextStyle color={light.main2}>
+                      {!client
+                        ? "No"
+                        : client.special
+                        ? "Agencia"
+                        : "Individual"}
+                    </TextStyle>
+                  </TouchableOpacity>
+                </View>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <TextStyle
                     color={mode === "light" ? light.textDark : dark.textWhite}
@@ -1708,12 +1750,12 @@ const ReserveInformation = ({ route, navigation }) => {
                         {
                           borderColor:
                             mode === "light" ? light.textDark : dark.textWhite,
-                          width: 90,
+                          width: 70,
                         },
                       ]}
                     >
                       <TextStyle color={light.main2} smallParagraph>
-                        REGISTRADO
+                        CLIENTE
                       </TextStyle>
                     </View>
                     <TouchableOpacity
@@ -1795,7 +1837,9 @@ const ReserveInformation = ({ route, navigation }) => {
                                       );
                                     }
 
-                                    const ids = reserve.hosted.filter((h) => h.owner).map(h => h.owner);
+                                    const ids = reserve.hosted
+                                      .filter((h) => h.owner)
+                                      .map((h) => h.owner);
                                     if (checkOut) await manageEconomy({ ids });
                                     else await deleteEconomy({ ids });
 
@@ -1879,6 +1923,7 @@ const ReserveInformation = ({ route, navigation }) => {
                         CHECK OUT
                       </TextStyle>
                     </TouchableOpacity>
+
                     {place.type === "accommodation" && (
                       <TouchableOpacity
                         onPress={() =>

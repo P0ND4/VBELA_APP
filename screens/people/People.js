@@ -273,7 +273,16 @@ const People = ({ navigation, userType }) => {
 
   useEffect(() => {
     findProviders();
-  }, [customers, suppliers, section, economy]);
+  }, [
+    customers,
+    suppliers,
+    section,
+    economy,
+    accommodationReservations,
+    standardReservations,
+    orders,
+    sales,
+  ]);
 
   useEffect(() => setReservationRoute(""), [accountsPayable]);
 
@@ -797,6 +806,7 @@ const People = ({ navigation, userType }) => {
     delete debugItem.reservationID;
     delete debugItem.zone;
     delete debugItem.nomenclature;
+    delete debugItem.client;
     return debugItem;
   };
 
@@ -974,7 +984,10 @@ const People = ({ navigation, userType }) => {
 
   const deleteEconomy = async ({ ids }) => {
     for (let ownerRef of ids) {
-      const person = customers.find(p => p.id === ownerRef || p?.clientList?.some(c => c.id === ownerRef));
+      const person = customers.find(
+        (p) =>
+          p.id === ownerRef || p?.clientList?.some((c) => c.id === ownerRef)
+      );
 
       const foundEconomy = economy.find((e) => e.ref === person.id);
       const reservation =
@@ -1023,7 +1036,10 @@ const People = ({ navigation, userType }) => {
   const manageEconomy = async ({ ids, hosted }) => {
     if (hosted.length === 0) return;
     for (let ownerRef of ids) {
-      const person = customers.find(p => p.id === ownerRef || p?.clientList?.some(c => c.id === ownerRef));
+      const person = customers.find(
+        (p) =>
+          p.id === ownerRef || p?.clientList?.some((c) => c.id === ownerRef)
+      );
 
       const reservation =
         standardReservations.find((s) =>
@@ -1215,112 +1231,187 @@ const People = ({ navigation, userType }) => {
                 smallParagraph
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
-                VALOR
+                PAGADO
+              </TextStyle>
+            </View>
+            <View
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                DEUDA
               </TextStyle>
             </View>
           </View>
-          {item.details.map((item, index) => (
-            <View key={item.date + index} style={{ flexDirection: "row" }}>
-              <View
-                style={[
-                  styles.table,
-                  {
-                    borderColor:
-                      mode === "light" ? light.textDark : dark.textWhite,
-                  },
-                ]}
-              >
-                <TextStyle
-                  verySmall
-                  color={mode === "light" ? light.textDark : dark.textWhite}
+          {item.details.map((item, index) => {
+            let debt = 0;
+
+            if (
+              item.type === "accommodation-reservations" ||
+              item.type === "standard-reservations"
+            ) {
+              const reservation =
+                item.type === "accommodation-reservations"
+                  ? item.hosted
+                  : item.reservation;
+              const amount = reservation?.discount
+                ? reservation?.amount - reservation?.discount
+                : reservation?.amount;
+
+              debt = amount * reservation.days - reservation.payment;
+            }
+
+            if (
+              (item.type === "sales" || item.type === "orders") &&
+              !item.data.pay
+            ) {
+              debt = item.data.selection.reduce(
+                (a, s) => a + (s.count - s.paid) * s.value,
+                0
+              );
+            }
+
+            const navigateToDetail = () => {
+              const accommodation = item.type === "accommodation-reservations";
+              const standard = item.type === "standard-reservations";
+              const orders = item.type === "orders";
+              const sales = item.type === "sales";
+              if (orders || sales) {
+                navigation.navigate("History", {
+                  item: [item.data],
+                  type: sales ? "sales" : "menu",
+                });
+              }
+              if (accommodation || standard) {
+                const place = nomenclatures.find((n) => {
+                  const id = accommodation
+                    ? item.hosted.ref
+                    : item.reservation.id;
+                  return n.id === id;
+                });
+                let reservation = [];
+                if (standard) reservation.push(item.reservation);
+                if (accommodation) reservation.push(item.hosted);
+                navigation.navigate("ReserveInformation", {
+                  reservation,
+                  place,
+                });
+              }
+            };
+
+            return (
+              <View key={item.date + index} style={{ flexDirection: "row" }}>
+                <View
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                    },
+                  ]}
                 >
-                  {changeDate(new Date(item.date))}
-                </TextStyle>
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    {changeDate(new Date(item.date))}
+                  </TextStyle>
+                </View>
+                <View
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                    },
+                  ]}
+                >
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    {item.quantity}
+                  </TextStyle>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                    },
+                  ]}
+                  onPress={() => navigateToDetail()}
+                >
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    {item.type === "sales"
+                      ? "P&S"
+                      : item.type === "orders"
+                      ? "Mesa"
+                      : item.type === "accommodation-reservations"
+                      ? "Acomodación"
+                      : "Estandar"}
+                  </TextStyle>
+                </TouchableOpacity>
+                <View
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                    },
+                  ]}
+                >
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    {thousandsSystem(item.total)}
+                  </TextStyle>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (!debt) return;
+                    if (item.type === "orders") {
+                      navigation.navigate("CreateOrder", {
+                        editing: true,
+                        id: item.data?.id,
+                        ref: item.data?.ref,
+                        table: item.data?.table,
+                        selection: item.data?.selection,
+                        reservation: "Cliente",
+                      });
+                    } else navigateToDetail();
+                  }}
+                  style={[
+                    styles.table,
+                    {
+                      borderColor:
+                        mode === "light" ? light.textDark : dark.textWhite,
+                    },
+                  ]}
+                >
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    {!debt ? "SIN DEUDA" : thousandsSystem(debt)}
+                  </TextStyle>
+                </TouchableOpacity>
               </View>
-              <View
-                style={[
-                  styles.table,
-                  {
-                    borderColor:
-                      mode === "light" ? light.textDark : dark.textWhite,
-                  },
-                ]}
-              >
-                <TextStyle
-                  verySmall
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  {item.quantity}
-                </TextStyle>
-              </View>
-              <TouchableOpacity
-                style={[
-                  styles.table,
-                  {
-                    borderColor:
-                      mode === "light" ? light.textDark : dark.textWhite,
-                  },
-                ]}
-                onPress={() => {
-                  const accommodation =
-                    item.type === "accommodation-reservations";
-                  const standard = item.type === "standard-reservations";
-                  const orders = item.type === "orders";
-                  const sales = item.type === "sales";
-                  if (orders || sales) {
-                    navigation.navigate("History", {
-                      item: [item.data],
-                      type: sales ? "sales" : "menu",
-                    });
-                  }
-                  if (accommodation || standard) {
-                    const place = nomenclatures.find((n) => {
-                      const id = accommodation
-                        ? item.hosted.ref
-                        : item.reservation.id;
-                      return n.id === id;
-                    });
-                    let reservation = [];
-                    if (standard) reservation.push(item.reservation);
-                    if (accommodation) reservation.push(item.hosted);
-                    navigation.navigate("ReserveInformation", {
-                      reservation,
-                      place,
-                    });
-                  }
-                }}
-              >
-                <TextStyle
-                  verySmall
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  {item.type === "sales"
-                    ? "P&S"
-                    : item.type === "orders"
-                    ? "Mesa"
-                    : item.type === "accommodation-reservations"
-                    ? "Acomodación"
-                    : "Estandar"}
-                </TextStyle>
-              </TouchableOpacity>
-              <View
-                style={[
-                  styles.table,
-                  {
-                    borderColor:
-                      mode === "light" ? light.textDark : dark.textWhite,
-                  },
-                ]}
-              >
-                <TextStyle
-                  verySmall
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  {thousandsSystem(item.total)}
-                </TextStyle>
-              </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       );
     };
@@ -1780,7 +1871,19 @@ const People = ({ navigation, userType }) => {
                 </TextStyle>
               </View>
               <View>
-                {openDatails && <Details />}
+                {openDatails && (
+                  <ScrollView
+                    style={{ maxHeight: 300 }}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                    >
+                      <Details />
+                    </ScrollView>
+                  </ScrollView>
+                )}
                 {item?.details?.length > 0 && (
                   <ButtonStyle
                     backgroundColor={
@@ -2043,12 +2146,12 @@ const People = ({ navigation, userType }) => {
     }, [filters.zone]);
 
     useEffect(() => {
-      const date = new Date();
-      let years = [date.getFullYear()];
-
-      for (let i = 5; i >= 0; i--) {
-        years.push(years[years.length - 1] - 1);
-      }
+      const years = Array.from({ length: 10 }, (_, i) => {
+        const fiveYearsAgo = new Date().setFullYear(
+          new Date().getFullYear() - 5
+        );
+        return new Date(fiveYearsAgo).getFullYear() + i;
+      });
 
       setYears(years);
     }, []);
@@ -2087,30 +2190,50 @@ const People = ({ navigation, userType }) => {
         return item.hosted
           .filter((r) => r.owner)
           .filter((r) =>
-            reservationRoute === "check-in"
+            !reservationRoute
+              ? !r.checkIn
+              : reservationRoute === "check-in"
               ? !r.checkOut && r.checkIn
               : reservationRoute === "check-out"
               ? r.checkOut
               : true
           )
-          .map((person) => ({
-            ...person,
-            type: item.type,
-            groupID: ref,
-            nomenclatureID: item.id,
-            reservationID: item.ref,
-            days: item.days,
-            zone,
-            nomenclature,
-            creationDate: item.creationDate,
-            start: item.start,
-          }));
+          .map((person) => {
+            let client = null;
+            if (person.owner) {
+              // Vemos si tiene afiliacion con cliente
+              const individual = customers.find((p) => p.id === person.owner); // Buscamos si es un cliente individual
+              if (!individual) {
+                // Comprovamos si lo es
+                const agency = customers.find((p) =>
+                  p?.clientList?.some((c) => c.id === person.owner)
+                ); // Buscamos si es un cliente de agencia
+                if (agency) client = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
+              } else client = individual; // Si lo es pasamos el dato al cliente
+            }
+
+            return {
+              ...person,
+              type: item.type,
+              groupID: ref,
+              nomenclatureID: item.id,
+              reservationID: item.ref,
+              days: item.days,
+              zone,
+              nomenclature,
+              creationDate: item.creationDate,
+              start: item.start,
+              client: person.owner ? client : null,
+            };
+          });
       });
 
       const accommodation = accommodationReservations
         .filter((r) => r.owner)
         .filter((r) =>
-          reservationRoute === "check-in"
+          !reservationRoute
+            ? !r.checkIn
+            : reservationRoute === "check-in"
             ? r.checkIn && !r.checkOut
             : reservationRoute === "check-out"
             ? r.checkOut
@@ -2121,6 +2244,18 @@ const People = ({ navigation, userType }) => {
             (n) => n.id === item.ref
           );
           const { name: zone } = zones.find((g) => g.ref === ref);
+          let client = null;
+          if (item.owner) {
+            // Vemos si tiene afiliacion con cliente
+            const individual = customers.find((p) => p.id === item.owner); // Buscamos si es un cliente individual
+            if (!individual) {
+              // Comprovamos si lo es
+              const agency = customers.find((p) =>
+                p?.clientList?.some((c) => c.id === item.owner)
+              ); // Buscamos si es un cliente de agencia
+              if (agency) client = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
+            } else client = individual; // Si lo es pasamos el dato al cliente
+          }
 
           return {
             ...item,
@@ -2129,6 +2264,7 @@ const People = ({ navigation, userType }) => {
             reservationID: item.id,
             zone,
             nomenclature,
+            client: item.owner ? client : null,
           };
         });
 
@@ -2546,14 +2682,31 @@ const People = ({ navigation, userType }) => {
                       </TextStyle>
                     </TouchableOpacity>
                   </View>
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Cliente registrado:{" "}
-                    <TextStyle color={light.main2}>
-                      {item.owner ? "SI" : "NO"}
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <TextStyle
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    >
+                      Cliente registrado:{" "}
                     </TextStyle>
-                  </TextStyle>
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (!item.client) return;
+                        navigation.navigate("PeopleInformation", {
+                          type: "person",
+                          userType: "customer",
+                          ref: item.client.id,
+                        });
+                      }}
+                    >
+                      <TextStyle color={light.main2}>
+                        {!item.client
+                          ? "No"
+                          : item.client.special
+                          ? "Agencia"
+                          : "Individual"}
+                      </TextStyle>
+                    </TouchableOpacity>
+                  </View>
 
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <TextStyle
@@ -2926,6 +3079,14 @@ const People = ({ navigation, userType }) => {
     const Guest = ({ guest }) => {
       const [informationModalVisible, setInformationModalVisible] =
         useState(false);
+      const [debt, setDebt] = useState(0);
+
+      useEffect(() => {
+        const amount = guest.discount
+          ? guest.amount * guest.days - guest.discount
+          : guest.amount * guest.days;
+        setDebt(amount - guest.payment);
+      }, [guest]);
 
       return (
         <>
@@ -3050,6 +3211,26 @@ const People = ({ navigation, userType }) => {
                     ? "POR EMPRESA"
                     : thousandsSystem(guest.payment)
                   : "PRIVADO"}
+              </TextStyle>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                if (debt) navigateToReservation(guest);
+              }}
+              style={[
+                styles.table,
+                {
+                  borderColor:
+                    mode === "light" ? light.textDark : dark.textWhite,
+                  width: 90,
+                },
+              ]}
+            >
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                {!debt ? "SIN DEUDA" : thousandsSystem(debt)}
               </TextStyle>
             </TouchableOpacity>
           </View>
@@ -3225,6 +3406,22 @@ const People = ({ navigation, userType }) => {
                       >
                         <TextStyle color={light.main2} smallParagraph>
                           PAGADO
+                        </TextStyle>
+                      </View>
+                      <View
+                        style={[
+                          styles.table,
+                          {
+                            borderColor:
+                              mode === "light"
+                                ? light.textDark
+                                : dark.textWhite,
+                            width: 90,
+                          },
+                        ]}
+                      >
+                        <TextStyle color={light.main2} smallParagraph>
+                          DEUDA
                         </TextStyle>
                       </View>
                     </View>
@@ -4260,7 +4457,10 @@ const People = ({ navigation, userType }) => {
                     accountsPayable
                   )}
                   style={{ width: "49%" }}
-                  onPress={() => setAccountsPayable("reservations")}
+                  onPress={() => {
+                    setAccountsPayable("reservations");
+                    setReservationRoute("");
+                  }}
                 >
                   <TextStyle
                     smallParagraph
@@ -4300,7 +4500,7 @@ const People = ({ navigation, userType }) => {
                     center
                     color={textColorSelected("", reservationRoute)}
                   >
-                    TODO
+                    AGENDADO
                   </TextStyle>
                 </ButtonStyle>
                 <ButtonStyle
