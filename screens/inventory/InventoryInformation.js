@@ -6,8 +6,7 @@ import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { useSelector } from "react-redux";
 
-const dark = theme.colors.dark;
-const light = theme.colors.light;
+const { light, dark } = theme();
 
 const InventoryInformation = () => {
   const mode = useSelector((state) => state.mode);
@@ -70,7 +69,6 @@ const InventoryInformation = () => {
   return (
     <Layout
       style={{
-        marginTop: 0,
         justifyContent: "center",
         alignItem: "center",
         padding: 30,

@@ -25,12 +25,10 @@ import {
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { readFile } from "@helpers/offline";
-
+import theme from '@theme';
 import Ionicons from "@expo/vector-icons/Ionicons";
-import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const CustomDrawer = (props) => {
   const user = useSelector((state) => state.user);
@@ -140,7 +138,7 @@ const CustomDrawer = (props) => {
           />
           <TextStyle
             smallParagraph
-            customStyle={{ fontFamily: "Roboto-Medium", marginLeft: 5 }}
+            style={{ fontFamily: "Roboto-Medium", marginLeft: 5 }}
             color={mode === "dark" ? dark.textWhite : light.textDark}
           >
             Compartir
@@ -206,7 +204,7 @@ const CustomDrawer = (props) => {
           />
           <TextStyle
             smallParagraph
-            customStyle={{ fontFamily: "Roboto-Medium", marginLeft: 5 }}
+            style={{ fontFamily: "Roboto-Medium", marginLeft: 5 }}
             color={mode === "dark" ? dark.textWhite : light.textDark}
           >
             {helperStatus.active ? "Salir del grupo" : "Cerrar sesión"}

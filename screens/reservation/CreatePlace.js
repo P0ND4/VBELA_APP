@@ -42,9 +42,7 @@ import TextStyle from "@components/TextStyle";
 import theme from "@theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");
-
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const CreatePlace = ({ route, navigation }) => {
   const {
@@ -360,12 +358,7 @@ const CreatePlace = ({ route, navigation }) => {
   };
 
   return (
-    <Layout
-      style={{
-        marginTop: 0,
-        padding: 30,
-      }}
-    >
+    <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -631,7 +624,7 @@ const CreatePlace = ({ route, navigation }) => {
               )}
               {type === "accommodation" && (
                 <TextStyle
-                  customStyle={{ marginTop: 10 }}
+                  style={{ marginTop: 10 }}
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
                   Valor por persona:{" "}
@@ -1156,7 +1149,7 @@ const CreatePlace = ({ route, navigation }) => {
                           }}
                         >
                           <TextStyle
-                            customStyle={[
+                            style={[
                               styles.accommodationCard,
                               {
                                 backgroundColor:
@@ -1171,7 +1164,7 @@ const CreatePlace = ({ route, navigation }) => {
                             {item.name.length > 10 ? "..." : ""}
                           </TextStyle>
                           <TextStyle
-                            customStyle={[
+                            style={[
                               styles.accommodationCard,
                               {
                                 backgroundColor:
@@ -1288,7 +1281,7 @@ const CreatePlace = ({ route, navigation }) => {
                   )}
                   <TextStyle
                     color={mode === "light" ? light.textDark : dark.textWhite}
-                    customStyle={{ marginVertical: 10 }}
+                    style={{ marginVertical: 10 }}
                   >
                     Total:{" "}
                     <TextStyle color={light.main2}>

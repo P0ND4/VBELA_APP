@@ -10,8 +10,7 @@ import Layout from "@components/Layout";
 import { thousandsSystem, changeDate } from "@helpers/libs";
 import { orderInvoice } from "@api";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const InvoiceByEmail = ({ navigation, route }) => {
   const {
@@ -112,7 +111,7 @@ const InvoiceByEmail = ({ navigation, route }) => {
   };
 
   return (
-    <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
+    <Layout style={{ justifyContent: "space-between" }}>
       <View />
       <View style={{ alignItems: "center" }}>
         <View style={{ marginBottom: 20 }}>

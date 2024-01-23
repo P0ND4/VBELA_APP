@@ -8,8 +8,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
 import { useNavigation } from "@react-navigation/native";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const OrderCompletion = ({ route }) => {
   const mode = useSelector((state) => state.mode);
@@ -20,6 +19,7 @@ const OrderCompletion = ({ route }) => {
   const total = route.params.total;
   const kitchen = route.params.kitchen;
   const sales = route.params.sales;
+  const code = route.params.code;
 
   const navigation = useNavigation();
 
@@ -39,22 +39,27 @@ const OrderCompletion = ({ route }) => {
             size={getFontSize(145)}
             color={light.main2}
           />
+          {!kitchen && (
+            <TextStyle subtitle color={light.main2} style={{ marginBottom: 5 }}>
+              TICKET N°: {code}
+            </TextStyle>
+          )}
           <TextStyle
-            bigParagraph
+            subtitle
             color={mode === "light" ? light.textDark : dark.textWhite}
           >
             {kitchen
               ? "Enviado a cocina"
               : !pay
-              ? "Pedido registrado"
-              : "Hecho"}
+              ? "Registrado"
+              : "Finalizado"}
           </TextStyle>
           {!kitchen && (
             <TextStyle
-              smallTitle
+              bigParagraph
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
-              {thousandsSystem(total)}
+              Monto: {thousandsSystem(total)}
             </TextStyle>
           )}
         </View>
@@ -63,7 +68,12 @@ const OrderCompletion = ({ route }) => {
             <ButtonStyle
               backgroundColor={light.main2}
               onPress={() =>
-                navigation.navigate("Invoice", { selection, total, extra })
+                navigation.navigate("Invoice", {
+                  selection,
+                  total,
+                  extra,
+                  code,
+                })
               }
               left={() => (
                 <View style={{ flexDirection: "row", alignItems: "center" }}>

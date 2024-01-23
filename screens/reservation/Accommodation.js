@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -13,36 +13,16 @@ import {
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { Picker } from "@react-native-picker/picker";
+import { edit as editRS } from "@features/zones/standardReservationsSlice";
+import { add as addRA } from "@features/zones/accommodationReservationsSlice";
 import {
-  edit as editRS,
-  remove as removeRS,
-} from "@features/zones/standardReservationsSlice";
-import {
-  add as addRA,
-  edit as editRA,
-  remove as removeRA,
-} from "@features/zones/accommodationReservationsSlice";
-import {
-  months,
   changeDate,
   thousandsSystem,
   getFontSize,
   random,
   addDays,
 } from "@helpers/libs";
-import {
-  add as addE,
-  edit as editE,
-  remove as removeE,
-} from "@features/function/economySlice";
-import {
-  editReservation,
-  removeEconomy,
-  editEconomy,
-  removeReservation,
-  addReservation,
-  addEconomy,
-} from "@api";
+import { editReservation, addReservation } from "@api";
 import Layout from "@components/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
@@ -51,11 +31,11 @@ import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
 import ChooseDate from "@components/ChooseDate";
 import AddPerson from "@components/AddPerson";
+import FullFilterDate from "@components/FullFilterDate";
+import GuestTable from "@components/GuestTable";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
-
-const { width, height } = Dimensions.get("screen");
+const { light, dark } = theme();
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("screen");
 
 const Accommodation = ({ navigation }) => {
   const mode = useSelector((state) => state.mode);
@@ -69,19 +49,10 @@ const Accommodation = ({ navigation }) => {
     (state) => state.accommodationReservations
   );
   const helperStatus = useSelector((state) => state.helperStatus);
-  const orders = useSelector((state) => state.orders);
-  const economy = useSelector((state) => state.economy);
-  const customers = useSelector((state) => state.client);
+  const customers = useSelector((state) => state.customers);
 
-  const hostedChangeRef = useRef(null);
-
-  const [paymentOptions, setPaymentOptions] = useState({
-    checkIn: false,
-    checkOut: false,
-  });
-
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
-  const [year, setYear] = useState(new Date().getFullYear());
+  const month = new Date().getMonth() + 1;
+  const year = new Date().getFullYear();
   const [days, setDays] = useState([]);
 
   const [zoneSelected, setZoneSelected] = useState("");
@@ -92,278 +63,39 @@ const Accommodation = ({ navigation }) => {
 
   const [daySelected, setDaySelected] = useState(null);
 
-  const [checkOutModalVisible, setCheckOutModalVisible] = useState({
-    active: false,
-  });
-  const [businessPayment, setBusinessPayment] = useState(false);
-  const [totalToPay, setTotalToPay] = useState(0);
-  const [payment, setPayment] = useState("");
-  const [tip, setTip] = useState(0);
-  const [total, setTotal] = useState(0);
-
-  useEffect(() => {
-    setTip(total - totalToPay);
-  }, [totalToPay, total]);
-
   const dispatch = useDispatch();
 
-  const navigateToReservation = (guest) => {
-    const place = nomenclatures.find((n) => n.id === guest.nomenclatureID);
-    let reservation = [];
+  useEffect(() => {
+    const days = new Date(year, month - 1, 0).getDate();
+    setDays(Array.from({ length: days }, (_, i) => i + 1));
+  }, [month, year]);
 
-    if (guest?.type === "standard") {
-      const re = standardReservations.find(
-        (r) => r.ref === guest.reservationID
-      );
-      reservation.push(re);
-    }
+  const backgroundSelected = (params) =>
+    route === params
+      ? mode === "light"
+        ? light.main5
+        : dark.main2
+      : light.main2;
 
-    if (guest?.type === "accommodation") {
-      const re = accommodationReservations.find(
-        (r) => r.id === guest.reservationID
-      );
-      reservation.push(re);
-    }
+  const textColorSelected = (params) =>
+    route === params
+      ? mode === "light"
+        ? light.textDark
+        : dark.textWhite
+      : light.textDark;
 
-    navigation.navigate("ReserveInformation", {
-      reservation,
-      place,
-    });
-  };
-
-  const cleanHosted = (hosted) => {
-    const debugItem = { ...hosted };
-    delete debugItem.active;
-    delete debugItem.groupID;
-    delete debugItem.nomenclatureID;
-    delete debugItem.reservationID;
-    delete debugItem.zone;
-    delete debugItem.nomenclature;
-    delete debugItem.client;
-    return debugItem;
-  };
-
-  const removePayment = ({ hosted }) => {
-    const debugItem = cleanHosted(hosted);
-    Alert.alert(
-      "REMOVER",
-      `¿Quieres remover el PAGO?`,
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Si",
-          onPress: async () => {
-            dispatch(
-              editRA({ id: debugItem.id, data: { ...debugItem, payment: 0 } })
-            );
-            await editReservation({
-              identifier: helperStatus.active
-                ? helperStatus.identifier
-                : user.identifier,
-              reservation: {
-                data: [{ ...debugItem, payment: 0 }],
-                type: debugItem.type,
-              },
-              helpers: helperStatus.active
-                ? [helperStatus.id]
-                : user.helpers.map((h) => h.id),
-            });
-          },
-        },
-      ],
-      { cancelable: true }
-    );
-  };
-
-  const paymentEvent = ({ callBack, hosted, options }) => {
-    if (helperStatus.active && !helperStatus.accessToReservations) return;
-
-    const event = () => {
-      if (!(hosted.payment === 0 && hosted.payment !== "business")) {
-        return removePayment({
-          type: "unique",
-          hosted,
-        });
-      }
-
-      setCheckOutModalVisible({ active: true, ...hosted });
-      setTotal(
-        hosted?.discount
-          ? (hosted?.amount - hosted?.discount) * hosted?.days
-          : hosted?.amount * hosted?.days
-      );
-      if (options) setPaymentOptions({ ...paymentOptions, ...options });
-      hostedChangeRef.current = { ...hosted, payment: hosted.payment };
-    };
-
-    if (callBack) {
-      Alert.alert(
-        "PAGO",
-        "¿El huésped ha pagado?",
-        [
-          {
-            text: "Cancelar",
-            style: "cancel",
-          },
-          {
-            text: "No",
-            onPress: () => callBack(),
-          },
-          {
-            text: "Si",
-            onPress: () => event(),
-          },
-        ],
-        { cancelable: true }
-      );
-    } else event();
-  };
-
-  const checkInEvent = ({ item }) => {
-    if (helperStatus.active && !helperStatus.accessToReservations) return;
-
-    Alert.alert(
-      "CAMBIAR",
-      `¿El cliente ${item.checkIn ? "no " : ""} ha llegado?`,
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Si",
-          onPress: () => {
-            const event = async () => {
-              let newReservation;
-
-              if (item.type === "accommodation") {
-                dispatch(
-                  editRA({
-                    id: item.id,
-                    data: {
-                      ...item,
-                      checkIn: item.checkIn ? null : new Date().getTime(),
-                    },
-                  })
-                );
-              }
-
-              if (item.type === "standard") {
-                newReservation = {
-                  ...standardReservations.find(
-                    (r) => r.ref === item.reservationID
-                  ),
-                };
-                const newHosted = newReservation?.hosted.map((i) => {
-                  if (i.id === item.id) {
-                    const newI = { ...i };
-                    newI.checkIn = i.checkIn ? null : new Date().getTime();
-                    return newI;
-                  }
-                  return i;
-                });
-
-                newReservation.hosted = newHosted;
-                dispatch(
-                  editRS({
-                    ref: item.reservationID,
-                    data: newReservation,
-                  })
-                );
-              }
-
-              await editReservation({
-                identifier: helperStatus.active
-                  ? helperStatus.identifier
-                  : user.identifier,
-                reservation: {
-                  data:
-                    item.type === "standard"
-                      ? newReservation
-                      : [
-                          {
-                            ...item,
-                            checkIn: item.checkIn ? null : new Date().getTime(),
-                          },
-                        ],
-                  type: item.type,
-                },
-                helpers: helperStatus.active
-                  ? [helperStatus.id]
-                  : user.helpers.map((h) => h.id),
-              });
-            };
-
-            if (
-              !item.checkIn &&
-              item?.payment === 0 &&
-              item?.payment !== "business"
-            )
-              paymentEvent({
-                callBack: event,
-                hosted: item,
-                options: { checkIn: true },
-              });
-            else event();
-          },
-        },
-      ],
-      { cancelable: true }
-    );
-  };
-
-  const deleteEconomy = async ({ ids }) => {
-    for (let ownerRef of ids) {
-      const person = customers.find(
-        (p) =>
-          p.id === ownerRef || p?.clientList?.some((c) => c.id === ownerRef)
-      );
-
-      const foundEconomy = economy.find((e) => e.ref === person.id);
-      const reservation =
-        standardReservations.find((s) =>
-          s.hosted.some((h) => h.owner === ownerRef)
-        ) || accommodationReservations.find((a) => a.owner === ownerRef);
-      const hosted = reservation?.hosted || [reservation];
-      const client = hosted.find((h) => h.owner === ownerRef);
-
-      if (!person) continue;
-
-      if (foundEconomy) {
-        const currentEconomy = { ...foundEconomy };
-        currentEconomy.amount -=
-          client.type === "accommodation"
-            ? client.amount * client.days
-            : reservation.amount;
-        currentEconomy.modificationDate = new Date().getTime();
-        if (currentEconomy.amount <= 0) {
-          dispatch(removeE({ id: foundEconomy.id }));
-          await removeEconomy({
-            identifier: helperStatus.active
-              ? helperStatus.identifier
-              : user.identifier,
-            id: foundEconomy.id,
-            helpers: helperStatus.active
-              ? [helperStatus.id]
-              : user.helpers.map((h) => h.id),
-          });
-        } else {
-          dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
-          await editEconomy({
-            identifier: helperStatus.active
-              ? helperStatus.identifier
-              : user.identifier,
-            economy: currentEconomy,
-            helpers: helperStatus.active
-              ? [helperStatus.id]
-              : user.helpers.map((h) => h.id),
-          });
-        }
-      }
-    }
+  const dateValidation = (date, dateCompare) => {
+    let error = false;
+    if (dateCompare.day !== "all" && date.getDate() !== dateCompare.day)
+      error = true;
+    if (
+      dateCompare.month !== "all" &&
+      date.getMonth() + 1 !== dateCompare.month
+    )
+      error = true;
+    if (dateCompare.year !== "all" && date.getFullYear() !== dateCompare.year)
+      error = true;
+    return error;
   };
 
   const saveHosted = async ({ data, cleanData }) => {
@@ -432,816 +164,6 @@ const Accommodation = ({ navigation }) => {
     cleanData();
   };
 
-  useEffect(() => {
-    const days = new Date(year, month - 1, 0).getDate();
-    setDays(Array.from({ length: days }, (_, i) => i + 1));
-  }, [month, year]);
-
-  const manageEconomy = async ({ ids, hosted }) => {
-    if (hosted.length === 0) return;
-    for (let ownerRef of ids) {
-      const person = customers.find(
-        (p) =>
-          p.id === ownerRef || p?.clientList?.some((c) => c.id === ownerRef)
-      );
-
-      const reservation =
-        standardReservations.find((s) =>
-          s.hosted.some((h) => h.owner === ownerRef)
-        ) || accommodationReservations.find((a) => a.owner === ownerRef);
-      const client = hosted.find((h) => h.owner === ownerRef);
-      if (!person) continue;
-
-      const foundEconomy = economy.find((e) => e.ref === person.id);
-      if (!foundEconomy) {
-        const id = random(20);
-
-        const newEconomy = {
-          id,
-          ref: person.id,
-          owner: {
-            identification: person.identification,
-            name: person.name,
-          },
-          type: "debt",
-          amount:
-            client.type === "accommodation"
-              ? client.amount * client.days
-              : reservation.amount,
-          name: `Deuda ${person.name}`,
-          payment: 0,
-          creationDate: new Date().getTime(),
-          modificationDate: new Date().getTime(),
-        };
-
-        dispatch(addE(newEconomy));
-        await addEconomy({
-          identifier: helperStatus.active
-            ? helperStatus.identifier
-            : user.identifier,
-          economy: newEconomy,
-          helpers: helperStatus.active
-            ? [helperStatus.id]
-            : user.helpers.map((h) => h.id),
-        });
-      } else {
-        const currentEconomy = { ...foundEconomy };
-        currentEconomy.amount +=
-          client.type === "accommodation"
-            ? client.amount * client.days
-            : reservation.amount;
-        currentEconomy.modificationDate = new Date().getTime();
-        dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
-        await editEconomy({
-          identifier: helperStatus.active
-            ? helperStatus.identifier
-            : user.identifier,
-          economy: currentEconomy,
-          helpers: helperStatus.active
-            ? [helperStatus.id]
-            : user.helpers.map((h) => h.id),
-        });
-      }
-    }
-  };
-
-  const cleanData = () => {
-    setBusinessPayment(false);
-    setTotal(0);
-    setCheckOutModalVisible({ active: false });
-    setTotalToPay(0);
-    setPayment("");
-    hostedChangeRef.current = null;
-  };
-
-  const backgroundSelected = (params) =>
-    route === params
-      ? mode === "light"
-        ? light.main5
-        : dark.main2
-      : light.main2;
-
-  const textColorSelected = (params) =>
-    route === params
-      ? mode === "light"
-        ? light.textDark
-        : dark.textWhite
-      : light.textDark;
-
-  const InformationGuest = ({ modalVisible, setModalVisible, item }) => {
-    const [openMoreInformation, setOpenMoreInformation] = useState(false);
-    const [editing, setEditing] = useState(false);
-    const [OF, setOF] = useState(null);
-
-    const [handler, setHandler] = useState({
-      active: true,
-      key: Math.random(),
-    });
-
-    useEffect(() => {
-      setOF(orders.find((o) => o.ref === (item.owner || item.id) && !o.pay));
-    }, [orders]);
-
-    const checkOutEvent = ({ item }) => {
-      if (helperStatus.active && !helperStatus.accessToReservations) return;
-
-      Alert.alert(
-        "CAMBIAR",
-        `¿El cliente ${item.checkOut ? "no " : ""} se ha ido?`,
-        [
-          {
-            text: "Cancelar",
-            style: "cancel",
-          },
-          {
-            text: "Si",
-            onPress: () => {
-              const mainEvent = ({ checkIn }) => {
-                const event = async () => {
-                  const newReservation = {
-                    ...standardReservations.find(
-                      (s) => s.ref === item.reservationID
-                    ),
-                  };
-
-                  if (item.type === "accommodation") {
-                    dispatch(
-                      editRA({
-                        id: item.id,
-                        data: {
-                          ...item,
-                          checkIn: checkIn
-                            ? new Date().getTime()
-                            : item.checkIn,
-                          checkOut: item.checkOut ? null : new Date().getTime(),
-                        },
-                      })
-                    );
-                  }
-
-                  if (item.type === "standard") {
-                    const newHosted = newReservation?.hosted.map((i) => {
-                      if (i.id === item.id) {
-                        const newI = { ...i };
-                        (newI.checkIn = checkIn
-                          ? new Date().getTime()
-                          : item.checkIn),
-                          (newI.checkOut = i.checkOut
-                            ? null
-                            : new Date().getTime());
-                        return newI;
-                      }
-                      return i;
-                    });
-
-                    newReservation.hosted = newHosted;
-                    dispatch(
-                      editRS({ ref: newReservation.ref, data: newReservation })
-                    );
-                  }
-
-                  if (item.owner) {
-                    if (item.checkOut)
-                      await deleteEconomy({ ids: [item.owner] });
-                    else {
-                      const reservation =
-                        standardReservations.find(
-                          (s) => s.ref === item.reservationID
-                        ) ||
-                        accommodationReservations.find(
-                          (a) => a.id === item.reservationID
-                        );
-                      await manageEconomy({
-                        ids: [item.owner],
-                        hosted: reservation.hosted || [reservation],
-                      });
-                    }
-                  }
-
-                  await editReservation({
-                    identifier: helperStatus.active
-                      ? helperStatus.identifier
-                      : user.identifier,
-                    reservation: {
-                      data:
-                        item.type === "standard"
-                          ? newReservation
-                          : [
-                              {
-                                ...item,
-                                checkOut: item.checkOut
-                                  ? null
-                                  : new Date().getTime(),
-                              },
-                            ],
-                      type: item.type,
-                    },
-                    helpers: helperStatus.active
-                      ? [helperStatus.id]
-                      : user.helpers.map((h) => h.id),
-                  });
-                };
-
-                if (
-                  !item.checkOut &&
-                  item.payment === 0 &&
-                  item.payment !== "business"
-                )
-                  paymentEvent({
-                    callBack: event,
-                    hosted: item,
-                    options: { checkIn, checkOut: true },
-                  });
-                else event();
-              };
-
-              if (!item.checkIn && !item.checkOut) {
-                Alert.alert(
-                  "NO HA LLEGADO",
-                  "¿El huésped no ha llegado, desea activar el CHECK IN?",
-                  [
-                    {
-                      text: "Cancelar",
-                      style: "cancel",
-                    },
-                    {
-                      text: "No",
-                      onPress: () => mainEvent({ checkIn: false }),
-                    },
-                    {
-                      text: "Si",
-                      onPress: () => mainEvent({ checkIn: true }),
-                    },
-                  ],
-                  { cancelable: true }
-                );
-              } else mainEvent({ checkIn: false });
-            },
-          },
-        ],
-        { cancelable: true }
-      );
-    };
-
-    const updateHosted = async ({ data, cleanData }) => {
-      data.id = item.id;
-      data.ref = item.ref;
-      data.owner = item.owner;
-      data.checkOut = item.checkOut;
-      let reserveUpdated;
-      let guest;
-
-      if (item.type === "accommodation") {
-        guest = accommodationReservations.find(
-          (r) => r.id === item.reservationID
-        );
-        const date = new Date(guest.start);
-        const day = date.getDate();
-        const month = date.getMonth();
-        const year = date.getFullYear();
-
-        const end = addDays(
-          new Date(year, month, day),
-          parseInt(data.days - 1)
-        ).getTime();
-        dispatch(editRA({ id: guest.id, data: { ...guest, ...data, end } }));
-      }
-      if (item.type === "standard") {
-        let reservationREF = standardReservations.find(
-          (r) => r.ref === item.reservationID
-        );
-        reserveUpdated = {
-          ...reservationREF,
-          hosted: reservationREF.hosted.map((h) => {
-            if (h.id === item.id) return data;
-            return h;
-          }),
-        };
-        dispatch(editRS({ ref: reserveUpdated.ref, data: reserveUpdated }));
-      }
-
-      cleanData();
-      setModalVisible(!modalVisible);
-      await editReservation({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        reservation: {
-          data:
-            item.type === "standard" ? reserveUpdated : [{ ...guest, ...data }],
-          type: item.type,
-        },
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-    };
-
-    return (
-      <>
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(!modalVisible)}
-        >
-          <TouchableWithoutFeedback
-            onPress={() => setModalVisible(!modalVisible)}
-          >
-            <View style={{ backgroundColor: "#0005", height: "100%" }} />
-          </TouchableWithoutFeedback>
-          <View
-            style={[
-              StyleSheet.absoluteFillObject,
-              {
-                justifyContent: "center",
-                alignItems: "center",
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.card,
-                {
-                  backgroundColor: mode === "light" ? light.main4 : dark.main1,
-                },
-              ]}
-            >
-              <View style={styles.row}>
-                <TextStyle color={light.main2} bigSubtitle>
-                  INFORMACIÓN
-                </TextStyle>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <TouchableOpacity onPress={() => setEditing(!editing)}>
-                    <Ionicons
-                      name="create-outline"
-                      size={getFontSize(28)}
-                      color={mode === "light" ? light.textDark : dark.textWhite}
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setModalVisible(!modalVisible)}
-                  >
-                    <Ionicons
-                      name="close"
-                      size={getFontSize(28)}
-                      color={mode === "light" ? light.textDark : dark.textWhite}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <View style={{ marginVertical: 20 }}>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  Nombre completo:{" "}
-                  <TextStyle color={light.main2}>{item.fullName}</TextStyle>
-                </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  Correo electrónico:{" "}
-                  <TextStyle color={light.main2}>{item.email}</TextStyle>
-                </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  Cédula:{" "}
-                  <TextStyle color={light.main2}>
-                    {!helperStatus.active || helperStatus.accessToReservations
-                      ? thousandsSystem(item.identification)
-                      : "PRIVADO"}
-                  </TextStyle>
-                </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  Número de teléfono:{" "}
-                  <TextStyle color={light.main2}>{item.phoneNumber}</TextStyle>
-                </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  País:{" "}
-                  <TextStyle color={light.main2}>{item.country}</TextStyle>
-                </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  Grupo: <TextStyle color={light.main2}>{item.zone}</TextStyle>
-                </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  Nomenclatura:{" "}
-                  <TextStyle color={light.main2}>{item.nomenclature}</TextStyle>
-                </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  Tipo:{" "}
-                  <TextStyle color={light.main2}>
-                    {item.type === "accommodation" ? "Acomodación" : "Estandar"}
-                  </TextStyle>
-                </TextStyle>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    CHECK IN:{" "}
-                  </TextStyle>
-                  <TouchableOpacity onPress={() => checkInEvent({ item })}>
-                    <TextStyle color={light.main2}>
-                      {item.checkIn ? changeDate(new Date(item.checkIn)) : "NO"}
-                    </TextStyle>
-                  </TouchableOpacity>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Cliente registrado:{" "}
-                  </TextStyle>
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (!item.client) return;
-                      navigation.navigate("PeopleInformation", {
-                        type: "person",
-                        userType: "customer",
-                        ref: item.client.id,
-                      });
-                    }}
-                  >
-                    <TextStyle color={light.main2}>
-                      {!item.client
-                        ? "No"
-                        : item.client.special
-                        ? "Agencia"
-                        : "Individual"}
-                    </TextStyle>
-                  </TouchableOpacity>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    CHECK OUT:{" "}
-                  </TextStyle>
-                  <TouchableOpacity onPress={() => checkOutEvent({ item })}>
-                    <TextStyle color={light.main2}>
-                      {item.checkOut
-                        ? changeDate(new Date(item.checkOut))
-                        : "NO"}
-                    </TextStyle>
-                  </TouchableOpacity>
-                </View>
-
-                {item.type === "accommodation" && (
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <TextStyle
-                      color={mode === "light" ? light.textDark : dark.textWhite}
-                    >
-                      Pagado:{" "}
-                    </TextStyle>
-                    <TouchableOpacity
-                      onPress={() => paymentEvent({ hosted: item })}
-                    >
-                      <TextStyle color={light.main2}>
-                        {!helperStatus.active ||
-                        helperStatus.accessToReservations
-                          ? !item.payment
-                            ? "EN ESPERA"
-                            : item.payment === "business"
-                            ? "POR EMPRESA"
-                            : thousandsSystem(item.payment)
-                          : "PRIVADO"}
-                      </TextStyle>
-                    </TouchableOpacity>
-                  </View>
-                )}
-                {openMoreInformation && (
-                  <View>
-                    {item.type === "accommodation" && (
-                      <TextStyle
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        Pago total:{" "}
-                        <TextStyle color={light.main2}>
-                          {thousandsSystem(
-                            item.payment === "business"
-                              ? "POR EMPRESA"
-                              : item.payment
-                          )}
-                        </TextStyle>
-                      </TextStyle>
-                    )}
-                    {item.type === "accommodation" && (
-                      <TextStyle
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        Costo total:{" "}
-                        <TextStyle color={light.main2}>
-                          {thousandsSystem(
-                            item.discount
-                              ? item.days * (item.amount - item.discount)
-                              : item.days * item.amount
-                          )}
-                        </TextStyle>
-                      </TextStyle>
-                    )}
-                    {item.type === "accommodation" && (
-                      <TextStyle
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        Costo por dia:{" "}
-                        <TextStyle color={light.main2}>
-                          {thousandsSystem(
-                            item.discount
-                              ? item.amount - item.discount
-                              : item.amount
-                          )}
-                        </TextStyle>
-                      </TextStyle>
-                    )}
-                    {item.type === "accommodation" && (
-                      <TextStyle
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        Costo pagado:{" "}
-                        <TextStyle color={light.main2}>
-                          {thousandsSystem(
-                            item.payment === "business"
-                              ? "POR EMPRESA"
-                              : item.payment
-                          )}
-                        </TextStyle>
-                      </TextStyle>
-                    )}
-                    {item.type === "accommodation" && item.discount && (
-                      <TextStyle
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        Descuento:{" "}
-                        <TextStyle color={light.main2}>
-                          {thousandsSystem(item.discount)}
-                        </TextStyle>
-                      </TextStyle>
-                    )}
-                    {item.type === "accommodation" && (
-                      <TextStyle
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        Días reservado:{" "}
-                        <TextStyle color={light.main2}>
-                          {thousandsSystem(item.days)}
-                        </TextStyle>
-                      </TextStyle>
-                    )}
-                    {item.type === "accommodation" && item.start && (
-                      <TextStyle
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        Fecha de registro:{" "}
-                        <TextStyle color={light.main2}>
-                          {changeDate(new Date(item.start))}
-                        </TextStyle>
-                      </TextStyle>
-                    )}
-                    {item.type === "accommodation" && item.end && (
-                      <TextStyle
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        Fecha de finalización:{" "}
-                        <TextStyle color={light.main2}>
-                          {changeDate(new Date(item.end))}
-                        </TextStyle>
-                      </TextStyle>
-                    )}
-                  </View>
-                )}
-              </View>
-              <View>
-                {item.type === "accommodation" && (
-                  <ButtonStyle
-                    backgroundColor={light.main2}
-                    onPress={() => setOpenMoreInformation(!openMoreInformation)}
-                  >
-                    <TextStyle center>
-                      {!openMoreInformation ? "Mostrar más" : "Mostrar menos"}
-                    </TextStyle>
-                  </ButtonStyle>
-                )}
-                <View style={styles.row}>
-                  <ButtonStyle
-                    backgroundColor={light.main2}
-                    style={{ width: "49%" }}
-                    onPress={() => {
-                      navigation.navigate("Sales", {
-                        ref: item.owner || item.id,
-                        name: item.fullName,
-                      });
-                    }}
-                  >
-                    <TextStyle center>P&S</TextStyle>
-                  </ButtonStyle>
-                  <ButtonStyle
-                    onPress={() => {
-                      navigation.navigate("CreateOrder", {
-                        editing: OF ? true : false,
-                        id: OF ? OF.id : undefined,
-                        ref: item.owner || item.id,
-                        table: item.fullName,
-                        selection: OF ? OF.selection : [],
-                        reservation: "Cliente",
-                      });
-                    }}
-                    style={{ width: "49%" }}
-                    backgroundColor={
-                      !OF
-                        ? light.main2
-                        : mode === "light"
-                        ? dark.main2
-                        : light.main4
-                    }
-                  >
-                    <TextStyle
-                      center
-                      color={
-                        !OF
-                          ? light.textDark
-                          : mode === "light"
-                          ? dark.textWhite
-                          : light.textDark
-                      }
-                    >
-                      Menú
-                    </TextStyle>
-                  </ButtonStyle>
-                </View>
-                <ButtonStyle
-                  backgroundColor={light.main2}
-                  onPress={() => {
-                    Alert.alert(
-                      "¿Estás seguro?",
-                      "Se eliminarán todos los datos de este huésped",
-                      [
-                        {
-                          text: "No estoy seguro",
-                          style: "cancel",
-                        },
-                        {
-                          text: "Estoy seguro",
-                          onPress: async () => {
-                            let reserve;
-
-                            if (item.type === "standard") {
-                              const reservation = standardReservations.find(
-                                (r) => r.ref === item.reservationID
-                              );
-
-                              reserve = reservation;
-                            }
-
-                            if (item.type === "accommodation") {
-                              const reservation =
-                                accommodationReservations.find(
-                                  (r) => r.id === item.reservationID
-                                );
-
-                              reserve = { ...reservation, hosted: [item] };
-                            }
-
-                            const ids = reserve?.hosted
-                              .filter(
-                                (h) => h.owner && h.checkOut && h.id === item.id
-                              )
-                              .map((h) => h.owner);
-
-                            const send = async () => {
-                              setModalVisible(!modalVisible);
-
-                              if (item.type === "accommodation") {
-                                dispatch(removeRA({ id: item.id }));
-                              }
-
-                              if (item.type === "standard") {
-                                const newReservation = { ...reserve };
-                                const newHosted = reserve?.hosted.filter(
-                                  (h) => h.id !== item.id
-                                );
-                                newReservation.hosted = newHosted;
-                                if (reserve?.hosted?.length > 1) {
-                                  dispatch(
-                                    editRS({
-                                      ref: reserve.ref,
-                                      data: newReservation,
-                                    })
-                                  );
-                                  await editReservation({
-                                    identifier: helperStatus.active
-                                      ? helperStatus.identifier
-                                      : user.identifier,
-                                    reservation: {
-                                      data: newReservation,
-                                      type: item.type,
-                                    },
-                                    helpers: helperStatus.active
-                                      ? [helperStatus.id]
-                                      : user.helpers.map((h) => h.id),
-                                  });
-                                } else
-                                  dispatch(
-                                    removeRS({ ref: item.reservationID })
-                                  );
-                              }
-
-                              if (
-                                item.type === "accommodation" ||
-                                reserve?.hosted?.length === 1
-                              ) {
-                                await removeReservation({
-                                  identifier: helperStatus.active
-                                    ? helperStatus.identifier
-                                    : user.identifier,
-                                  reservation: {
-                                    identifier:
-                                      item.type === "standard"
-                                        ? item.reservationID
-                                        : [item.reservationID],
-                                    type: item.type,
-                                  },
-                                  helpers: helperStatus.active
-                                    ? [helperStatus.id]
-                                    : user.helpers.map((h) => h.id),
-                                });
-                              }
-                            };
-
-                            if (ids?.length > 0) {
-                              Alert.alert(
-                                "ECONOMÍA",
-                                "¿Quiere eliminar la información de economía de los clientes?",
-                                [
-                                  {
-                                    text: "No",
-                                    onPress: async () => await send(),
-                                  },
-                                  {
-                                    text: "Si",
-                                    onPress: async () => {
-                                      await deleteEconomy({
-                                        ids,
-                                        hosted: reserve?.hosted,
-                                      });
-                                      await send();
-                                    },
-                                  },
-                                ]
-                              );
-                            } else await send();
-                          },
-                        },
-                      ],
-                      { cancelable: true }
-                    );
-                  }}
-                >
-                  <TextStyle center>Eliminar huésped</TextStyle>
-                </ButtonStyle>
-              </View>
-            </View>
-          </View>
-        </Modal>
-        <AddPerson
-          key={handler.key}
-          setEditing={setHandler}
-          modalVisible={editing}
-          setModalVisible={setEditing}
-          editing={{ active: true, ...item }}
-          discount={item.type === "accommodation"}
-          handleSubmit={(data) => updateHosted(data)}
-          type={item.type}
-        />
-      </>
-    );
-  };
-
   const Hosted = ({ type }) => {
     const [search, setSearch] = useState("");
     const [hosted, setHosted] = useState([]);
@@ -1254,25 +176,25 @@ const Accommodation = ({ navigation }) => {
       type: "",
       minDays: "",
       maxDays: "",
-      day: "all",
-      month: "all",
-      year: "all",
+      dayCheckIn: "all",
+      monthCheckIn: "all",
+      yearCheckIn: "all",
+      dayCheckOut: "all",
+      monthCheckOut: "all",
+      yearCheckOut: "all",
+      dayCreation: "all",
+      monthCreation: "all",
+      yearCreation: "all",
     };
     const [filters, setFilters] = useState({
-      ...filters,
+      ...initialState,
       active: type === "hosted",
-      day: type === "hosted" ? new Date().getDate() : "all",
-      month: type === "hosted" ? new Date().getMonth() + 1 : "all",
-      year: type === "hosted" ? new Date().getFullYear() : "all",
+      dayCheckIn: type === "hosted" ? new Date().getDate() : "all",
+      monthCheckIn: type === "hosted" ? new Date().getMonth() + 1 : "all",
+      yearCheckIn: type === "hosted" ? new Date().getFullYear() : "all",
     });
 
-    const [days, setDays] = useState([]);
-    const [years, setYears] = useState([]);
     const [nomenclaturesToChoose, setNomenclaturesToChoose] = useState([]);
-
-    const dayRef = useRef();
-    const monthRef = useRef();
-    const yearRef = useRef();
 
     useEffect(() => {
       if (zones.length > 0) {
@@ -1282,42 +204,6 @@ const Accommodation = ({ navigation }) => {
         setNomenclaturesToChoose(nomenclaturesFound);
       }
     }, [filters.zone]);
-
-    useEffect(() => {
-      const years = Array.from(
-        { length: 10 },
-        (_, i) => {
-          const fiveYearsAgo = new Date().setFullYear(new Date().getFullYear() - 5);
-          return new Date(fiveYearsAgo).getFullYear() + i
-        }
-      );
-
-      setYears(years);
-    }, []);
-
-    useEffect(() => {
-      const date = new Date();
-      const days = new Date(
-        filters.year === "all" ? date.getFullYear() : filters.year,
-        filters.month === "all" ? 1 : filters.month + 1,
-        0
-      ).getDate();
-      const monthDays = [];
-      for (let day = 0; day < days; day++) {
-        monthDays.push(day + 1);
-      }
-      setDays(monthDays);
-    }, [filters.year, filters.month]);
-
-    const dateValidation = (date) => {
-      let error = false;
-      if (filters.day !== "all" && date.getDate() !== filters.day) error = true;
-      if (filters.month !== "all" && date.getMonth() + 1 !== filters.month)
-        error = true;
-      if (filters.year !== "all" && date.getFullYear() !== filters.year)
-        error = true;
-      return error;
-    };
 
     useEffect(() => {
       const standard = standardReservations.flatMap((item) => {
@@ -1335,7 +221,7 @@ const Accommodation = ({ navigation }) => {
               : true
           )
           .map((person) => {
-            let client = null;
+            let customer = null;
             if (person.owner) {
               // Vemos si tiene afiliacion con cliente
               const individual = customers.find((p) => p.id === person.owner); // Buscamos si es un cliente individual
@@ -1344,8 +230,8 @@ const Accommodation = ({ navigation }) => {
                 const agency = customers.find((p) =>
                   p?.clientList?.some((c) => c.id === person.owner)
                 ); // Buscamos si es un cliente de agencia
-                if (agency) client = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
-              } else client = individual; // Si lo es pasamos el dato al cliente
+                if (agency) customer = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
+              } else customer = individual; // Si lo es pasamos el dato al cliente
             }
 
             return {
@@ -1359,7 +245,7 @@ const Accommodation = ({ navigation }) => {
               nomenclature,
               creationDate: item.creationDate,
               start: item.start,
-              client: person.owner ? client : null,
+              customer: person.owner ? customer : null,
             };
           });
       });
@@ -1377,7 +263,7 @@ const Accommodation = ({ navigation }) => {
             (n) => n.id === item.ref
           );
           const { name: zone } = zones.find((g) => g.ref === ref);
-          let client = null;
+          let customer = null;
           if (item.owner) {
             // Vemos si tiene afiliacion con cliente
             const individual = customers.find((p) => p.id === item.owner); // Buscamos si es un cliente individual
@@ -1386,8 +272,8 @@ const Accommodation = ({ navigation }) => {
               const agency = customers.find((p) =>
                 p?.clientList?.some((c) => c.id === item.owner)
               ); // Buscamos si es un cliente de agencia
-              if (agency) client = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
-            } else client = individual; // Si lo es pasamos el dato al cliente
+              if (agency) customer = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
+            } else customer = individual; // Si lo es pasamos el dato al cliente
           }
 
           return {
@@ -1397,7 +283,7 @@ const Accommodation = ({ navigation }) => {
             reservationID: item.id,
             zone,
             nomenclature,
-            client: item.owner ? client : null,
+            customer: item.owner ? customer : null,
           };
         });
 
@@ -1425,7 +311,30 @@ const Accommodation = ({ navigation }) => {
             formatText(h?.country).includes(formatText(search))
           ) {
             if (!filters.active) return h;
-            if (dateValidation(new Date(h.checkIn))) return;
+            if (
+              dateValidation(new Date(h.checkIn), {
+                day: filters.dayCheckIn,
+                month: filters.monthCheckIn,
+                year: filters.yearCheckIn,
+              })
+            )
+              return;
+            if (
+              dateValidation(new Date(h.checkOut), {
+                day: filters.dayCheckOut,
+                month: filters.monthCheckOut,
+                year: filters.yearCheckOut,
+              })
+            )
+              return;
+            if (
+              dateValidation(new Date(h.creationDate), {
+                day: filters.dayCreation,
+                month: filters.monthCreation,
+                year: filters.yearCreation,
+              })
+            )
+              return;
             if (
               filters.minDays &&
               h.days < parseInt(filters.minDays.replace(/\D/g, ""))
@@ -1451,176 +360,8 @@ const Accommodation = ({ navigation }) => {
       } else setHosted(hosted);
     }, [search, filters]);
 
-    const Guest = ({ guest }) => {
-      const [informationModalVisible, setInformationModalVisible] =
-        useState(false);
-
-      return (
-        <>
-          <View style={{ flexDirection: "row" }}>
-            <View
-              style={[
-                styles.table,
-                {
-                  width: 85,
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {changeDate(new Date(guest.start))}
-              </TextStyle>
-            </View>
-            <TouchableOpacity
-              onPress={() => checkInEvent({ item: guest })}
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                  width: 85,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {guest.checkIn ? changeDate(new Date(guest.checkIn)) : "NO"}
-              </TextStyle>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                  width: 100,
-                },
-              ]}
-              onLongPress={() => navigateToReservation(guest)}
-              onPress={() =>
-                setInformationModalVisible(!informationModalVisible)
-              }
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {`${guest.fullName.slice(0, 13)}${
-                  guest.fullName.length > 13 ? "..." : ""
-                }`}
-              </TextStyle>
-            </TouchableOpacity>
-            <View
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                  width: 40,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {guest.days}
-              </TextStyle>
-            </View>
-            <View
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                  width: 90,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {guest.zone}
-              </TextStyle>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                if (!guest.client) return;
-                navigation.navigate("PeopleInformation", {
-                  type: "person",
-                  userType: "customer",
-                  ref: guest.client.id,
-                });
-              }}
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                  width: 70,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {!guest.client
-                  ? "No"
-                  : guest.client.special
-                  ? "Agencia"
-                  : "Individual"}
-              </TextStyle>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                if (guest.type === "standard")
-                  return navigateToReservation(guest);
-                paymentEvent({ hosted: guest });
-              }}
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                  width: 100,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {!helperStatus.active || helperStatus.accessToReservations
-                  ? guest.checkOut && guest?.type === "standard"
-                    ? "PAGADO"
-                    : !guest.payment
-                    ? "EN ESPERA"
-                    : guest.payment === "business"
-                    ? "POR EMPRESA"
-                    : thousandsSystem(guest.payment)
-                  : "PRIVADO"}
-              </TextStyle>
-            </TouchableOpacity>
-          </View>
-          <InformationGuest
-            modalVisible={informationModalVisible}
-            setModalVisible={setInformationModalVisible}
-            item={guest}
-          />
-        </>
-      );
-    };
-
     return (
-      <View style={{ height: height / 1.55 }}>
+      <View style={{ height: SCREEN_HEIGHT / 1.55 }}>
         <View style={[styles.row, { marginBottom: 15 }]}>
           <InputStyle
             placeholder="Nombre, Cédula, Teléfono, Email"
@@ -1653,129 +394,7 @@ const Accommodation = ({ navigation }) => {
         </View>
         <ScrollView showsVerticalScrollIndicator={false}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View>
-              <View style={{ flexDirection: "row" }}>
-                <View
-                  style={[
-                    styles.table,
-                    {
-                      width: 85,
-                      borderColor:
-                        mode === "light" ? light.textDark : dark.textWhite,
-                    },
-                  ]}
-                >
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    FECHA
-                  </TextStyle>
-                </View>
-                <View
-                  style={[
-                    styles.table,
-                    {
-                      borderColor:
-                        mode === "light" ? light.textDark : dark.textWhite,
-                      width: 85,
-                    },
-                  ]}
-                >
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    CHECK IN
-                  </TextStyle>
-                </View>
-                <View
-                  style={[
-                    styles.table,
-                    {
-                      borderColor:
-                        mode === "light" ? light.textDark : dark.textWhite,
-                      width: 100,
-                    },
-                  ]}
-                >
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    NOMBRE
-                  </TextStyle>
-                </View>
-                <View
-                  style={[
-                    styles.table,
-                    {
-                      borderColor:
-                        mode === "light" ? light.textDark : dark.textWhite,
-                      width: 40,
-                    },
-                  ]}
-                >
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    DÍAS
-                  </TextStyle>
-                </View>
-                <View
-                  style={[
-                    styles.table,
-                    {
-                      borderColor:
-                        mode === "light" ? light.textDark : dark.textWhite,
-                      width: 90,
-                    },
-                  ]}
-                >
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    GRUPO
-                  </TextStyle>
-                </View>
-                <View
-                  style={[
-                    styles.table,
-                    {
-                      borderColor:
-                        mode === "light" ? light.textDark : dark.textWhite,
-                      width: 70,
-                    },
-                  ]}
-                >
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                    smallParagraph
-                  >
-                    CLIENTE
-                  </TextStyle>
-                </View>
-                <View
-                  style={[
-                    styles.table,
-                    {
-                      borderColor:
-                        mode === "light" ? light.textDark : dark.textWhite,
-                      width: 100,
-                    },
-                  ]}
-                >
-                  <TextStyle color={light.main2} smallParagraph>
-                    PAGADO
-                  </TextStyle>
-                </View>
-              </View>
-              {hosted.map((guest) => (
-                <Guest guest={guest} key={guest.id} />
-              ))}
-            </View>
+            <GuestTable hosted={hosted} />
           </ScrollView>
         </ScrollView>
         <Modal
@@ -1961,7 +580,7 @@ const Accommodation = ({ navigation }) => {
                         color:
                           mode === "light" ? light.textDark : dark.textWhite,
                         fontSize: 20,
-                        width: width / 2.8,
+                        width: SCREEN_WIDTH / 2.8,
                       }}
                     >
                       <Picker.Item
@@ -2015,7 +634,7 @@ const Accommodation = ({ navigation }) => {
                         color:
                           mode === "light" ? light.textDark : dark.textWhite,
                         fontSize: 20,
-                        width: width / 2.8,
+                        width: SCREEN_WIDTH / 2.8,
                       }}
                     >
                       <Picker.Item
@@ -2046,236 +665,62 @@ const Accommodation = ({ navigation }) => {
                     </Picker>
                   </View>
                 </View>
-                <View style={[styles.row, { marginTop: 10 }]}>
-                  <View>
-                    <ButtonStyle
-                      backgroundColor={
-                        mode === "light" ? light.main5 : dark.main2
-                      }
-                      style={{ width: width / 4.5, paddingVertical: 16 }}
-                      onPress={() => dayRef.current?.focus()}
-                    >
-                      <View style={styles.row}>
-                        <TextStyle
-                          color={
-                            filters.day !== "all"
-                              ? mode === "light"
-                                ? light.textDark
-                                : dark.textWhite
-                              : "#888888"
-                          }
-                          smallParagraph
-                        >
-                          {filters.day !== "all" ? filters.day : "Día"}
-                        </TextStyle>
-                        <Ionicons
-                          color={
-                            filters.day !== "all"
-                              ? mode === "light"
-                                ? light.textDark
-                                : dark.textWhite
-                              : "#888888"
-                          }
-                          size={getFontSize(10)}
-                          name="caret-down"
-                        />
-                      </View>
-                    </ButtonStyle>
-
-                    <View style={{ display: "none" }}>
-                      <Picker
-                        ref={dayRef}
-                        mode="dropdown"
-                        selectedValue={filters.day}
-                        onValueChange={(itemValue) =>
-                          setFilters({ ...filters, day: itemValue })
-                        }
-                        style={{
-                          color:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        }}
-                      >
-                        <Picker.Item
-                          label="Día"
-                          value="all"
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                        {days.map((day) => (
-                          <Picker.Item
-                            key={day}
-                            label={`${day}`}
-                            value={day}
-                            style={{
-                              backgroundColor:
-                                mode === "light" ? light.main5 : dark.main2,
-                            }}
-                            color={
-                              mode === "light" ? light.textDark : dark.textWhite
-                            }
-                          />
-                        ))}
-                      </Picker>
-                    </View>
-                  </View>
-                  <View>
-                    <ButtonStyle
-                      backgroundColor={
-                        mode === "light" ? light.main5 : dark.main2
-                      }
-                      style={{ width: width / 3.6, paddingVertical: 16 }}
-                      onPress={() => monthRef.current?.focus()}
-                    >
-                      <View style={styles.row}>
-                        <TextStyle
-                          color={
-                            filters.month !== "all"
-                              ? mode === "light"
-                                ? light.textDark
-                                : dark.textWhite
-                              : "#888888"
-                          }
-                          smallParagraph
-                        >
-                          {filters.month !== "all"
-                            ? months[filters.month - 1]
-                            : "Mes"}
-                        </TextStyle>
-                        <Ionicons
-                          color={
-                            filters.month !== "all"
-                              ? mode === "light"
-                                ? light.textDark
-                                : dark.textWhite
-                              : "#888888"
-                          }
-                          size={getFontSize(10)}
-                          name="caret-down"
-                        />
-                      </View>
-                    </ButtonStyle>
-                    <View style={{ display: "none" }}>
-                      <Picker
-                        ref={monthRef}
-                        mode="dropdown"
-                        selectedValue={filters.month}
-                        onValueChange={(itemValue) =>
-                          setFilters({ ...filters, month: itemValue })
-                        }
-                        style={{
-                          color:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        }}
-                      >
-                        <Picker.Item
-                          label="Mes"
-                          value="all"
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                        {months.map((month, index) => (
-                          <Picker.Item
-                            key={month}
-                            label={month}
-                            value={index + 1}
-                            style={{
-                              backgroundColor:
-                                mode === "light" ? light.main5 : dark.main2,
-                            }}
-                            color={
-                              mode === "light" ? light.textDark : dark.textWhite
-                            }
-                          />
-                        ))}
-                      </Picker>
-                    </View>
-                  </View>
-                  <View>
-                    <ButtonStyle
-                      backgroundColor={
-                        mode === "light" ? light.main5 : dark.main2
-                      }
-                      style={{ width: width / 4.5, paddingVertical: 16 }}
-                      onPress={() => yearRef.current?.focus()}
-                    >
-                      <View style={styles.row}>
-                        <TextStyle
-                          color={
-                            filters.year !== "all"
-                              ? mode === "light"
-                                ? light.textDark
-                                : dark.textWhite
-                              : "#888888"
-                          }
-                          smallParagraph
-                        >
-                          {filters.year !== "all" ? filters.year : "Año"}
-                        </TextStyle>
-                        <Ionicons
-                          color={
-                            filters.year !== "all"
-                              ? mode === "light"
-                                ? light.textDark
-                                : dark.textWhite
-                              : "#888888"
-                          }
-                          size={getFontSize(10)}
-                          name="caret-down"
-                        />
-                      </View>
-                    </ButtonStyle>
-                    <View style={{ display: "none" }}>
-                      <Picker
-                        ref={yearRef}
-                        mode="dropdown"
-                        selectedValue={filters.year}
-                        onValueChange={(itemValue) =>
-                          setFilters({ ...filters, year: itemValue })
-                        }
-                        style={{
-                          color:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        }}
-                      >
-                        <Picker.Item
-                          label="Año"
-                          value="all"
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                        {years.map((year, index) => (
-                          <Picker.Item
-                            key={year}
-                            label={`${year}`}
-                            value={year}
-                            style={{
-                              backgroundColor:
-                                mode === "light" ? light.main5 : dark.main2,
-                            }}
-                            color={
-                              mode === "light" ? light.textDark : dark.textWhite
-                            }
-                          />
-                        ))}
-                      </Picker>
-                    </View>
-                  </View>
-                </View>
+                {type !== "reservation" && (
+                  <FullFilterDate
+                    title="Por fecha (CHECK IN)"
+                    defaultValue={{
+                      day: filters.dayCheckIn,
+                      month: filters.monthCheckIn,
+                      year: filters.yearCheckIn,
+                    }}
+                    onChangeDay={(value) =>
+                      setFilters({ ...filters, dayCheckIn: value })
+                    }
+                    onChangeMonth={(value) =>
+                      setFilters({ ...filters, monthCheckIn: value })
+                    }
+                    onChangeYear={(value) =>
+                      setFilters({ ...filters, yearCheckIn: value })
+                    }
+                  />
+                )}
+                {type === "historical" && (
+                  <FullFilterDate
+                    title="Por fecha (CHECK OUT)"
+                    defaultValue={{
+                      day: filters.dayCheckOut,
+                      month: filters.monthCheckOut,
+                      year: filters.yearCheckOut,
+                    }}
+                    onChangeDay={(value) =>
+                      setFilters({ ...filters, dayCheckOut: value })
+                    }
+                    onChangeMonth={(value) =>
+                      setFilters({ ...filters, monthCheckOut: value })
+                    }
+                    onChangeYear={(value) =>
+                      setFilters({ ...filters, yearCheckOut: value })
+                    }
+                  />
+                )}
+                <FullFilterDate
+                  title="Por fecha (CREACIÓN)"
+                  increment={5}
+                  defaultValue={{
+                    day: filters.dayCreation,
+                    month: filters.monthCreation,
+                    year: filters.yearCreation,
+                  }}
+                  onChangeDay={(value) =>
+                    setFilters({ ...filters, dayCreation: value })
+                  }
+                  onChangeMonth={(value) =>
+                    setFilters({ ...filters, monthCreation: value })
+                  }
+                  onChangeYear={(value) =>
+                    setFilters({ ...filters, yearCreation: value })
+                  }
+                />
               </View>
               <View
                 style={{
@@ -2334,6 +779,7 @@ const Accommodation = ({ navigation }) => {
   const Location = () => {
     const [search, setSearch] = useState("");
     const [location, setLocation] = useState([]);
+    const [everybody, setEverybody] = useState(false);
 
     const [activeFilter, setActiveFilter] = useState(false);
     const initialState = {
@@ -2341,60 +787,20 @@ const Accommodation = ({ navigation }) => {
       minDays: "",
       maxDays: "",
       type: "",
-      day: "all",
-      month: "all",
-      year: "all",
+      dayCheckIn: "all",
+      monthCheckIn: "all",
+      yearCheckIn: "all",
+      dayCreation: "all",
+      monthCreation: "all",
+      yearCreation: "all",
     };
     const [filters, setFilters] = useState({
-      ...filters,
+      ...initialState,
       active: true,
-      day: new Date().getDate(),
-      month: new Date().getMonth() + 1,
-      year: new Date().getFullYear(),
+      dayCheckIn: new Date().getDate(),
+      monthCheckIn: new Date().getMonth() + 1,
+      yearCheckIn: new Date().getFullYear(),
     });
-
-    const [days, setDays] = useState([]);
-    const [years, setYears] = useState([]);
-
-    const dayRef = useRef();
-    const monthRef = useRef();
-    const yearRef = useRef();
-
-    useEffect(() => {
-      const years = Array.from(
-        { length: 10 },
-        (_, i) => {
-          const fiveYearsAgo = new Date().setFullYear(new Date().getFullYear() - 5);
-          return new Date(fiveYearsAgo).getFullYear() + i
-        }
-      );
-
-      setYears(years);
-    }, []);
-
-    useEffect(() => {
-      const date = new Date();
-      const days = new Date(
-        filters.year === "all" ? date.getFullYear() : filters.year,
-        filters.month === "all" ? 1 : filters.month + 1,
-        0
-      ).getDate();
-      const monthDays = [];
-      for (let day = 0; day < days; day++) {
-        monthDays.push(day + 1);
-      }
-      setDays(monthDays);
-    }, [filters.year, filters.month]);
-
-    const dateValidation = (date) => {
-      let error = false;
-      if (filters.day !== "all" && date.getDate() !== filters.day) error = true;
-      if (filters.month !== "all" && date.getMonth() + 1 !== filters.month)
-        error = true;
-      if (filters.year !== "all" && date.getFullYear() !== filters.year)
-        error = true;
-      return error;
-    };
 
     useEffect(() => {
       const standard = standardReservations.flatMap((item) => {
@@ -2403,64 +809,68 @@ const Accommodation = ({ navigation }) => {
         );
         const { name: zone } = zones.find((g) => g.ref === ref);
 
-        return item.hosted.map((person) => {
-          let client = null;
-          if (person.owner) {
+        return item.hosted
+          .filter((r) => everybody || (!r.checkOut && r.checkIn))
+          .map((person) => {
+            let customer = null;
+            if (person.owner) {
+              // Vemos si tiene afiliacion con cliente
+              const individual = customers.find((p) => p.id === person.owner); // Buscamos si es un cliente individual
+              if (!individual) {
+                // Comprovamos si lo es
+                const agency = customers.find((p) =>
+                  p?.clientList?.some((c) => c.id === person.owner)
+                ); // Buscamos si es un cliente de agencia
+                if (agency) customer = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
+              } else customer = individual; // Si lo es pasamos el dato al cliente
+            }
+
+            return {
+              ...person,
+              type: item.type,
+              groupID: ref,
+              nomenclatureID: item.id,
+              reservationID: item.ref,
+              days: item.days,
+              zone,
+              nomenclature,
+              creationDate: item.creationDate,
+              start: item.start,
+              customer: person.owner ? customer : null,
+            };
+          });
+      });
+
+      const accommodation = accommodationReservations
+        .filter((r) => everybody || (!r.checkOut && r.checkIn))
+        .flatMap((item) => {
+          const { nomenclature, ref } = nomenclatures.find(
+            (n) => n.id === item.ref
+          );
+          const { name: zone } = zones.find((g) => g.ref === ref);
+          let customer = null;
+          if (item.owner) {
             // Vemos si tiene afiliacion con cliente
-            const individual = customers.find((p) => p.id === person.owner); // Buscamos si es un cliente individual
+            const individual = customers.find((p) => p.id === item.owner); // Buscamos si es un cliente individual
             if (!individual) {
               // Comprovamos si lo es
               const agency = customers.find((p) =>
-                p?.clientList?.some((c) => c.id === person.owner)
+                p?.clientList?.some((c) => c.id === item.owner)
               ); // Buscamos si es un cliente de agencia
-              if (agency) client = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
-            } else client = individual; // Si lo es pasamos el dato al cliente
+              if (agency) customer = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
+            } else customer = individual; // Si lo es pasamos el dato al cliente
           }
 
           return {
-            ...person,
-            type: item.type,
+            ...item,
             groupID: ref,
-            nomenclatureID: item.id,
-            reservationID: item.ref,
-            days: item.days,
+            nomenclatureID: item.ref,
+            reservationID: item.id,
             zone,
             nomenclature,
-            creationDate: item.creationDate,
-            start: item.start,
-            client: person.owner ? client : null,
+            customer: item.owner ? customer : null,
           };
         });
-      });
-
-      const accommodation = accommodationReservations.flatMap((item) => {
-        const { nomenclature, ref } = nomenclatures.find(
-          (n) => n.id === item.ref
-        );
-        const { name: zone } = zones.find((g) => g.ref === ref);
-        let client = null;
-        if (item.owner) {
-          // Vemos si tiene afiliacion con cliente
-          const individual = customers.find((p) => p.id === item.owner); // Buscamos si es un cliente individual
-          if (!individual) {
-            // Comprovamos si lo es
-            const agency = customers.find((p) =>
-              p?.clientList?.some((c) => c.id === item.owner)
-            ); // Buscamos si es un cliente de agencia
-            if (agency) client = agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
-          } else client = individual; // Si lo es pasamos el dato al cliente
-        }
-
-        return {
-          ...item,
-          groupID: ref,
-          nomenclatureID: item.ref,
-          reservationID: item.id,
-          zone,
-          nomenclature,
-          client: item.owner ? client : null,
-        };
-      });
 
       const union = [...accommodation, ...standard];
       const organized = union.sort((a, b) => {
@@ -2496,7 +906,23 @@ const Accommodation = ({ navigation }) => {
               formatText(h?.country).includes(formatText(search))
             ) {
               if (!filters.active) return h;
-              if (dateValidation(new Date(h.checkIn))) return;
+              if (
+                !(everybody && !h.checkIn) &&
+                dateValidation(new Date(h.checkIn), {
+                  day: filters.dayCheckIn,
+                  month: filters.monthCheckIn,
+                  year: filters.yearCheckIn,
+                })
+              )
+                return;
+              if (
+                dateValidation(new Date(h.creationDate), {
+                  day: filters.dayCreation,
+                  month: filters.monthCreation,
+                  year: filters.yearCreation,
+                })
+              )
+                return;
               if (
                 filters.minDays &&
                 h.days < parseInt(filters.minDays.replace(/\D/g, ""))
@@ -2515,162 +941,17 @@ const Accommodation = ({ navigation }) => {
         }));
         setLocation(locationWithSearch);
       } else setLocation(location);
-    }, [search, filters, standardReservations, accommodationReservations]);
-
-    const Guest = ({ guest }) => {
-      const [informationModalVisible, setInformationModalVisible] =
-        useState(false);
-
-      return (
-        <>
-          <View style={{ flexDirection: "row" }}>
-            <View
-              style={[
-                styles.table,
-                {
-                  width: 85,
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {changeDate(new Date(guest.start))}
-              </TextStyle>
-            </View>
-            <TouchableOpacity
-              onPress={() => checkInEvent({ item: guest })}
-              style={[
-                styles.table,
-                {
-                  width: 85,
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {guest.checkIn ? changeDate(new Date(guest.checkIn)) : "NO"}
-              </TextStyle>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.table,
-                {
-                  width: 100,
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                },
-              ]}
-              onLongPress={() => navigateToReservation(guest)}
-              onPress={() =>
-                setInformationModalVisible(!informationModalVisible)
-              }
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {`${guest.fullName.slice(0, 13)}${
-                  guest.fullName.length > 13 ? "..." : ""
-                }`}
-              </TextStyle>
-            </TouchableOpacity>
-            <View
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                  width: 45,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {guest.days}
-              </TextStyle>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                if (!guest.client) return;
-                navigation.navigate("PeopleInformation", {
-                  type: "person",
-                  userType: "customer",
-                  ref: guest.client.id,
-                });
-              }}
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                  width: 70,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {!guest.client
-                  ? "No"
-                  : guest.client.special
-                  ? "Agencia"
-                  : "Individual"}
-              </TextStyle>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                if (guest.type === "standard")
-                  return navigateToReservation(guest);
-                paymentEvent({ hosted: guest });
-              }}
-              style={[
-                styles.table,
-                {
-                  borderColor:
-                    mode === "light" ? light.textDark : dark.textWhite,
-                  width: 100,
-                },
-              ]}
-            >
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                {!helperStatus.active || helperStatus.accessToReservations
-                  ? guest.checkOut && guest?.type === "standard"
-                    ? "PAGADO"
-                    : !guest.payment
-                    ? "EN ESPERA"
-                    : guest.payment === "business"
-                    ? "POR EMPRESA"
-                    : thousandsSystem(guest.payment)
-                  : "PRIVADO"}
-              </TextStyle>
-            </TouchableOpacity>
-          </View>
-          <InformationGuest
-            modalVisible={informationModalVisible}
-            setModalVisible={setInformationModalVisible}
-            item={guest}
-          />
-        </>
-      );
-    };
+    }, [
+      search,
+      filters,
+      standardReservations,
+      accommodationReservations,
+      everybody,
+    ]);
 
     return (
-      <View style={{ height: height / 1.55 }}>
-        <View style={[styles.row, { marginBottom: 15 }]}>
+      <View style={{ height: SCREEN_HEIGHT / 1.55 }}>
+        <View style={styles.row}>
           <InputStyle
             placeholder="Nombre, Cédula, Teléfono, Email"
             value={search}
@@ -2690,6 +971,28 @@ const Accommodation = ({ navigation }) => {
             />
           </TouchableOpacity>
         </View>
+        <View
+          style={{
+            marginVertical: 10,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <TextStyle
+            smallParagraph
+            color={light.main2}
+            style={{ marginRight: 6 }}
+          >
+            TODOS
+          </TextStyle>
+          <Switch
+            trackColor={{ false: dark.main2, true: light.main2 }}
+            thumbColor={light.main4}
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={() => setEverybody(!everybody)}
+            value={everybody}
+          />
+        </View>
         <ScrollView showsVerticalScrollIndicator={false}>
           {location.map((item) => {
             return (
@@ -2707,134 +1010,10 @@ const Accommodation = ({ navigation }) => {
                   </TextStyle>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View>
-                    <View style={{ flexDirection: "row" }}>
-                      <View
-                        style={[
-                          styles.table,
-                          {
-                            width: 85,
-                            borderColor:
-                              mode === "light"
-                                ? light.textDark
-                                : dark.textWhite,
-                          },
-                        ]}
-                      >
-                        <TextStyle
-                          smallParagraph
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        >
-                          FECHA
-                        </TextStyle>
-                      </View>
-                      <View
-                        style={[
-                          styles.table,
-                          {
-                            width: 85,
-                            borderColor:
-                              mode === "light"
-                                ? light.textDark
-                                : dark.textWhite,
-                          },
-                        ]}
-                      >
-                        <TextStyle
-                          smallParagraph
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        >
-                          CHECK IN
-                        </TextStyle>
-                      </View>
-                      <View
-                        style={[
-                          styles.table,
-                          {
-                            borderColor:
-                              mode === "light"
-                                ? light.textDark
-                                : dark.textWhite,
-                            width: 100,
-                          },
-                        ]}
-                      >
-                        <TextStyle
-                          smallParagraph
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        >
-                          NOMBRE
-                        </TextStyle>
-                      </View>
-                      <View
-                        style={[
-                          styles.table,
-                          {
-                            width: 45,
-                            borderColor:
-                              mode === "light"
-                                ? light.textDark
-                                : dark.textWhite,
-                          },
-                        ]}
-                      >
-                        <TextStyle
-                          smallParagraph
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        >
-                          DÍAS
-                        </TextStyle>
-                      </View>
-                      <View
-                        style={[
-                          styles.table,
-                          {
-                            borderColor:
-                              mode === "light"
-                                ? light.textDark
-                                : dark.textWhite,
-                            width: 70,
-                          },
-                        ]}
-                      >
-                        <TextStyle
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                          smallParagraph
-                        >
-                          CLIENTE
-                        </TextStyle>
-                      </View>
-                      <View
-                        style={[
-                          styles.table,
-                          {
-                            borderColor:
-                              mode === "light"
-                                ? light.textDark
-                                : dark.textWhite,
-                            width: 100,
-                          },
-                        ]}
-                      >
-                        <TextStyle color={light.main2} smallParagraph>
-                          PAGADO
-                        </TextStyle>
-                      </View>
-                    </View>
-                    {item.hosted.map((guest) => (
-                      <Guest guest={guest} key={guest.id} />
-                    ))}
-                  </View>
+                  <GuestTable
+                    hosted={item.hosted}
+                    tableOptions={{ group: false }}
+                  />
                 </ScrollView>
               </View>
             );
@@ -2933,236 +1112,41 @@ const Accommodation = ({ navigation }) => {
                     />
                   </View>
                 </View>
-                <View style={[styles.row, { marginTop: 10 }]}>
-                  <View>
-                    <ButtonStyle
-                      backgroundColor={
-                        mode === "light" ? light.main5 : dark.main2
-                      }
-                      style={{ width: width / 4.5, paddingVertical: 16 }}
-                      onPress={() => dayRef.current?.focus()}
-                    >
-                      <View style={styles.row}>
-                        <TextStyle
-                          color={
-                            filters.day !== "all"
-                              ? mode === "light"
-                                ? light.textDark
-                                : dark.textWhite
-                              : "#888888"
-                          }
-                          smallParagraph
-                        >
-                          {filters.day !== "all" ? filters.day : "Día"}
-                        </TextStyle>
-                        <Ionicons
-                          color={
-                            filters.day !== "all"
-                              ? mode === "light"
-                                ? light.textDark
-                                : dark.textWhite
-                              : "#888888"
-                          }
-                          size={getFontSize(10)}
-                          name="caret-down"
-                        />
-                      </View>
-                    </ButtonStyle>
-
-                    <View style={{ display: "none" }}>
-                      <Picker
-                        ref={dayRef}
-                        mode="dropdown"
-                        selectedValue={filters.day}
-                        onValueChange={(itemValue) =>
-                          setFilters({ ...filters, day: itemValue })
-                        }
-                        style={{
-                          color:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        }}
-                      >
-                        <Picker.Item
-                          label="Día"
-                          value="all"
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                        {days.map((day) => (
-                          <Picker.Item
-                            key={day}
-                            label={`${day}`}
-                            value={day}
-                            style={{
-                              backgroundColor:
-                                mode === "light" ? light.main5 : dark.main2,
-                            }}
-                            color={
-                              mode === "light" ? light.textDark : dark.textWhite
-                            }
-                          />
-                        ))}
-                      </Picker>
-                    </View>
-                  </View>
-                  <View>
-                    <ButtonStyle
-                      backgroundColor={
-                        mode === "light" ? light.main5 : dark.main2
-                      }
-                      style={{ width: width / 3.6, paddingVertical: 16 }}
-                      onPress={() => monthRef.current?.focus()}
-                    >
-                      <View style={styles.row}>
-                        <TextStyle
-                          color={
-                            filters.month !== "all"
-                              ? mode === "light"
-                                ? light.textDark
-                                : dark.textWhite
-                              : "#888888"
-                          }
-                          smallParagraph
-                        >
-                          {filters.month !== "all"
-                            ? months[filters.month - 1]
-                            : "Mes"}
-                        </TextStyle>
-                        <Ionicons
-                          color={
-                            filters.month !== "all"
-                              ? mode === "light"
-                                ? light.textDark
-                                : dark.textWhite
-                              : "#888888"
-                          }
-                          size={getFontSize(10)}
-                          name="caret-down"
-                        />
-                      </View>
-                    </ButtonStyle>
-                    <View style={{ display: "none" }}>
-                      <Picker
-                        ref={monthRef}
-                        mode="dropdown"
-                        selectedValue={filters.month}
-                        onValueChange={(itemValue) =>
-                          setFilters({ ...filters, month: itemValue })
-                        }
-                        style={{
-                          color:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        }}
-                      >
-                        <Picker.Item
-                          label="Mes"
-                          value="all"
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                        {months.map((month, index) => (
-                          <Picker.Item
-                            key={month}
-                            label={month}
-                            value={index + 1}
-                            style={{
-                              backgroundColor:
-                                mode === "light" ? light.main5 : dark.main2,
-                            }}
-                            color={
-                              mode === "light" ? light.textDark : dark.textWhite
-                            }
-                          />
-                        ))}
-                      </Picker>
-                    </View>
-                  </View>
-                  <View>
-                    <ButtonStyle
-                      backgroundColor={
-                        mode === "light" ? light.main5 : dark.main2
-                      }
-                      style={{ width: width / 4.5, paddingVertical: 16 }}
-                      onPress={() => yearRef.current?.focus()}
-                    >
-                      <View style={styles.row}>
-                        <TextStyle
-                          color={
-                            filters.year !== "all"
-                              ? mode === "light"
-                                ? light.textDark
-                                : dark.textWhite
-                              : "#888888"
-                          }
-                          smallParagraph
-                        >
-                          {filters.year !== "all" ? filters.year : "Año"}
-                        </TextStyle>
-                        <Ionicons
-                          color={
-                            filters.year !== "all"
-                              ? mode === "light"
-                                ? light.textDark
-                                : dark.textWhite
-                              : "#888888"
-                          }
-                          size={getFontSize(10)}
-                          name="caret-down"
-                        />
-                      </View>
-                    </ButtonStyle>
-                    <View style={{ display: "none" }}>
-                      <Picker
-                        ref={yearRef}
-                        mode="dropdown"
-                        selectedValue={filters.year}
-                        onValueChange={(itemValue) =>
-                          setFilters({ ...filters, year: itemValue })
-                        }
-                        style={{
-                          color:
-                            mode === "light" ? light.textDark : dark.textWhite,
-                        }}
-                      >
-                        <Picker.Item
-                          label="Año"
-                          value="all"
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                        {years.map((year, index) => (
-                          <Picker.Item
-                            key={year}
-                            label={`${year}`}
-                            value={year}
-                            style={{
-                              backgroundColor:
-                                mode === "light" ? light.main5 : dark.main2,
-                            }}
-                            color={
-                              mode === "light" ? light.textDark : dark.textWhite
-                            }
-                          />
-                        ))}
-                      </Picker>
-                    </View>
-                  </View>
-                </View>
+                <FullFilterDate
+                  title="Por fecha (CHECK IN)"
+                  defaultValue={{
+                    day: filters.dayCheckIn,
+                    month: filters.monthCheckIn,
+                    year: filters.yearCheckIn,
+                  }}
+                  onChangeDay={(value) =>
+                    setFilters({ ...filters, dayCheckIn: value })
+                  }
+                  onChangeMonth={(value) =>
+                    setFilters({ ...filters, monthCheckIn: value })
+                  }
+                  onChangeYear={(value) =>
+                    setFilters({ ...filters, yearCheckIn: value })
+                  }
+                />
+                <FullFilterDate
+                  title="Por fecha (CREACIÓN)"
+                  increment={5}
+                  defaultValue={{
+                    day: filters.dayCreation,
+                    month: filters.monthCreation,
+                    year: filters.yearCreation,
+                  }}
+                  onChangeDay={(value) =>
+                    setFilters({ ...filters, dayCreation: value })
+                  }
+                  onChangeMonth={(value) =>
+                    setFilters({ ...filters, monthCreation: value })
+                  }
+                  onChangeYear={(value) =>
+                    setFilters({ ...filters, yearCreation: value })
+                  }
+                />
               </View>
               <View
                 style={{
@@ -3220,7 +1204,7 @@ const Accommodation = ({ navigation }) => {
 
   const Groups = () => {
     return (
-      <View style={{ height: height / 1.55 }}>
+      <View style={{ height: SCREEN_HEIGHT / 1.55 }}>
         <TextStyle
           bigParagraph
           color={mode === "light" ? light.textDark : dark.textWhite}
@@ -3232,14 +1216,10 @@ const Accommodation = ({ navigation }) => {
           style={{ marginTop: 20 }}
           keyExtractor={(item) => item.ref}
           renderItem={({ item }) => {
-            const dateValidation = (date) => {
-              const currentDate = new Date();
-              let error = false;
-              if (date.getDate() !== currentDate.getDate()) error = true;
-              if (date.getMonth() !== currentDate.getMonth()) error = true;
-              if (date.getFullYear() !== currentDate.getFullYear())
-                error = true;
-              return error;
+            const currenDate = {
+              day: new Date().getDate(),
+              month: new Date().getMonth() + 1,
+              year: new Date().getFullYear(),
             };
 
             const hosted = nomenclatures
@@ -3247,18 +1227,21 @@ const Accommodation = ({ navigation }) => {
               .reduce((a, n) => {
                 const value =
                   n.type === "standard"
-                    ? standardReservations.reduce((a, b) => {
-                        if (
-                          b.id === n.id &&
-                          !dateValidation(new Date(b.checkIn))
-                        )
-                          return a + b.hosted.length;
-                        return a;
+                    ? standardReservations.reduce((a, r) => {
+                        const value = r.hosted.reduce((a, b) => {
+                          if (
+                            r.id === n.id &&
+                            !dateValidation(new Date(b.checkIn), currenDate)
+                          )
+                            return a + 1;
+                          return a;
+                        }, 0);
+                        return a + value;
                       }, 0)
                     : accommodationReservations.reduce((a, b) => {
                         if (
                           b.ref === n.id &&
-                          !dateValidation(new Date(b.checkIn))
+                          !dateValidation(new Date(b.checkIn), currenDate)
                         )
                           return a + 1;
                         return a;
@@ -3376,7 +1359,7 @@ const Accommodation = ({ navigation }) => {
   };
 
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       {zones.length > 0 && (
         <>
           <View>
@@ -3450,7 +1433,7 @@ const Accommodation = ({ navigation }) => {
                         mode === "light" ? light.textDark : dark.textWhite
                       }
                       style={{
-                        width: width / 2.8,
+                        width: SCREEN_WIDTH / 2.8,
                         backgroundColor:
                           mode === "light" ? light.main5 : dark.main2,
                         color:
@@ -3595,231 +1578,6 @@ const Accommodation = ({ navigation }) => {
           }
         }}
       />
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={checkOutModalVisible.active}
-        onRequestClose={() => cleanData()}
-      >
-        <TouchableWithoutFeedback onPress={() => cleanData()}>
-          <View style={{ backgroundColor: "#0005", height: "100%" }} />
-        </TouchableWithoutFeedback>
-        <View
-          style={[
-            StyleSheet.absoluteFillObject,
-            {
-              justifyContent: "center",
-              alignItems: "center",
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: mode === "light" ? light.main4 : dark.main1,
-              },
-            ]}
-          >
-            <View>
-              <View style={styles.row}>
-                <TextStyle color={light.main2} bigSubtitle>
-                  PAGO
-                </TextStyle>
-                <TouchableOpacity onPress={() => cleanData()}>
-                  <Ionicons
-                    name="close"
-                    size={getFontSize(28)}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  />
-                </TouchableOpacity>
-              </View>
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
-                Añade el pago total del huésped
-              </TextStyle>
-            </View>
-            <View>
-              <View style={[styles.row, { marginVertical: 10 }]}>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  {checkOutModalVisible?.fullName?.slice(0, 8)}:{" "}
-                  {thousandsSystem(total)}
-                </TextStyle>
-                <InputStyle
-                  editable={!businessPayment}
-                  stylesContainer={{
-                    width: width / 2.6,
-                    opacity: !businessPayment ? 1 : 0.5,
-                  }}
-                  placeholder="Pagado"
-                  keyboardType="numeric"
-                  value={payment}
-                  onChangeText={(num) => {
-                    setPayment(thousandsSystem(num.replace(/[^0-9]/g, "")));
-                    setTotalToPay(parseInt(num.replace(/[^0-9]/g, "")) || 0);
-                  }}
-                  maxLength={13}
-                />
-              </View>
-              <View>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  Monto faltante:{" "}
-                  <TextStyle color={light.main2}>
-                    {thousandsSystem(total)}
-                  </TextStyle>
-                </TextStyle>
-                <TextStyle
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
-                  Monto a pagar:{" "}
-                  <TextStyle color={light.main2}>
-                    {thousandsSystem(businessPayment ? total : totalToPay)}
-                  </TextStyle>
-                </TextStyle>
-                {tip < 0 && (
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Propina:{" "}
-                    <TextStyle color={light.main2}>
-                      {thousandsSystem(Math.abs(tip))}
-                    </TextStyle>
-                  </TextStyle>
-                )}
-              </View>
-              {!checkOutModalVisible?.owner && (
-                <View style={[styles.row, { marginVertical: 10 }]}>
-                  <TextStyle smallParagraph color={light.main2}>
-                    Lo pago la empresa
-                  </TextStyle>
-                  <Switch
-                    trackColor={{ false: dark.main2, true: light.main2 }}
-                    thumbColor={light.main4}
-                    ios_backgroundColor="#3e3e3e"
-                    onValueChange={() => setBusinessPayment(!businessPayment)}
-                    value={businessPayment}
-                  />
-                </View>
-              )}
-              <ButtonStyle
-                backgroundColor={light.main2}
-                style={{ marginTop: checkOutModalVisible?.owner ? 20 : 0 }}
-                onPress={async () => {
-                  const debugItem = cleanHosted(checkOutModalVisible);
-
-                  const send = async () => {
-                    const newReservation = {
-                      ...standardReservations.find(
-                        (s) => s.ref === checkOutModalVisible.reservationID
-                      ),
-                    };
-                    const newData = {
-                      ...debugItem,
-                      checkOut: paymentOptions.checkOut
-                        ? new Date().getTime()
-                        : debugItem.checkOut,
-                      checkIn: paymentOptions.checkIn
-                        ? new Date().getTime()
-                        : debugItem.checkIn,
-                      payment: businessPayment
-                        ? "business"
-                        : parseInt(totalToPay),
-                    };
-                    if (checkOutModalVisible.type === "accommodation")
-                      dispatch(editRA({ id: debugItem.id, data: newData }));
-                    if (checkOutModalVisible.type === "standard") {
-                      const newHosted = newReservation?.hosted.map((h) => ({
-                        ...h,
-                        checkOut: paymentOptions.checkOut
-                          ? new Date().getTime()
-                          : h.checkOut,
-                        checkIn: paymentOptions.checkIn
-                          ? new Date().getTime()
-                          : h.checkIn,
-                      }));
-
-                      newReservation.hosted = newHosted;
-                      newReservation.payment = businessPayment
-                        ? "business"
-                        : parseInt(totalToPay);
-
-                      dispatch(
-                        editRS({
-                          ref: newReservation.ref,
-                          data: newReservation,
-                        })
-                      );
-                    }
-
-                    if (paymentOptions.checkIn || paymentOptions.checkOut) {
-                      const reservation =
-                        standardReservations.find(
-                          (s) => s.ref === checkOutModalVisible.reservationID
-                        ) ||
-                        accommodationReservations.find(
-                          (a) => a.id === checkOutModalVisible.reservationID
-                        );
-                      await manageEconomy({
-                        ids: [debugItem.owner],
-                        hosted: reservation.hosted || [reservation],
-                      });
-                    }
-                    cleanData();
-
-                    await editReservation({
-                      identifier: helperStatus.active
-                        ? helperStatus.identifier
-                        : user.identifier,
-                      reservation: {
-                        data:
-                          checkOutModalVisible.type === "standard"
-                            ? newReservation
-                            : [newData],
-                        type: checkOutModalVisible.type,
-                      },
-                      helpers: helperStatus.active
-                        ? [helperStatus.id]
-                        : user.helpers.map((h) => h.id),
-                    });
-                  };
-
-                  if (totalToPay !== total && !businessPayment) {
-                    Alert.alert(
-                      "ADVERTENCIA",
-                      `Los hospédados ${
-                        total > totalToPay
-                          ? `deben ${thousandsSystem(total - totalToPay)}`
-                          : `te dieron una propina de ${thousandsSystem(
-                              Math.abs(tip)
-                            )}`
-                      } ¿Estás seguro que desea continuar?`,
-                      [
-                        {
-                          text: "Cancelar",
-                          style: "cancel",
-                        },
-                        {
-                          text: "Si",
-                          onPress: async () => await send(),
-                        },
-                      ],
-                      { cancelable: true }
-                    );
-                  } else await send();
-                }}
-              >
-                <TextStyle center>Guardar</TextStyle>
-              </ButtonStyle>
-            </View>
-          </View>
-        </View>
-      </Modal>
       <AddPerson
         modalVisible={modalVisiblePeople}
         setModalVisible={setModalVisiblePeople}
@@ -3837,33 +1595,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  premium: {
-    height: Math.floor(width / 20),
-    width: Math.floor(width / 20),
-    position: "absolute",
-    top: 0,
-    right: 0,
-    display: "none",
-  },
   table: {
     width: 120,
     paddingHorizontal: 5,
     paddingVertical: 4,
     borderWidth: 0.2,
-  },
-  available: {
-    width: 48,
-    height: 34,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 5,
-  },
-  days: {
-    marginHorizontal: 2,
-    height: 34,
-    width: 34,
-    justifyContent: "center",
-    alignItems: "center",
   },
   card: {
     width: "90%",

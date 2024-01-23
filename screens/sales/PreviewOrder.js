@@ -13,7 +13,6 @@ import {
 import {
   thousandsSystem,
   getFontSize,
-  random,
   changeDate,
   print,
 } from "@helpers/libs";
@@ -25,10 +24,8 @@ import ButtonStyle from "@components/ButtonStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
 
-const SCREEN_WIDTH = Dimensions.get("window").width;
-
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { width: SCREEN_WIDTH } = Dimensions.get("screen");
+const { light, dark } = theme();
 
 const Selection = ({ item, setIndividualPayment, individualPayment }) => {
   const mode = useSelector((state) => state.mode);
@@ -111,6 +108,7 @@ const PreviewOrder = ({ route, navigation }) => {
   const sendToKitchen = route.params.sendToKitchen;
   const editing = route.params.editing;
   const sales = route.params?.sales;
+  const code = route.params?.code;
 
   const [individualPayment, setIndividualPayment] = useState([]);
   const [newSelection, setNewSelection] = useState(route.params.newSelection);
@@ -231,7 +229,7 @@ const PreviewOrder = ({ route, navigation }) => {
           ${invoice?.name ? invoice?.name : "Sin nombre"}
         </p>
         <p style="text-align: center; color: #444444; font-size: 30px; font-weight: 800; margin-bottom: 20px">
-          TICKET N°: ${random(6, { number: true })}
+          TICKET N°: ${code}
         </p>
       <view>
         <table style="width: 95vw">
@@ -307,7 +305,7 @@ const PreviewOrder = ({ route, navigation }) => {
   };
 
   return (
-    <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
+    <Layout style={{ justifyContent: "space-between" }}>
       <View>
         <ScrollView style={{ maxHeight: 380 }}>
           {selection
@@ -674,7 +672,7 @@ const PreviewOrder = ({ route, navigation }) => {
             />
             <TextStyle
               smallParagraph
-              customStyle={{ marginTop: 4 }}
+              style={{ marginTop: 4 }}
               color={
                 paymentMethod !== "Efectivo" ? light.main2 : light.textDark
               }
@@ -704,7 +702,7 @@ const PreviewOrder = ({ route, navigation }) => {
             />
             <TextStyle
               smallParagraph
-              customStyle={{ marginTop: 4 }}
+              style={{ marginTop: 4 }}
               color={paymentMethod !== "Tarjeta" ? light.main2 : light.textDark}
             >
               Tarjeta
@@ -732,7 +730,7 @@ const PreviewOrder = ({ route, navigation }) => {
             />
             <TextStyle
               smallParagraph
-              customStyle={{ marginTop: 4 }}
+              style={{ marginTop: 4 }}
               color={paymentMethod !== "Otros" ? light.main2 : light.textDark}
             >
               Otros

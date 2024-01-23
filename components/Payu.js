@@ -31,11 +31,9 @@ import InputStyle from "./InputStyle";
 import theme from "@theme";
 import countries from "@countries.json";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
-const width = Dimensions.get("screen").width;
-const height = Dimensions.get("screen").height;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("screen");
 
 export default function App({
   subtitle = "Plan basico",
@@ -150,9 +148,9 @@ export default function App({
   const secondPart = useRef(new Animated.Value(0)).current;
   const thirdPart = useRef(new Animated.Value(0)).current;
 
-  const viewRef = useRef(new Animated.Value(height / 2.8)).current;
-  const addRef = useRef(new Animated.Value(height / 1.1)).current;
-  const errorRef = useRef(new Animated.Value(height / 2.8)).current;
+  const viewRef = useRef(new Animated.Value(SCREEN_HEIGHT / 2.8)).current;
+  const addRef = useRef(new Animated.Value(SCREEN_HEIGHT / 1.1)).current;
+  const errorRef = useRef(new Animated.Value(SCREEN_HEIGHT / 2.8)).current;
 
   const countriesRef = useRef();
   const shake = useRef(new Animated.Value(0)).current;
@@ -328,19 +326,19 @@ export default function App({
     if (activePayment && !activeAdd && !errorValidation) {
       Animated.timing(viewRef, { toValue: 0, ...config }).start();
     } else {
-      Animated.timing(viewRef, { toValue: height / 2.8, ...config }).start();
+      Animated.timing(viewRef, { toValue: SCREEN_HEIGHT / 2.8, ...config }).start();
     }
 
     if (activeAdd && !errorValidation) {
       Animated.timing(addRef, { toValue: 0, ...config }).start();
     } else {
-      Animated.timing(addRef, { toValue: height / 1.1, ...config }).start();
+      Animated.timing(addRef, { toValue: SCREEN_HEIGHT / 1.1, ...config }).start();
     }
 
     if (errorValidation) {
       Animated.timing(errorRef, { toValue: 0, ...config }).start();
     } else {
-      Animated.timing(errorRef, { toValue: height / 2.8, ...config }).start();
+      Animated.timing(errorRef, { toValue: SCREEN_HEIGHT / 2.8, ...config }).start();
     }
   }, [viewRef, addRef, activeAdd, errorValidation, errorRef]);
 
@@ -606,7 +604,7 @@ export default function App({
                   {error && (
                     <TextStyle
                       color={light.main2}
-                      customStyle={{ marginTop: 8 }}
+                      style={{ marginTop: 8 }}
                       verySmall
                     >
                       Metodo de pago no válido o no admitido.
@@ -615,7 +613,7 @@ export default function App({
                   {errors.card?.type && (
                     <TextStyle
                       color={light.main2}
-                      customStyle={{ marginTop: 8 }}
+                      style={{ marginTop: 8 }}
                       verySmall
                     >
                       {errors.card?.type === "required"
@@ -650,7 +648,7 @@ export default function App({
                       <TextStyle
                         verySmall
                         color={light.main2}
-                        customStyle={{ marginTop: 8 }}
+                        style={{ marginTop: 8 }}
                       >
                         Campo requerido.
                       </TextStyle>
@@ -681,13 +679,13 @@ export default function App({
                           onBlur={() => setType("")}
                           placeholder="MMAA"
                           keyboardType="numeric"
-                          stylesInput={{ width: width / 2.5 }}
+                          stylesInput={{ width: SCREEN_WIDTH / 2.5 }}
                         />
                         {errors.mmaa?.type && (
                           <TextStyle
                             verySmall
                             color={light.main2}
-                            customStyle={{ marginTop: 8 }}
+                            style={{ marginTop: 8 }}
                           >
                             {errors.mmaa?.type === "required"
                               ? "Campo requerido."
@@ -714,13 +712,13 @@ export default function App({
                           onBlur={() => setType("")}
                           placeholder="CVC"
                           keyboardType="numeric"
-                          stylesInput={{ width: width / 2.5 }}
+                          stylesInput={{ width: SCREEN_WIDTH / 2.5 }}
                         />
                         {errors.cvc?.type && (
                           <TextStyle
                             verySmall
                             color={light.main2}
-                            customStyle={{ marginTop: 8 }}
+                            style={{ marginTop: 8 }}
                           >
                             {errors.cvc?.type === "required"
                               ? "Campo requerido."
@@ -752,7 +750,7 @@ export default function App({
                       <TextStyle
                         verySmall
                         color={light.main2}
-                        customStyle={{ marginTop: 8 }}
+                        style={{ marginTop: 8 }}
                       >
                         Campo requerido.
                       </TextStyle>
@@ -770,7 +768,7 @@ export default function App({
                     >
                       <TextStyle
                         smallParagraph
-                        customStyle={{ paddingVertical: 4 }}
+                        style={{ paddingVertical: 4 }}
                         color={
                           country
                             ? mode === "light"
@@ -803,7 +801,7 @@ export default function App({
                     {errors.country?.type && (
                       <TextStyle
                         verySmall
-                        customStyle={{ marginTop: 8 }}
+                        style={{ marginTop: 8 }}
                         color={light.main2}
                       >
                         Campo requerido.
@@ -830,7 +828,7 @@ export default function App({
                     {errors.phoneNumber?.type && (
                       <TextStyle
                         verySmall
-                        customStyle={{ marginTop: 8 }}
+                        style={{ marginTop: 8 }}
                         color={light.main2}
                       >
                         {errors.phoneNumber?.type === "required"
@@ -857,7 +855,7 @@ export default function App({
                     {errors.city?.type && (
                       <TextStyle
                         verySmall
-                        customStyle={{ marginTop: 8 }}
+                        style={{ marginTop: 8 }}
                         color={light.main2}
                       >
                         Campo requerido.
@@ -884,7 +882,7 @@ export default function App({
                     {errors.postalCode?.type && (
                       <TextStyle
                         verySmall
-                        customStyle={{ marginTop: 8 }}
+                        style={{ marginTop: 8 }}
                         color={light.main2}
                       >
                         {errors.postalCode?.type === "required"
@@ -911,7 +909,7 @@ export default function App({
                     {errors.state?.type && (
                       <TextStyle
                         verySmall
-                        customStyle={{ marginTop: 8 }}
+                        style={{ marginTop: 8 }}
                         color={light.main2}
                       >
                         Campo requerido.
@@ -946,7 +944,7 @@ export default function App({
                   />
                   <TextStyle
                     color={light.main2}
-                    customStyle={{ marginLeft: 15 }}
+                    style={{ marginLeft: 15 }}
                   >
                     {subtitle}
                   </TextStyle>
@@ -987,7 +985,7 @@ export default function App({
             >
               <TextStyle
                 color={mode === "light" ? light.textDark : dark.textWhite}
-                customStyle={{ marginBottom: 15 }}
+                style={{ marginBottom: 15 }}
               >
                 ERROR
               </TextStyle>
@@ -1067,7 +1065,7 @@ export default function App({
                 }}
               >
                 <ActivityIndicator size={50} color={light.main2} />
-                <TextStyle smallParagraph customStyle={{ marginTop: 10 }}>
+                <TextStyle smallParagraph style={{ marginTop: 10 }}>
                   Cargando
                 </TextStyle>
               </View>
@@ -1125,14 +1123,14 @@ export default function App({
                     <TextStyle
                       verySmall
                       color={mode === "light" ? light.textDark : dark.textWhite}
-                      customStyle={{ marginVertical: 18 }}
+                      style={{ marginVertical: 18 }}
                     >
                       Añade un método de pago para completar la compra. Solo
                       VBELA puede ver tus datos de pago.
                     </TextStyle>
                   )}
                   <ScrollView
-                    style={{ maxHeight: height / 6.5, marginTop: 10 }}
+                    style={{ maxHeight: SCREEN_HEIGHT / 6.5, marginTop: 10 }}
                     showsVerticalScrollIndicator={false}
                   >
                     {cards.map((card) => (
@@ -1262,7 +1260,7 @@ export default function App({
             <TextStyle
               smallParagraph
               color={mode === "light" ? light.textDark : dark.textWhite}
-              customStyle={{ marginTop: 18 }}
+              style={{ marginTop: 18 }}
             >
               Añadiendo tarjeta
             </TextStyle>
@@ -1282,7 +1280,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    height: height / 2.8,
+    height: SCREEN_HEIGHT / 2.8,
   },
   addCard: {
     width: "100%",

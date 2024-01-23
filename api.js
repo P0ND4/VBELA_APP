@@ -223,6 +223,9 @@ export const editInventory = async (data) =>
 export const removeInventory = async (data) =>
   await connect({ data, url: "/inventory/remove" });
 
+export const discountInventory= async (data) =>
+  await connect({ data, url: "/inventory/discount" });
+
 export const addSale = async (data) =>
   await connect({ data, url: "/sale/add" });
 
@@ -258,3 +261,12 @@ export const editGroup = async (data) =>
 
 export const removeGroup = async (data) =>
   await connect({ data, url: "/group/remove" });
+
+export const addRecipe = async (data) =>
+  await connect({ data, url: "/recipe/add" });
+
+export const editRecipe = async (data) =>
+  await connect({ data, url: "/recipe/edit" });
+
+export const removeRecipe = async (data) =>
+  await connect({ data, url: "/recipe/remove" });

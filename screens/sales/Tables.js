@@ -15,10 +15,8 @@ import ButtonStyle from "@components/ButtonStyle";
 import Layout from "@components/Layout";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
-const height = Dimensions.get("window").height;
-const width = Dimensions.get("window").width;
+const { light, dark } = theme();
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
 
 const Tables = () => {
   const mode = useSelector((state) => state.mode);
@@ -53,7 +51,7 @@ const Tables = () => {
   }, []);
 
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       <View style={{ width: "100%" }}>
         <View style={styles.header}>
           <View style={styles.titlesContainer}>
@@ -61,7 +59,7 @@ const Tables = () => {
               Hoy
             </TextStyle>
             <TextStyle
-              customStyle={{ marginLeft: 10 }}
+              style={{ marginLeft: 10 }}
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
               {`${hours}:${minutes}:${seconds} ${AMPM}`}
@@ -83,12 +81,12 @@ const Tables = () => {
       <View>
         <TextStyle
           bigParagraph
-          customStyle={{ marginVertical: 30 }}
+          style={{ marginVertical: 30 }}
           color={mode === "light" ? light.textDark : dark.textWhite}
         >
           Mesas
         </TextStyle>
-        <ScrollView style={{ maxHeight: height / 1.5 }}>
+        <ScrollView style={{ maxHeight: SCREEN_HEIGHT / 1.5 }}>
           {tables?.map((table) => {
             const OF = orders.find(
               (o) => o.ref === table.id && o.pay === false
@@ -109,14 +107,14 @@ const Tables = () => {
                         ? dark.main2
                         : light.main4
                     }
-                    customStyle={{ marginRight: 8 }}
+                    style={{ marginRight: 8 }}
                     smallSubtitle
                   >
                     {table.table}
                   </TextStyle>
                 </TouchableOpacity>
                 <ButtonStyle
-                  style={{ width: width / 1.6 }}
+                  style={{ width: SCREEN_WIDTH / 1.6 }}
                   backgroundColor={
                     !OF
                       ? light.main2
@@ -130,6 +128,7 @@ const Tables = () => {
                       id: OF ? OF.id : undefined,
                       ref: table.id,
                       table: table.table,
+                      invoice: OF ? OF.invoice : null,
                       selection: OF ? OF.selection : [],
                       reservation: false
                     })
@@ -144,7 +143,7 @@ const Tables = () => {
                           ? dark.textWhite
                           : light.textDark
                       }
-                      customStyle={{ fontSize: width / 19 }}
+                      style={{ fontSize: SCREEN_WIDTH / 19 }}
                     >
                       Menu
                     </TextStyle>

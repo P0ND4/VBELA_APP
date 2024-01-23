@@ -11,8 +11,7 @@ import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const CreateZone = ({ route, navigation }) => {
   const {
@@ -85,12 +84,7 @@ const CreateZone = ({ route, navigation }) => {
   };
 
   return (
-    <Layout
-      style={{
-        marginTop: 0,
-        padding: 30,
-      }}
-    >
+    <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
         <ScrollView
           showsVerticalScrollIndicator={false}

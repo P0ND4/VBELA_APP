@@ -8,18 +8,14 @@ import { change as changeEconomy } from "@features/function/economySlice";
 import { change as changeMenu } from "@features/tables/menuSlice";
 import { change as changeKitchen } from "@features/tables/kitchenSlice";
 import { change as changeRoster } from "@features/function/rosterSlice";
-
-import { change as changePeople } from "@features/function/peopleSlice";
-
-import { change as changeClient } from "@features/people/clientSlice";
-import { change as changeSupplier } from "@features/people/supplierSlice";
-
+import { change as changeCustomers } from "@features/people/customersSlice";
+import { change as changeSuppliers } from "@features/people/suppliersSlice";
 import { change as changeInventory } from "@features/inventory/informationSlice";
 import { change as changeProducts } from "@features/sales/productsSlice";
 import { change as changeSlice } from "@features/sales/salesSlice";
 import { change as changeAccommodations } from "@features/zones/accommodationsSlice";
 import { change as changeGroups } from "@features/sales/groupsSlice";
-
+import { change as changeRecipes } from "@features/sales/recipesSlice";
 
 export default changeGeneralInformation = (dispatch, data) => {
   dispatch(changeZones(data.zones));
@@ -32,17 +28,12 @@ export default changeGeneralInformation = (dispatch, data) => {
   dispatch(changeMenu(data.menu));
   dispatch(changeKitchen(data.kitchen));
   dispatch(changeRoster(data.roster));
-  
-  
-  dispatch(changePeople(data.people));
-
-  dispatch(changeClient(data.people.clients));
-  dispatch(changeSupplier(data.people.suppliers));
-
-
+  dispatch(changeCustomers(data.people.customers));
+  dispatch(changeSuppliers(data.people.suppliers));
   dispatch(changeInventory(data.inventory));
   dispatch(changeProducts(data.products));
   dispatch(changeSlice(data.sales));
   dispatch(changeAccommodations(data.accommodations));
   dispatch(changeGroups(data.groups));
+  dispatch(changeRecipes(data.recipes));
 };

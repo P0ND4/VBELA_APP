@@ -11,8 +11,7 @@ import * as WebBrowser from "expo-web-browser";
 
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const Event = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
@@ -56,7 +55,7 @@ const Event = ({ route, navigation }) => {
             color={light.main2}
             center
             bigParagraph
-            customStyle={{ marginTop: 15 }}
+            style={{ marginTop: 15 }}
           >
             V {route.params.version}
           </TextStyle>

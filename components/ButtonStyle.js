@@ -1,7 +1,7 @@
 import { TouchableOpacity, View, StyleSheet } from "react-native";
 import theme from "@theme";
 
-const light = theme.colors.light;
+const { light } = theme();
 
 const styles = StyleSheet.create({
   default: {

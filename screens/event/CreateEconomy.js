@@ -19,8 +19,7 @@ import { thousandsSystem } from "@helpers/libs";
 import { add, edit, remove } from "@features/function/economySlice";
 import helperNotification from "@helpers/helperNotification";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const CreateEconomy = ({ route, navigation }) => {
   const {
@@ -214,12 +213,7 @@ const CreateEconomy = ({ route, navigation }) => {
   };
 
   return (
-    <Layout
-      style={{
-        marginTop: 0,
-        padding: 30,
-      }}
-    >
+    <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
         <ScrollView
           showsVerticalScrollIndicator={false}

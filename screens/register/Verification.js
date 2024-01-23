@@ -32,8 +32,7 @@ import {
   addUser,
 } from "@api";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const Verification = ({ navigation, route }) => {
   const mode = useSelector((state) => state.mode);
@@ -116,7 +115,7 @@ const Verification = ({ navigation, route }) => {
   };
 
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -140,7 +139,7 @@ const Verification = ({ navigation, route }) => {
               <TextStyle
                 smallParagraph
                 center
-                customStyle={{ marginTop: 8 }}
+                style={{ marginTop: 8 }}
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
                 Hemos enviado un código de verificación a tu{" "}

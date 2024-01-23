@@ -22,10 +22,8 @@ import ButtonStyle from "@components/ButtonStyle";
 import theme from "@theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { light, dark } = theme();
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("screen");
 
 const Kitchen = () => {
   const kitchen = useSelector((state) => state.kitchen);
@@ -230,11 +228,11 @@ const Kitchen = () => {
   };
 
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       {orders?.length === 0 && ordersFinished?.length === 0 && (
         <TextStyle
           center
-          customStyle={{ marginTop: 10 }}
+          style={{ marginTop: 10 }}
           color={light.main2}
         >
           NO HAY PEDIDOS
@@ -249,7 +247,7 @@ const Kitchen = () => {
             <View>
               <TextStyle
                 smallSubtitle
-                customStyle={{ marginVertical: 10 }}
+                style={{ marginVertical: 10 }}
                 color={light.main2}
               >
                 En cocina
@@ -262,7 +260,7 @@ const Kitchen = () => {
         {orders.length === 0 && (
           <TextStyle
             center
-            customStyle={{ marginTop: 10 }}
+            style={{ marginTop: 10 }}
             color={light.main2}
           >
             NO HAY ORDENES EN COCINA
@@ -273,7 +271,7 @@ const Kitchen = () => {
             <View>
               <TextStyle
                 smallSubtitle
-                customStyle={{ marginVertical: 10 }}
+                style={{ marginVertical: 10 }}
                 color={light.main2}
               >
                 Ordenes finalizado
@@ -286,7 +284,7 @@ const Kitchen = () => {
         {ordersFinished.length === 0 && (
           <TextStyle
             center
-            customStyle={{ marginTop: 10 }}
+            style={{ marginTop: 10 }}
             color={light.main2}
           >
             NO HAY ORDENES FINALIZADOS

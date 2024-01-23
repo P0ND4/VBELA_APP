@@ -15,9 +15,7 @@ import TextStyle from "@components/TextStyle";
 import { Calendar } from "react-native-calendars";
 import { getFontSize } from "@helpers/libs";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
-
+const { light, dark } = theme();
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 
 const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {

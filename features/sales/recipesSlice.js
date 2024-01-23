@@ -1,24 +1,24 @@
 const { createSlice } = require("@reduxjs/toolkit");
 
-export const peopleSlice = createSlice({
-  name: "people",
+export const recipesSlice = createSlice({
+  name: "recipes",
   initialState: [],
   reducers: {
     change: (state, action) => (state = action.payload),
     add: (state, action) => void (state = state.push(action.payload)),
     edit: (state, action) => {
       const { id, data } = action.payload;
-      const index = state.findIndex((p) => p.id === id);
-      state[index] = { ...state[index], ...data };
+      const index = state.findIndex((m) => m.id === id);
+      state[index] = data;
     },
     remove: (state, action) => {
       const { id } = action.payload;
-      const index = state.findIndex(p => p.id === id);
+      const index = state.findIndex((m) => m.id === id);
       state.splice(index, 1);
     },
-    clean: (state, action) => [],
+    clean: (state, action) => (state = []),
   },
 });
 
-export const { add, edit, remove, clean, change } = peopleSlice.actions;
-export default peopleSlice.reducer;
+export const { clean, change, add, edit, remove } = recipesSlice.actions;
+export default recipesSlice.reducer;

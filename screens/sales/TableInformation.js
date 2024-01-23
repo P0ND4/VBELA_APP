@@ -15,8 +15,7 @@ import ButtonStyle from "@components/ButtonStyle";
 import theme from "@theme";
 import { removeMany } from "@features/tables/ordersSlice";
 
-const dark = theme.colors.dark;
-const light = theme.colors.light;
+const { light, dark } = theme();
 
 const TableInformation = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
@@ -55,7 +54,6 @@ const TableInformation = ({ route, navigation }) => {
   return (
     <Layout
       style={{
-        marginTop: 0,
         justifyContent: "center",
         alignItem: "center",
         padding: 30,

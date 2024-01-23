@@ -25,8 +25,7 @@ import SALES from "@assets/login/sales.png";
 import ACCOMODATION from "@assets/login/accomodation.png";
 import BOTH from "@assets/login/both.png";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const Selection = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
@@ -105,7 +104,7 @@ const Selection = ({ route, navigation }) => {
   };
 
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       <View style={{ marginBottom: 10 }}>
         <TextStyle subtitle center color={light.main2}>
           ¿Que prefieres?
@@ -113,7 +112,7 @@ const Selection = ({ route, navigation }) => {
         <TextStyle
           center
           smallParagraph
-          customStyle={{ marginTop: 10 }}
+          style={{ marginTop: 10 }}
           color={mode === "light" ? light.textDark : dark.textWhite}
         >
           Queremos conocer tus preferencias y el propósito de uso de la

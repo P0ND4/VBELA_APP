@@ -13,44 +13,44 @@ import {
   FlatList,
   KeyboardAvoidingView,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
-import { thousandsSystem, random, months, getFontSize } from "@helpers/libs";
+import { thousandsSystem, random, getFontSize } from "@helpers/libs";
 import { add as addS } from "@features/sales/salesSlice";
 import { change as changeP } from "@features/sales/productsSlice";
 import { add as addE, edit as editE } from "@features/function/economySlice";
-import { add as addClient } from "@features/people/clientSlice";
+import { add as addCustomer } from "@features/people/customersSlice";
 import { edit as editRS } from "@features/zones/standardReservationsSlice";
 import { edit as editRA } from "@features/zones/accommodationReservationsSlice";
+import { edit as editInv } from "@features/inventory/informationSlice";
 import {
   editUser,
   editEconomy,
   addEconomy,
   addPerson,
   editReservation,
+  discountInventory
 } from "@api";
+import { useNavigation } from "@react-navigation/native";
+import FullFilterDate from "@components/FullFilterDate";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
-import { useNavigation } from "@react-navigation/native";
 
-const SCREEN_HEIGHT = Dimensions.get("screen").height;
-const SCREEN_WIDTH = Dimensions.get("screen").width;
-
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("screen");
+const { light, dark } = theme();
 
 const Sales = ({ route }) => {
   const user = useSelector((state) => state.user);
+  const inventory = useSelector(state => state.inventory);
   const helperStatus = useSelector((state) => state.helperStatus);
   const productsRef = useSelector((state) => state.products);
   const mode = useSelector((state) => state.mode);
   const sales = useSelector((state) => state.sales);
   const groupsREF = useSelector((state) => state.groups);
   const economy = useSelector((state) => state.economy);
-  const client = useSelector((state) => state.client);
+  const customers = useSelector((state) => state.customers);
 
   const initialState = {
     active: false,
@@ -76,14 +76,10 @@ const Sales = ({ route }) => {
   const [subcategorySelected, setSubcategorySelected] = useState(null);
   const [groups, setGroups] = useState([]);
 
-  const [days, setDays] = useState([]);
-  const [years, setYears] = useState([]);
   const [keyCategory, setKeyCategory] = useState(Math.random());
   const [keySubcategory, setKeySubcategory] = useState(Math.random());
 
-  const dayRef = useRef();
-  const monthRef = useRef();
-  const yearRef = useRef();
+  const code = useRef(random(6, { number: true })).current;
 
   useEffect(() => {
     setKeySubcategory(Math.random());
@@ -100,31 +96,6 @@ const Sales = ({ route }) => {
     }
     setGroups(groups);
   }, [groupsREF]);
-
-  useEffect(() => {
-    const date = new Date();
-    let years = [date.getFullYear()];
-
-    for (let i = 5; i >= 0; i--) {
-      years.push(years[years.length - 1] - 1);
-    }
-
-    setYears(years);
-  }, []);
-
-  useEffect(() => {
-    const date = new Date();
-    const days = new Date(
-      filters.year === "all" ? date.getFullYear() : filters.year,
-      filters.month === "all" ? 1 : filters.month + 1,
-      0
-    ).getDate();
-    const monthDays = [];
-    for (let day = 0; day < days; day++) {
-      monthDays.push(day + 1);
-    }
-    setDays(monthDays);
-  }, [filters.year, filters.month]);
 
   const ref = route.params?.ref;
   const name = route.params?.name;
@@ -223,7 +194,7 @@ const Sales = ({ route }) => {
       data.type = "customer";
       data.creationDate = new Date().getTime();
       data.modificationDate = new Date().getTime();
-      dispatch(addClient(data));
+      dispatch(addCustomer(data));
 
       const newReservation = { ...createClient };
       const newHosted = { ...hosted, owner: clientID };
@@ -337,6 +308,58 @@ const Sales = ({ route }) => {
         tip +
         tax;
 
+  const inventoryDiscountHandler = async (selection) => {
+    const ingredients = selection.flatMap((s) =>
+      s.recipe?.ingredients.map((i) => {
+        const iUpdate = { ...i };
+        iUpdate.quantity *= s.count;
+        return iUpdate;
+      })
+    );
+
+    let inventories = [];
+
+    for (let ingredient of ingredients) {
+      const inv = inventory.find((i) => i.id === ingredient.id);
+      const obj = {
+        id: random(20),
+        quantity: ingredient.quantity,
+        creationDate: new Date().getTime(),
+        currentValue: inv.currentValue,
+        element: ingredient.id,
+      };
+
+      const validation = inventories.find((i) => i.id === ingredient.id);
+      if (validation) {
+        inventories = inventories.map((i) => {
+          if (i.id === validation.id) {
+            const newI = { ...i };
+            newI.output = [...newI.output, obj];
+            return newI;
+          }
+          return i;
+        });
+      } else {
+        const output = [...inv.output, obj];
+        inventories.push({ ...inv, output });
+      }
+    }
+
+    for (let inventory of inventories) {
+      dispatch(editInv({ id: inventory.id, data: inventory }));
+    }
+
+    await discountInventory({
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
+      inventories,
+      helpers: helperStatus.active
+        ? [helperStatus.id]
+        : user.helpers.map((h) => h.id),
+    });
+  };
+
   const saveOrder = async ({
     data: dat,
     completeSelection,
@@ -346,8 +369,8 @@ const Sales = ({ route }) => {
     const id = dat.ID ? dat.ID : random(20);
 
     const person =
-      client.find((p) => p.id === ref) ||
-      client.find((p) => p?.clientList?.some((c) => c.id === ref));
+      customers.find((p) => p.id === ref) ||
+      customers.find((p) => p?.clientList?.some((c) => c.id === ref));
 
     if (sales.find((sale) => sale.id === id))
       return saveOrder({
@@ -362,6 +385,7 @@ const Sales = ({ route }) => {
 
     data.id = id;
     data.ref = ref || null;
+    data.invoice = code;
     data.selection = completeSelection;
     data.pay = dat.pay;
     data.discount = dat.discount || null;
@@ -387,6 +411,7 @@ const Sales = ({ route }) => {
       dispatch(changeP(newProducts));
       if (dat.pay) navigation.pop();
       navigation.navigate("OrderCompletion", {
+        code,
         selection: currentSelection,
         pay: data.pay,
         total: totalPaid,
@@ -397,6 +422,11 @@ const Sales = ({ route }) => {
           tip: dat.tip || null,
         },
       });
+
+      const selectionWithRecipe = selection.filter((c) => c.recipe);
+      if (selectionWithRecipe.length && dat.pay)
+        inventoryDiscountHandler(selectionWithRecipe);
+
       await editUser({
         identifier: helperStatus.active
           ? helperStatus.identifier
@@ -417,7 +447,7 @@ const Sales = ({ route }) => {
   };
 
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -538,7 +568,7 @@ const Sales = ({ route }) => {
               )}
             </View>
             <View>
-              <View style={styles.header}>
+              <View style={styles.row}>
                 <FlatList
                   key={keyCategory}
                   data={groups}
@@ -772,9 +802,7 @@ const Sales = ({ route }) => {
                               ]}
                             >
                               <TextStyle verySmall>{item.identifier}</TextStyle>
-                              <View
-                                style={[styles.header, { flexWrap: "wrap" }]}
-                              >
+                              <View style={[styles.row, { flexWrap: "wrap" }]}>
                                 <TextStyle verySmall>
                                   {thousandsSystem(item.value)}
                                 </TextStyle>
@@ -865,7 +893,7 @@ const Sales = ({ route }) => {
             ]}
           >
             <View>
-              <View style={styles.header}>
+              <View style={styles.row}>
                 <TextStyle bigSubtitle color={light.main2} bold>
                   FILTRA
                 </TextStyle>
@@ -890,7 +918,7 @@ const Sales = ({ route }) => {
               </TextStyle>
             </View>
             <View style={{ marginTop: 6 }}>
-              <View style={[styles.header, { marginTop: 15 }]}>
+              <View style={[styles.row, { marginTop: 15 }]}>
                 <View style={{ width: "48%" }}>
                   <TextStyle
                     smallParagraph
@@ -932,236 +960,22 @@ const Sales = ({ route }) => {
                   />
                 </View>
               </View>
-              <View style={[styles.header, { marginTop: 10 }]}>
-                <View>
-                  <ButtonStyle
-                    backgroundColor={
-                      mode === "light" ? light.main5 : dark.main2
-                    }
-                    style={{ width: SCREEN_WIDTH / 4.5, paddingVertical: 16 }}
-                    onPress={() => dayRef.current?.focus()}
-                  >
-                    <View style={styles.header}>
-                      <TextStyle
-                        color={
-                          filters.day !== "all"
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
-                        smallParagraph
-                      >
-                        {filters.day !== "all" ? filters.day : "Día"}
-                      </TextStyle>
-                      <Ionicons
-                        color={
-                          filters.day !== "all"
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
-                        size={getFontSize(10)}
-                        name="caret-down"
-                      />
-                    </View>
-                  </ButtonStyle>
-
-                  <View style={{ display: "none" }}>
-                    <Picker
-                      ref={dayRef}
-                      mode="dropdown"
-                      selectedValue={filters.day}
-                      onValueChange={(itemValue) =>
-                        setFilters({ ...filters, day: itemValue })
-                      }
-                      style={{
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                      }}
-                    >
-                      <Picker.Item
-                        label="Día"
-                        value="all"
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      />
-                      {days.map((day) => (
-                        <Picker.Item
-                          key={day}
-                          label={`${day}`}
-                          value={day}
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
-                <View>
-                  <ButtonStyle
-                    backgroundColor={
-                      mode === "light" ? light.main5 : dark.main2
-                    }
-                    style={{ width: SCREEN_WIDTH / 3.6, paddingVertical: 16 }}
-                    onPress={() => monthRef.current?.focus()}
-                  >
-                    <View style={styles.header}>
-                      <TextStyle
-                        color={
-                          filters.month !== "all"
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
-                        smallParagraph
-                      >
-                        {filters.month !== "all"
-                          ? months[filters.month - 1]
-                          : "Mes"}
-                      </TextStyle>
-                      <Ionicons
-                        color={
-                          filters.month !== "all"
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
-                        size={getFontSize(10)}
-                        name="caret-down"
-                      />
-                    </View>
-                  </ButtonStyle>
-                  <View style={{ display: "none" }}>
-                    <Picker
-                      ref={monthRef}
-                      mode="dropdown"
-                      selectedValue={filters.month}
-                      onValueChange={(itemValue) =>
-                        setFilters({ ...filters, month: itemValue })
-                      }
-                      style={{
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                      }}
-                    >
-                      <Picker.Item
-                        label="Mes"
-                        value="all"
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      />
-                      {months.map((month, index) => (
-                        <Picker.Item
-                          key={month}
-                          label={month}
-                          value={index + 1}
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
-                <View>
-                  <ButtonStyle
-                    backgroundColor={
-                      mode === "light" ? light.main5 : dark.main2
-                    }
-                    style={{ width: SCREEN_WIDTH / 4.5, paddingVertical: 16 }}
-                    onPress={() => yearRef.current?.focus()}
-                  >
-                    <View style={styles.header}>
-                      <TextStyle
-                        color={
-                          filters.year !== "all"
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
-                        smallParagraph
-                      >
-                        {filters.year !== "all" ? filters.year : "Año"}
-                      </TextStyle>
-                      <Ionicons
-                        color={
-                          filters.year !== "all"
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
-                        size={getFontSize(10)}
-                        name="caret-down"
-                      />
-                    </View>
-                  </ButtonStyle>
-                  <View style={{ display: "none" }}>
-                    <Picker
-                      ref={yearRef}
-                      mode="dropdown"
-                      selectedValue={filters.year}
-                      onValueChange={(itemValue) =>
-                        setFilters({ ...filters, year: itemValue })
-                      }
-                      style={{
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                      }}
-                    >
-                      <Picker.Item
-                        label="Año"
-                        value="all"
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      />
-                      {years.map((year, index) => (
-                        <Picker.Item
-                          key={year}
-                          label={`${year}`}
-                          value={year}
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
-              </View>
+              <FullFilterDate
+                title="Por fecha (CREACIÓN)"
+                defaultValue={{
+                  day: filters.day,
+                  month: filters.month,
+                  year: filters.year,
+                }}
+                increment={5}
+                onChangeDay={(value) => setFilters({ ...filters, day: value })}
+                onChangeMonth={(value) =>
+                  setFilters({ ...filters, month: value })
+                }
+                onChangeYear={(value) =>
+                  setFilters({ ...filters, year: value })
+                }
+              />
             </View>
             <View
               style={{
@@ -1216,16 +1030,10 @@ const Sales = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-  header: {
+  row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  textHeader: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    marginRight: 10,
-    borderRadius: 8,
   },
   footerCatalogue: {
     height: "40%",
@@ -1253,10 +1061,6 @@ const styles = StyleSheet.create({
     width: "90%",
     borderRadius: 8,
     padding: 30,
-  },
-  cardPicker: {
-    padding: 2,
-    borderRadius: 8,
   },
   category: {
     paddingVertical: 8,

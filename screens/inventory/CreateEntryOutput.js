@@ -19,8 +19,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import Layout from "@components/Layout";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const CreateEntryOutput = ({ route, navigation }) => {
   const {
@@ -174,7 +173,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
   };
 
   return (
-    <Layout style={{ marginTop: 0, padding: 30 }}>
+    <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -203,7 +202,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
               {editing && (
                 <TextStyle
                   color={light.main2}
-                  customStyle={{ marginVertical: 10 }}
+                  style={{ marginVertical: 10 }}
                 >
                   Elemento: {elementName}
                 </TextStyle>

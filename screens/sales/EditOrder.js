@@ -8,8 +8,7 @@ import ButtonStyle from "@components/ButtonStyle";
 import Layout from "@components/Layout";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const EditOrder = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
@@ -57,7 +56,7 @@ const EditOrder = ({ route, navigation }) => {
 
   if (route.params.data === "observation") {
     return (
-      <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
+      <Layout style={{ justifyContent: "space-between" }}>
         <View />
         <View style={{ alignItems: "center" }}>
           <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
@@ -67,7 +66,7 @@ const EditOrder = ({ route, navigation }) => {
             verySmall
             color={light.main2}
             center
-            customStyle={{ width: "80%" }}
+            style={{ width: "80%" }}
           >
             Escriba una breve observación para ser más específico con el pedido
             {!sales ? ", esto lo leerá cocina" : ""}
@@ -148,7 +147,7 @@ const EditOrder = ({ route, navigation }) => {
 
   if (route.params.data === "count") {
     return (
-      <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
+      <Layout style={{ justifyContent: "space-between" }}>
         <View />
         <View style={{ alignItems: "center" }}>
           <TextStyle color={light.main2}>
@@ -188,7 +187,7 @@ const EditOrder = ({ route, navigation }) => {
 
   if (route.params.data === "item") {
     return (
-      <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
+      <Layout style={{ justifyContent: "space-between" }}>
         <View />
         <View style={{ alignItems: "center" }}>
           <TextStyle color={light.main2}>Cantidad: </TextStyle>
@@ -249,7 +248,7 @@ const EditOrder = ({ route, navigation }) => {
 
   if (route.params.data === "tax") {
     return (
-      <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
+      <Layout style={{ justifyContent: "space-between" }}>
         <View />
         <View style={{ alignItems: "center" }}>
           <TextStyle color={light.main2}>Impuesto establecido</TextStyle>
@@ -284,7 +283,7 @@ const EditOrder = ({ route, navigation }) => {
 
   if (route.params.data === "tip") {
     return (
-      <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
+      <Layout style={{ justifyContent: "space-between" }}>
         <View />
         <View style={{ alignItems: "center" }}>
           <TextStyle color={light.main2}>Propina obtenida</TextStyle>
@@ -319,7 +318,7 @@ const EditOrder = ({ route, navigation }) => {
 
   if (route.params.data === "value") {
     return (
-      <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
+      <Layout style={{ justifyContent: "space-between" }}>
         <View />
         <View style={{ alignItems: "center" }}>
           <TextStyle color={light.main2}>Editar precio unitario</TextStyle>
@@ -338,7 +337,7 @@ const EditOrder = ({ route, navigation }) => {
           <TextStyle
             verySmall
             color={mode === "light" ? light.textDark : dark.textWhite}
-            customStyle={{ width: "50%" }}
+            style={{ width: "50%" }}
             center
           >
             El precio unitario de este producto será cambiado por solo esta

@@ -20,8 +20,7 @@ import theme from "@theme";
 import { thousandsSystem, getFontSize } from "@helpers/libs";
 import { add, edit, remove } from "@features/function/rosterSlice";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const CreateRoster = ({ route, navigation }) => {
   const {
@@ -126,7 +125,10 @@ const CreateRoster = ({ route, navigation }) => {
             setLoading(true);
             cleanData();
             dispatch(remove({ id: data.id }));
-            Alert.alert("ÉXITO", "Se ha eliminado la información correctamente");
+            Alert.alert(
+              "ÉXITO",
+              "Se ha eliminado la información correctamente"
+            );
             await removeRoster({
               identifier: helperStatus.active
                 ? helperStatus.identifier
@@ -144,12 +146,7 @@ const CreateRoster = ({ route, navigation }) => {
   };
 
   return (
-    <Layout
-      style={{
-        marginTop: 0,
-        padding: 30,
-      }}
-    >
+    <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
         <ScrollView
           showsVerticalScrollIndicator={false}

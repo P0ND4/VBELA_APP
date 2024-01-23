@@ -27,11 +27,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 
 import Premium from "@assets/icons/premium.png";
 
-const dark = theme.colors.dark;
-const light = theme.colors.light;
-
-const width = Dimensions.get("window").width;
-const height = Dimensions.get("window").height;
+const { light, dark } = theme();
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
 
 const Statistic = ({ navigation }) => {
   const mode = useSelector((state) => state.mode);
@@ -382,7 +379,7 @@ const Statistic = ({ navigation }) => {
           >
             {name}
           </TextStyle>
-          <View style={{ maxWidth: width / 2.5 }}>
+          <View style={{ maxWidth: SCREEN_WIDTH / 2.5 }}>
             <ScrollView horizontal showsHorizontalScrollIndicator>
               <TextStyle {...restText} color={light.main2}>
                 {value}
@@ -398,7 +395,7 @@ const Statistic = ({ navigation }) => {
   const GeneralSales = ({ count, item, type }) => {
     return (
       <View style={styles.row}>
-        <TextStyle verySmall color={light.main2} customStyle={{ margin: 5 }}>
+        <TextStyle verySmall color={light.main2} style={{ margin: 5 }}>
           Hay {count} ventas realizadas
         </TextStyle>
         <TouchableOpacity
@@ -412,7 +409,7 @@ const Statistic = ({ navigation }) => {
             size={getFontSize(24)}
             color={light.main2}
           />
-          <TextStyle verySmall color={light.main2} customStyle={{ margin: 5 }}>
+          <TextStyle verySmall color={light.main2} style={{ margin: 5 }}>
             Ver información
           </TextStyle>
         </TouchableOpacity>
@@ -521,12 +518,7 @@ const Statistic = ({ navigation }) => {
   };
 
   return (
-    <Layout
-      style={{
-        marginTop: 0,
-        padding: 10,
-      }}
-    >
+    <Layout style={{ padding: 10 }}>
       {!isLoading && (
         <View>
           <View
@@ -552,7 +544,7 @@ const Statistic = ({ navigation }) => {
                 }
                 onValueChange={(itemValue) => setDay(itemValue)}
                 style={{
-                  width: width / 3.4,
+                  width: SCREEN_WIDTH / 3.4,
                   backgroundColor: mode === "light" ? light.main5 : dark.main2,
                   color: mode === "light" ? light.textDark : dark.textWhite,
                   fontSize: 20,
@@ -597,7 +589,7 @@ const Statistic = ({ navigation }) => {
                   mode === "light" ? light.textDark : dark.textWhite
                 }
                 style={{
-                  width: width / 3.4,
+                  width: SCREEN_WIDTH / 3.4,
                   backgroundColor: mode === "light" ? light.main5 : dark.main2,
                   color: mode === "light" ? light.textDark : dark.textWhite,
                   fontSize: 20,
@@ -642,7 +634,7 @@ const Statistic = ({ navigation }) => {
                   mode === "light" ? light.textDark : dark.textWhite
                 }
                 style={{
-                  width: width / 3.4,
+                  width: SCREEN_WIDTH / 3.4,
                   backgroundColor: mode === "light" ? light.main5 : dark.main2,
                   color: mode === "light" ? light.textDark : dark.textWhite,
                   fontSize: 20,
@@ -675,7 +667,7 @@ const Statistic = ({ navigation }) => {
           <ScrollView
             bounces={false}
             showsVerticalScrollIndicator={false}
-            style={{ marginTop: 20, height: height / 1.25 }}
+            style={{ marginTop: 20, height: SCREEN_HEIGHT / 1.25 }}
           >
             {["both", "sales"].includes(user?.type) && (
               <Information
@@ -689,7 +681,7 @@ const Statistic = ({ navigation }) => {
                     <TextStyle
                       verySmall
                       color={light.main2}
-                      customStyle={{ margin: 5 }}
+                      style={{ margin: 5 }}
                     >
                       No hay ventas diarias (menú)
                     </TextStyle>
@@ -712,7 +704,7 @@ const Statistic = ({ navigation }) => {
                     <TextStyle
                       verySmall
                       color={light.main2}
-                      customStyle={{ margin: 5 }}
+                      style={{ margin: 5 }}
                     >
                       No hay ventas de productos y servicios
                     </TextStyle>
@@ -740,7 +732,7 @@ const Statistic = ({ navigation }) => {
                   <TextStyle
                     verySmall
                     color={light.main2}
-                    customStyle={{ margin: 5 }}
+                    style={{ margin: 5 }}
                   >
                     No hay gatos o inversiones realizados
                   </TextStyle>
@@ -764,7 +756,7 @@ const Statistic = ({ navigation }) => {
                   <TextStyle
                     verySmall
                     color={light.main2}
-                    customStyle={{ margin: 5 }}
+                    style={{ margin: 5 }}
                   >
                     No hay compras o costos realizados
                   </TextStyle>
@@ -816,7 +808,7 @@ const Statistic = ({ navigation }) => {
                   <TextStyle
                     verySmall
                     color={light.main2}
-                    customStyle={{ margin: 5 }}
+                    style={{ margin: 5 }}
                   >
                     No hay nominas realizadas
                   </TextStyle>
@@ -873,7 +865,7 @@ const Statistic = ({ navigation }) => {
                   <TextStyle
                     verySmall
                     color={light.main2}
-                    customStyle={{ margin: 5 }}
+                    style={{ margin: 5 }}
                   >
                     No hay cuentas por pagar
                   </TextStyle>
@@ -930,7 +922,7 @@ const Statistic = ({ navigation }) => {
                   <TextStyle
                     verySmall
                     color={light.main2}
-                    customStyle={{ margin: 5 }}
+                    style={{ margin: 5 }}
                   >
                     No hay cuentas por cobrar
                   </TextStyle>
@@ -958,7 +950,7 @@ const Statistic = ({ navigation }) => {
                 <ProgressChart
                   style={{ marginTop: 20 }}
                   data={data}
-                  width={width - 20}
+                  width={SCREEN_WIDTH - 20}
                   height={220}
                   strokeWidth={16}
                   radius={32}
@@ -972,9 +964,9 @@ const Statistic = ({ navigation }) => {
               <View>
                 <LineChart
                   data={dataLine}
-                  width={width - 20}
+                  width={SCREEN_WIDTH - 20}
                   style={{ paddingRight: 35, marginTop: 20 }}
-                  height={height / 4}
+                  height={SCREEN_HEIGHT / 4}
                   chartConfig={getConfig({ BFO: 0, BTO: 0, DP: 0 })}
                 />
                 <Image source={Premium} style={styles.premium} />
@@ -997,7 +989,7 @@ const Statistic = ({ navigation }) => {
           <TextStyle
             bigParagraph
             color={mode === "dark" ? dark.textWhite : light.textDark}
-            customStyle={{ marginTop: 15 }}
+            style={{ marginTop: 15 }}
           >
             CARGANDO
           </TextStyle>
@@ -1026,16 +1018,16 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: 6,
-    width: Math.floor(width / 3.25),
+    width: Math.floor(SCREEN_WIDTH / 3.25),
     marginHorizontal: 5,
-    height: Math.floor(height / 13),
+    height: Math.floor(SCREEN_HEIGHT / 13),
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
   premium: {
-    height: Math.floor(width / 20),
-    width: Math.floor(width / 20),
+    height: Math.floor(SCREEN_WIDTH / 20),
+    width: Math.floor(SCREEN_WIDTH / 20),
     position: "absolute",
     top: 10,
     right: 10,

@@ -17,14 +17,13 @@ import theme from "@theme";
 import { useRef } from "react";
 import TextStyle from "./TextStyle";
 
-const { width, height } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const DOT_SIZE = 40;
 const TICKER_HEIGHT = 40;
-const CIRCLE_SIZE = width * 0.6;
+const CIRCLE_SIZE = SCREEN_WIDTH * 0.6;
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const data = [
   {
@@ -98,9 +97,9 @@ const Circle = ({ scrollX }) => {
     <View style={[StyleSheet.absoluteFillObject, styles.circleContainer]}>
       {data.map(({ color }, index) => {
         const inputRange = [
-          (index - 0.55) * width,
-          index * width,
-          (index + 0.55) * width,
+          (index - 0.55) * SCREEN_WIDTH,
+          index * SCREEN_WIDTH,
+          (index + 0.55) * SCREEN_WIDTH,
         ];
         const scale = scrollX.interpolate({
           inputRange,
@@ -128,7 +127,7 @@ const Circle = ({ scrollX }) => {
 };
 
 const Ticker = ({ scrollX }) => {
-  const inputRange = [-width, 0, width];
+  const inputRange = [-SCREEN_WIDTH, 0, SCREEN_WIDTH];
 
   const translateY = scrollX.interpolate({
     inputRange,
@@ -159,11 +158,11 @@ const Item = ({
   scrollX,
   subtitle,
 }) => {
-  const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
+  const inputRange = [(index - 1) * SCREEN_WIDTH, index * SCREEN_WIDTH, (index + 1) * SCREEN_WIDTH];
   const inputRangeOpacity = [
-    (index - 0.3) * width,
-    index * width,
-    (index + 0.3) * width,
+    (index - 0.3) * SCREEN_WIDTH,
+    index * SCREEN_WIDTH,
+    (index + 0.3) * SCREEN_WIDTH,
   ];
   const scale = scrollX.interpolate({
     inputRange,
@@ -172,17 +171,17 @@ const Item = ({
 
   const translateXHeading = scrollX.interpolate({
     inputRange,
-    outputRange: [width * 0.1, 0, -width * 0.1],
+    outputRange: [SCREEN_WIDTH * 0.1, 0, -SCREEN_WIDTH * 0.1],
   });
 
   const translateXSubtitle = scrollX.interpolate({
     inputRange,
-    outputRange: [width * 0.4, 0, -width * 0.4],
+    outputRange: [SCREEN_WIDTH * 0.4, 0, -SCREEN_WIDTH * 0.4],
   });
 
   const translateXDescription = scrollX.interpolate({
     inputRange,
-    outputRange: [width * 0.7, 0, -width * 0.7],
+    outputRange: [SCREEN_WIDTH * 0.7, 0, -SCREEN_WIDTH * 0.7],
   });
 
   const opacity = scrollX.interpolate({
@@ -233,7 +232,7 @@ const Item = ({
 };
 
 const Pagination = ({ scrollX }) => {
-  const inputRange = [-width, 0, width];
+  const inputRange = [-SCREEN_WIDTH, 0, SCREEN_WIDTH];
   const translateX = scrollX.interpolate({
     inputRange,
     outputRange: [-DOT_SIZE, 0, DOT_SIZE],
@@ -265,7 +264,7 @@ const Pagination = ({ scrollX }) => {
 };
 
 const Button = ({ scrollX }) => {
-  const inputRange = [-width, 0, width];
+  const inputRange = [-SCREEN_WIDTH, 0, SCREEN_WIDTH];
 
   const translateYText = scrollX.interpolate({
     inputRange,
@@ -274,14 +273,14 @@ const Button = ({ scrollX }) => {
 
   const translateYBackground = scrollX.interpolate({
     inputRange,
-    outputRange: [-Math.floor(height / 15.8), 0, Math.floor(height / 15.8)],
+    outputRange: [-Math.floor(SCREEN_HEIGHT / 15.8), 0, Math.floor(SCREEN_HEIGHT / 15.8)],
   });
 
   return (
     <View style={[styles.button]}>
       <TouchableOpacity style={styles.buttonStyle}>
         <View style={styles.buttonContent}>
-          <TextStyle customStyle={{ position: "absolute", left: "25%" }}>
+          <TextStyle style={{ position: "absolute", left: "25%" }}>
             Suscribirse a
           </TextStyle>
           <View style={styles.buttonContainer}>
@@ -297,7 +296,7 @@ const Button = ({ scrollX }) => {
                   <TextStyle
                     key={index}
                     color={light.main4}
-                    customStyle={styles.buttonText}
+                    style={styles.buttonText}
                   >
                     {type}
                   </TextStyle>
@@ -377,14 +376,14 @@ const Premium = () => {
 const styles = StyleSheet.create({
   centeredView: { flex: 1 },
   itemStyle: {
-    width,
-    height,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
     alignItems: "center",
     justifyContent: "center",
   },
   imageStyle: {
-    width: width * 0.75,
-    height: width * 0.75,
+    width: SCREEN_WIDTH * 0.75,
+    height: SCREEN_WIDTH * 0.75,
     resizeMode: "contain",
     flex: 1,
   },
@@ -413,7 +412,7 @@ const styles = StyleSheet.create({
     color: "#ccc",
     fontWeight: "600",
     textAlign: "left",
-    width: width * 0.75,
+    width: SCREEN_WIDTH * 0.75,
     marginRight: 10,
     fontSize: 15,
   },
@@ -477,7 +476,7 @@ const styles = StyleSheet.create({
     bottom: 12,
     right: "17%",
     overflow: "hidden",
-    height: Math.floor(height / 34),
+    height: Math.floor(SCREEN_HEIGHT / 34),
   },
   buttonStyle: {
     borderRadius: 8,
@@ -485,7 +484,7 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     width: "100%",
-    height: Math.floor(height / 15.8),
+    height: Math.floor(SCREEN_HEIGHT / 15.8),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -502,7 +501,7 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
   backgroundColorButton: {
-    height: Math.floor(height / 15.8),
+    height: Math.floor(SCREEN_HEIGHT / 15.8),
   },
 });
 

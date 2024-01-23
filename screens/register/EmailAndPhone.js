@@ -1,13 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import {
-  FlatList,
   View,
-  Image,
-  TouchableOpacity,
   StyleSheet,
-  Modal,
-  TouchableWithoutFeedback,
   ActivityIndicator,
   Alert,
   Keyboard,
@@ -19,26 +14,23 @@ import InputStyle from "@components/InputStyle";
 import Layout from "@components/Layout";
 import ButtonStyle from "@components/ButtonStyle";
 import countries from "@countries.json";
-import CountriesImages from "@assets/countries";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import PickerPhoneNumber from "@components/PickerPhoneNumber";
+import FlagButton from "@components/FlagButton";
 import theme from "@theme";
 
 import * as localization from "expo-localization";
 import * as WebBrowser from "expo-web-browser";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const EmailAndPhone = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
 
   const [value, setValue] = useState("");
   const [phoneNumberVisible, setPhoneNumberVisible] = useState(false);
-  const [data, setData] = useState([]);
   const [selection, setSelection] = useState(null);
   const [loading, setLoading] = useState({ state: false, button: null });
-
-  const [filter, setFilter] = useState("");
 
   const type = route.params.type;
 
@@ -55,21 +47,6 @@ const EmailAndPhone = ({ route, navigation }) => {
   }, []);
 
   //TODO Controlar el uso excesivo de mensajes y llamadas una variable en redux para manejar el whatsapp, msm y llamadas
-
-  useEffect(() => {
-    const keyword = filter.toLocaleLowerCase().replace("+", "");
-
-    if (keyword.length === 0) setData(countries);
-    else {
-      const filteredData = countries.filter((c) =>
-        ["country_name", "country_short_name", "country_phone_code"].some(
-          (field) => String(c[field]).toLowerCase().includes(keyword)
-        )
-      );
-
-      setData(filteredData);
-    }
-  }, [filter]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -161,48 +138,11 @@ const EmailAndPhone = ({ route, navigation }) => {
     );
   };
 
-  const Country = React.memo(({ item }) => {
-    return (
-      <TouchableOpacity
-        style={[
-          {
-            paddingVertical: 8,
-          },
-          styles.row,
-        ]}
-        onPress={() => {
-          setSelection(item);
-          setPhoneNumberVisible(!phoneNumberVisible);
-        }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Image
-            source={CountriesImages[item.country_short_name.toLowerCase()]}
-            style={{ width: 40, height: 40, borderRadius: 20 }}
-          />
-          <TextStyle
-            color={mode === "light" ? light.textDark : dark.textWhite}
-            customStyle={{ marginLeft: 10 }}
-            smallParagraph
-          >
-            {item.country_name}
-          </TextStyle>
-        </View>
-        <TextStyle
-          color={mode === "light" ? light.textDark : dark.textWhite}
-          smallParagraph
-        >
-          +{item.country_phone_code}
-        </TextStyle>
-      </TouchableOpacity>
-    );
-  });
-
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       <View>
         <TextStyle
-          customStyle={{ marginBottom: 8 }}
+          style={{ marginBottom: 8 }}
           bigSubtitle
           color={light.main2}
         >
@@ -219,37 +159,11 @@ const EmailAndPhone = ({ route, navigation }) => {
       </View>
       <View style={styles.row}>
         {type === "phone" && (
-          <TouchableOpacity
-            style={[
-              styles.flagButton,
-              styles.row,
-              { backgroundColor: mode === "light" ? light.main5 : dark.main2 },
-            ]}
+          <FlagButton
             onPress={() => setPhoneNumberVisible(!phoneNumberVisible)}
-          >
-            {selection && (
-              <Image
-                source={
-                  CountriesImages[selection?.country_short_name?.toLowerCase()]
-                }
-                style={{ width: 20, height: 20, borderRadius: 20 }}
-              />
-            )}
-            <TextStyle
-              customStyle={{ marginHorizontal: 5 }}
-              color={mode === "light" ? light.textDark : dark.textWhite}
-              smallParagraph
-            >
-              +{selection?.country_phone_code}
-            </TextStyle>
-            <Ionicons
-              name={phoneNumberVisible ? "caret-up" : "caret-down"}
-              color={
-                mode === "light" ? `${light.textDark}66` : `${dark.textWhite}66`
-              }
-              size={getFontSize(12)}
-            />
-          </TouchableOpacity>
+            arrow={phoneNumberVisible}
+            selection={selection}
+          />
         )}
         <InputStyle
           stylesContainer={{
@@ -265,7 +179,7 @@ const EmailAndPhone = ({ route, navigation }) => {
         />
       </View>
       <TextStyle
-        customStyle={{ marginBottom: 20 }}
+        style={{ marginBottom: 20 }}
         verySmall
         color={mode === "light" ? light.textDark : dark.textWhite}
       >
@@ -355,110 +269,20 @@ const EmailAndPhone = ({ route, navigation }) => {
           )}
         </ButtonStyle>
       )}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={phoneNumberVisible}
-        onRequestClose={() => {
-          setPhoneNumberVisible(!phoneNumberVisible);
-          setFilter("");
-        }}
-      >
-        <TouchableWithoutFeedback
-          onPress={() => {
-            setPhoneNumberVisible(!phoneNumberVisible);
-            setFilter("");
-          }}
-        >
-          <View style={{ backgroundColor: "#0005", height: "42%" }} />
-        </TouchableWithoutFeedback>
-        <View
-          style={[
-            styles.countriesContainer,
-            {
-              backgroundColor: mode === "light" ? light.main4 : dark.main1,
-            },
-          ]}
-        >
-          <View style={styles.row}>
-            <TextStyle
-              bigParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
-              Seleccionar el código de zona
-            </TextStyle>
-            <TouchableOpacity
-              onPress={() => {
-                setPhoneNumberVisible(!phoneNumberVisible);
-                setFilter("");
-              }}
-            >
-              <Ionicons
-                name="close"
-                color={
-                  mode === "light"
-                    ? `${light.textDark}66`
-                    : `${dark.textWhite}66`
-                }
-                size={getFontSize(24)}
-              />
-            </TouchableOpacity>
-          </View>
-          <InputStyle
-            left={() => (
-              <Ionicons
-                style={{ marginRight: 10 }}
-                name="search"
-                color={
-                  mode === "light"
-                    ? `${light.textDark}66`
-                    : `${dark.textWhite}66`
-                }
-                size={getFontSize(24)}
-              />
-            )}
-            placeholder="Buscar"
-            value={filter}
-            onChangeText={(text) => setFilter(text)}
-            stylesContainer={{ marginTop: 20, marginBottom: 15 }}
-            stylesInput={{ maxWidth: "85%" }}
-          />
-          <FlatList
-            data={data}
-            windowSize={25}
-            initialNumToRender={10}
-            decelerationRate="fast"
-            scrollSpeedMultiplier={0.5}
-            keyExtractor={(item) => item.country_short_name}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => <Country item={item} />}
-          />
-        </View>
-      </Modal>
+      <PickerPhoneNumber
+        modalVisible={phoneNumberVisible}
+        setModalVisible={setPhoneNumberVisible}
+        onChange={(item) => setSelection(item)}
+      />
     </Layout>
   );
 };
 
 const styles = StyleSheet.create({
-  countriesContainer: {
-    width: "100%",
-    height: "60%",
-    position: "absolute",
-    bottom: 0,
-    padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-  flagButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    width: "30%",
   },
   button: {
     flexDirection: "row",

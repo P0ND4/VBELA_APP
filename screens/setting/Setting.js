@@ -24,10 +24,8 @@ import theme from "@theme";
 import TextStyle from "@components/TextStyle";
 import { languageCodes } from "@helpers/libs";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
-
-const HEIGHT_SCREEN = Dimensions.get("screen").height;
+const { light, dark } = theme();
+const { height: SCREEN_HEIGHT } = Dimensions.get("screen");
 
 const Setting = ({ navigation }) => {
   const mode = useSelector((state) => state.mode);
@@ -71,9 +69,9 @@ const Setting = ({ navigation }) => {
   };
 
   return (
-    <Layout style={{ marginTop: 0, padding: 0, paddingHorizontal: 20 }}>
+    <Layout style={{ padding: 0, paddingHorizontal: 20 }}>
       <ScrollView
-        style={{ maxHeight: HEIGHT_SCREEN / 1.15 }}
+        style={{ maxHeight: SCREEN_HEIGHT / 1.15 }}
         showsVerticalScrollIndicator={false}
       >
         <Card
@@ -101,7 +99,7 @@ const Setting = ({ navigation }) => {
             <View style={styles.rowcenter}>
               <TextStyle
                 paragrahp
-                customStyle={{ marginRight: 10 }}
+                style={{ marginRight: 10 }}
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
                 WIFI
@@ -121,7 +119,7 @@ const Setting = ({ navigation }) => {
             <View style={styles.rowcenter}>
               <TextStyle
                 paragrahp
-                customStyle={{ marginRight: 10 }}
+                style={{ marginRight: 10 }}
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
                 Cliente y proveedor
@@ -141,7 +139,7 @@ const Setting = ({ navigation }) => {
             <View style={styles.rowcenter}>
               <TextStyle
                 paragrahp
-                customStyle={{ marginRight: 10 }}
+                style={{ marginRight: 10 }}
                 color={mode === "light" ? light.textDark : dark.textWhite}
               >
                 Privacidad y seguridad
@@ -160,7 +158,7 @@ const Setting = ({ navigation }) => {
           right={() => (
             <TextStyle
               paragrahp
-              customStyle={{ marginRight: 10 }}
+              style={{ marginRight: 10 }}
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
               Idioma ({languageCodes.find((l) => l.code === language)?.name})
@@ -175,7 +173,7 @@ const Setting = ({ navigation }) => {
           right={() => (
             <TextStyle
               paragrahp
-              customStyle={{ marginRight: 10 }}
+              style={{ marginRight: 10 }}
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
               Temas

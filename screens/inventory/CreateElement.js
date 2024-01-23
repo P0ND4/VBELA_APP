@@ -19,8 +19,7 @@ import TextStyle from "@components/TextStyle";
 import Layout from "@components/Layout";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const CreateElement = ({ route, navigation }) => {
   const {
@@ -41,6 +40,7 @@ const CreateElement = ({ route, navigation }) => {
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState(editing ? element.name : "");
   const [unit, setUnit] = useState(editing ? element.unit : "");
+  const [visible, setVisible] = useState(editing ? element.visible : "both");
   const [reorder, setReorder] = useState(
     editing ? thousandsSystem(element.reorder || 0) : ""
   );
@@ -54,7 +54,8 @@ const CreateElement = ({ route, navigation }) => {
   );
 
   const dispatch = useDispatch();
-  const pickerRef = useRef();
+  const pickerUnitRef = useRef();
+  const pickerVisibleRef = useRef();
 
   useEffect(() => {
     register("name", {
@@ -76,6 +77,7 @@ const CreateElement = ({ route, navigation }) => {
       },
     });
     register("unit", { value: editing ? element.unit : "", required: true });
+    register("visible", { value: editing ? element.visible : "both" });
     register("reorder", { value: editing ? element.reorder : 0 });
     register("currentValue", {
       value: editing ? element.currentValue : "",
@@ -193,8 +195,15 @@ const CreateElement = ({ route, navigation }) => {
     { label: "Onza fluida", value: "FL OZ" },
   ];
 
+  const visibleOptions = [
+    { label: "VISIBLE PARA VENTAS (por defecto)", value: "both" },
+    { label: "Restaurante/Bar", value: "menu" },
+    { label: "Productos&Servicios", value: "sales" },
+    { label: "Ninguno", value: 'none' },
+  ];
+
   return (
-    <Layout style={{ marginTop: 0, padding: 30 }}>
+    <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -244,7 +253,7 @@ const CreateElement = ({ route, navigation }) => {
               <View>
                 <ButtonStyle
                   backgroundColor={mode === "light" ? light.main5 : dark.main2}
-                  onPress={() => pickerRef.current?.focus()}
+                  onPress={() => pickerUnitRef.current?.focus()}
                 >
                   <View
                     style={{
@@ -280,7 +289,7 @@ const CreateElement = ({ route, navigation }) => {
 
                 <View style={{ display: "none" }}>
                   <Picker
-                    ref={pickerRef}
+                    ref={pickerUnitRef}
                     style={{
                       color: mode === "light" ? light.textDark : dark.textWhite,
                     }}
@@ -312,6 +321,72 @@ const CreateElement = ({ route, navigation }) => {
                   Seleccione la unidad del elemento
                 </TextStyle>
               )}
+              <View>
+                <ButtonStyle
+                  backgroundColor={mode === "light" ? light.main5 : dark.main2}
+                  onPress={() => pickerVisibleRef.current?.focus()}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <TextStyle
+                      color={
+                        visible !== 'both'
+                          ? mode === "light"
+                            ? light.textDark
+                            : dark.textWhite
+                          : "#888888"
+                      }
+                    >
+                      {visibleOptions.find((u) => u.value === visible)?.label}
+                    </TextStyle>
+                    <Ionicons
+                      color={
+                        visible !== 'both'
+                          ? mode === "light"
+                            ? light.textDark
+                            : dark.textWhite
+                          : "#888888"
+                      }
+                      size={getFontSize(15)}
+                      name="caret-down"
+                    />
+                  </View>
+                </ButtonStyle>
+
+                <View style={{ display: "none" }}>
+                  <Picker
+                    ref={pickerVisibleRef}
+                    style={{
+                      color: mode === "light" ? light.textDark : dark.textWhite,
+                    }}
+                    selectedValue={visible}
+                    onValueChange={(value) => {
+                      setValue("visible", value);
+                      setVisible(value);
+                    }}
+                  >
+                    {visibleOptions.map((u) => (
+                      <Picker.Item
+                        key={u.value}
+                        label={u.label}
+                        value={u.value}
+                        style={{
+                          backgroundColor:
+                            mode === "light" ? light.main5 : dark.main2,
+                        }}
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
               <InputStyle
                 value={quantity}
                 right={

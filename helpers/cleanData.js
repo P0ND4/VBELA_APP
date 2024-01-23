@@ -12,19 +12,14 @@ import { clean as cleanEconomy } from "@features/function/economySlice";
 import { inactive as inactiveSession } from "@features/user/sessionSlice";
 import { inactive as inactiveGroup } from "@features/helpers/statusSlice";
 import { clean as cleanRoster } from "@features/function/rosterSlice";
-
-
-import { clean as cleanPeople } from "@features/function/peopleSlice";
-
-import { clean as cleanClient } from "@features/people/clientSlice";
-import { clean as cleanSupplier } from "@features/people/supplierSlice";
-
-
+import { clean as cleanCustomers } from "@features/people/customersSlice";
+import { clean as cleanSuppliers } from "@features/people/suppliersSlice";
 import { clean as cleanInventory } from '@features/inventory/informationSlice';
 import { clean as cleanProducts } from "@features/sales/productsSlice";
 import { clean as cleanSales } from "@features/sales/salesSlice";
 import { clean as cleanAccommodations } from "@features/zones/accommodationsSlice";
 import { clean as cleanGroups } from "@features/sales/groupsSlice";
+import { clean as cleanRecipes } from "@features/sales/recipesSlice";
 
 export default cleanData = (dispatch) => {
   dispatch(inactiveSession());
@@ -41,16 +36,12 @@ export default cleanData = (dispatch) => {
   dispatch(cleanMenu());
   dispatch(cleanKitchen());
   dispatch(cleanRoster());
-
-
-  dispatch(cleanPeople());
-  
-  dispatch(cleanClient());
-  dispatch(cleanSupplier());
-  
+  dispatch(cleanCustomers());
+  dispatch(cleanSuppliers());
   dispatch(cleanInventory());
   dispatch(cleanProducts());
   dispatch(cleanSales());
   dispatch(cleanAccommodations());
   dispatch(cleanGroups());
+  dispatch(cleanRecipes());
 };

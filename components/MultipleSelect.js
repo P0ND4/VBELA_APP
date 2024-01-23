@@ -16,8 +16,7 @@ import ButtonStyle from "./ButtonStyle";
 import theme from "@theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const MultipleSelect = ({
   modalVisible,

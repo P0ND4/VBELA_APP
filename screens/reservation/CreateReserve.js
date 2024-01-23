@@ -33,8 +33,7 @@ import theme from "@theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AddPerson from "@components/AddPerson";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const CreateReserve = ({ route, navigation }) => {
   const {
@@ -234,7 +233,7 @@ const CreateReserve = ({ route, navigation }) => {
 
         obj.discount = data.discount;
         obj.type = data.type;
-        obj.accommodation = data.accommodation;
+        obj.accommodation = place.accommodation;
         obj.payment = 0;
         obj.creationDate = new Date().getTime();
         obj.modificationDate = new Date().getTime();
@@ -310,12 +309,7 @@ const CreateReserve = ({ route, navigation }) => {
   };
 
   return (
-    <Layout
-      style={{
-        marginTop: 0,
-        padding: 30,
-      }}
-    >
+    <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -349,7 +343,7 @@ const CreateReserve = ({ route, navigation }) => {
                   {nomenclature.name || nomenclature.nomenclature}
                 </TextStyle>
                 <TextStyle
-                  customStyle={{ marginLeft: 5 }}
+                  style={{ marginLeft: 5 }}
                   bigParagraph
                   color={light.main2}
                 >
@@ -473,7 +467,7 @@ const CreateReserve = ({ route, navigation }) => {
               )}
               {place.type === "standard" && hosted.length >= place.people && (
                 <TextStyle
-                  customStyle={{ marginVertical: 6 }}
+                  style={{ marginVertical: 6 }}
                   smallParagraph
                   color={light.main2}
                   center

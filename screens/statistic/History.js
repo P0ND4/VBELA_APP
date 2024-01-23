@@ -24,15 +24,13 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import Layout from "@components/Layout";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
-
+const { light, dark } = theme();
 const { height: SCREEN_HEIGHT } = Dimensions.get("screen");
 
 const History = ({ route }) => {
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
-  const customer = useSelector((state) => state.client);
+  const customers = useSelector((state) => state.customers);
   const economy = useSelector((state) => state.economy);
   const mode = useSelector((state) => state.mode);
   const [data, setData] = useState(route.params.item);
@@ -154,8 +152,8 @@ const History = ({ route }) => {
 
     for (let ownerRef of ids) {
       const person =
-        customer.find((p) => p.id === ownerRef) ||
-        customer.find((p) => p?.clientList?.some((c) => c.id === ownerRef));
+        customers.find((p) => p.id === ownerRef) ||
+        customers.find((p) => p?.clientList?.some((c) => c.id === ownerRef));
 
       const foundEconomy = economy.find((e) => e.ref === person.id);
 
@@ -234,7 +232,14 @@ const History = ({ route }) => {
                 });
               }
             };
-            if (item.ref) {
+            
+            const person =
+              customers.find((p) => p.id === item.ref) ||
+              customers.find((p) => p?.clientList?.some((c) => c.id === item.ref));
+
+            const foundEconomy = economy.find((e) => e.ref === person.id);
+
+            if (foundEconomy) {
               Alert.alert(
                 "ECONOMÍA",
                 "¿Quiere eliminar la información de economía de los clientes?",
@@ -299,7 +304,7 @@ const History = ({ route }) => {
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <TextStyle
               color={mode === "light" ? light.textDark : dark.textWhite}
-              customStyle={{ marginRight: 6 }}
+              style={{ marginRight: 6 }}
             >
               {thousandsSystem(item?.total)}
             </TextStyle>
@@ -381,6 +386,16 @@ const History = ({ route }) => {
                     ))}
                   </View>
                   <View style={{ marginRight: 5 }}>
+                    <TextStyle
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      >
+                        Identificación:{" "}
+                        <TextStyle color={light.main2}>
+                          {item.table}
+                        </TextStyle>
+                      </TextStyle>
                     <View style={styles.row}>
                       <TextStyle
                         color={
@@ -479,7 +494,7 @@ const History = ({ route }) => {
   };
 
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       <View style={[styles.row, { marginBottom: 20 }]}>
         <TextStyle
           subtitle

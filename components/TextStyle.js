@@ -2,7 +2,7 @@ import { Text, StyleSheet } from "react-native";
 import { getFontSize } from "@helpers/libs";
 import theme from "@theme";
 
-const light = theme.colors.light;
+const { light } = theme();
 
 const styles = StyleSheet.create({
   default: {
@@ -13,7 +13,7 @@ const styles = StyleSheet.create({
 
 const TextStyle = ({
   color,
-  customStyle,
+  style,
   bigTitle,
   title,
   smallTitle,
@@ -48,7 +48,7 @@ const TextStyle = ({
     justify && { textAlign: "justify" },
     right && { textAlign: "right" },
     bold && { fontWeight: "bold" },
-    customStyle,
+    style,
   ];
 
   //numberOfLines={1} PARA QUE SE VEA EN UNA SOLA LINEA

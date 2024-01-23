@@ -6,8 +6,7 @@ import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const GroupScreen = () => {
   const mode = useSelector((state) => state.mode);
@@ -18,7 +17,6 @@ const GroupScreen = () => {
   return (
     <Layout
       style={{
-        marginTop: 0,
         justifyContent: "center",
         alignItem: "center",
         padding: 30,
@@ -29,7 +27,7 @@ const GroupScreen = () => {
           Grupos
         </TextStyle>
         <TextStyle
-          customStyle={{ marginTop: 18 }}
+          style={{ marginTop: 18 }}
           color={mode === "light" ? light.textDark : dark.textWhite}
           smallParagraph
           justify

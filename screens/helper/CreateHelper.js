@@ -7,6 +7,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   ScrollView,
+  Vibration,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
@@ -22,9 +23,13 @@ import { addHelper, editHelper, removeHelper, getUser } from "@api";
 import { socket } from "@socket";
 import changeGeneralInformation from "@helpers/changeGeneralInformation";
 import { writeFile } from "@helpers/offline";
+import countries from "@countries.json";
+import PickerPhoneNumber from "@components/PickerPhoneNumber";
+import FlagButton from "@components/FlagButton";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+import * as localization from "expo-localization";
+
+const { light, dark } = theme();
 
 const CreateHelper = ({ navigation, route }) => {
   const {
@@ -38,6 +43,23 @@ const CreateHelper = ({ navigation, route }) => {
   const helpers = useSelector((state) => state.helpers);
 
   const item = route.params.item;
+
+  const [selection, setSelection] = useState(null);
+  const [isPhoneNumber, setIsPhoneNumber] = useState(false);
+  const [phoneNumberVisible, setPhoneNumberVisible] = useState(false);
+  const [identifier, setIdentifier] = useState("");
+
+  useEffect(() => {
+    const regionCode = localization.getLocales()[0].regionCode;
+    const found = countries.find((c) => c.country_short_name === regionCode);
+    if (found) setSelection(found);
+    else
+      setSelection({
+        country_name: "Estados Unidos",
+        country_short_name: "US",
+        country_phone_code: 1,
+      });
+  }, []);
 
   const [loading, setLoading] = useState(false);
   const [errorIdentifier, setErrorIdentifier] = useState(false);
@@ -95,10 +117,29 @@ const CreateHelper = ({ navigation, route }) => {
       register("identifier", {
         value: "",
         required: true,
-        validate: (text) =>
-          text !== user.identifier || "No puede ingresar a su propio perfil.",
+        validate: {
+          profile: (text) =>
+            text !== user.identifier || "No puede ingresar a su propio perfil.",
+          email: (text) => {
+            if (isPhoneNumber) return true;
+            if (
+              /^([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$/.test(
+                text
+              )
+            )
+              return true;
+            return "Correo electrónico invalido";
+          },
+          phone: (text) => {
+            if (!isPhoneNumber) return true;
+            if (/^[0-9+]{7,20}$/.test(text)) return true;
+            return "Número de teléfono invalido";
+          },
+        },
       });
+  }, [isPhoneNumber]);
 
+  useEffect(() => {
     register("user", {
       value: route.params.data === "Edit" ? item.user : "",
       required: true,
@@ -183,10 +224,10 @@ const CreateHelper = ({ navigation, route }) => {
     if (!u.error) {
       const userFound = u.helpers.find((helper) => helper.user === data.user);
 
-      if (userFound && userFound.password === data.password) {
-        const helpers = helpers.map((h) => h.id);
+      if (userFound?.password === data.password) {
+        const helpers = helpers?.map((h) => h.id);
 
-        if (helpers.length > 0) socket.emit("leave", { helpers });
+        if (helpers?.length > 0) socket.emit("leave", { helpers });
         socket.emit("enter_room", { helpers: [userFound.id] });
 
         if (!userFound.expoID.includes(user.expoID)) {
@@ -222,6 +263,7 @@ const CreateHelper = ({ navigation, route }) => {
         }
       } else setErrorUser(true);
     } else setErrorIdentifier(true);
+    setLoading(false);
   };
 
   const onSubmitEdit = async (data) => {
@@ -275,12 +317,7 @@ const CreateHelper = ({ navigation, route }) => {
   };
 
   return (
-    <Layout
-      style={{
-        marginTop: 0,
-        padding: 30,
-      }}
-    >
+    <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -310,24 +347,87 @@ const CreateHelper = ({ navigation, route }) => {
               </TextStyle>
             </View>
             <View style={{ marginVertical: 20 }}>
-              {route.params.data !== "Create" &&
-                route.params.data !== "Edit" && (
-                  <InputStyle
-                    placeholder="Identificador al ingresar"
-                    maxLength={40}
-                    onChangeText={(text) => {
-                      setValue("identifier", text.trim());
-                    }}
-                  />
-                )}
+              {route.params.data === "Session" && (
+                <View>
+                  <TextStyle
+                    verySmall
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    {!isPhoneNumber
+                      ? "Puedes presionar el carácter (+) para ingresar a un número de teléfono"
+                      : "Puedes presionar la tecla (borrar) para ingresar a un correo electrónico"}
+                  </TextStyle>
+                  <View style={styles.row}>
+                    {isPhoneNumber && (
+                      <FlagButton
+                        onPress={() =>
+                          setPhoneNumberVisible(!phoneNumberVisible)
+                        }
+                        arrow={phoneNumberVisible}
+                        selection={selection}
+                      />
+                    )}
+                    <InputStyle
+                      stylesContainer={{
+                        width: !isPhoneNumber ? "100%" : "69%",
+                      }}
+                      placeholder={
+                        !isPhoneNumber
+                          ? "Correo electrónico"
+                          : "Número de teléfono"
+                      }
+                      maxLength={!isPhoneNumber ? 64 : 20}
+                      value={identifier}
+                      keyboardType={
+                        !isPhoneNumber ? "email-address" : "numeric"
+                      }
+                      onKeyPress={(e) => {
+                        if (
+                          e.nativeEvent.key === "Backspace" &&
+                          !identifier.length &&
+                          isPhoneNumber
+                        ) {
+                          Vibration.vibrate();
+                          setIsPhoneNumber(false);
+                        }
+                      }}
+                      onChangeText={(text) => {
+                        if (text.charAt(0) === "+") {
+                          Vibration.vibrate();
+                          setIsPhoneNumber(true);
+                          return;
+                        }
+                        const transform = !isPhoneNumber
+                          ? text.replace(/[^a-zA-Z0-9._@]/g, "")
+                          : text.replace(/[^0-9]/g, "").trim();
+                        setValue(
+                          "identifier",
+                          isPhoneNumber
+                            ? `+${selection.country_phone_code}${transform}`
+                            : transform
+                        );
+                        setIdentifier(transform);
+                      }}
+                    />
+                  </View>
+                </View>
+              )}
               {(errors.identifier?.type || errorIdentifier) && (
                 <TextStyle verySmall color={light.main2}>
                   {errors.identifier?.type === "required"
-                    ? "El identificador de la cuenta es requerido"
-                    : errors.identifier?.type === "validate"
+                    ? `El ${
+                        !isPhoneNumber
+                          ? "correo electrónico"
+                          : "número de teléfono"
+                      } de la cuenta es requerido`
+                    : errors.identifier?.type
                     ? errors.identifier?.message
                     : errorIdentifier
-                    ? "El identificador de la cuenta no existe"
+                    ? `El ${
+                        !isPhoneNumber
+                          ? "correo electrónico"
+                          : "número de teléfono"
+                      } de la cuenta no existe`
                     : ""}
                 </TextStyle>
               )}
@@ -368,57 +468,66 @@ const CreateHelper = ({ navigation, route }) => {
               {(route.params.data === "Create" ||
                 route.params.data === "Edit") && (
                 <View style={{ marginTop: 10 }}>
-                  <View style={styles.toggles}>
-                    <TextStyle smallParagraph color={light.main2}>
-                      VENTAS DIARIAS
-                    </TextStyle>
-                    <Switch
-                      trackColor={{ false: dark.main2, true: light.main2 }}
-                      thumbColor={light.main4}
-                      ios_backgroundColor="#3e3e3e"
-                      onValueChange={() => {
-                        setAccessToTables(!accessToTables);
-                        setValue("accessToTables", !accessToTables);
-                      }}
-                      value={accessToTables}
-                    />
-                  </View>
-                  <View style={styles.toggles}>
-                    <TextStyle smallParagraph color={light.main2}>
-                      PRODUCTOS Y SERVICIOS
-                    </TextStyle>
-                    <Switch
-                      trackColor={{ false: dark.main2, true: light.main2 }}
-                      thumbColor={light.main4}
-                      ios_backgroundColor="#3e3e3e"
-                      onValueChange={() => {
-                        setAccessToProductsAndServices(
-                          !accessToProductsAndServices
-                        );
-                        setValue(
-                          "accessToProductsAndServices",
-                          !accessToProductsAndServices
-                        );
-                      }}
-                      value={accessToProductsAndServices}
-                    />
-                  </View>
-                  <View style={styles.toggles}>
-                    <TextStyle smallParagraph color={light.main2}>
-                      RESERVACIONES
-                    </TextStyle>
-                    <Switch
-                      trackColor={{ false: dark.main2, true: light.main2 }}
-                      thumbColor={light.main4}
-                      ios_backgroundColor="#3e3e3e"
-                      onValueChange={() => {
-                        setAccessToReservations(!accessToReservations);
-                        setValue("accessToReservations", !accessToReservations);
-                      }}
-                      value={accessToReservations}
-                    />
-                  </View>
-                  <View style={styles.toggles}>
+                  {["both", "sales"].includes(user?.type) && (
+                    <View style={styles.row}>
+                      <TextStyle smallParagraph color={light.main2}>
+                        RESTAURANTE/BAR
+                      </TextStyle>
+                      <Switch
+                        trackColor={{ false: dark.main2, true: light.main2 }}
+                        thumbColor={light.main4}
+                        ios_backgroundColor="#3e3e3e"
+                        onValueChange={() => {
+                          setAccessToTables(!accessToTables);
+                          setValue("accessToTables", !accessToTables);
+                        }}
+                        value={accessToTables}
+                      />
+                    </View>
+                  )}
+                  {["both", "sales"].includes(user?.type) && (
+                    <View style={styles.row}>
+                      <TextStyle smallParagraph color={light.main2}>
+                        PRODUCTOS Y SERVICIOS
+                      </TextStyle>
+                      <Switch
+                        trackColor={{ false: dark.main2, true: light.main2 }}
+                        thumbColor={light.main4}
+                        ios_backgroundColor="#3e3e3e"
+                        onValueChange={() => {
+                          setAccessToProductsAndServices(
+                            !accessToProductsAndServices
+                          );
+                          setValue(
+                            "accessToProductsAndServices",
+                            !accessToProductsAndServices
+                          );
+                        }}
+                        value={accessToProductsAndServices}
+                      />
+                    </View>
+                  )}
+                  {["both", "accommodation"].includes(user?.type) && (
+                    <View style={styles.row}>
+                      <TextStyle smallParagraph color={light.main2}>
+                        RESERVACIONES
+                      </TextStyle>
+                      <Switch
+                        trackColor={{ false: dark.main2, true: light.main2 }}
+                        thumbColor={light.main4}
+                        ios_backgroundColor="#3e3e3e"
+                        onValueChange={() => {
+                          setAccessToReservations(!accessToReservations);
+                          setValue(
+                            "accessToReservations",
+                            !accessToReservations
+                          );
+                        }}
+                        value={accessToReservations}
+                      />
+                    </View>
+                  )}
+                  <View style={styles.row}>
                     <TextStyle smallParagraph color={light.main2}>
                       ESTADÍSTICAS
                     </TextStyle>
@@ -433,22 +542,24 @@ const CreateHelper = ({ navigation, route }) => {
                       value={accessToStatistics}
                     />
                   </View>
-                  <View style={styles.toggles}>
-                    <TextStyle smallParagraph color={light.main2}>
-                      PROVEEDOR
-                    </TextStyle>
-                    <Switch
-                      trackColor={{ false: dark.main2, true: light.main2 }}
-                      thumbColor={light.main4}
-                      ios_backgroundColor="#3e3e3e"
-                      onValueChange={() => {
-                        setAccessToSupplier(!accessToSupplier);
-                        setValue("accessToSupplier", !accessToSupplier);
-                      }}
-                      value={accessToSupplier}
-                    />
-                  </View>
-                  <View style={styles.toggles}>
+                  {["both", "sales"].includes(user?.type) && (
+                    <View style={styles.row}>
+                      <TextStyle smallParagraph color={light.main2}>
+                        PROVEEDOR
+                      </TextStyle>
+                      <Switch
+                        trackColor={{ false: dark.main2, true: light.main2 }}
+                        thumbColor={light.main4}
+                        ios_backgroundColor="#3e3e3e"
+                        onValueChange={() => {
+                          setAccessToSupplier(!accessToSupplier);
+                          setValue("accessToSupplier", !accessToSupplier);
+                        }}
+                        value={accessToSupplier}
+                      />
+                    </View>
+                  )}
+                  <View style={styles.row}>
                     <TextStyle smallParagraph color={light.main2}>
                       CLIENTE
                     </TextStyle>
@@ -463,7 +574,7 @@ const CreateHelper = ({ navigation, route }) => {
                       value={accessToCustomer}
                     />
                   </View>
-                  <View style={styles.toggles}>
+                  <View style={styles.row}>
                     <TextStyle smallParagraph color={light.main2}>
                       NÓMINA
                     </TextStyle>
@@ -478,36 +589,40 @@ const CreateHelper = ({ navigation, route }) => {
                       value={accessToRoster}
                     />
                   </View>
-                  <View style={styles.toggles}>
-                    <TextStyle smallParagraph color={light.main2}>
-                      COCINA
-                    </TextStyle>
-                    <Switch
-                      trackColor={{ false: dark.main2, true: light.main2 }}
-                      thumbColor={light.main4}
-                      ios_backgroundColor="#3e3e3e"
-                      onValueChange={() => {
-                        setAccessToKitchen(!accessToKitchen);
-                        setValue("accessToKitchen", !accessToKitchen);
-                      }}
-                      value={accessToKitchen}
-                    />
-                  </View>
-                  <View style={styles.toggles}>
-                    <TextStyle smallParagraph color={light.main2}>
-                      INVENTARIO
-                    </TextStyle>
-                    <Switch
-                      trackColor={{ false: dark.main2, true: light.main2 }}
-                      thumbColor={light.main4}
-                      ios_backgroundColor="#3e3e3e"
-                      onValueChange={() => {
-                        setAccessToInventory(!accessToInventory);
-                        setValue("accessToInventory", !accessToInventory);
-                      }}
-                      value={accessToInventory}
-                    />
-                  </View>
+                  {["both", "sales"].includes(user?.type) && (
+                    <View style={styles.row}>
+                      <TextStyle smallParagraph color={light.main2}>
+                        COCINA
+                      </TextStyle>
+                      <Switch
+                        trackColor={{ false: dark.main2, true: light.main2 }}
+                        thumbColor={light.main4}
+                        ios_backgroundColor="#3e3e3e"
+                        onValueChange={() => {
+                          setAccessToKitchen(!accessToKitchen);
+                          setValue("accessToKitchen", !accessToKitchen);
+                        }}
+                        value={accessToKitchen}
+                      />
+                    </View>
+                  )}
+                  {["both", "sales"].includes(user?.type) && (
+                    <View style={styles.row}>
+                      <TextStyle smallParagraph color={light.main2}>
+                        INVENTARIO
+                      </TextStyle>
+                      <Switch
+                        trackColor={{ false: dark.main2, true: light.main2 }}
+                        thumbColor={light.main4}
+                        ios_backgroundColor="#3e3e3e"
+                        onValueChange={() => {
+                          setAccessToInventory(!accessToInventory);
+                          setValue("accessToInventory", !accessToInventory);
+                        }}
+                        value={accessToInventory}
+                      />
+                    </View>
+                  )}
                 </View>
               )}
             </View>
@@ -555,12 +670,17 @@ const CreateHelper = ({ navigation, route }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <PickerPhoneNumber
+        modalVisible={phoneNumberVisible}
+        setModalVisible={setPhoneNumberVisible}
+        onChange={(item) => setSelection(item)}
+      />
     </Layout>
   );
 };
 
 const styles = StyleSheet.create({
-  toggles: {
+  row: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",

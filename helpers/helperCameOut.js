@@ -2,12 +2,12 @@ import { editHelper, getUser } from "@api";
 import sendNotification from "./sendNotification";
 
 export default helperCameOut = async (helperStatus, user) => {
-  const data = await getUser({ email: helperStatus.email });
-  const userFound = data.helpers.find((helper) => helper.id === helperStatus.id);
+  const data = await getUser({ identifier: helperStatus.identifier });
+  const userFound = data.helpers?.find((helper) => helper.id === helperStatus.id);
   const expoID = userFound.expoID.filter((expoID) => expoID !== user.expoID);
   
   await editHelper({
-    email: helperStatus.email,
+    identifier: helperStatus.identifier,
     helper: { ...userFound, expoID },
   });
 

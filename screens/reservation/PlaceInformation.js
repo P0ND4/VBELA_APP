@@ -17,8 +17,7 @@ import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const PlaceInformation = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
@@ -107,7 +106,6 @@ const PlaceInformation = ({ route, navigation }) => {
   return (
     <Layout
       style={{
-        marginTop: 0,
         justifyContent: "center",
         alignItem: "center",
         padding: 30,

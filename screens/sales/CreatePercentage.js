@@ -8,8 +8,7 @@ import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const CreatePercentage = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
@@ -49,7 +48,7 @@ const CreatePercentage = ({ route, navigation }) => {
             navigation.pop();
           }}
         >
-          <TextStyle color={light.main2} customStyle={{ paddingRight: 20 }}>
+          <TextStyle color={light.main2} style={{ paddingRight: 20 }}>
             Limpiar
           </TextStyle>
         </TouchableOpacity>
@@ -58,11 +57,11 @@ const CreatePercentage = ({ route, navigation }) => {
   }, []);
 
   return (
-    <Layout style={{ marginTop: 0, justifyContent: "space-between" }}>
+    <Layout style={{ justifyContent: "space-between" }}>
       <View />
       <View style={{ alignItems: "center" }}>
         <TextStyle
-          customStyle={{ marginBottom: 10 }}
+          style={{ marginBottom: 10 }}
           color={mode === "light" ? light.textDark : dark.textWhite}
         >
           Descuento fijo
@@ -85,7 +84,7 @@ const CreatePercentage = ({ route, navigation }) => {
       </View>
       <View style={{ alignItems: "center" }}>
         <TextStyle
-          customStyle={{ marginBottom: 10 }}
+          style={{ marginBottom: 10 }}
           color={mode === "light" ? light.textDark : dark.textWhite}
         >
           Descuento por porcentaje
@@ -129,7 +128,7 @@ const CreatePercentage = ({ route, navigation }) => {
           {discountInAmount && (
             <TextStyle
               color={mode === "light" ? light.textDark : dark.textWhite}
-              customStyle={{
+              style={{
                 textDecorationLine: "line-through",
                 textDecorationStyle: "solid",
               }}

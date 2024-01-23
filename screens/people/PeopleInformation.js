@@ -6,6 +6,7 @@ import {
   Keyboard,
   Alert,
   ScrollView,
+  Image,
   Dimensions,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
@@ -30,12 +31,11 @@ import {
   getFontSize,
 } from "@helpers/libs";
 import helperNotification from "@helpers/helperNotification";
+import Logo from "@assets/logo.png";
 
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
-
+const { light, dark } = theme();
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const PeopleInformation = ({ route, navigation }) => {
@@ -51,8 +51,8 @@ const PeopleInformation = ({ route, navigation }) => {
   const orders = useSelector((state) => state.orders);
   const sales = useSelector((state) => state.sales);
   const user = useSelector((state) => state.user);
-  const customers = useSelector((state) => state.client);
-  const suppliers = useSelector((state) => state.supplier);
+  const customers = useSelector((state) => state.customers);
+  const suppliers = useSelector((state) => state.suppliers);
   const nomenclatures = useSelector((state) => state.nomenclatures);
 
   const [registers, setRegisters] = useState([]);
@@ -843,15 +843,15 @@ const PeopleInformation = ({ route, navigation }) => {
       const text = registers.reduce((a, item) => {
         return (
           a +
-          `<table style="width: 100%; border: 1px solid #444444; padding: 8px; border-radius: 8px; margin: 20px 0;">
+          `<table style="width: 100%; padding: 8px; border-radius: 8px; margin: 20px 0;">
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">${
+            <p style="font-size: 28px; font-weight: 600;">${
               item.owner?.name
             }</p>
           </td>
           <td style="text-align: right;">
-            <p style="font-size: 22px; font-weight: 600;">
+            <p style="font-size: 28px; font-weight: 600;">
               ${thousandsSystem(item.owner?.identification)}
             </p>
           </td>
@@ -859,35 +859,35 @@ const PeopleInformation = ({ route, navigation }) => {
         <tr/>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">${item.name.toUpperCase()}</p>
+            <p style="font-size: 28px; font-weight: 600;">${item.name.toUpperCase()}</p>
           </td>
         </tr>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">Creación</p>
+            <p style="font-size: 28px; font-weight: 600;">Creación</p>
           </td>
           <td style="text-align: right;">
-            <p style="font-size: 22px; font-weight: 600;">
+            <p style="font-size: 28px; font-weight: 600;">
               ${changeDate(new Date(item.creationDate))}
             </p>
           </td>
         </tr>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">Modificación</p>
+            <p style="font-size: 28px; font-weight: 600;">Modificación</p>
           </td>
           <td style="text-align: right;">
-            <p style="font-size: 22px; font-weight: 600;">
+            <p style="font-size: 28px; font-weight: 600;">
               ${changeDate(new Date(item.modificationDate))}
             </p>
           </td>
         </tr>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">Total</p>
+            <p style="font-size: 28px; font-weight: 600;">Total</p>
           </td>
           <td style="text-align: right;">
-            <p style="font-size: 22px; font-weight: 600;">
+            <p style="font-size: 28px; font-weight: 600;">
               ${thousandsSystem(item.amount)}
             </p>
           </td>
@@ -895,7 +895,7 @@ const PeopleInformation = ({ route, navigation }) => {
         <tr/>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">${
+            <p style="font-size: 28px; font-weight: 600;">${
               item.amount !== item.payment ? "PENDIENTE" : "PAGADO"
             }</p>
           </td>
@@ -911,15 +911,15 @@ const PeopleInformation = ({ route, navigation }) => {
       const text = registers.reduce((a, item) => {
         return (
           a +
-          `<table style="width: 100%; border: 1px solid #444444; padding: 8px; border-radius: 8px; margin: 20px 0;">
+          `<table style="width: 100%; padding: 8px; border-radius: 8px; margin: 20px 0;">
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">${
+            <p style="font-size: 28px; font-weight: 600;">${
               item.owner?.name
             }</p>
           </td>
           <td style="text-align: right;">
-            <p style="font-size: 22px; font-weight: 600;">
+            <p style="font-size: 28px; font-weight: 600;">
               ${thousandsSystem(item.owner?.identification)}
             </p>
           </td>
@@ -927,75 +927,75 @@ const PeopleInformation = ({ route, navigation }) => {
         <tr/>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">${item.name.toUpperCase()}</p>
+            <p style="font-size: 28px; font-weight: 600;">${item.name.toUpperCase()}</p>
           </td>
         </tr>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">Creación</p>
+            <p style="font-size: 28px; font-weight: 600;">Creación</p>
           </td>
           <td style="text-align: right;">
-            <p style="font-size: 22px; font-weight: 600;">
+            <p style="font-size: 28px; font-weight: 600;">
               ${changeDate(new Date(item.creationDate))}
             </p>
           </td>
         </tr>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">Modificación</p>
+            <p style="font-size: 28px; font-weight: 600;">Modificación</p>
           </td>
           <td style="text-align: right;">
-            <p style="font-size: 22px; font-weight: 600;">
+            <p style="font-size: 28px; font-weight: 600;">
               ${changeDate(new Date(item.modificationDate))}
             </p>
           </td>
         </tr>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">Alojamiento</p>
+            <p style="font-size: 28px; font-weight: 600;">Alojamiento</p>
           </td>
           <td style="text-align: right;">
-            <p style="font-size: 22px; font-weight: 600;">
+            <p style="font-size: 28px; font-weight: 600;">
               ${thousandsSystem(item.reservations || 0)}
             </p>
           </td>
         </tr>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">Personas alojadas</p>
+            <p style="font-size: 28px; font-weight: 600;">Personas alojadas</p>
           </td>
           <td style="text-align: right;">
-            <p style="font-size: 22px; font-weight: 600;">
+            <p style="font-size: 28px; font-weight: 600;">
               ${thousandsSystem(item.people)}
             </p>
           </td>
         </tr>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">Ordenes realizadas/finalizadas</p>
+            <p style="font-size: 28px; font-weight: 600;">Ordenes realizadas/finalizadas</p>
           </td>
           <td style="text-align: right;">
-            <p style="font-size: 22px; font-weight: 600;">
+            <p style="font-size: 28px; font-weight: 600;">
               ${thousandsSystem(item.orders || 0)}
             </p>
           </td>
         </tr>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">Compras realizadas/finalizadas</p>
+            <p style="font-size: 28px; font-weight: 600;">Compras realizadas/finalizadas</p>
           </td>
           <td style="text-align: right;">
-            <p style="font-size: 22px; font-weight: 600;">
+            <p style="font-size: 28px; font-weight: 600;">
               ${thousandsSystem(item.sales || 0)}
             </p>
           </td>
         </tr>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">Total</p>
+            <p style="font-size: 28px; font-weight: 600;">Total</p>
           </td>
           <td style="text-align: right;">
-            <p style="font-size: 22px; font-weight: 600;">
+            <p style="font-size: 28px; font-weight: 600;">
               ${thousandsSystem(item.amount)}
             </p>
           </td>
@@ -1003,7 +1003,7 @@ const PeopleInformation = ({ route, navigation }) => {
         <tr/>
         <tr>
           <td style="text-align: left;">
-            <p style="font-size: 22px; font-weight: 600;">${
+            <p style="font-size: 28px; font-weight: 600;">${
               item.amount !== item.payment ? "PENDIENTE" : "PAGADO"
             }</p>
           </td>
@@ -1038,12 +1038,13 @@ const PeopleInformation = ({ route, navigation }) => {
 
 <body>
 <view style="padding: 20px; width: 500px; display: block; margin: 20px auto; background-color: #FFFFFF;">
-    <h2 style="text-align: center; color: #444444; font-size: 50px; font-weight: 800;">
-      DETALLES
-    </h2>
-    <p style="text-align: center; color: #444444; font-size: 25px; font-weight: 800;">
-      ${type === "general" ? "GENERAL" : "ESPECÍFICO"}
-    </p>
+<view>
+<img
+  src="${Image.resolveAssetSource(Logo).uri}" 
+  style="width: 22vw; display: block; margin: 0 auto; border-radius: 8px" />
+<p style="font-size: 30px; text-align: center">vbelapp.com</p>
+</view>
+<p style="font-size: 30px; text-align: center; margin: 20px 0; background-color: #444444; padding: 10px 0; color: #FFFFFF">DETALLES - ${type === "general" ? "GENERAL" : "ESPECÍFICO"}</p>    
     <view>
       ${textSupplier}
     </view>
@@ -1083,12 +1084,12 @@ const PeopleInformation = ({ route, navigation }) => {
 
 <body>
 <view style="padding: 20px; width: 500px; display: block; margin: 20px auto; background-color: #FFFFFF;">
-  <h2 style="text-align: center; color: #444444; font-size: 50px; font-weight: 800;">
-    DETALLES
-  </h2>
-  <p style="text-align: center; color: #444444; font-size: 25px; font-weight: 800;">
-    ${type === "general" ? "GENERAL" : "ESPECÍFICO"}
-  </p>
+<img
+src="${Image.resolveAssetSource(Logo).uri}"
+style="width: 22vw; display: block; margin: 0 auto; border-radius: 8px" />
+<p style="font-size: 30px; text-align: center">vbelapp.com</p>
+</view>
+<p style="font-size: 30px; text-align: center; margin: 20px 0; background-color: #444444; padding: 10px 0; color: #FFFFFF">DETALLES - ${type === "general" ? "GENERAL" : "ESPECÍFICO"}</p>    
   <view>
     ${textCustomer}
   </view>
@@ -1106,7 +1107,7 @@ const PeopleInformation = ({ route, navigation }) => {
 `;
 
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       <View style={[styles.row, { marginBottom: 20 }]}>
         <TextStyle
           subtitle

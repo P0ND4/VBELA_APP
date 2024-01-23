@@ -37,10 +37,8 @@ import KitchenAndReservations from "@assets/login/kitchen_and_reservations.png";
 import Teamwork from "@assets/login/teamwork.png";
 import EasyToUse from "@assets/login/easy_to_use.png";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
-
-const { width, height } = Dimensions.get("screen");
+const { light, dark } = theme();
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("screen");
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -194,7 +192,7 @@ const SignIn = ({ navigation }) => {
     return (
       <View style={{ position: "relative", bottom: 40, flexDirection: "row" }}>
         {DATA.map((_, i) => {
-          const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
+          const inputRange = [(i - 1) * SCREEN_WIDTH, i * SCREEN_WIDTH, (i + 1) * SCREEN_WIDTH];
 
           const scale = scrollX.interpolate({
             inputRange,
@@ -256,8 +254,8 @@ const SignIn = ({ navigation }) => {
   const Square = ({ scrollX }) => {
     const YOLO = Animated.modulo(
       Animated.divide(
-        Animated.modulo(scrollX, width),
-        new Animated.Value(width)
+        Animated.modulo(scrollX, SCREEN_WIDTH),
+        new Animated.Value(SCREEN_WIDTH)
       ),
       1
     );
@@ -269,19 +267,19 @@ const SignIn = ({ navigation }) => {
 
     const translateX = YOLO.interpolate({
       inputRange: [0, 0.5, 1],
-      outputRange: [0, -height, 0],
+      outputRange: [0, -SCREEN_HEIGHT, 0],
     });
 
     return (
       <Animated.View
         style={{
-          width: height,
-          height: height,
+          width: SCREEN_HEIGHT,
+          height: SCREEN_HEIGHT,
           backgroundColor: light.main2,
           borderRadius: 86,
           position: "absolute",
-          top: -height * 0.64,
-          left: -height * 0.33,
+          top: -SCREEN_HEIGHT * 0.64,
+          left: -SCREEN_HEIGHT * 0.33,
           transform: [
             {
               rotate,
@@ -298,8 +296,6 @@ const SignIn = ({ navigation }) => {
   return (
     <Layout
       style={{
-        flex: 1,
-        marginTop: 0,
         padding: 0,
         alignItems: "center",
         justifyContent: "center",
@@ -321,13 +317,13 @@ const SignIn = ({ navigation }) => {
         showsHorizontalScrollIndicator={false}
         renderItem={({ item }) => {
           return (
-            <View style={{ width, alignItems: "center", padding: 20 }}>
+            <View style={{ width: SCREEN_WIDTH, alignItems: "center", padding: 20 }}>
               <View style={{ flex: 1, justifyContent: "center" }}>
                 <Image
                   source={item.image}
                   style={{
-                    width: width / 1.5,
-                    height: width / 1.5,
+                    width: SCREEN_WIDTH / 1.5,
+                    height: SCREEN_WIDTH / 1.5,
                     resizeMode: "contain",
                   }}
                 />
@@ -336,13 +332,13 @@ const SignIn = ({ navigation }) => {
                 <TextStyle
                   color={light.main2}
                   subtitle
-                  customStyle={{ marginBottom: 10, fontWeight: 800 }}
+                  style={{ marginBottom: 10, fontWeight: 800 }}
                 >
                   {item.title}
                 </TextStyle>
                 <TextStyle
                   color={mode === "light" ? light.textDark : dark.textWhite}
-                  customStyle={{ fontWeight: "300" }}
+                  style={{ fontWeight: "300" }}
                   smallParagraph
                 >
                   {item.description}
@@ -355,7 +351,7 @@ const SignIn = ({ navigation }) => {
       <View style={{ alignItems: "center" }}>
         <TextStyle
           color={mode === "light" ? light.textDark : dark.textWhite}
-          customStyle={{ marginBottom: 15 }}
+          style={{ marginBottom: 15 }}
         >
           --------------- Inicia sesión con ---------------
         </TextStyle>

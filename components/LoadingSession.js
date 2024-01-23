@@ -1,11 +1,10 @@
 import { View, Modal } from "react-native";
 import { useSelector } from "react-redux";
-import Donut from "@components/Donut";
+import Donut from "@utils/Donut";
 import TextStyle from "@components/TextStyle";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const LoadingSession = ({ modalVisible, percentage }) => {
   const mode = useSelector((state) => state.mode);
@@ -25,7 +24,7 @@ const LoadingSession = ({ modalVisible, percentage }) => {
         <TextStyle
           bigParagraph
           color={mode === "dark" ? dark.textWhite : light.textDark}
-          customStyle={{ marginTop: 15 }}
+          style={{ marginTop: 15 }}
         >
           {percentage === 25
             ? "ESTABLECIENDO CONEXIÓN CON TERCEROS"

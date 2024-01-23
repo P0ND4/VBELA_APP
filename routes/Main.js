@@ -8,10 +8,7 @@ import {
   inactive,
   inactive as inactiveGroup,
 } from "@features/helpers/statusSlice";
-import {
-  change as changeHelper,
-  change as changeHelpers,
-} from "@features/helpers/informationSlice";
+import { change as changeHelpers } from "@features/helpers/informationSlice";
 import { change as changeLanguage } from "@features/settings/languageSlice";
 import { change as changeMode } from "@features/settings/modeSlice";
 import { change as changeSettings } from "@features/settings/settingsSlice";
@@ -43,6 +40,7 @@ import Place from "@screens/reservation/Place";
 import PlaceInformation from "@screens/reservation/PlaceInformation";
 import ReserveInformation from "@screens/reservation/ReserveInformation";
 import CreateOrder from "@screens/sales/CreateOrder";
+import CreateRecipe from "@screens/sales/CreateRecipe";
 import CreatePercentage from "@screens/sales/CreatePercentage";
 import CreateProduct from "@screens/sales/CreateProduct";
 import CreateTable from "@screens/sales/CreateTable";
@@ -81,9 +79,7 @@ Notifications.setNotificationHandler({
 
 const BACKGROUND_FETCH_TASK = "Sincronizando";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
-
+const { light, dark } = theme();
 const Stack = createStackNavigator();
 
 TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
@@ -453,7 +449,7 @@ const Main = () => {
     const change = ({ data, confidential }) => {
       if (confidential && !helperStatus.active) {
         dispatch(changeUser(data));
-        dispatch(changeHelper(data.helpers));
+        dispatch(changeHelpers(data.helpers));
       }
       if (helperStatus.active) {
         const user = checkUser(data);
@@ -616,6 +612,10 @@ const Main = () => {
           name="CreateOrder"
           component={CreateOrder}
           options={{ title: "Vender" }}
+        />
+        <Stack.Screen
+          name="CreateRecipe"
+          component={CreateRecipe}
         />
         <Stack.Screen name="CreateProduct" component={CreateProduct} />
         <Stack.Screen

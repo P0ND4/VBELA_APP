@@ -17,8 +17,7 @@ import InputStyle from "@components/InputStyle";
 import TextStyle from "@components/TextStyle";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const AddPerson = ({
   modalVisible,

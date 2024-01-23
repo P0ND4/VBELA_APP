@@ -31,10 +31,8 @@ import InputStyle from "@components/InputStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
-const height = Dimensions.get("window").height;
-const width = Dimensions.get("screen").width;
+const { light, dark } = theme();
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("screen");
 
 const PlaceScreen = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
@@ -212,7 +210,7 @@ const PlaceScreen = ({ route, navigation }) => {
         >
           <TextStyle
             color={light.main2}
-            customStyle={{ marginRight: 8 }}
+            style={{ marginRight: 8 }}
             smallSubtitle
           >
             {place.nomenclature}
@@ -332,7 +330,7 @@ const PlaceScreen = ({ route, navigation }) => {
               >
                 <View style={[styles.date, { backgroundColor }]}>
                   <TextStyle
-                    customStyle={{
+                    style={{
                       position: "absolute",
                       top: 0,
                       left: 1,
@@ -368,7 +366,7 @@ const PlaceScreen = ({ route, navigation }) => {
           center
           color={light.main2}
           bigParagraph
-          customStyle={{ width: "50%" }}
+          style={{ width: "50%" }}
         >
           No hay huéspedes encontrados
         </TextStyle>
@@ -517,7 +515,7 @@ const PlaceScreen = ({ route, navigation }) => {
   };
 
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       <View style={{ width: "100%" }}>
         {activeFilter && (
           <View
@@ -561,7 +559,7 @@ const PlaceScreen = ({ route, navigation }) => {
               </TouchableOpacity>
               <TouchableOpacity onPress={() => yearPickerRef.current.focus()}>
                 <TextStyle
-                  customStyle={{ marginLeft: 10 }}
+                  style={{ marginLeft: 10 }}
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 >
                   {year}
@@ -658,7 +656,7 @@ const PlaceScreen = ({ route, navigation }) => {
         {activeFilter && (
           <ScrollView
             showsVerticalScrollIndicator={false}
-            style={{ maxHeight: height / 1.22, marginTop: 20 }}
+            style={{ maxHeight: SCREEN_HEIGHT / 1.22, marginTop: 20 }}
           >
             <GuestCard />
           </ScrollView>
@@ -666,7 +664,7 @@ const PlaceScreen = ({ route, navigation }) => {
         {!activeFilter && (
           <ScrollView
             showsVerticalScrollIndicator={false}
-            style={{ maxHeight: height / 1.5 }}
+            style={{ maxHeight: SCREEN_HEIGHT / 1.5 }}
           >
             <DayOfTheMonth />
           </ScrollView>
@@ -882,8 +880,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   date: {
-    width: Math.floor(width / 10),
-    height: Math.floor(width / 10),
+    width: Math.floor(SCREEN_WIDTH / 10),
+    height: Math.floor(SCREEN_WIDTH / 10),
     justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 2,

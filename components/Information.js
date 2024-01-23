@@ -11,8 +11,7 @@ import TextStyle from "@components/TextStyle";
 import theme from "@theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const styles = StyleSheet.create({
   centeredView: {
@@ -61,8 +60,8 @@ const Information = ({
       <View style={styles.centeredView}>
         <View
           style={[
-            stylesTaken,
             { backgroundColor: mode === "light" ? light.main4 : dark.main2 },
+            stylesTaken
           ]}
         >
           <View style={{ width: "100%" }}>

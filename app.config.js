@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "VBELA",
     slug: "vbela",
-    version: "3.5.2",
+    version: "3.6.0",
     orientation: "portrait",
     icon: "./assets/logo.png",
     userInterfaceStyle: "light",
@@ -24,10 +24,14 @@ export default {
       },
     },
     android: {
+      googleServicesFile: process.env.EXPO_PUBLIC_GOOGLE_SERVICES,
+      package: "com.app.vbela",
+      versionCode: 53,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#FFFFFF",
       },
+      permissions: ["com.android.vending.BILLING"]
     },
     web: {
       favicon: "./assets/favicon.png",
@@ -47,11 +51,6 @@ export default {
       icon: "./assets/notification-icon.png",
     },
     scheme: ["vbela", "fb1235340873743796"],
-    android: {
-      googleServicesFile: process.env.EXPO_PUBLIC_GOOGLE_SERVICES,
-      package: "com.app.vbela",
-      versionCode: 52,
-    },
     extra: { eas: { projectId: "0dd838a6-95db-4883-9a7f-7e6112496cd0" } },
     owner: "lmacml",
   },

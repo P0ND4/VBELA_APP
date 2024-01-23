@@ -8,13 +8,14 @@ import {
   StyleSheet,
   FlatList,
   Modal,
+  Image,
   TouchableWithoutFeedback,
   Switch,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigation } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
 import AddPerson from "@components/AddPerson";
+import Logo from "@assets/logo.png";
 import {
   changeDate,
   thousandsSystem,
@@ -52,15 +53,12 @@ import InputStyle from "@components/InputStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import theme from "@theme";
 
-const dark = theme.colors.dark;
-const light = theme.colors.light;
+const { light, dark } = theme();
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("screen");
 
-const width = Dimensions.get("screen").width;
-const height = Dimensions.get("screen").height;
-
-const Hosted = ({ name, id, onChangeText, editable, style = {} }) => {
+const Hosted = ({ name, id, onChangeText, editable, style = {}, amount }) => {
   const mode = useSelector((state) => state.mode);
-  const [payment, setPayment] = useState("");
+  const [payment, setPayment] = useState(thousandsSystem(amount));
 
   return (
     <View key={id} style={[styles.row, style]}>
@@ -69,7 +67,10 @@ const Hosted = ({ name, id, onChangeText, editable, style = {} }) => {
       </TextStyle>
       <InputStyle
         editable={editable}
-        stylesContainer={{ width: width / 2.6, opacity: editable ? 1 : 0.5 }}
+        stylesContainer={{
+          width: SCREEN_WIDTH / 2.6,
+          opacity: editable ? 1 : 0.5,
+        }}
         placeholder="Pagado"
         keyboardType="numeric"
         value={payment}
@@ -96,7 +97,7 @@ const ReserveInformation = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
   const orders = useSelector((state) => state.orders);
   const economy = useSelector((state) => state.economy);
-  const customers = useSelector((state) => state.client);
+  const customers = useSelector((state) => state.customers);
 
   const [reserve, setReserve] = useState(null);
   const [totalPayment, setTotalPayment] = useState(0);
@@ -120,7 +121,6 @@ const ReserveInformation = ({ route, navigation }) => {
 
   const hostedChangeRef = useRef([]);
   const pickerRef = useRef();
-  const navigationStack = useNavigation();
 
   const place = route.params.place;
   const reservation = route.params.reservation;
@@ -130,13 +130,31 @@ const ReserveInformation = ({ route, navigation }) => {
   const [text, setText] = useState("");
 
   useEffect(() => {
+    const isCustomer = (owner) => {
+      if (owner) {
+        // Vemos si tiene afiliacion con cliente
+        const individual = customers.find((p) => p.id === owner); // Buscamos si es un cliente individual
+        if (!individual) {
+          // Comprobamos si lo es
+          const agency = customers.find((p) =>
+            p?.clientList?.some((c) => c.id === owner)
+          ); // Buscamos si es un cliente de agencia
+          if (agency) return agency; // Si lo es que lo guarde en clientes si no el parametro cliente queda null
+        } else return individual; // Si lo es pasamos el dato al cliente
+      }
+      return null;
+    };
+
     if (place.type === "accommodation") {
       const ids = reservation.map((r) => r.id);
       const reserves = accommodationReservations.filter((r) =>
         ids.includes(r.id)
       );
       const data = {
-        hosted: reserves,
+        hosted: reserves.map((r) => ({
+          customer: isCustomer(r.owner),
+          ...r,
+        })),
         days: reserves.map((r) => r.days).every((n) => n === reserves[0]?.days)
           ? reserves[0]?.days
           : "Mixto",
@@ -194,15 +212,29 @@ const ReserveInformation = ({ route, navigation }) => {
       const reserve = standardReservations.find(
         (r) => r.ref === reservation[0]?.ref
       );
-      setReserve(reserve);
-      const amount = reserve?.discount
-        ? reserve?.amount - reserve?.discount
-        : reserve?.amount;
 
-      setAmount(amount);
-      setTotalPayment(
-        reserve?.payment === "business" ? amount : reserve?.payment
-      );
+      if (reserve) {
+        setReserve({
+          ...reserve,
+          hosted: reserve?.hosted.map((r) => ({
+            customer: isCustomer(r.owner),
+            ...r,
+          })),
+        });
+
+        const amount = reserve?.discount
+          ? reserve?.amount - reserve?.discount
+          : reserve?.amount;
+
+        setAmount(amount);
+        setTotalPayment(
+          reserve?.payment === "business" ? amount : reserve?.payment
+        );
+      } else {
+        setReserve(null);
+        setAmount(0);
+        setTotalPayment(0);
+      }
     }
 
     setNomenclature(nomenclatureState.find((n) => n.id === place.id));
@@ -251,9 +283,35 @@ const ReserveInformation = ({ route, navigation }) => {
             </td>
             <td style="width: 50px; border: 1px solid #000; padding: 8px">
               <p style="font-size: 14px; font-weight: 600; word-break: break-word;">${
-                item.owner ? "SI" : "NO"
+                item.checkOut ? changeDate(new Date(item.checkOut)) : "NO"
               }</p>
             </td>
+            <td style="width: 50px; border: 1px solid #000; padding: 8px">
+              <p style="font-size: 14px; font-weight: 600; word-break: break-word;">${
+                !item.customer
+                  ? "No"
+                  : item.customer.special
+                  ? "Agencia"
+                  : "Individual"
+              }</p>
+            </td>
+            ${
+              place.type === "accommodation"
+                ? `<td style="width: 50px; border: 1px solid #000; padding: 8px">
+                  <p style="font-size: 14px; font-weight: 600; word-break: break-word;">
+                    ${
+                      !helperStatus.active || helperStatus.accessToReservations
+                        ? !item.payment
+                          ? "EN ESPERA"
+                          : item.payment === "business"
+                          ? "POR EMPRESA"
+                          : thousandsSystem(item.payment)
+                        : "PRIVADO"
+                    }
+                  </p>
+                </td>`
+                : ""
+            }
           </tr>`
       );
     }, "");
@@ -283,14 +341,13 @@ const ReserveInformation = ({ route, navigation }) => {
 
 <body>
 <view style="padding: 20px; width: 500px; display: block; margin: 20px auto; background-color: #FFFFFF;">
-    <view style="margin: 10px;">
-      <h2 style="text-align: center; color: #444444; font-size: 50px; font-weight: 800;">
-        RESERVACIÓN
-      </h2>
-      <p style="text-align: center; color: #444444; font-size: 38px; font-weight: 800;">
-        Huespédes
-      </p>
-    </view>
+  <view>
+    <img
+      src="${Image.resolveAssetSource(Logo).uri}"
+      style="width: 22vw; display: block; margin: 0 auto; border-radius: 8px" />
+    <p style="font-size: 30px; text-align: center">vbelapp.com</p>
+  </view>
+  <p style="font-size: 30px; text-align: center; margin: 20px 0; background-color: #444444; padding: 10px 0; color: #FFFFFF">RESERVACIÓN Y HUÉSPED</p>
     <view style="width: 100%;">
       <table style="width: 100%; margin-top: 30px;">
         <tr>
@@ -301,8 +358,19 @@ const ReserveInformation = ({ route, navigation }) => {
             <p style="font-size: 14px; font-weight: 600;">CHECK IN</p>
           </td>
           <td style="width: 50px; border: 1px solid #000; padding: 8px">
+            <p style="font-size: 14px; font-weight: 600;">CHECK OUT</p>
+          </td>
+          <td style="width: 50px; border: 1px solid #000; padding: 8px">
             <p style="font-size: 14px; font-weight: 600;">REGISTRADO</p>
           </td>
+          ${
+            place.type === "accommodation"
+              ? `
+              <td style="width: 50px; border: 1px solid #000; padding: 8px">
+                <p style="font-size: 14px; font-weight: 600;">PAGADO</p>
+              </td>`
+              : ""
+          }
         </tr>
         ${text?.replace(/,/g, "")}
       </table>
@@ -509,9 +577,16 @@ const ReserveInformation = ({ route, navigation }) => {
       if (options) setPaymentOptions({ ...paymentOptions, ...options });
       hostedChangeRef.current = hostedFiltered.map((h) => {
         const newHosted = { ...h };
-        newHosted.payment = h?.payment;
+        newHosted.payment = h?.discount
+          ? (h?.amount - h?.discount) * h?.days
+          : h?.amount * h?.days;
         return newHosted;
       });
+      setTotalToPay(
+        place.type === "accommodation"
+          ? hostedChangeRef.current.reduce((a, b) => a + b.payment, 0)
+          : amount
+      );
     };
 
     if (callBack) {
@@ -639,9 +714,9 @@ const ReserveInformation = ({ route, navigation }) => {
       (s, i, arr) => arr.filter((m) => m.clientID === s.clientID).length >= 2
     );
     const person = duplicates.find((d) => d.hosted?.owner === current); // Vemos cual es el usuario que se esta buscando
-
+      
     const amountGeneral = duplicates // Aqui vemos si dentro de los duplicados existe
-      .filter((d) => d.clientID === person.clientID)
+      .filter((d) => d.clientID === person?.clientID)
       .reduce((a, b) => a + b.hosted.amount * b.hosted.days, 0);
 
     const currentHosted = reserve?.hosted?.find((h) => h.owner === current); // Si no hay duplicados pasaremos el valor normal
@@ -650,34 +725,81 @@ const ReserveInformation = ({ route, navigation }) => {
     return person ? amountGeneral : amountUnique;
   };
 
-  const deleteEconomy = async ({ ids }) => {
+  const getOwners = ({ ids }) => {
     const manageEconomyHosted = [];
-    for (let owner of ids) {
-      const found = customers.find(
-        (p) => p?.clientList?.some((c) => c.id === owner) || p?.id === owner
-      );
-      if (!found) continue;
-      if (!manageEconomyHosted.some((h) => h?.clientID === found?.id)) {
-        manageEconomyHosted.push({ clientID: found?.id, owner });
+    //manageEconomyHosted, Esto es por si existe mas de un sub-cliente para no crear 2 o mas economy para un cliente
+    const reserveOwners = [];
+    // reserveOwners, es solo para habitaciones standard.
+    // Sirve para que cuando exista varios sub-clientes de una misma agencia se filtren.
+    // Cuando todos los sub-clientes hacen check-out de una misma agencia esta se va a cobrar,
+    // A la agencia, de lo contrario no se cobra.
+    // Si los sub-clientes son de diferentes agencias no pasa nada, corre el codigo normal
+    // Solo es para validar cuando hay muchos sub-clientes de una agencia en la misma habitacion
+
+    const getFiltered = (arr) => {
+      const result = arr.reduce((acc, item) => {
+        const found = acc.find((r) => r.clientID === item.clientID);
+        if (found) found.quantity += 1;
+        else
+          acc.push({ clientID: item.clientID, owner: item.owner, quantity: 1 });
+        return acc;
+      }, []);
+
+      return result;
+    };
+
+    // getFiltered filtramos los elementos que se repite y lo eliminamos, aparte sumamos en una
+    // nueva propiedad llamada quantity los elementos que se duplican
+
+    const hostedCheckOut = reserve.hosted.filter((h) => h.owner && !h.checkOut);
+
+    if (place.type === "standard") {
+      for (const hosted of hostedCheckOut) {
+        const found = customers.find(
+          (p) =>
+            p?.id === hosted.owner ||
+            p?.clientList?.some((c) => c.id === hosted.owner)
+        );
+        if (!found) continue;
+        reserveOwners.push({ clientID: found?.id, owner: hosted.owner });
       }
     }
-    const owners = manageEconomyHosted.map((m) => m?.owner);
+
+    for (let owner of ids) {
+      const found = customers.find(
+        (p) => p?.id === owner || p?.clientList?.some((c) => c.id === owner)
+      );
+      if (!found) continue;
+      manageEconomyHosted.push({ clientID: found?.id, owner });
+    }
+
+    const compareReserve = getFiltered(reserveOwners);
+    const compareEconomy = getFiltered(manageEconomyHosted);
+
+    if (place.type === 'standard') {
+      return compareEconomy.reduce((acc, curr) => {
+        const found = compareReserve.find((r) => r.clientID === curr.clientID);
+        if (!found || found.quantity === curr.quantity) acc.push(curr.owner);
+        return acc;
+      }, []);
+    } else return compareEconomy.map(c => c.owner);
+  };
+
+  const deleteEconomy = async ({ ids }) => {
+    const owners = getOwners({ ids });
 
     for (let ownerRef of owners) {
       const person = customers.find(
         (p) =>
           p.id === ownerRef || p?.clientList?.some((c) => c.id === ownerRef)
       );
-
       const foundEconomy = economy.find((e) => e.ref === person.id);
       const checkedAmount = debugHosted({ current: ownerRef, ids });
-
       if (!person) continue;
-
       if (foundEconomy) {
         const currentEconomy = { ...foundEconomy };
         currentEconomy.amount -=
-          place.type === "accommodation" ? checkedAmount : amount; //TODO CAMBIAR AMOUNT
+          place.type === "accommodation" ? checkedAmount : amount;
         currentEconomy.modificationDate = new Date().getTime();
         if (currentEconomy.amount <= 0) {
           dispatch(removeE({ id: foundEconomy.id }));
@@ -836,18 +958,7 @@ const ReserveInformation = ({ route, navigation }) => {
   };
 
   const manageEconomy = async ({ ids }) => {
-    const manageEconomyHosted = []; //Esto es por si existe mas de un sub-cliente para no crear 2 o mas economy para un cliente
-    for (let owner of ids) {
-      const found = customers.find(
-        (p) => p?.id === owner || p?.clientList?.some((c) => c.id === owner)
-      );
-      if (!found) continue;
-      if (!manageEconomyHosted.some((h) => h?.clientID === found?.id)) {
-        manageEconomyHosted.push({ clientID: found?.id, owner });
-      }
-    }
-    const owners = manageEconomyHosted.map((m) => m?.owner);
-
+    const owners = getOwners({ ids });
     for (let ownerRef of owners) {
       const person = customers.find(
         (p) =>
@@ -869,7 +980,7 @@ const ReserveInformation = ({ route, navigation }) => {
             name: person.name,
           },
           type: "debt",
-          amount: place.type === "accommodation" ? checkedAmount : amount, //TODO CAMBIAR AMOUNT
+          amount: place.type === "accommodation" ? checkedAmount : amount,
           name: `Deuda ${person.name}`,
           payment: 0,
           creationDate: new Date().getTime(),
@@ -889,7 +1000,7 @@ const ReserveInformation = ({ route, navigation }) => {
       } else {
         const currentEconomy = { ...foundEconomy };
         currentEconomy.amount +=
-          place.type === "accommodation" ? checkedAmount : amount; //TODO CAMBIAR AMOUNT
+          place.type === "accommodation" ? checkedAmount : amount;
         currentEconomy.modificationDate = new Date().getTime();
         dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
         await editEconomy({
@@ -906,39 +1017,39 @@ const ReserveInformation = ({ route, navigation }) => {
   };
 
   const Table = ({ item }) => {
-    const [client, setClient] = useState(null); //TODO QUE NO SE CAMBIE A CADA RATO
     const [informationModalVisible, setInformationModalVisible] =
       useState(false);
     const [editing, setEditing] = useState(false);
     const [openMoreInformation, setOpenMoreInformation] = useState(false);
+    const [debt, setDebt] = useState(0);
     const [handler, setHandler] = useState({
       active: true,
       key: Math.random(),
     });
 
     useEffect(() => {
-      if (item.owner) {
-        // Vemos si tiene afiliacion con cliente
-        const individual = customers.find((p) => p.id === item.owner); // Buscamos si es un cliente individual
-        if (!individual) {
-          // Comprovamos si lo es
-          const agency = customers.find((p) =>
-            p?.clientList?.some((c) => c.id === item.owner)
-          ); // Buscamos si es un cliente de agencia
-          if (agency) setClient(agency); // Si lo es que lo guarde en clientes si no el parametro cliente queda null
-        } else setClient(individual); // Si lo es pasamos el dato al cliente
-      }
-    },[item]);
+      const amount = item?.discount
+        ? item?.amount - item?.discount
+        : item?.amount;
+
+      setDebt(amount * item.days - item.payment);
+    }, [item]);
 
     const updateHosted = async ({ data, cleanData }) => {
-      data.id = item.id;
-      data.ref = item.ref;
-      data.owner = item.owner;
-      data.checkOut = item.checkOut;
+      const purifiedHosted = { ...item };
+      delete purifiedHosted.customer;
+      data.id = purifiedHosted.id;
+      data.ref = purifiedHosted.ref;
+      data.owner = purifiedHosted.owner;
+      data.checkIn =
+        purifiedHosted.checkIn && data.checkIn
+          ? purifiedHosted.checkIn
+          : data.checkIn;
+      data.checkOut = purifiedHosted.checkOut;
       let reserveUpdated;
 
       if (place.type === "accommodation") {
-        const date = new Date(item.start);
+        const date = new Date(purifiedHosted.start);
         const day = date.getDate();
         const month = date.getMonth();
         const year = date.getFullYear();
@@ -947,7 +1058,12 @@ const ReserveInformation = ({ route, navigation }) => {
           new Date(year, month, day),
           parseInt(data.days - 1)
         ).getTime();
-        dispatch(editRA({ id: item.id, data: { ...item, ...data, end } }));
+        dispatch(
+          editRA({
+            id: purifiedHosted.id,
+            data: { ...purifiedHosted, ...data, end },
+          })
+        );
       }
       if (place.type === "standard") {
         let reservationREF = standardReservations.find(
@@ -956,7 +1072,7 @@ const ReserveInformation = ({ route, navigation }) => {
         reserveUpdated = {
           ...reservationREF,
           hosted: reservationREF.hosted.map((h) => {
-            if (h.id === item.id) return data;
+            if (h.id === purifiedHosted.id) return data;
             return h;
           }),
         };
@@ -971,7 +1087,9 @@ const ReserveInformation = ({ route, navigation }) => {
           : user.identifier,
         reservation: {
           data:
-            place.type === "standard" ? reserveUpdated : [{ ...item, ...data }],
+            place.type === "standard"
+              ? reserveUpdated
+              : [{ ...purifiedHosted, ...data }],
           type: place.type,
         },
         helpers: helperStatus.active
@@ -1020,11 +1138,11 @@ const ReserveInformation = ({ route, navigation }) => {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
-              if (!client) return;
+              if (!item.customer) return;
               navigation.navigate("PeopleInformation", {
                 type: "person",
                 userType: "customer",
-                ref: client.id,
+                ref: item.customer.id,
               });
             }}
             style={[
@@ -1039,7 +1157,11 @@ const ReserveInformation = ({ route, navigation }) => {
               smallParagraph
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
-              {!client ? 'No' : client.special ? 'Agencia' : 'Individual'}
+              {!item.customer
+                ? "No"
+                : item.customer.special
+                ? "Agencia"
+                : "Individual"}
             </TextStyle>
           </TouchableOpacity>
           <TouchableOpacity
@@ -1196,18 +1318,18 @@ const ReserveInformation = ({ route, navigation }) => {
                   </TextStyle>
                   <TouchableOpacity
                     onPress={() => {
-                      if (!client) return;
+                      if (!item.customer) return;
                       navigation.navigate("PeopleInformation", {
                         type: "person",
                         userType: "customer",
-                        ref: client.id,
+                        ref: item.customer.id,
                       });
                     }}
                   >
                     <TextStyle color={light.main2}>
-                      {!client
+                      {!item.customer
                         ? "No"
-                        : client.special
+                        : item.customer.special
                         ? "Agencia"
                         : "Individual"}
                     </TextStyle>
@@ -1227,6 +1349,16 @@ const ReserveInformation = ({ route, navigation }) => {
                     </TextStyle>
                   </TouchableOpacity>
                 </View>
+                {item.type === "accommodation" && (
+                  <TextStyle
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  >
+                    Deuda:{" "}
+                    <TextStyle color={light.main2}>
+                      {!debt ? "SIN DEUDA" : thousandsSystem(debt)}
+                    </TextStyle>
+                  </TextStyle>
+                )}
                 {place.type === "accommodation" && (
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <TextStyle
@@ -1508,12 +1640,12 @@ const ReserveInformation = ({ route, navigation }) => {
   };
 
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        style={{ maxHeight: height / 1.3 }}
+        style={{ maxHeight: SCREEN_HEIGHT / 1.3 }}
         contentContainerStyle={{
-          height: height / 1.3,
+          height: SCREEN_HEIGHT / 1.3,
           justifyContent: "center",
           alignItem: "center",
         }}
@@ -1958,7 +2090,12 @@ const ReserveInformation = ({ route, navigation }) => {
                   backgroundColor={light.main2}
                 >
                   <TextStyle center>
-                    {totalPayment !== amount ? "Pago" : "Eliminar pago"}
+                    {!(
+                      reserve?.payment ||
+                      !reserve?.hosted?.some((h) => !h.payment)
+                    )
+                      ? "Pago"
+                      : "Eliminar pago"}
                   </TextStyle>
                 </ButtonStyle>
               )}
@@ -2115,11 +2252,12 @@ const ReserveInformation = ({ route, navigation }) => {
                     (o) =>
                       o.ref === (hosted.owner || hosted.id) && o.pay === false
                   );
-                  navigationStack.navigate("CreateOrder", {
+                  navigation.navigate("CreateOrder", {
                     editing: OF ? true : false,
                     id: OF ? OF.id : undefined,
                     ref: hosted.owner || hosted.id,
                     table: hosted.fullName,
+                    invoice: OF ? OF.invoice : null,
                     selection: OF ? OF.selection : [],
                     reservation: "Cliente",
                     createClient: createClient ? reserve : undefined,
@@ -2314,6 +2452,7 @@ const ReserveInformation = ({ route, navigation }) => {
                   onChangeText={(num) =>
                     setTotalToPay(num.replace(/[^0-9]/g, "") || 0)
                   }
+                  amount={amount}
                   style={{ marginVertical: 10 }}
                 />
               )}
@@ -2321,43 +2460,45 @@ const ReserveInformation = ({ route, navigation }) => {
                 <FlatList
                   data={hosted}
                   keyExtractor={(h) => h.id}
-                  renderItem={({ item }) => (
-                    <Hosted
-                      name={`${item?.fullName?.slice(0, 8)}${
-                        place.type === "accommodation"
-                          ? ": " +
-                            thousandsSystem(
-                              item?.discount
-                                ? (item?.amount - item?.discount) * item?.days
-                                : item?.amount * item?.days
-                            )
-                          : ""
-                      }`}
-                      id={item?.id}
-                      onChangeText={(num) => {
-                        hostedChangeRef.current = hostedChangeRef.current.map(
-                          (h) => {
-                            if (h.id === item?.id) {
-                              const nh = { ...h };
-                              nh.payment = num
-                                ? parseInt(num.replace(/[^0-9]/g, ""))
-                                : 0;
-                              return nh;
-                            }
-                            return h;
-                          }
-                        );
+                  renderItem={({ item }) => {
+                    const hostedAmount = item?.discount
+                      ? (item?.amount - item?.discount) * item?.days
+                      : item?.amount * item?.days;
 
-                        setTotalToPay(
-                          hostedChangeRef.current.reduce(
-                            (a, b) => a + b.payment,
-                            0
-                          )
-                        );
-                      }}
-                      editable={!businessPayment}
-                    />
-                  )}
+                    return (
+                      <Hosted
+                        name={`${item?.fullName?.slice(0, 8)}${
+                          place.type === "accommodation"
+                            ? ": " + thousandsSystem(amount)
+                            : ""
+                        }`}
+                        id={item?.id}
+                        amount={hostedAmount}
+                        onChangeText={(num) => {
+                          hostedChangeRef.current = hostedChangeRef.current.map(
+                            (h) => {
+                              if (h.id === item?.id) {
+                                const nh = { ...h };
+                                nh.payment = num
+                                  ? parseInt(num.replace(/[^0-9]/g, ""))
+                                  : 0;
+                                return nh;
+                              }
+                              return h;
+                            }
+                          );
+
+                          setTotalToPay(
+                            hostedChangeRef.current.reduce(
+                              (a, b) => a + b.payment,
+                              0
+                            )
+                          );
+                        }}
+                        editable={!businessPayment}
+                      />
+                    );
+                  }}
                   style={{ maxHeight: 200, marginVertical: 10 }}
                 />
               )}

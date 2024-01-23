@@ -8,6 +8,7 @@ import {
   Dimensions,
   Modal,
   Switch,
+  Image
 } from "react-native";
 import { useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
@@ -16,35 +17,31 @@ import {
   changeDate,
   generatePDF,
   print,
-  months,
   getFontSize,
 } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
 import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import FullFilterDate from "@components/FullFilterDate";
 import Layout from "@components/Layout";
+import Logo from "@assets/logo.png";
 
 import theme from "@theme";
 import TextStyle from "@components/TextStyle";
 
-const dark = theme.colors.dark;
-const light = theme.colors.light;
-
-const { height, width } = Dimensions.get("screen");
+const { light, dark } = theme();
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("screen");
 
 const Inventory = () => {
   const mode = useSelector((state) => state.mode);
   const inventoryInformation = useSelector((state) => state.inventory);
-  //TODO CUANDO ESTE MENOR AL STOCK AVISAR CON NOTIFICACIONES Y EN EL MENU SECCION INVENTARIO
+
   const [inventory, setInventory] = useState([]);
   const [activeSearch, setActiveSearch] = useState(false);
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState(false);
   const [text, setText] = useState("");
-
-  const [days, setDays] = useState([]);
-  const [years, setYears] = useState([]);
 
   const initialState = {
     active: false,
@@ -59,6 +56,7 @@ const Inventory = () => {
     minReorden: "",
     maxReorden: "",
     unit: "",
+    visible: "",
     aboveReorder: false,
     belowReorder: false,
     year: "all",
@@ -66,15 +64,12 @@ const Inventory = () => {
     day: "all",
   };
 
-  const dayRef = useRef();
-  const monthRef = useRef();
-  const yearRef = useRef();
-
   const [filters, setFilters] = useState(initialState);
 
   const navigation = useNavigation();
   const searchRef = useRef();
   const unitRef = useRef();
+  const visibleRef = useRef();
 
   const unitOptions = [
     { label: "SELECCIONE LA UNIDAD", value: "" },
@@ -91,6 +86,14 @@ const Inventory = () => {
     { label: "Onza fluida", value: "FL OZ" },
   ];
 
+  const visibleOptions = [
+    { label: "SELECCIONE LA VISIBILIDAD", value: "" },
+    { label: "Restaurante/Bar", value: "menu" },
+    { label: "Productos&Servicios", value: "sales" },
+    { label: "Ambos", value: "both" },
+    { label: "Ninguno", value: 'none' },
+  ];
+
   const dateValidation = (date) => {
     let error = false;
     if (filters.day !== "all" && date.getDate() !== filters.day) error = true;
@@ -100,31 +103,6 @@ const Inventory = () => {
       error = true;
     return error;
   };
-
-  useEffect(() => {
-    const date = new Date();
-    let years = [date.getFullYear()];
-
-    for (let i = 5; i >= 0; i--) {
-      years.push(years[years.length - 1] - 1);
-    }
-
-    setYears(years);
-  }, []);
-
-  useEffect(() => {
-    const date = new Date();
-    const days = new Date(
-      filters.year === "all" ? date.getFullYear() : filters.year,
-      filters.month === "all" ? 1 : filters.month + 1,
-      0
-    ).getDate();
-    const monthDays = [];
-    for (let day = 0; day < days; day++) {
-      monthDays.push(day + 1);
-    }
-    setDays(monthDays);
-  }, [filters.year, filters.month]);
 
   useEffect(() => {
     if (search || filters.active) {
@@ -206,6 +184,7 @@ const Inventory = () => {
             )
               return;
             if (filters.unit && i.unit !== filters.unit) return;
+            if (filters.visible && i.visible !== filters.visible) return;
             if (filters.aboveReorder && stock < i.reorder) return;
             if (filters.belowReorder && stock >= i.reorder) return;
 
@@ -306,9 +285,14 @@ const Inventory = () => {
 
 <body>
 <view style="padding: 20px; width: 500px; display: block; margin: 20px auto; background-color: #FFFFFF;">
-  <h2 style="text-align: center; color: #444444; font-size: 50px; font-weight: 800; margin-bottom: 30px;">
-    INVENTARIO
-  </h2>
+  <view>
+    <img
+      src="${Image.resolveAssetSource(Logo).uri}"
+      style="width: 22vw; display: block; margin: 0 auto; border-radius: 8px" />
+    <p style="font-size: 30px; text-align: center">vbelapp.com</p>
+  </view>
+  <p style="font-size: 30px; text-align: center; margin: 20px 0; background-color: #444444; padding: 10px 0; color: #FFFFFF">INVENTARIO</p>    
+
   <view style="width: 100%; margin: 20px auto;">
     <table style="width: 100%">
       <tr>
@@ -485,7 +469,7 @@ const Inventory = () => {
   };
 
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       <View style={{ justifyContent: "space-between", flexGrow: 1 }}>
         <View style={styles.row}>
           <View style={{ flexDirection: "row" }}>
@@ -628,7 +612,7 @@ const Inventory = () => {
           </View>
         )}
         {inventory.length === 0 && activeSearch && (
-          <TextStyle center color={light.main2} customStyle={{ marginTop: 20 }}>
+          <TextStyle center color={light.main2} style={{ marginTop: 20 }}>
             NO HAY RESULTADOS
           </TextStyle>
         )}
@@ -651,7 +635,7 @@ const Inventory = () => {
           </View>
         )}
         <View
-          style={{ alignItems: "center", marginTop: 20, height: height / 1.3 }}
+          style={{ alignItems: "center", marginTop: 20, height: SCREEN_HEIGHT / 1.3 }}
         >
           {inventory.length > 0 && (
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -1008,233 +992,23 @@ const Inventory = () => {
                   />
                 </View>
               </View>
-              <View style={[styles.row, { marginTop: 15 }]}>
-                <View>
-                  <ButtonStyle
-                    backgroundColor={
-                      mode === "light" ? light.main5 : dark.main2
-                    }
-                    style={{ width: width / 4.2, paddingVertical: 16 }}
-                    onPress={() => dayRef.current?.focus()}
-                  >
-                    <View style={styles.row}>
-                      <TextStyle
-                        color={
-                          filters.day !== "all"
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
-                      >
-                        {filters.day !== "all" ? filters.day : "Día"}
-                      </TextStyle>
-                      <Ionicons
-                        color={
-                          filters.day !== "all"
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
-                        size={getFontSize(10)}
-                        name="caret-down"
-                      />
-                    </View>
-                  </ButtonStyle>
-
-                  <View style={{ display: "none" }}>
-                    <Picker
-                      ref={dayRef}
-                      mode="dropdown"
-                      selectedValue={filters.day}
-                      onValueChange={(itemValue) =>
-                        setFilters({ ...filters, day: itemValue })
-                      }
-                      style={{
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                      }}
-                    >
-                      <Picker.Item
-                        label="Día"
-                        value="all"
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      />
-                      {days.map((day) => (
-                        <Picker.Item
-                          key={day}
-                          label={`${day}`}
-                          value={day}
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
-                <View>
-                  <ButtonStyle
-                    backgroundColor={
-                      mode === "light" ? light.main5 : dark.main2
-                    }
-                    style={{ width: width / 3, paddingVertical: 16 }}
-                    onPress={() => monthRef.current?.focus()}
-                  >
-                    <View style={styles.row}>
-                      <TextStyle
-                        color={
-                          filters.month !== "all"
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
-                      >
-                        {filters.month !== "all"
-                          ? months[filters.month - 1]
-                          : "Mes"}
-                      </TextStyle>
-                      <Ionicons
-                        color={
-                          filters.month !== "all"
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
-                        size={getFontSize(10)}
-                        name="caret-down"
-                      />
-                    </View>
-                  </ButtonStyle>
-                  <View style={{ display: "none" }}>
-                    <Picker
-                      ref={monthRef}
-                      mode="dropdown"
-                      selectedValue={filters.month}
-                      onValueChange={(itemValue) =>
-                        setFilters({ ...filters, month: itemValue })
-                      }
-                      style={{
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                      }}
-                    >
-                      <Picker.Item
-                        label="Mes"
-                        value="all"
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      />
-                      {months.map((month, index) => (
-                        <Picker.Item
-                          key={month}
-                          label={month}
-                          value={index + 1}
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
-                <View>
-                  <ButtonStyle
-                    backgroundColor={
-                      mode === "light" ? light.main5 : dark.main2
-                    }
-                    style={{ width: width / 4.2, paddingVertical: 16 }}
-                    onPress={() => yearRef.current?.focus()}
-                  >
-                    <View style={styles.row}>
-                      <TextStyle
-                        color={
-                          filters.year !== "all"
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
-                      >
-                        {filters.year !== "all" ? filters.year : "Año"}
-                      </TextStyle>
-                      <Ionicons
-                        color={
-                          filters.year !== "all"
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
-                        size={getFontSize(10)}
-                        name="caret-down"
-                      />
-                    </View>
-                  </ButtonStyle>
-                  <View style={{ display: "none" }}>
-                    <Picker
-                      ref={yearRef}
-                      mode="dropdown"
-                      selectedValue={filters.year}
-                      onValueChange={(itemValue) =>
-                        setFilters({ ...filters, year: itemValue })
-                      }
-                      style={{
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
-                      }}
-                    >
-                      <Picker.Item
-                        label="Año"
-                        value="all"
-                        style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      />
-                      {years.map((year, index) => (
-                        <Picker.Item
-                          key={year}
-                          label={`${year}`}
-                          value={year}
-                          style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
-                        />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
-              </View>
+              <FullFilterDate
+                title="Por fecha (CREACIÓN)"
+                increment={5}
+                monthButtonStyle={{ width: SCREEN_WIDTH / 2.8 }}
+                defaultValue={{
+                  day: filters.day,
+                  month: filters.month,
+                  year: filters.year,
+                }}
+                onChangeDay={(value) => setFilters({ ...filters, day: value })}
+                onChangeMonth={(value) =>
+                  setFilters({ ...filters, month: value })
+                }
+                onChangeYear={(value) =>
+                  setFilters({ ...filters, year: value })
+                }
+              />
               <View style={{ marginTop: 15 }}>
                 <ButtonStyle
                   backgroundColor={mode === "light" ? light.main5 : dark.main2}
@@ -1269,15 +1043,71 @@ const Inventory = () => {
                 <View style={{ display: "none" }}>
                   <Picker
                     ref={unitRef}
-                    style={{
-                      color: mode === "light" ? light.textDark : dark.textWhite,
-                    }}
+                    style={{ opacity: 0 }}
                     selectedValue={filters.unit}
                     onValueChange={(value) =>
                       setFilters({ ...filters, unit: value })
                     }
                   >
                     {unitOptions.map((u) => (
+                      <Picker.Item
+                        key={u.value}
+                        label={u.label}
+                        value={u.value}
+                        style={{
+                          backgroundColor:
+                            mode === "light" ? light.main5 : dark.main2,
+                        }}
+                        color={
+                          mode === "light" ? light.textDark : dark.textWhite
+                        }
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+
+              <View style={{ marginTop: 15 }}>
+                <ButtonStyle
+                  backgroundColor={mode === "light" ? light.main5 : dark.main2}
+                  onPress={() => visibleRef.current?.focus()}
+                >
+                  <View style={styles.row}>
+                    <TextStyle
+                      color={
+                        filters.visible
+                          ? mode === "light"
+                            ? light.textDark
+                            : dark.textWhite
+                          : "#888888"
+                      }
+                    >
+                      {visibleOptions.find((u) => u.value === filters.visible)?.label}
+                    </TextStyle>
+                    <Ionicons
+                      color={
+                        filters.visible
+                          ? mode === "light"
+                            ? light.textDark
+                            : dark.textWhite
+                          : "#888888"
+                      }
+                      size={getFontSize(15)}
+                      name="caret-down"
+                    />
+                  </View>
+                </ButtonStyle>
+
+                <View style={{ display: "none" }}>
+                  <Picker
+                    ref={visibleRef}
+                    style={{ opacity: 0 }}
+                    selectedValue={filters.visible}
+                    onValueChange={(value) =>
+                      setFilters({ ...filters, visible: value })
+                    }
+                  >
+                    {visibleOptions.map((u) => (
                       <Picker.Item
                         key={u.value}
                         label={u.label}
@@ -1406,9 +1236,9 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: 6,
-    width: Math.floor(width / 3.25),
+    width: Math.floor(SCREEN_WIDTH / 3.25),
     marginHorizontal: 5,
-    height: Math.floor(height / 13),
+    height: Math.floor(SCREEN_HEIGHT / 13),
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",

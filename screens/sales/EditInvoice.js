@@ -9,7 +9,7 @@ import theme from "@theme";
 import TextStyle from "@components/TextStyle";
 import { change } from "@features/tables/invoiceSlice";
 
-const light = theme.colors.light;
+const { light } = theme();
 
 const EditInvoice = ({ navigation }) => {
   const {
@@ -48,12 +48,7 @@ const EditInvoice = ({ navigation }) => {
   
 
   return (
-    <Layout
-      style={{
-        marginTop: 0,
-        justifyContent: "space-between"
-      }}
-    >
+    <Layout style={{ justifyContent: "space-between" }}>
       <View>
         <InputStyle
           placeholder="Nombre del comercio"

@@ -4,8 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const styles = StyleSheet.create({
   defaultInput: {
@@ -38,6 +37,7 @@ const InputStyle = ({
   stylesContainer,
   secureTextEntry,
   onFocus,
+  onKeyPress,
   onBlur,
   left,
   right,
@@ -84,6 +84,7 @@ const InputStyle = ({
         placeholderTextColor="#888888"
         onFocus={onFocus}
         onBlur={onBlur}
+        onKeyPress={onKeyPress}
         defaultValue={defaultValue}
       />
       {secureTextEntry && (

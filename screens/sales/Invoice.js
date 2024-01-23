@@ -14,7 +14,6 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import Logo from "@assets/logo.png";
 import {
   thousandsSystem,
-  random,
   changeDate,
   generatePDF,
   print,
@@ -26,9 +25,8 @@ import * as Sharing from "expo-sharing";
 
 import theme from "@theme";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("screen");
+const { light, dark } = theme();
 
 const Invoice = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
@@ -42,7 +40,7 @@ const Invoice = ({ route, navigation }) => {
   const selection = route.params.selection;
   const total = route.params.total;
   const code = route.params.code;
-  //const code = useRef(random(6, { number: true })).current;
+  
   const date = useRef(new Date()).current;
   const viewShotRef = useRef();
 
@@ -230,7 +228,7 @@ const Invoice = ({ route, navigation }) => {
   };
 
   return (
-    <Layout style={{ padding: 0, justifyContent: "space-between" }}>
+    <Layout style={{ padding: 0, marginTop: 30, justifyContent: "space-between" }}>
       <View>
         <View style={[styles.editInvoice, backgroundButton()]}>
           <TouchableOpacity
@@ -286,7 +284,7 @@ const Invoice = ({ route, navigation }) => {
                     style={{ width: 90, height: 90, borderRadius: 8 }}
                   />
                   <TextStyle
-                    customStyle={{ marginTop: 5 }}
+                    style={{ marginTop: 5 }}
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   >
                     vbelapp.com
@@ -432,7 +430,7 @@ const Invoice = ({ route, navigation }) => {
                     center
                     color={color()}
                     smallParagraph
-                    customStyle={{ marginTop: 15 }}
+                    style={{ marginTop: 15 }}
                   >
                     GRACIAS POR COMPRAR EN{" "}
                     {invoice?.name ? invoice?.name : "Sin nombre"} RECUERDE

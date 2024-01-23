@@ -11,8 +11,7 @@ import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const CreateTable = ({ navigation, route }) => {
   const {
@@ -94,12 +93,7 @@ const CreateTable = ({ navigation, route }) => {
   };
 
   return (
-    <Layout
-      style={{
-        marginTop: 0,
-        padding: 30,
-      }}
-    >
+    <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
         <ScrollView
           showsVerticalScrollIndicator={false}

@@ -16,7 +16,6 @@ import sectionSlice from "@features/tables/sectionSlice";
 import invoiceSlice from "@features/tables/invoiceSlice";
 import kitchenSlice from "@features/tables/kitchenSlice";
 import rosterSlice from "@features/function/rosterSlice";
-import peopleSlice from "@features/function/peopleSlice";
 import synchronizationSlice from "@features/user/synchronizationSlice";
 import languageSlice from "@features/settings/languageSlice";
 import settingsSlice from "@features/settings/settingsSlice";
@@ -25,13 +24,14 @@ import salesSlice from "@features/sales/salesSlice";
 import productsSlice from "@features/sales/productsSlice";
 import accommodationSlice from "@features/zones/accommodationsSlice";
 import groupsSlice from "@features/sales/groupsSlice";
+import recipesSlice from "@features/sales/recipesSlice";
 
 import standardReservationsSlice from "@features/zones/standardReservationsSlice";
 import accommodationReservationsSlice from "@features/zones/accommodationReservationsSlice"; 
 
 // PEOPLE //
-import clientSlice from "@features/people/clientSlice";
-import supplierSlice from "@features/people/supplierSlice";
+import customerSlice from "@features/people/customersSlice";
+import supplierSlice from "@features/people/suppliersSlice";
 
 const reducers = combineReducers({
   mode: modeSlice, // Mode light and dark
@@ -51,18 +51,19 @@ const reducers = combineReducers({
   invoice: invoiceSlice,
   kitchen: kitchenSlice,
   roster: rosterSlice,
-  people: peopleSlice,
   synchronization: synchronizationSlice,
   language: languageSlice,
   settings: settingsSlice,
   inventory: informationInventorySlice,
+  // SALES //
   products: productsSlice, // PRODUCTOS O SERVICIOS DE VENTAS
   sales: salesSlice, // VENTAS REALIZADAS DE SERVICIOS O VENTAS
   accommodation: accommodationSlice, // GRUPOS DE ACOMODACION DE RESERVACIONES
   groups: groupsSlice, // GRUPOS DE DE VENTAS
+  recipes: recipesSlice, // LAS RECETAS DE MESA
   // PEOPLE //
-  client: clientSlice,
-  supplier: supplierSlice
+  customers: customerSlice,
+  suppliers: supplierSlice
 });
 
 const persistConfig = {

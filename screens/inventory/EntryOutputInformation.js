@@ -6,18 +6,19 @@ import {
   Dimensions,
   FlatList,
   Alert,
+  Image
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import Logo from "@assets/logo.png";
 import { thousandsSystem, print, generatePDF, changeDate, getFontSize } from "@helpers/libs";
 import { editInventory } from "@api";
 import { edit } from "@features/inventory/informationSlice";
 import theme from "@theme";
 
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { light, dark } = theme();
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("screen");
 
@@ -144,9 +145,14 @@ const EntryOutputInformation = ({ route, navigation }) => {
 
 <body>
 <view style="padding: 20px; width: 500px; display: block; margin: 20px auto; background-color: #FFFFFF;">
-  <h2 style="text-align: center; color: #444444; font-size: 50px; font-weight: 800;">
-    INVENTARIO
-  </h2>
+  <view>
+    <img
+      src="${Image.resolveAssetSource(Logo).uri}"
+      style="width: 22vw; display: block; margin: 0 auto; border-radius: 8px" />
+    <p style="font-size: 30px; text-align: center">vbelapp.com</p>
+  </view>
+  <p style="font-size: 30px; text-align: center; margin: 20px 0; background-color: #444444; padding: 10px 0; color: #FFFFFF">INVENTARIO</p>  
+
   <p style="text-align: center; color: #444444; font-size: 30px; font-weight: 800; margin-bottom: 30px;">
     ${inventoryRef.name.toUpperCase()} - SALIDA
   </p>
@@ -496,7 +502,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
   };
 
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       <View style={[styles.row, { marginBottom: 20 }]}>
         <TextStyle
           subtitle

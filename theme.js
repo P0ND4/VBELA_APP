@@ -1,32 +1,19 @@
-import Constants from "expo-constants";
-
-export default {
-  colors: {
+export default () => {
+  return {
     light: {
       main1: "#00FFF0",
-      main2: "#00D1FF",
+      main2: "#39ADE4", //"#00D1FF",
       main3: "#3D6CB9",
       main4: "#FAFAF6",
       main5: "#EEEEEE",
-      textDark: "#444444",
+      textDark: "#000000"//"#444444",
     },
     dark: {
-      main1: "#222831",
-      main2: "#393E46",
+      main1: "#0a0d18",//"#222831",
+      main2: "#10182b",//"#393E46",
       main3: "#00ADB5",
       main4: "#EEEEEE",
       textWhite: "#EEEEEE",
     },
-  },
-  styles: {
-    default: {
-      flex: 1,
-      marginTop: Constants.statusBarHeight,
-      padding: 20,
-    },
-    containerCenter: {
-      justifyContent: "center",
-      alignItems: "center",
-    },
-  },
+  };
 };

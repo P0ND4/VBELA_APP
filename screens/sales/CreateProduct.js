@@ -8,6 +8,8 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   ScrollView,
+  FlatList,
+  TouchableOpacity,
 } from "react-native";
 import {
   add as addM,
@@ -26,7 +28,9 @@ import {
   addProduct,
   editProduct,
   removeProduct,
+  removeRecipe,
 } from "@api";
+import { remove as removeR } from "@features/sales/recipesSlice";
 import { thousandsSystem, random, getFontSize } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -35,12 +39,11 @@ import InputStyle from "@components/InputStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import MultipleSelect from "@components/MultipleSelect";
 import Layout from "@components/Layout";
+import Information from "@components/Information";
 import theme from "@theme";
 
-const SCREEN_WIDTH = Dimensions.get("window").width;
-
-const light = theme.colors.light;
-const dark = theme.colors.dark;
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { light, dark } = theme();
 
 const CreateProduct = ({ route, navigation }) => {
   const {
@@ -60,6 +63,7 @@ const CreateProduct = ({ route, navigation }) => {
   const products = useSelector((state) => state.products);
   const groups = useSelector((state) => state.groups);
   const helperStatus = useSelector((state) => state.helperStatus);
+  const recipes = useSelector((state) => state.recipes);
 
   const [name, setName] = useState(editing ? item.name : "");
   const [identifier, setIdentifier] = useState(editing ? item.identifier : "");
@@ -83,9 +87,14 @@ const CreateProduct = ({ route, navigation }) => {
   const [subcategoryKey, setSubcategoryKey] = useState(Math.random());
   const [categoryKey, setCategoryKey] = useState(Math.random());
 
+  const [recipeSelected, setRecipeSelected] = useState(
+    editing ? item.recipe : null
+  );
+  const [modalVisibleRecipe, setModalVisibleRecipe] = useState(false);
   const [modalCategory, setModalCategory] = useState(false);
   const [modalSubcategory, setModalSubcategory] = useState(false);
   const [category, setCategory] = useState(editing ? item.category : []);
+  const [recipeList, setRecipeList] = useState([]);
   const [subcategory, setSubcategory] = useState(
     editing ? item.subcategory : []
   );
@@ -116,12 +125,20 @@ const CreateProduct = ({ route, navigation }) => {
   }, []);
 
   useEffect(() => {
+    const validation = (condition) =>
+      recipes.filter((r) => r.type === condition);
+    if (sales) setRecipeList(validation("sales"));
+    else setRecipeList(validation("menu"));
+  }, [sales, recipes]);
+
+  useEffect(() => {
     register("name", { value: editing ? item.name : "", required: true });
     register("identifier", { value: editing ? item.identifier : "" });
     register("unit", { value: editing ? item.unit : "", required: true });
     register("quantity", { value: editing ? item.quantity : 0 });
     register("reorder", { value: editing ? item.reorder : 0 });
     register("value", { value: editing ? item.value : "", required: true });
+    register("recipe", { value: editing ? item.recipe : null });
     register("purchase", {
       value: editing ? item.purchase : "",
       required: true,
@@ -238,6 +255,160 @@ const CreateProduct = ({ route, navigation }) => {
     ]);
   };
 
+  const Recipe = ({ item }) => {
+    const [modalVisible, setModalVisible] = useState(false);
+
+    return (
+      <>
+        <TouchableOpacity
+          onPress={() => {
+            Alert.alert(
+              "SELECCIÓN",
+              `¿Vas a elegir la receta ${item.name}?`,
+              [
+                {
+                  text: "No",
+                  style: "cancel",
+                },
+                {
+                  text: "Si",
+                  onPress: () => {
+                    setRecipeSelected(item);
+                    setValue("recipe", item);
+                    setModalVisibleRecipe(false);
+                  },
+                },
+              ],
+              { cancelable: true }
+            );
+          }}
+          style={[
+            styles.row,
+            styles.recipeCard,
+            {
+              width: "100%",
+              backgroundColor: mode === "light" ? light.main5 : dark.main2,
+            },
+          ]}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
+              <Ionicons
+                name="information-circle"
+                color={light.main2}
+                size={getFontSize(23)}
+                style={{ marginRight: 5 }}
+              />
+            </TouchableOpacity>
+            <TextStyle
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              {item.name.slice(0, 20)}
+              {item.name.length > 20 ? "..." : ""}
+            </TextStyle>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("CreateRecipe", {
+                  editing: true,
+                  item,
+                  sales,
+                })
+              }
+            >
+              <Ionicons
+                name="create-outline"
+                color={light.main2}
+                size={getFontSize(23)}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert(
+                  "ELIMINAR",
+                  `¿Estás seguro que desea eliminar la receta ${item.name}?`,
+                  [
+                    {
+                      text: "No",
+                      style: "cancel",
+                    },
+                    {
+                      text: "Si",
+                      onPress: async () => {
+                        dispatch(removeR({ id: item?.id }));
+                        await removeRecipe({
+                          identifier: helperStatus.active
+                            ? helperStatus.identifier
+                            : user.identifier,
+                          id: item.id,
+                          helpers: helperStatus.active
+                            ? [helperStatus.id]
+                            : user.helpers.map((h) => h.id),
+                        });
+                      },
+                    },
+                  ],
+                  { cancelable: true }
+                );
+              }}
+            >
+              <Ionicons
+                name="trash"
+                color={light.main2}
+                size={getFontSize(23)}
+                style={{ marginHorizontal: 5 }}
+              />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+        <Information
+          modalVisible={modalVisible}
+          setModalVisible={setModalVisible}
+          style={{
+            backgroundColor: mode === "light" ? light.main4 : dark.main1,
+          }}
+          title="INFORMACIÓN"
+          content={() => (
+            <View>
+              <TextStyle
+                smallParagraph
+                color={mode === "light" ? light.textDark : dark.textWhite}
+              >
+                Ingredientes de ({item.name.toUpperCase()})
+              </TextStyle>
+              <FlatList
+                data={item.ingredients}
+                style={{ maxHeight: 400, marginTop: 15 }}
+                showsVerticalScrollIndicator={false}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <TextStyle smallParagraph color={light.main2}>
+                      {thousandsSystem(item.quantity)} ({item.unit})
+                    </TextStyle>
+                    <TextStyle
+                      smallParagraph
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    >
+                      {" "}
+                      {item.name}
+                    </TextStyle>
+                  </View>
+                )}
+              />
+            </View>
+          )}
+        />
+      </>
+    );
+  };
+
   const unitOptions = [
     { label: "SELECCIONE LA UNIDAD", value: "" },
     { label: "Unidad", value: "UND" },
@@ -254,7 +425,7 @@ const CreateProduct = ({ route, navigation }) => {
   ];
 
   return (
-    <Layout style={{ marginTop: 0 }}>
+    <Layout>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -300,15 +471,25 @@ const CreateProduct = ({ route, navigation }) => {
                     <TextStyle
                       verySmall
                       color={
-                        parseInt(quantity ? quantity.replace(/[^0-9]/g, "") : 0) <
+                        parseInt(
+                          quantity ? quantity.replace(/[^0-9]/g, "") : 0
+                        ) <
                         parseInt(reorder ? reorder.replace(/[^0-9]/g, "") : 0)
                           ? "#F70000"
                           : light.main2
                       }
                     >
-                      {parseInt(quantity ? quantity.replace(/[^0-9]/g, "") : 0) < 0 ? "-" : ""}
+                      {parseInt(
+                        quantity ? quantity.replace(/[^0-9]/g, "") : 0
+                      ) < 0
+                        ? "-"
+                        : ""}
                       {thousandsSystem(
-                        Math.abs(parseInt(quantity ? quantity.replace(/[^0-9]/g, "") : 0))
+                        Math.abs(
+                          parseInt(
+                            quantity ? quantity.replace(/[^0-9]/g, "") : 0
+                          )
+                        )
                       )}
                       /
                     </TextStyle>
@@ -319,6 +500,16 @@ const CreateProduct = ({ route, navigation }) => {
                       {reorder || 0}
                     </TextStyle>
                   </View>
+                  {recipeSelected && (
+                    <TextStyle
+                      verySmall
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    >
+                      {recipeSelected.name.length > 12
+                        ? `${recipeSelected.name.slice(0, 12).toUpperCase()}...`
+                        : recipeSelected.name.toUpperCase()}
+                    </TextStyle>
+                  )}
                 </View>
                 <View style={styles.footerCatalogue}>
                   <TextStyle verySmall>
@@ -547,6 +738,54 @@ const CreateProduct = ({ route, navigation }) => {
                     El precio de compra es requerido
                   </TextStyle>
                 )}
+                <ButtonStyle
+                  backgroundColor={light.main2}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  onPress={() => {
+                    if (recipeSelected)
+                      return Alert.alert(
+                        "REMOVER",
+                        `¿Quieres eliminar ${
+                          sales ? "el reconteo" : "la receta"
+                        } (${recipeSelected.name})?`,
+                        [
+                          {
+                            text: "No",
+                            style: "cancel",
+                          },
+                          {
+                            text: "Si",
+                            onPress: () => {
+                              setRecipeSelected(null);
+                              setValue("recipe", null);
+                            },
+                          },
+                        ],
+                        { cancelable: true }
+                      );
+                    setModalVisibleRecipe(!modalVisibleRecipe);
+                  }}
+                >
+                  <TextStyle>
+                    {recipeSelected
+                      ? `${sales ? "Reconteo" : "Receta"} (${
+                          recipeSelected.name.length > 20
+                            ? `${recipeSelected.name.slice(0, 20)}...`
+                            : recipeSelected.name
+                        })`
+                      : `Agregar ${sales ? "reconteo" : "receta"}`}
+                  </TextStyle>
+                  <Ionicons
+                    name="newspaper-outline"
+                    color={light.textDark}
+                    size={getFontSize(16)}
+                    style={{ marginLeft: 10 }}
+                  />
+                </ButtonStyle>
               </View>
               <ButtonStyle
                 backgroundColor={mode === "light" ? light.main5 : dark.main2}
@@ -659,6 +898,37 @@ const CreateProduct = ({ route, navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <Information
+        modalVisible={modalVisibleRecipe}
+        setModalVisible={setModalVisibleRecipe}
+        style={{ backgroundColor: mode === "light" ? light.main4 : dark.main1 }}
+        title={sales ? "RECONTEO" : "RECETA"}
+        content={() => (
+          <View>
+            <TextStyle
+              smallParagraph
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              Lista de {sales ? "reconteos" : "recetas"}
+            </TextStyle>
+            <FlatList
+              data={recipeList}
+              style={{ maxHeight: 220, marginTop: 15 }}
+              showsVerticalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <Recipe item={item} />}
+            />
+            <ButtonStyle
+              backgroundColor={light.main2}
+              onPress={() => navigation.navigate("CreateRecipe", { sales })}
+            >
+              <TextStyle center>
+                Crear {sales ? "reconteo" : "receta"}
+              </TextStyle>
+            </ButtonStyle>
+          </View>
+        )}
+      />
       <MultipleSelect
         key={categoryKey}
         modalVisible={modalCategory}
@@ -729,6 +999,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  recipeCard: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginVertical: 4,
+    borderRadius: 8,
+    width: SCREEN_WIDTH / 3.2,
   },
 });
 
