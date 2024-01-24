@@ -30,7 +30,7 @@ export default {
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#FFFFFF",
-      }
+      },
     },
     web: {
       favicon: "./assets/favicon.png",
