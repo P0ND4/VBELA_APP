@@ -30,8 +30,7 @@ export default {
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#FFFFFF",
-      },
-      permissions: ["com.android.vending.BILLING"]
+      }
     },
     web: {
       favicon: "./assets/favicon.png",
