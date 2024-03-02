@@ -4,48 +4,31 @@ export const standardReservationsSlice = createSlice({
   name: "standard-reservations",
   initialState: [],
   reducers: {
-    change: (state, action) => (state = action.payload),
-    add: (state, action) => void (state = state.push(action.payload)),
+    change: (state, action) => action.payload,
+    add: (state, action) => [...state, action.payload],
     edit: (state, action) => {
-      const { ref, data } = action.payload;
-      const index = state.findIndex((r) => r.ref === ref);
-      state[index] = { ...state[index], ...data };
+      const { id, data } = action.payload;
+      return state.map((s) => {
+        if (s.id === id) return { ...s, ...data };
+        return s;
+      });
     },
     remove: (state, action) => {
-      const { ref } = action.payload;
-      const index = state.findIndex((r) => r.ref === ref);
-      state.splice(index, 1);
+      const { id } = action.payload;
+      return state.filter((r) => r.id !== id);
     },
     removeMany: (state, action) => {
-      const { ref } = action.payload;
-      const newReservations = state.filter((r) => r.id === ref);
-      for (let r of newReservations) {
-        const index = state.findIndex((curr) => curr.ref === r.ref);
-        state.splice(index, 1);
-      }
+      const refToRemove = action.payload.ref;
+      return state.filter((r) => r.ref !== refToRemove);
     },
-    removeManyByOwner: (state, action) => {
-      const { owner } = action.payload;
-
-      state.forEach((reservation, index) => {
-        reservation.hosted = reservation.hosted.filter(
-          (hosted) => hosted.owner !== owner
-        );
-
-        if (reservation.hosted.length === 0) state.splice(index, 1);
-      });
+    removeManyByManyRefs: (state, action) => {
+      const refs = action.payload.refs;
+      return state.filter((r) => !refs.includes(r.ref));
     },
     clean: (state, action) => (state = []),
   },
 });
 
-export const {
-  add,
-  change,
-  remove,
-  edit,
-  clean,
-  removeMany,
-  removeManyByOwner,
-} = standardReservationsSlice.actions;
+export const { add, change, remove, edit, clean, removeMany, removeManyByManyRefs } =
+  standardReservationsSlice.actions;
 export default standardReservationsSlice.reducer;

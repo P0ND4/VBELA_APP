@@ -22,8 +22,8 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
   const mode = useSelector((state) => state.mode);
   const zones = useSelector((state) => state.zones);
   const nomenclatures = useSelector((state) => state.nomenclatures);
-  const standardReservations = useSelector(state => state.standardReservations);
-  const accommodationReservations = useSelector(state => state.accommodationReservations);
+  const standardReservations = useSelector((state) => state.standardReservations);
+  const accommodationReservations = useSelector((state) => state.accommodationReservations);
 
   const [nomenclaturesToChoose, setNomenclaturesToChoose] = useState([]);
   const [zoneSelected, setZoneSelected] = useState("");
@@ -32,11 +32,12 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
 
   useEffect(() => {
     if (nomenclaturesToChoose.length > 0) {
-      let nomenclatureReservations = [];
-      const nom = nomenclatures.find(n => n.id === nomenclatureSelected);
-
-      if (nom?.type === 'standard') nomenclatureReservations = standardReservations.filter(r => r.id === nomenclatureSelected);
-      if (nom?.type === 'accommodation') nomenclatureReservations = accommodationReservations.filter(r => r.ref === nomenclatureSelected);
+      let nomenclatureReservations =
+        nom?.type === "standard"
+          ? standardReservations.filter((r) => r.ref === nomenclatureSelected)
+          : accommodationReservations.filter((r) => r.ref === nomenclatureSelected);
+          
+      const nom = nomenclatures.find((n) => n.id === nomenclatureSelected);
 
       let markedDates = {};
       for (let reservation of nomenclatureReservations) {
@@ -49,8 +50,8 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
           const startISO = start.toISOString().slice(0, 10);
           const endISO = end.toISOString().slice(0, 10);
           markedDates[dateISO] = {
-            startingDay: nom?.type === 'accommodation' || dateISO === startISO,
-            endingDay: nom?.type === 'accommodation' || dateISO === endISO,
+            startingDay: nom?.type === "accommodation" || dateISO === startISO,
+            endingDay: nom?.type === "accommodation" || dateISO === endISO,
             color: light.main2,
             textColor: "#000000",
             reservation,
@@ -64,10 +65,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
 
   useEffect(() => {
     if (zones.length > 0) {
-      const groupFound = zones.find((g) => g.ref === zoneSelected);
-      const nomenclaturesFound = nomenclatures.filter(
-        (n) => n.ref === groupFound?.ref
-      );
+      const nomenclaturesFound = nomenclatures.filter((n) => n.ref === zoneSelected);
       setNomenclaturesToChoose(nomenclaturesFound);
     }
   }, [zoneSelected]);
@@ -76,7 +74,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
     setModalVisible(!modalVisible);
     setZoneSelected("");
     setNomenclatureSelected("");
-    setNomenclatureSelected([]);
+    setNomenclaturesToChoose([]);
     setMarkedDates({});
   };
 
@@ -142,13 +140,10 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                     setZoneSelected(value);
                     setNomenclatureSelected("");
                   }}
-                  dropdownIconColor={
-                    mode === "light" ? light.textDark : dark.textWhite
-                  }
+                  dropdownIconColor={mode === "light" ? light.textDark : dark.textWhite}
                   style={{
                     width: SCREEN_WIDTH / 2.7,
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
+                    backgroundColor: mode === "light" ? light.main5 : dark.main2,
                     color: mode === "light" ? light.textDark : dark.textWhite,
                     fontSize: 20,
                   }}
@@ -157,8 +152,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                     label="SELECCIONE LA ZONA"
                     value=""
                     style={{
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
+                      backgroundColor: mode === "light" ? light.main5 : dark.main2,
                       fontSize: getFontSize(10),
                     }}
                     color={mode === "light" ? light.textDark : dark.textWhite}
@@ -167,10 +161,9 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                     <Picker.Item
                       key={zone.id + index}
                       label={zone.name}
-                      value={zone.ref}
+                      value={zone.id}
                       style={{
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
+                        backgroundColor: mode === "light" ? light.main5 : dark.main2,
                         fontSize: getFontSize(10),
                       }}
                       color={mode === "light" ? light.textDark : dark.textWhite}
@@ -182,8 +175,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                 <View
                   style={{
                     marginHorizontal: 2,
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
+                    backgroundColor: mode === "light" ? light.main5 : dark.main2,
                   }}
                 >
                   <Picker
@@ -192,13 +184,10 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                     onValueChange={(value) => {
                       setNomenclatureSelected(value);
                     }}
-                    dropdownIconColor={
-                      mode === "light" ? light.textDark : dark.textWhite
-                    }
+                    dropdownIconColor={mode === "light" ? light.textDark : dark.textWhite}
                     style={{
                       width: SCREEN_WIDTH / 2.7,
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
+                      backgroundColor: mode === "light" ? light.main5 : dark.main2,
                       color: mode === "light" ? light.textDark : dark.textWhite,
                       fontSize: 20,
                     }}
@@ -207,8 +196,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                       label="SELECCIONA LA NOMENCLATURA"
                       value=""
                       style={{
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
+                        backgroundColor: mode === "light" ? light.main5 : dark.main2,
                         fontSize: getFontSize(10),
                       }}
                       color={mode === "light" ? light.textDark : dark.textWhite}
@@ -219,13 +207,10 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                         label={nomenclature.name || nomenclature.nomenclature}
                         value={nomenclature.id}
                         style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
+                          backgroundColor: mode === "light" ? light.main5 : dark.main2,
                           fontSize: getFontSize(10),
                         }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
+                        color={mode === "light" ? light.textDark : dark.textWhite}
                       />
                     ))}
                   </Picker>
@@ -238,27 +223,20 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                 // Specify theme properties to override specific styles for calendar parts. Default = {}
                 theme={{
                   backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                  calendarBackground:
-                    mode === "light" ? light.main5 : dark.main2,
+                  calendarBackground: mode === "light" ? light.main5 : dark.main2,
                   textSectionTitleColor: light.main2, // TITULO DE SEMANA
                   textSectionTitleDisabledColor: "#d9e1e8", // TITULO DE SEMANA DESACTIVADO
                   selectedDayBackgroundColor: "#00adf5", // NO SE
                   selectedDayTextColor: "#ffffff", // NO SE
                   todayTextColor: light.main2, // COLOR DEL DIA DE HOY
-                  dayTextColor:
-                    mode === "light" ? light.textDark : dark.textWhite, // COLOR DE LAS FECHAS
-                  textDisabledColor: `${
-                    mode === "light" ? light.textDark : dark.textWhite
-                  }66`, // COLOR QUE NO ES DEL MES
+                  dayTextColor: mode === "light" ? light.textDark : dark.textWhite, // COLOR DE LAS FECHAS
+                  textDisabledColor: `${mode === "light" ? light.textDark : dark.textWhite}66`, // COLOR QUE NO ES DEL MES
                   dotColor: "#00adf5", // NO SE
                   selectedDotColor: "#ffffff", // NO SE
-                  arrowColor:
-                    mode === "light" ? light.textDark : dark.textWhite, // COLOR DE LAS FLECHAS
+                  arrowColor: mode === "light" ? light.textDark : dark.textWhite, // COLOR DE LAS FLECHAS
                   disabledArrowColor: `${light.main2}66`, //COLOR DE LAS FECHAS DESHABILITADAS
-                  monthTextColor:
-                    mode === "light" ? light.textDark : dark.textWhite, // TEXTO DEL MES
-                  indicatorColor:
-                    mode === "light" ? light.textDark : dark.textWhite, // COLOR DE INDICADOR
+                  monthTextColor: mode === "light" ? light.textDark : dark.textWhite, // TEXTO DEL MES
+                  indicatorColor: mode === "light" ? light.textDark : dark.textWhite, // COLOR DE INDICADOR
                   textDayFontFamily: "monospace", // FONT FAMILY DEL DIA
                   textMonthFontFamily: "monospace", // FONT FAMILY DEL MES
                   textDayHeaderFontFamily: "monospace", // FONT FAMILY DEL ENCABEZADO

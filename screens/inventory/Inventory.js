@@ -8,7 +8,7 @@ import {
   Dimensions,
   Modal,
   Switch,
-  Image
+  Image,
 } from "react-native";
 import { useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
@@ -91,7 +91,7 @@ const Inventory = () => {
     { label: "Restaurante/Bar", value: "menu" },
     { label: "Productos&Servicios", value: "sales" },
     { label: "Ambos", value: "both" },
-    { label: "Ninguno", value: 'none' },
+    { label: "Ninguno", value: "none" },
   ];
 
   const dateValidation = (date) => {
@@ -334,7 +334,56 @@ const Inventory = () => {
 </html>
 `;
 
-  const Table = ({ item }) => {
+  const AnchoredTable = ({ item }) => {
+    return (
+      <View style={{ flexDirection: "row" }}>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate("CreateElement", { editing: true, item })
+          }
+          style={[
+            styles.table,
+            { borderColor: mode === "light" ? light.textDark : dark.textWhite },
+          ]}
+        >
+          <TextStyle
+            smallParagraph
+            color={mode === "light" ? light.textDark : dark.textWhite}
+          >
+            {item.name}
+          </TextStyle>
+        </TouchableOpacity>
+        <View
+          style={[
+            styles.table,
+            { borderColor: mode === "light" ? light.textDark : dark.textWhite },
+          ]}
+        >
+          <TextStyle
+            smallParagraph
+            color={mode === "light" ? light.textDark : dark.textWhite}
+          >
+            {item.unit}
+          </TextStyle>
+        </View>
+        <View
+          style={[
+            styles.table,
+            { borderColor: mode === "light" ? light.textDark : dark.textWhite },
+          ]}
+        >
+          <TextStyle
+            smallParagraph
+            color={mode === "light" ? light.textDark : dark.textWhite}
+          >
+            {thousandsSystem(item.currentValue)}
+          </TextStyle>
+        </View>
+      </View>
+    );
+  };
+
+  const UnanchoredTable = ({ item }) => {
     const stock =
       item.entry.reduce((a, b) => a + b.quantity, 0) -
       item.output.reduce((a, b) => a + b.quantity, 0);
@@ -470,174 +519,252 @@ const Inventory = () => {
 
   return (
     <Layout>
-      <View style={{ justifyContent: "space-between", flexGrow: 1 }}>
-        <View style={styles.row}>
-          <View style={{ flexDirection: "row" }}>
-            {(inventory.length > 0 || activeSearch) && (
-              <ButtonStyle
-                onPress={() =>
-                  navigation.navigate("CreateEntryOutput", { type: "entry" })
-                }
-                backgroundColor={light.main2}
-                style={{
-                  width: "auto",
-                  paddingHorizontal: 8,
-                  paddingVertical: 8,
-                  marginHorizontal: 2,
-                }}
-              >
-                <TextStyle center verySmall>
-                  ENTRADA
-                </TextStyle>
-              </ButtonStyle>
-            )}
-            {(inventory.length > 0 || activeSearch) && (
-              <ButtonStyle
-                onPress={() =>
-                  navigation.navigate("CreateEntryOutput", { type: "output" })
-                }
-                backgroundColor={light.main2}
-                style={{
-                  width: "auto",
-                  paddingHorizontal: 8,
-                  paddingVertical: 8,
-                  marginHorizontal: 2,
-                }}
-              >
-                <TextStyle center verySmall>
-                  SALIDA
-                </TextStyle>
-              </ButtonStyle>
-            )}
+      <View style={styles.row}>
+        {(inventory.length > 0 || activeSearch) && (
+          <View>
+            <TextStyle
+              color={mode === "light" ? light.textDark : dark.textWhite}
+              bigParagraph
+            >
+              PRODUCTOS
+            </TextStyle>
+            <TextStyle color={light.main2} smallParagraph>
+              INVENTARIO
+            </TextStyle>
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {(inventory.length > 0 || activeSearch) && (
-              <TouchableOpacity
-                onPress={() => navigation.navigate("InventoryInformation")}
-              >
-                <Ionicons
-                  name="information-circle"
-                  size={getFontSize(32)}
-                  color={light.main2}
-                />
-              </TouchableOpacity>
-            )}
-            {(inventory.length > 0 || activeSearch) && (
-              <TouchableOpacity
-                onPress={() => generatePDF({ html, code: "INVENTARIO VBELA" })}
-              >
-                <Ionicons
-                  name="document"
-                  size={getFontSize(32)}
-                  color={light.main2}
-                />
-              </TouchableOpacity>
-            )}
-            {(inventory.length > 0 || activeSearch) && (
-              <TouchableOpacity onPress={() => print({ html })}>
-                <Ionicons
-                  name="print"
-                  size={getFontSize(32)}
-                  color={light.main2}
-                />
-              </TouchableOpacity>
-            )}
-            {(inventory.length > 0 || activeSearch) && (
-              <TouchableOpacity
-                onPress={() => {
-                  const state = !activeSearch;
-                  setActiveSearch(state);
-                  if (state) setTimeout(() => searchRef.current.focus());
-                }}
-              >
-                <Ionicons
-                  name="search"
-                  size={getFontSize(32)}
-                  color={light.main2}
-                />
-              </TouchableOpacity>
-            )}
-            {(inventory.length > 0 || activeSearch) && (
-              <TouchableOpacity
-                onPress={() => navigation.navigate("CreateElement")}
-                style={{ marginHorizontal: 2 }}
-              >
-                <Ionicons
-                  name="add-circle"
-                  size={getFontSize(32)}
-                  color={light.main2}
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-        {activeSearch && (
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "100%",
-              marginTop: 20,
-            }}
-          >
+        )}
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {(inventory.length > 0 || activeSearch) && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("InventoryInformation")}
+            >
+              <Ionicons
+                name="information-circle"
+                size={getFontSize(32)}
+                color={light.main2}
+              />
+            </TouchableOpacity>
+          )}
+          {(inventory.length > 0 || activeSearch) && (
+            <TouchableOpacity
+              onPress={() => generatePDF({ html, code: "INVENTARIO VBELA" })}
+            >
+              <Ionicons
+                name="document"
+                size={getFontSize(32)}
+                color={light.main2}
+              />
+            </TouchableOpacity>
+          )}
+          {(inventory.length > 0 || activeSearch) && (
+            <TouchableOpacity onPress={() => print({ html })}>
+              <Ionicons
+                name="print"
+                size={getFontSize(32)}
+                color={light.main2}
+              />
+            </TouchableOpacity>
+          )}
+          {(inventory.length > 0 || activeSearch) && (
             <TouchableOpacity
               onPress={() => {
-                setSearch("");
-                setActiveSearch(false);
-                setFilters(initialState);
+                const state = !activeSearch;
+                setActiveSearch(state);
+                if (state) setTimeout(() => searchRef.current.focus());
               }}
             >
               <Ionicons
-                name="close"
-                size={30}
-                color={mode === "light" ? light.textDark : dark.textWhite}
+                name="search"
+                size={getFontSize(32)}
+                color={light.main2}
               />
             </TouchableOpacity>
-            <InputStyle
-              innerRef={searchRef}
-              placeholder="Buscar producto"
-              value={search}
-              onChangeText={(text) => setSearch(text)}
-              stylesContainer={{ width: "78%", marginVertical: 0 }}
-              stylesInput={{
-                paddingHorizontal: 6,
-                paddingVertical: 5,
-                fontSize: 18,
-              }}
-            />
-            <TouchableOpacity onPress={() => setActiveFilter(!activeFilter)}>
-              <Ionicons name="filter" size={30} color={light.main2} />
-            </TouchableOpacity>
-          </View>
-        )}
-        {inventory.length === 0 && activeSearch && (
-          <TextStyle center color={light.main2} style={{ marginTop: 20 }}>
-            NO HAY RESULTADOS
-          </TextStyle>
-        )}
-        {inventory.length === 0 && !activeSearch && (
-          <View
-            style={[
-              StyleSheet.absoluteFillObject,
-              { justifyContent: "center", alignItems: "center" },
-            ]}
-          >
-            <ButtonStyle
-              backgroundColor={light.main2}
-              style={{ width: "auto", paddingHorizontal: 35 }}
+          )}
+          {(inventory.length > 0 || activeSearch) && (
+            <TouchableOpacity
               onPress={() => navigation.navigate("CreateElement")}
+              style={{ marginHorizontal: 2 }}
             >
-              <TextStyle center color={light.textDark}>
-                Crear tabla de elementos
-              </TextStyle>
-            </ButtonStyle>
-          </View>
-        )}
+              <Ionicons
+                name="add-circle"
+                size={getFontSize(32)}
+                color={light.main2}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+      {activeSearch && (
         <View
-          style={{ alignItems: "center", marginTop: 20, height: SCREEN_HEIGHT / 1.3 }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "100%",
+            marginTop: 20,
+          }}
         >
-          {inventory.length > 0 && (
+          <TouchableOpacity
+            onPress={() => {
+              setSearch("");
+              setActiveSearch(false);
+              setFilters(initialState);
+            }}
+          >
+            <Ionicons
+              name="close"
+              size={30}
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            />
+          </TouchableOpacity>
+          <InputStyle
+            innerRef={searchRef}
+            placeholder="Buscar producto"
+            value={search}
+            onChangeText={(text) => setSearch(text)}
+            stylesContainer={{ width: "78%", marginVertical: 0 }}
+            stylesInput={{
+              paddingHorizontal: 6,
+              paddingVertical: 5,
+              fontSize: 18,
+            }}
+          />
+          <TouchableOpacity onPress={() => setActiveFilter(!activeFilter)}>
+            <Ionicons name="filter" size={30} color={light.main2} />
+          </TouchableOpacity>
+        </View>
+      )}
+      {inventory.length === 0 && activeSearch && (
+        <TextStyle center color={light.main2} style={{ marginTop: 20 }}>
+          NO HAY RESULTADOS
+        </TextStyle>
+      )}
+      <View
+        style={{
+          marginTop: 20,
+          maxHeight: SCREEN_HEIGHT / 2.7
+        }}
+      >
+        {inventory.filter((i) => i.visible !== "none").length > 0 && (
+          <>
+            <TextStyle
+              style={{ marginBottom: 5 }}
+              color={mode === "light" ? light.textDark : dark.textWhite}
+              smallParagraph
+            >
+              ANCLADO
+            </TextStyle>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* <ScrollView horizontal showsHorizontalScrollIndicator={false}> */}
+                <View>
+                  <View style={{ flexDirection: "row" }}>
+                    <View
+                      style={[
+                        styles.table,
+                        {
+                          borderColor:
+                            mode === "light" ? light.textDark : dark.textWhite,
+                        },
+                      ]}
+                    >
+                      <TextStyle color={light.main2} smallParagraph>
+                        PRODUCTO
+                      </TextStyle>
+                    </View>
+                    <View
+                      style={[
+                        styles.table,
+                        {
+                          borderColor:
+                            mode === "light" ? light.textDark : dark.textWhite,
+                        },
+                      ]}
+                    >
+                      <TextStyle color={light.main2} smallParagraph>
+                        UNIDAD
+                      </TextStyle>
+                    </View>
+                    <View
+                      style={[
+                        styles.table,
+                        {
+                          borderColor:
+                            mode === "light" ? light.textDark : dark.textWhite,
+                        },
+                      ]}
+                    >
+                      <TextStyle color={light.main2} smallParagraph>
+                        VALOR
+                      </TextStyle>
+                    </View>
+                  </View>
+                  <FlatList
+                    data={inventory.filter((i) => i.visible !== "none")}
+                    renderItem={AnchoredTable}
+                    showsVerticalScrollIndicator={false}
+                    keyExtractor={(item) => item.id}
+                    scrollEnabled={false}
+                  />
+                </View>
+              {/* </ScrollView> */}
+            </ScrollView>
+          </>
+        )}
+      </View>
+      <View
+        style={{
+          marginTop: 20,
+          maxHeight: SCREEN_HEIGHT / 2.7
+        }}
+      >
+        {inventory.filter((i) => i.visible === "none").length > 0 && (
+          <>
+            <View style={[styles.row, { marginBottom: 5 }]}>
+              <TextStyle
+                color={mode === "light" ? light.textDark : dark.textWhite}
+                smallParagraph
+              >
+                NO ANCLADO
+              </TextStyle>
+              <View style={{ flexDirection: "row" }}>
+                <ButtonStyle
+                  onPress={() =>
+                    navigation.navigate("CreateEntryOutput", {
+                      type: "entry",
+                    })
+                  }
+                  backgroundColor={light.main2}
+                  style={{
+                    width: "auto",
+                    paddingHorizontal: 8,
+                    paddingVertical: 8,
+                    marginHorizontal: 2,
+                  }}
+                >
+                  <TextStyle center verySmall>
+                    ENTRADA
+                  </TextStyle>
+                </ButtonStyle>
+                <ButtonStyle
+                  onPress={() =>
+                    navigation.navigate("CreateEntryOutput", {
+                      type: "output",
+                    })
+                  }
+                  backgroundColor={light.main2}
+                  style={{
+                    width: "auto",
+                    paddingHorizontal: 8,
+                    paddingVertical: 8,
+                    marginHorizontal: 2,
+                  }}
+                >
+                  <TextStyle center verySmall>
+                    SALIDA
+                  </TextStyle>
+                </ButtonStyle>
+              </View>
+            </View>
             <ScrollView showsVerticalScrollIndicator={false}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View>
@@ -722,8 +849,8 @@ const Inventory = () => {
                     </View>
                   </View>
                   <FlatList
-                    data={inventory}
-                    renderItem={Table}
+                    data={inventory.filter((i) => i.visible === "none")}
+                    renderItem={UnanchoredTable}
                     showsVerticalScrollIndicator={false}
                     keyExtractor={(item) => item.id}
                     scrollEnabled={false}
@@ -731,9 +858,30 @@ const Inventory = () => {
                 </View>
               </ScrollView>
             </ScrollView>
-          )}
-        </View>
+          </>
+        )}
       </View>
+      {inventory.length === 0 && !activeSearch && (
+        <View
+          style={[
+            StyleSheet.absoluteFillObject,
+            {
+              justifyContent: "center",
+              alignItems: "center",
+            },
+          ]}
+        >
+          <ButtonStyle
+            backgroundColor={light.main2}
+            style={{ width: "auto", paddingHorizontal: 35 }}
+            onPress={() => navigation.navigate("CreateElement")}
+          >
+            <TextStyle center color={light.textDark}>
+              Crear tabla de elementos
+            </TextStyle>
+          </ButtonStyle>
+        </View>
+      )}
       <Modal
         animationType="slide"
         transparent={true}
@@ -1082,7 +1230,10 @@ const Inventory = () => {
                           : "#888888"
                       }
                     >
-                      {visibleOptions.find((u) => u.value === filters.visible)?.label}
+                      {
+                        visibleOptions.find((u) => u.value === filters.visible)
+                          ?.label
+                      }
                     </TextStyle>
                     <Ionicons
                       color={

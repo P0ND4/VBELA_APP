@@ -163,7 +163,7 @@ const CreatePerson = ({ route, navigation }) => {
   const onSubmitEdit = async (data) => {
     setLoading(true);
     Keyboard.dismiss();
-    const foundEconomy = economy.find((e) => e.ref === dataP.personID);
+    const foundEconomy = economy.find((e) => e.ref === dataP.id);
     if (foundEconomy) {
       dispatch(
         editE({
@@ -188,17 +188,17 @@ const CreatePerson = ({ route, navigation }) => {
       });
     }
     data.modificationDate = new Date().getTime();
-    data.id = dataP.personID;
+    data.id = dataP.id;
     data.creationDate = dataP.creationDate;
     if (type === "customer") {
-      if (data.special) dispatch(editCustomer({ id: dataP.personID, data }));
+      if (data.special) dispatch(editCustomer({ id: dataP.id, data }));
       else {
         delete data.clientList;
-        dispatch(editCustomer({ id: dataP.personID, data }));
+        dispatch(editCustomer({ id: dataP.id, data }));
       }
     }
     if (type === "supplier")
-      dispatch(editSupplier({ id: dataP.personID, data }));
+      dispatch(editSupplier({ id: dataP.id, data }));
     navigation.pop();
 
     await editPerson({
@@ -499,9 +499,8 @@ const CreatePerson = ({ route, navigation }) => {
         key={editingClient.key}
         modalVisible={modalVisible}
         setModalVisible={setModalVisible}
-        options={{
+        settings={{
           email: false,
-          identification: true,
           phoneNumber: false,
           country: false,
           days: false,

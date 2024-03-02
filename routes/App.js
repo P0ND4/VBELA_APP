@@ -1,11 +1,12 @@
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { useSelector } from "react-redux";
-import Accommodation from "@screens/reservation/Accommodation";
+import Reservation from "@screens/reservation/Reservation";
 import Statistic from "@screens/statistic/Statistic";
 import CreateRoster from "@screens/event/CreateRoster";
 import Helper from "@screens/helper/Helper";
 import Inventory from "@screens/inventory/Inventory";
-import People from "@screens/people/People";
+import Supplier from "screens/people/supplier/Supplier";
+import Customer from "screens/people/customer/Customer";
 import Setting from "@screens/setting/Setting";
 import Kitchen from "@screens/sales/Kitchen";
 import Tables from "@screens/sales/Tables";
@@ -32,8 +33,7 @@ function App() {
         },
         drawerActiveBackgroundColor: light.main2,
         drawerActiveTintColor: light.textDark,
-        drawerInactiveTintColor:
-          mode === "dark" ? dark.textWhite : light.textDark,
+        drawerInactiveTintColor: mode === "dark" ? dark.textWhite : light.textDark,
         drawerLabelStyle: {
           marginLeft: -25,
           fontFamily: "Roboto-Medium",
@@ -44,14 +44,12 @@ function App() {
       drawerContent={(props) => <CustomDrawer {...props} />}
       unmountInactiveRoutes={true}
     >
-      {((!helperStatus.active &&
-        ["both", "accommodation"].includes(user?.type)) ||
+      {((!helperStatus.active && ["both", "accommodation"].includes(user?.type)) ||
         (helperStatus.active &&
-          (helperStatus.accessToTables ||
-            helperStatus.accessToReservations))) && (
+          (helperStatus.accessToTables || helperStatus.accessToReservations))) && (
         <Drawer.Screen
-          name="Accommodation"
-          component={Accommodation}
+          name="Reservation"
+          component={Reservation}
           options={{
             title: "Alojamiento y reservas",
             drawerIcon: ({ color }) => (
@@ -144,29 +142,27 @@ function App() {
         helperStatus.accessToTables) && (
         <Drawer.Screen
           name="Customers"
+          component={Customer}
           options={{
             title: "Clientes",
             drawerIcon: ({ color }) => (
               <Ionicons name="people-outline" size={22} color={color} />
             ),
           }}
-        >
-          {(props) => <People {...props} userType="customer" />}
-        </Drawer.Screen>
+        />
       )}
       {((!helperStatus.active && ["both", "sales"].includes(user?.type)) ||
         (helperStatus.active && helperStatus.accessToSupplier)) && (
         <Drawer.Screen
           name="Providers"
+          component={Supplier}
           options={{
             title: "Proveedores",
             drawerIcon: ({ color }) => (
               <Ionicons name="cube-outline" size={22} color={color} />
             ),
           }}
-        >
-          {(props) => <People {...props} userType="supplier" />}
-        </Drawer.Screen>
+        />
       )}
       {((!helperStatus.active && ["both", "sales"].includes(user?.type)) ||
         (helperStatus.active && helperStatus.accessToInventory)) && (

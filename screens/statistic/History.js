@@ -14,11 +14,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { getFontSize, changeDate, thousandsSystem } from "@helpers/libs";
 import { remove as removeS } from "@features/sales/salesSlice";
 import { remove as removeO } from "@features/tables/ordersSlice";
-import { removeOrder, removeSale, removeEconomy, editEconomy } from "@api";
-import {
-  edit as editE,
-  remove as removeE,
-} from "@features/function/economySlice";
+import { removeOrder, removeSale } from "@api";
 import TextStyle from "@components/TextStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Layout from "@components/Layout";
@@ -30,8 +26,6 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("screen");
 const History = ({ route }) => {
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
-  const customers = useSelector((state) => state.customers);
-  const economy = useSelector((state) => state.economy);
   const mode = useSelector((state) => state.mode);
   const [data, setData] = useState(route.params.item);
 
@@ -125,70 +119,6 @@ const History = ({ route }) => {
     );
   };
 
-  const getTotal = (totalDiscount = 0, selection = [], tip = 0, tax = 0) =>
-    totalDiscount !== 0
-      ? selection.reduce((a, b) => {
-          const value = b.value * b.paid;
-          const percentage = (value / b.total).toFixed(2);
-          return (
-            a + (b.discount !== 0 ? value - b.discount * percentage : value)
-          );
-        }, 0) -
-        totalDiscount +
-        tip +
-        tax
-      : selection.reduce((a, b) => {
-          const value = b.value * b.paid;
-          const percentage = (value / b.total).toFixed(2);
-          return (
-            a + (b.discount !== 0 ? value - b.discount * percentage : value)
-          );
-        }, 0) +
-        tip +
-        tax;
-
-  const deleteEconomy = async ({ ids, item }) => {
-    const total = getTotal(item.discount, item.selection, item.tip, item.tax);
-
-    for (let ownerRef of ids) {
-      const person =
-        customers.find((p) => p.id === ownerRef) ||
-        customers.find((p) => p?.clientList?.some((c) => c.id === ownerRef));
-
-      const foundEconomy = economy.find((e) => e.ref === person.id);
-
-      if (foundEconomy) {
-        const currentEconomy = { ...foundEconomy };
-        currentEconomy.amount -= total;
-        currentEconomy.payment -= total;
-        currentEconomy.modificationDate = new Date().getTime();
-        if (currentEconomy.amount <= 0) {
-          dispatch(removeE({ id: foundEconomy.id }));
-          await removeEconomy({
-            identifier: helperStatus.active
-              ? helperStatus.identifier
-              : user.identifier,
-            id: foundEconomy.id,
-            helpers: helperStatus.active
-              ? [helperStatus.id]
-              : user.helpers.map((h) => h.id),
-          });
-        } else {
-          dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
-          await editEconomy({
-            identifier: helperStatus.active
-              ? helperStatus.identifier
-              : user.identifier,
-            economy: currentEconomy,
-            helpers: helperStatus.active
-              ? [helperStatus.id]
-              : user.helpers.map((h) => h.id),
-          });
-        }
-      }
-    }
-  };
-
   const deleteSale = ({ item }) => {
     Alert.alert(
       `¿Estás seguro que quieres eliminar la venta?`,
@@ -201,63 +131,35 @@ const History = ({ route }) => {
         {
           text: "Si",
           onPress: async () => {
-            const send = async () => {
-              setData(data.filter((d) => d.id !== item.id));
-              dispatch(
-                type === "menu"
-                  ? removeO({ id: item.id })
-                  : removeS({ id: item.id })
-              );
-              if (type === "menu") {
-                await removeOrder({
-                  identifier: helperStatus.active
-                    ? helperStatus.identifier
-                    : user.identifier,
-                  id: item.id,
-                  helpers: helperStatus.active
-                    ? [helperStatus.id]
-                    : user.helpers.map((h) => h.id),
-                });
-              }
+            setData(data.filter((d) => d.id !== item.id));
+            dispatch(
+              type === "menu"
+                ? removeO({ id: item.id })
+                : removeS({ id: item.id })
+            );
+            if (type === "menu") {
+              await removeOrder({
+                identifier: helperStatus.active
+                  ? helperStatus.identifier
+                  : user.identifier,
+                id: item.id,
+                helpers: helperStatus.active
+                  ? [helperStatus.id]
+                  : user.helpers.map((h) => h.id),
+              });
+            }
 
-              if (type === "sales") {
-                await removeSale({
-                  identifier: helperStatus.active
-                    ? helperStatus.identifier
-                    : user.identifier,
-                  id: item.id,
-                  helpers: helperStatus.active
-                    ? [helperStatus.id]
-                    : user.helpers.map((h) => h.id),
-                });
-              }
-            };
-            
-            const person =
-              customers.find((p) => p.id === item.ref) ||
-              customers.find((p) => p?.clientList?.some((c) => c.id === item.ref));
-
-            const foundEconomy = economy.find((e) => e.ref === person.id);
-
-            if (foundEconomy) {
-              Alert.alert(
-                "ECONOMÍA",
-                "¿Quiere eliminar la información de economía de los clientes?",
-                [
-                  {
-                    text: "No",
-                    onPress: async () => await send(),
-                  },
-                  {
-                    text: "Si",
-                    onPress: async () => {
-                      await deleteEconomy({ ids: [item.ref], item });
-                      await send();
-                    },
-                  },
-                ]
-              );
-            } else await send();
+            if (type === "sales") {
+              await removeSale({
+                identifier: helperStatus.active
+                  ? helperStatus.identifier
+                  : user.identifier,
+                id: item.id,
+                helpers: helperStatus.active
+                  ? [helperStatus.id]
+                  : user.helpers.map((h) => h.id),
+              });
+            }
           },
         },
       ],
@@ -387,15 +289,11 @@ const History = ({ route }) => {
                   </View>
                   <View style={{ marginRight: 5 }}>
                     <TextStyle
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
-                      >
-                        Identificación:{" "}
-                        <TextStyle color={light.main2}>
-                          {item.table}
-                        </TextStyle>
-                      </TextStyle>
+                      color={mode === "light" ? light.textDark : dark.textWhite}
+                    >
+                      Identificación:{" "}
+                      <TextStyle color={light.main2}>{item.table}</TextStyle>
+                    </TextStyle>
                     <View style={styles.row}>
                       <TextStyle
                         color={
@@ -431,7 +329,14 @@ const History = ({ route }) => {
                           }
                         >
                           <TextStyle color={light.main2} verySmall>
-                            {m.method}:
+                            {m.method === "cash"
+                              ? "Efectivo"
+                              : m.method === "card"
+                              ? "Tarjeta"
+                              : m.method === "others"
+                              ? "Otros"
+                              : "Crédito"}
+                            :
                           </TextStyle>{" "}
                           {m.total}
                         </TextStyle>

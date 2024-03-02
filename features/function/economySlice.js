@@ -13,16 +13,23 @@ export const economySlice = createSlice({
     },
     remove: (state, action) => {
       const { id } = action.payload;
-      const index = state.findIndex(e => e.id === id);
+      const index = state.findIndex((e) => e.id === id);
       state.splice(index, 1);
     },
-    removeMany: (state, action) => {
+    removeManyByRef: (state, action) => {
       const { ref } = action.payload;
       const economies = state.filter((e) => e.ref === ref);
       for (let e of economies) {
         const index = state.findIndex((eco) => eco.ref === e.ref);
         state.splice(index, 1);
-      };
+      }
+    },
+    removeManyByIds: (state, action) => {
+      const { ids } = action.payload;
+      for (let e of ids) {
+        const index = state.findIndex((eco) => eco.id === e.id);
+        state.splice(index, 1);
+      }
     },
     removeByEvent: (state, action) => {
       const { event } = action.payload;
@@ -30,11 +37,20 @@ export const economySlice = createSlice({
       for (let e of economies) {
         const index = state.findIndex((eco) => eco.ref === e.ref);
         state.splice(index, 1);
-      };
+      }
     },
     clean: (state, action) => [],
   },
 });
 
-export const { add, edit, remove, removeMany, removeByEvent, clean, change } = economySlice.actions;
+export const {
+  add,
+  edit,
+  remove,
+  removeManyByRef,
+  removeManyByIds,
+  removeByEvent,
+  clean,
+  change,
+} = economySlice.actions;
 export default economySlice.reducer;

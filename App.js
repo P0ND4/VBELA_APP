@@ -51,9 +51,7 @@ LocaleConfig.locales["es"] = {
 LocaleConfig.defaultLocale = "es";
 
 export default function App() {
-  LogBox.ignoreLogs([
-    "Non-serializable values were found in the navigation state",
-  ]);
+  LogBox.ignoreAllLogs();
 
   return (
     <Provider store={store}>

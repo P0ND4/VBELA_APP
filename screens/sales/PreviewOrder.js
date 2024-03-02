@@ -10,12 +10,7 @@ import {
   FlatList,
   Image,
 } from "react-native";
-import {
-  thousandsSystem,
-  getFontSize,
-  changeDate,
-  print,
-} from "@helpers/libs";
+import { thousandsSystem, getFontSize, changeDate, print } from "@helpers/libs";
 import Logo from "@assets/logo.png";
 import Information from "@components/Information";
 import Layout from "@components/Layout";
@@ -23,6 +18,7 @@ import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
+import PaymentButtons from "@components/PaymentButtons";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 const { light, dark } = theme();
@@ -35,10 +31,7 @@ const Selection = ({ item, setIndividualPayment, individualPayment }) => {
   return (
     <View style={[styles.row, { marginTop: 5 }]}>
       <View>
-        <TextStyle
-          paragrahp
-          color={mode === "light" ? light.textDark : dark.textWhite}
-        >
+        <TextStyle paragrahp color={mode === "light" ? light.textDark : dark.textWhite}>
           <TextStyle color={light.main2} paragrahp>
             {thousandsSystem(payment)}
           </TextStyle>
@@ -85,11 +78,7 @@ const Selection = ({ item, setIndividualPayment, individualPayment }) => {
                 return s;
               });
               setIndividualPayment(changed);
-            } else
-              setIndividualPayment([
-                ...individualPayment,
-                { ...item, paid: 1 },
-              ]);
+            } else setIndividualPayment([...individualPayment, { ...item, paid: 1 }]);
           }}
         >
           <Ionicons name="add" size={getFontSize(15)} color={light.main2} />
@@ -102,6 +91,7 @@ const Selection = ({ item, setIndividualPayment, individualPayment }) => {
 const PreviewOrder = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const invoice = useSelector((state) => state.invoice);
+
   const mainSelection = route.params.selection;
   const saveOrder = route.params.saveOrder;
   const updateOrder = route.params.updateOrder;
@@ -109,6 +99,7 @@ const PreviewOrder = ({ route, navigation }) => {
   const editing = route.params.editing;
   const sales = route.params?.sales;
   const code = route.params?.code;
+  const owner = route.params?.owner;
 
   const [individualPayment, setIndividualPayment] = useState([]);
   const [newSelection, setNewSelection] = useState(route.params.newSelection);
@@ -127,8 +118,7 @@ const PreviewOrder = ({ route, navigation }) => {
   }, [modalVisible]);
 
   useEffect(() => {
-    if (selection.filter((s) => s.count !== s.paid).length === 0)
-      navigation.pop();
+    if (selection.filter((s) => s.count !== s.paid).length === 0) navigation.pop();
     route.params.setSelection(selection);
   }, [selection]);
 
@@ -163,9 +153,9 @@ const PreviewOrder = ({ route, navigation }) => {
         a +
         `<tr>
             <td style="text-align: left;">
-              <p style="font-size: 28px; font-weight: 600;">${thousandsSystem(
-                count
-              )}x ${item.name}</p>
+              <p style="font-size: 28px; font-weight: 600;">${thousandsSystem(count)}x ${
+          item.name
+        }</p>
             </td>
             <td style="text-align: right;">
               <p style="font-size: 28px; font-weight: 600;">
@@ -174,9 +164,7 @@ const PreviewOrder = ({ route, navigation }) => {
                   ? count * item.value - item.discount
                   : selection.reduce((a, b) => {
                       if (b.id === item.id) {
-                        return (
-                          a + (b.discount !== 0 ? b.discount : count * b.value)
-                        );
+                        return a + (b.discount !== 0 ? b.discount : count * b.value);
                       }
                       return (a = a);
                     }, 0)
@@ -251,9 +239,9 @@ const PreviewOrder = ({ route, navigation }) => {
             </td>
             <td>
               <p style="font-size: 25px; font-weight: 600; color: #444444; margin-bottom: 12px; text-align: right">
-              Hora: ${("0" + date.getHours()).slice(-2)}:${(
-      "0" + date.getMinutes()
-    ).slice(-2)}:${("0" + date.getSeconds()).slice(-2)}
+              Hora: ${("0" + date.getHours()).slice(-2)}:${("0" + date.getMinutes()).slice(
+      -2
+    )}:${("0" + date.getSeconds()).slice(-2)}
               </p>
             </td>
           </tr>
@@ -321,12 +309,8 @@ const PreviewOrder = ({ route, navigation }) => {
                     style={[
                       styles.chosenProduct,
                       {
-                        opacity:
-                          openEditOrder === index || openEditOrder === null
-                            ? 1
-                            : 0.6,
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
+                        opacity: openEditOrder === index || openEditOrder === null ? 1 : 0.6,
+                        backgroundColor: mode === "light" ? light.main5 : dark.main2,
                       },
                     ]}
                   >
@@ -339,13 +323,10 @@ const PreviewOrder = ({ route, navigation }) => {
                       </TextStyle>
                       x {item.name}
                     </TextStyle>
-                    <TextStyle
-                      color={mode === "light" ? light.textDark : dark.textWhite}
-                    >
+                    <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
                       {thousandsSystem(
                         item.discount !== 0
-                          ? (item.count - item.paid) * item.value -
-                              item.discount
+                          ? (item.count - item.paid) * item.value - item.discount
                           : selection
                               .filter((s) => s.count !== s.paid)
                               .reduce((a, b) => {
@@ -369,17 +350,14 @@ const PreviewOrder = ({ route, navigation }) => {
                         {
                           borderTopWidth: 1,
                           borderColor: light.main2,
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
+                          backgroundColor: mode === "light" ? light.main5 : dark.main2,
                         },
                       ]}
                     >
                       <TouchableOpacity
                         style={{ alignItems: "center" }}
                         onPress={() => {
-                          const amount = selection.find(
-                            (s) => s.id === item.id
-                          );
+                          const amount = selection.find((s) => s.id === item.id);
                           navigation.navigate("EditOrder", {
                             data: "item",
                             id: item.id,
@@ -392,16 +370,12 @@ const PreviewOrder = ({ route, navigation }) => {
                         <Ionicons
                           name="file-tray-stacked"
                           size={getFontSize(23)}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
+                          color={mode === "light" ? light.textDark : dark.textWhite}
                           style={{ marginLeft: 5 }}
                         />
                         <TextStyle
                           smallParagraph
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
+                          color={mode === "light" ? light.textDark : dark.textWhite}
                         >
                           {thousandsSystem(item.count - item.paid)} items
                         </TextStyle>
@@ -425,16 +399,12 @@ const PreviewOrder = ({ route, navigation }) => {
                         <Ionicons
                           name="reader"
                           size={getFontSize(23)}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
+                          color={mode === "light" ? light.textDark : dark.textWhite}
                           style={{ marginLeft: 5 }}
                         />
                         <TextStyle
                           smallParagraph
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
+                          color={mode === "light" ? light.textDark : dark.textWhite}
                         >
                           Observación
                         </TextStyle>
@@ -450,8 +420,7 @@ const PreviewOrder = ({ route, navigation }) => {
                           navigation.navigate("EditOrder", {
                             data: "value",
                             id: item.id,
-                            value: selection.find((s) => s.id === item.id)
-                              .value,
+                            value: selection.find((s) => s.id === item.id).value,
                             selection,
                             setSelection,
                           })
@@ -460,26 +429,18 @@ const PreviewOrder = ({ route, navigation }) => {
                         <Ionicons
                           name="cash"
                           size={getFontSize(23)}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
+                          color={mode === "light" ? light.textDark : dark.textWhite}
                           style={{ marginLeft: 5 }}
                         />
                         <TextStyle
                           smallParagraph
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
+                          color={mode === "light" ? light.textDark : dark.textWhite}
                         >
-                          {thousandsSystem(
-                            selection.find((s) => s.id === item.id).value
-                          )}
+                          {thousandsSystem(selection.find((s) => s.id === item.id).value)}
                         </TextStyle>
                         <TextStyle
                           smallParagraph
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
+                          color={mode === "light" ? light.textDark : dark.textWhite}
                         >
                           Unidad
                         </TextStyle>
@@ -605,9 +566,7 @@ const PreviewOrder = ({ route, navigation }) => {
               </TouchableOpacity>
             )}
             <TextStyle color={light.main2}>
-              {tax !== 0
-                ? `Impuesto: ${thousandsSystem(tax)}`
-                : "Colocar Impueso"}
+              {tax !== 0 ? `Impuesto: ${thousandsSystem(tax)}` : "Colocar Impueso"}
             </TextStyle>
           </TouchableOpacity>
           <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
@@ -640,103 +599,7 @@ const PreviewOrder = ({ route, navigation }) => {
             )}
           />
         )}
-        <View
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            marginVertical: 10,
-          }}
-        >
-          <TouchableOpacity
-            onPress={() => setPaymentMethod("Efectivo")}
-            style={[
-              styles.payOptions,
-              {
-                backgroundColor:
-                  paymentMethod === "Efectivo"
-                    ? light.main2
-                    : mode === "light"
-                    ? light.main5
-                    : dark.main2,
-              },
-            ]}
-          >
-            <Ionicons
-              name="cash"
-              size={getFontSize(28)}
-              color={
-                paymentMethod !== "Efectivo" ? light.main2 : light.textDark
-              }
-              style={{ marginLeft: 5 }}
-            />
-            <TextStyle
-              smallParagraph
-              style={{ marginTop: 4 }}
-              color={
-                paymentMethod !== "Efectivo" ? light.main2 : light.textDark
-              }
-            >
-              Efectivo
-            </TextStyle>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.payOptions,
-              {
-                backgroundColor:
-                  paymentMethod === "Tarjeta"
-                    ? light.main2
-                    : mode === "light"
-                    ? light.main5
-                    : dark.main2,
-              },
-            ]}
-            onPress={() => setPaymentMethod("Tarjeta")}
-          >
-            <Ionicons
-              name="card"
-              size={getFontSize(28)}
-              color={paymentMethod !== "Tarjeta" ? light.main2 : light.textDark}
-              style={{ marginLeft: 5 }}
-            />
-            <TextStyle
-              smallParagraph
-              style={{ marginTop: 4 }}
-              color={paymentMethod !== "Tarjeta" ? light.main2 : light.textDark}
-            >
-              Tarjeta
-            </TextStyle>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.payOptions,
-              {
-                backgroundColor:
-                  paymentMethod === "Otros"
-                    ? light.main2
-                    : mode === "light"
-                    ? light.main5
-                    : dark.main2,
-              },
-            ]}
-            onPress={() => setPaymentMethod("Otros")}
-          >
-            <Ionicons
-              name="browsers"
-              size={getFontSize(28)}
-              color={paymentMethod !== "Otros" ? light.main2 : light.textDark}
-              style={{ marginLeft: 5 }}
-            />
-            <TextStyle
-              smallParagraph
-              style={{ marginTop: 4 }}
-              color={paymentMethod !== "Otros" ? light.main2 : light.textDark}
-            >
-              Otros
-            </TextStyle>
-          </TouchableOpacity>
-        </View>
+        <PaymentButtons type="others" value={paymentMethod} setValue={setPaymentMethod} />
         <View
           style={{
             flexDirection: "row",
@@ -779,9 +642,7 @@ const PreviewOrder = ({ route, navigation }) => {
                 borderColor: light.main2,
                 width: SCREEN_WIDTH / 2.8,
               }}
-              onPress={() =>
-                sendToKitchen({ selection, newSelection, back: true })
-              }
+              onPress={() => sendToKitchen({ selection, newSelection, back: true })}
             >
               <TextStyle center verySmall color={light.main2}>
                 Enviar a cocina
@@ -874,21 +735,14 @@ const PreviewOrder = ({ route, navigation }) => {
           const total = individualPayment.reduce((a, b) => {
             const value = b.value * b.paid;
             const percentage = (value / b.total).toFixed(2);
-            return (
-              a + (b.discount !== 0 ? value - b.discount * percentage : value)
-            );
+            return a + (b.discount !== 0 ? value - b.discount * percentage : value);
           }, 0);
 
           const selectionTotal = selection
             .filter((s) => s.count !== s.paid)
-            .reduce(
-              (a, b) => a + (b.discount !== 0 ? b.total - b.discount : b.total),
-              0
-            );
+            .reduce((a, b) => a + (b.discount !== 0 ? b.total - b.discount : b.total), 0);
 
-          const percentageDiscount = (totalDiscount / selectionTotal).toFixed(
-            2
-          );
+          const percentageDiscount = (totalDiscount / selectionTotal).toFixed(2);
 
           const totalQuantity = selection
             .filter((s) => s.count !== s.paid)
@@ -897,9 +751,7 @@ const PreviewOrder = ({ route, navigation }) => {
               return a;
             }, 0);
 
-          const totalToPay = Math.round(
-            total - total * percentageDiscount + tip + tax
-          );
+          const totalToPay = Math.round(total - total * percentageDiscount + tip + tax);
 
           return (
             <View style={{ marginTop: 10 }}>
@@ -919,8 +771,7 @@ const PreviewOrder = ({ route, navigation }) => {
               <View style={{ marginTop: 10 }}>
                 {totalDiscount !== 0 && total !== 0 && (
                   <TextStyle right color={light.main2}>
-                    Descuento:{" "}
-                    {thousandsSystem(Math.round(total * percentageDiscount))}
+                    Descuento: {thousandsSystem(Math.round(total * percentageDiscount))}
                   </TextStyle>
                 )}
                 {tip !== 0 && total !== 0 && (
@@ -934,10 +785,7 @@ const PreviewOrder = ({ route, navigation }) => {
                   </TextStyle>
                 )}
                 {total !== 0 && (
-                  <TextStyle
-                    right
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                  <TextStyle right color={mode === "light" ? light.textDark : dark.textWhite}>
                     TOTAL: {thousandsSystem(totalToPay)}
                   </TextStyle>
                 )}
@@ -956,9 +804,7 @@ const PreviewOrder = ({ route, navigation }) => {
                     print({ html });
                   }}
                   left={() => (
-                    <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
-                    >
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
                       <Ionicons
                         name="reader-outline"
                         color={light.textDark}
@@ -974,10 +820,7 @@ const PreviewOrder = ({ route, navigation }) => {
                   style={{ opacity: total !== 0 ? 1 : 0.6 }}
                   onPress={() => {
                     if (total === 0) return;
-                    const quantitySelected = individualPayment.reduce(
-                      (a, b) => a + b.paid,
-                      0
-                    );
+                    const quantitySelected = individualPayment.reduce((a, b) => a + b.paid, 0);
 
                     const obj = {
                       pay: totalQuantity === quantitySelected,
@@ -987,9 +830,7 @@ const PreviewOrder = ({ route, navigation }) => {
                     };
                     const currentSelection = [];
                     for (let se of selection) {
-                      const individual = individualPayment.find(
-                        (i) => i.id === se.id
-                      );
+                      const individual = individualPayment.find((i) => i.id === se.id);
                       if (se.id === individual?.id && se.count !== se.paid) {
                         const securrent = { ...se };
                         securrent.paid += individual.paid;
@@ -1027,8 +868,6 @@ const PreviewOrder = ({ route, navigation }) => {
   );
 };
 
-//TODO FALTA COLOCAR LA IMPRESION ANTES DE COMPRAR EL PRODUCTO EN INDIVIDUAL Y GENERAL
-
 const styles = StyleSheet.create({
   quantitySelection: {
     paddingVertical: 2,
@@ -1049,14 +888,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  payOptions: {
-    padding: 8,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    width: Math.floor(SCREEN_WIDTH / 3.8),
-    height: Math.floor(SCREEN_WIDTH / 5),
   },
 });
 

@@ -6,14 +6,14 @@ export const informationSlice = createSlice({
   reducers: {
     add: (state, action) => void (state = state.push(action.payload)),
     edit: (state, action) => {
-      const { ref, data } = action.payload;
-      const index = state.findIndex(z => z.ref === ref);
+      const { id, data } = action.payload;
+      const index = state.findIndex(z => z.id === id);
       state[index] = { ...state[index], ...data };
     },
     change: (state, action) => (state = action.payload),
     remove: (state, action) => {
-      const { ref } = action.payload;
-      const index = state.findIndex(n => n.ref === ref);
+      const { id } = action.payload;
+      const index = state.findIndex(n => n.id === id);
       state.splice(index, 1);
     },
     clean: (state, action) => (state = []),

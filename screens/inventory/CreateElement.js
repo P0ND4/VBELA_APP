@@ -105,7 +105,9 @@ const CreateElement = ({ route, navigation }) => {
     dispatch(edit({ id: data.id, data }));
     navigation.pop();
     await editInventory({
-      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
       inventory: data,
       helpers: helperStatus.active
         ? [helperStatus.id]
@@ -199,7 +201,7 @@ const CreateElement = ({ route, navigation }) => {
     { label: "VISIBLE PARA VENTAS (por defecto)", value: "both" },
     { label: "Restaurante/Bar", value: "menu" },
     { label: "Productos&Servicios", value: "sales" },
-    { label: "Ninguno", value: 'none' },
+    { label: "Ninguno", value: "none" },
   ];
 
   return (
@@ -335,7 +337,7 @@ const CreateElement = ({ route, navigation }) => {
                   >
                     <TextStyle
                       color={
-                        visible !== 'both'
+                        visible !== "both"
                           ? mode === "light"
                             ? light.textDark
                             : dark.textWhite
@@ -346,7 +348,7 @@ const CreateElement = ({ route, navigation }) => {
                     </TextStyle>
                     <Ionicons
                       color={
-                        visible !== 'both'
+                        visible !== "both"
                           ? mode === "light"
                             ? light.textDark
                             : dark.textWhite
@@ -368,6 +370,11 @@ const CreateElement = ({ route, navigation }) => {
                     onValueChange={(value) => {
                       setValue("visible", value);
                       setVisible(value);
+                      if (value === 'both') {
+                        setValue("reorder", 0);
+                        setReorder("");
+                        setQuantity("");
+                      }
                     }}
                   >
                     {visibleOptions.map((u) => (
@@ -387,41 +394,50 @@ const CreateElement = ({ route, navigation }) => {
                   </Picker>
                 </View>
               </View>
-              <InputStyle
-                value={quantity}
-                right={
-                  quantity
-                    ? () => <TextStyle color={light.main2}>Cantidad</TextStyle>
-                    : null
-                }
-                placeholder="Cantidad en inventario"
-                keyboardType="numeric"
-                maxLength={9}
-                onChangeText={(text) =>
-                  setQuantity(thousandsSystem(text.replace(/[^0-9]/g, "")))
-                }
-              />
-              <InputStyle
-                value={reorder}
-                right={
-                  reorder
-                    ? () => (
-                        <TextStyle color={light.main2}>
-                          Punto de reorden
-                        </TextStyle>
-                      )
-                    : null
-                }
-                placeholder="Punto de reorden"
-                keyboardType="numeric"
-                maxLength={9}
-                onChangeText={(text) => {
-                  if (text === "") setValue("reorder", 0);
-                  else
-                    setValue("reorder", parseInt(text.replace(/[^0-9]/g, "")));
-                  setReorder(thousandsSystem(text.replace(/[^0-9]/g, "")));
-                }}
-              />
+              {visible === "none" && (
+                <InputStyle
+                  value={quantity}
+                  right={
+                    quantity
+                      ? () => (
+                          <TextStyle color={light.main2}>Cantidad</TextStyle>
+                        )
+                      : null
+                  }
+                  placeholder="Cantidad en inventario"
+                  keyboardType="numeric"
+                  maxLength={9}
+                  onChangeText={(text) =>
+                    setQuantity(thousandsSystem(text.replace(/[^0-9]/g, "")))
+                  }
+                />
+              )}
+              {visible === "none" && (
+                <InputStyle
+                  value={reorder}
+                  right={
+                    reorder
+                      ? () => (
+                          <TextStyle color={light.main2}>
+                            Punto de reorden
+                          </TextStyle>
+                        )
+                      : null
+                  }
+                  placeholder="Punto de reorden"
+                  keyboardType="numeric"
+                  maxLength={9}
+                  onChangeText={(text) => {
+                    if (text === "") setValue("reorder", 0);
+                    else
+                      setValue(
+                        "reorder",
+                        parseInt(text.replace(/[^0-9]/g, ""))
+                      );
+                    setReorder(thousandsSystem(text.replace(/[^0-9]/g, "")));
+                  }}
+                />
+              )}
               <InputStyle
                 value={elementValue}
                 right={

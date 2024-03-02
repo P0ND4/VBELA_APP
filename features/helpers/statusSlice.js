@@ -14,7 +14,6 @@ export const statusSlice = createSlice({
       }),
     inactive: (state, action) =>
       (state = {
-        ...state,
         disconnection: new Date().getTime(),
         active: false,
       }),

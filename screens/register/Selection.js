@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Image,
   ScrollView,
+  Alert
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { getExpoID } from "@helpers/libs";
@@ -38,6 +39,7 @@ const Selection = ({ route, navigation }) => {
   const dispatch = useDispatch();
 
   const identifier = route.params.value;
+  const editing = route.params.editing;
 
   useEffect(() => {
     (async () => {
@@ -47,32 +49,61 @@ const Selection = ({ route, navigation }) => {
     })();
   }, []);
 
-  const sendInformation = async ({ type }) => {
-    setLoading(true);
-    setPercentage(50);
-    setModalVisible(true);
-    let data = await addUser({ identifier, expoID: expoPushToken, type });
+  const sendInformation = ({ type }) => {
+    const send = async ({ clearData = false }) => {
+      setLoading(true);
+      setPercentage(50);
+      setModalVisible(true);
+      let data = await addUser({ identifier, expoID: expoPushToken, type, clearData });
 
-    if (data.error) {
-      setLoading(false);
-      setModalVisible(false);
-      setPercentage(0);
-      return alert("Ha ocurrido un problema al iniciar sesión");
-    }
+      if (data.error) {
+        setLoading(false);
+        setModalVisible(false);
+        setPercentage(0);
+        return alert(
+          `Ha ocurrido un problema al iniciar sesión, de tipo: ${data.type}, detalles: ${data.details}`
+        );
+      }
 
-    dispatch(changeMode(data.mode));
-    changeGeneralInformation(dispatch, data);
-    dispatch(changeUser(data));
-    dispatch(changeLanguage(data.settings.language));
-    dispatch(changeSettings(data.settings));
-    dispatch(changeHelper(data.helpers));
+      dispatch(changeMode(data.mode));
+      changeGeneralInformation(dispatch, data);
+      dispatch(changeUser(data));
+      dispatch(changeLanguage(data.settings.language));
+      dispatch(changeSettings(data.settings));
+      dispatch(changeHelper(data.helpers));
 
-    setPercentage(100);
-    setTimeout(() => {
-      dispatch(active());
-      navigation.popToTop();
-      navigation.replace("App");
-    }, 1000);
+      setPercentage(100);
+      if (editing) navigation.pop();
+      else {
+        setTimeout(() => {
+          dispatch(active());
+          navigation.popToTop();
+          navigation.replace("App");
+        }, 1000);
+      }
+    };
+
+    if (editing) {
+      Alert.alert(
+        "ELIMINAR",
+        "¿Desea eliminar la información anterior guardada?",
+        [
+          {
+            text: "Cancelar",
+            style: "cancel",
+          },
+          {
+            text: "No",
+            onPress: () => send({ clearData: false }),
+          },
+          {
+            text: "Si",
+            onPress: () => send({ clearData: true }),
+          },
+        ],
+        { cancelable: true }
+      );
+    } else send();
   };
 
   const Card = ({ source, title, description, type }) => {

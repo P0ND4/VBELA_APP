@@ -746,28 +746,29 @@ const CreateProduct = ({ route, navigation }) => {
                     justifyContent: "center",
                   }}
                   onPress={() => {
-                    if (recipeSelected)
-                      return Alert.alert(
-                        "REMOVER",
-                        `¿Quieres eliminar ${
-                          sales ? "el reconteo" : "la receta"
-                        } (${recipeSelected.name})?`,
-                        [
-                          {
-                            text: "No",
-                            style: "cancel",
-                          },
-                          {
-                            text: "Si",
-                            onPress: () => {
-                              setRecipeSelected(null);
-                              setValue("recipe", null);
-                            },
-                          },
-                        ],
-                        { cancelable: true }
-                      );
-                    setModalVisibleRecipe(!modalVisibleRecipe);
+                    Alert.alert("PROXIMAMENTE NUEVO DISENO", "VOY A RECREAR VENTAS (GENERAL) PARA REDISEÑARLO Y HACERLO ESCALABLE")
+                    // if (recipeSelected)
+                    //   return Alert.alert(
+                    //     "REMOVER",
+                    //     `¿Quieres eliminar ${
+                    //       sales ? "el reconteo" : "la receta"
+                    //     } (${recipeSelected.name})?`,
+                    //     [
+                    //       {
+                    //         text: "No",
+                    //         style: "cancel",
+                    //       },
+                    //       {
+                    //         text: "Si",
+                    //         onPress: () => {
+                    //           setRecipeSelected(null);
+                    //           setValue("recipe", null);
+                    //         },
+                    //       },
+                    //     ],
+                    //     { cancelable: true }
+                    //   );
+                    // setModalVisibleRecipe(!modalVisibleRecipe);
                   }}
                 >
                   <TextStyle>

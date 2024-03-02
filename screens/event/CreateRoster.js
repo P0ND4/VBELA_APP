@@ -15,6 +15,7 @@ import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
+import PaymentButtons from "@components/PaymentButtons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
 import { thousandsSystem, getFontSize } from "@helpers/libs";
@@ -313,6 +314,7 @@ const CreateRoster = ({ route, navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      {/* <PaymentButtons/> */}
     </Layout>
   );
 };

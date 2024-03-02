@@ -31,10 +31,10 @@ const CreateEconomy = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
   const economy = useSelector((state) => state.economy);
+  const suppliers = useSelector((state) => state.suppliers);
   const helperStatus = useSelector((state) => state.helperStatus);
 
   const ref = route.params?.ref;
-  const owner = route.params?.owner;
   const data = route.params?.item;
   const editing = route.params?.editing;
   const pay = route.params?.pay;
@@ -47,13 +47,7 @@ const CreateEconomy = ({ route, navigation }) => {
       ? thousandsSystem(data.amount)
       : ""
   );
-  const [payment, setPayment] = useState(
-    pay
-      ? thousandsSystem(data.amount - data.payment)
-      : editing
-      ? thousandsSystem(data.payment)
-      : ""
-  );
+  const [payment, setPayment] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -61,6 +55,11 @@ const CreateEconomy = ({ route, navigation }) => {
     if (amount.length > 0)
       setValue("payment", parseInt(amount.replace(/[^0-9]/g, "")));
   }, [amount]);
+  
+  useEffect(() => {
+    if (pay || editing) setPayment(thousandsSystem(data.amount - data.payment))
+    else setPayment("");
+  },[])
 
   const dispatch = useDispatch();
 
@@ -78,17 +77,15 @@ const CreateEconomy = ({ route, navigation }) => {
           editing && pay ? "Abonar" : editing ? "Editar" : "Crear"
         } compra`,
       });
-
-    if (route.params.type === "debt")
-      navigation.setOptions({
-        title: "Abonar Deuda",
-      });
   }, []);
 
   useEffect(() => {
     register("name", { value: editing ? data.name : "", required: true });
     register("amount", { value: editing ? data.amount : "", required: true });
-    register("payment", { value: editing ? data.payment : "", required: true });
+    register("payment", {
+      value: pay ? data.amount - data.payment : editing ? data.payment : "",
+      required: true,
+    });
   }, []);
 
   const onSubmitEdit = async (d) => {
@@ -97,7 +94,6 @@ const CreateEconomy = ({ route, navigation }) => {
     d.id = data.id;
     d.type = data.type;
     d.ref = data.ref;
-    d.owner = data.owner;
     if (pay) {
       d.amount = parseInt(data.amount);
       d.payment = parseInt(data.payment) + parseInt(d.payment);
@@ -107,25 +103,25 @@ const CreateEconomy = ({ route, navigation }) => {
     dispatch(edit({ id: data.id, data: d }));
     navigation.pop();
     await editEconomy({
-      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
       economy: d,
       helpers: helperStatus.active
         ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
-    if (route.params.type !== "debt") {
-      await helperNotification(
-        helperStatus,
-        user,
-        route.params.type === "expense" ? "Gasto editado" : "Compra editada",
-        `${
-          route.params.type === "expense"
-            ? "Un gasto ha sido editado"
-            : "Una compra ha sido editada"
-        } por ${user.identifier}`,
-        "accessToSupplier"
-      );
-    }
+    await helperNotification(
+      helperStatus,
+      user,
+      route.params.type === "expense" ? "Gasto editado" : "Compra editada",
+      `${
+        route.params.type === "expense"
+          ? "Un gasto ha sido editado"
+          : "Una compra ha sido editada"
+      } por ${user.identifier}`,
+      "accessToSupplier"
+    );
   };
 
   const onSubmitCreate = async (data) => {
@@ -136,33 +132,32 @@ const CreateEconomy = ({ route, navigation }) => {
 
     data.id = id;
     data.ref = ref;
-    data.owner = owner;
     data.type = route.params.type;
     data.creationDate = new Date().getTime();
     data.modificationDate = new Date().getTime();
     dispatch(add(data));
     navigation.pop();
     await addEconomy({
-      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+      identifier: helperStatus.active
+        ? helperStatus.identifier
+        : user.identifier,
       economy: data,
       helpers: helperStatus.active
         ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
 
-    if (route.params.type !== "debt") {
-      await helperNotification(
-        helperStatus,
-        user,
-        route.params.type === "expense" ? "Gasto creado" : "Compra creada",
-        `${
-          route.params.type === "expense"
-            ? "Un gasto ha sido creado"
-            : "Una compra ha sido creada"
-        } por ${user.identifier}`,
-        "accessToSupplier"
-      );
-    }
+    await helperNotification(
+      helperStatus,
+      user,
+      route.params.type === "expense" ? "Gasto creado" : "Compra creada",
+      `${
+        route.params.type === "expense"
+          ? "Un gasto ha sido creado"
+          : "Una compra ha sido creada"
+      } por ${user.identifier}`,
+      "accessToSupplier"
+    );
   };
 
   const deleteEconomy = () => {
@@ -246,8 +241,8 @@ const CreateEconomy = ({ route, navigation }) => {
             {editing && (
               <View style={{ marginVertical: 10 }}>
                 <TextStyle color={light.main2}>
-                  {route.params.type === "debt" ? "Cliente" : "Proveedor"}:{" "}
-                  {data.owner?.name}
+                  Proveedor:{" "}
+                  {suppliers.find((supplier) => supplier.id === data.ref).name}
                 </TextStyle>
                 {pay && (
                   <TextStyle color={light.main2}>
@@ -262,24 +257,22 @@ const CreateEconomy = ({ route, navigation }) => {
               </View>
             )}
             <View style={{ marginVertical: 10 }}>
-              {route.params.type !== "debt" && (
-                <InputStyle
-                  value={name}
-                  editable={!editing || !pay}
-                  stylesContainer={{ opacity: editing && pay ? 0.5 : 1 }}
-                  placeholder="Nombre"
-                  right={
-                    name
-                      ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
-                      : null
-                  }
-                  maxLength={20}
-                  onChangeText={(text) => {
-                    setValue("name", text);
-                    setName(text);
-                  }}
-                />
-              )}
+              <InputStyle
+                value={name}
+                editable={!editing || !pay}
+                stylesContainer={{ opacity: editing && pay ? 0.5 : 1 }}
+                placeholder="Nombre"
+                right={
+                  name
+                    ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
+                    : null
+                }
+                maxLength={20}
+                onChangeText={(text) => {
+                  setValue("name", text);
+                  setName(text);
+                }}
+              />
               {errors.name?.type && (
                 <TextStyle verySmall color={light.main2}>
                   El nombre es obligatorio
@@ -308,7 +301,7 @@ const CreateEconomy = ({ route, navigation }) => {
                 </TextStyle>
               )}
             </View>
-            {editing && route.params.type !== "debt" && (
+            {editing && (
               <ButtonStyle
                 onPress={() => {
                   if (loading) return;

@@ -4,44 +4,32 @@ export const accommodationReservationsSlice = createSlice({
   name: "accommodation-reservations",
   initialState: [],
   reducers: {
-    change: (state, action) => (state = action.payload),
-    add: (state, action) => void (state = state.push(action.payload)),
+    change: (state, action) => action.payload,
+    add: (state, action) => [...state, ...action.payload],
     edit: (state, action) => {
-      const { id, data } = action.payload;
-      const index = state.findIndex((r) => r.id === id);
-      state[index] = { ...state[index], ...data };
+      const { data } = action.payload;
+      return state.map((s) => {
+        const hosted = data.find((d) => d.id === s.id);
+        if (hosted) return hosted;
+        return s;
+      });
     },
     remove: (state, action) => {
-      const { id } = action.payload;
-      const index = state.findIndex((r) => r.id === id);
-      state.splice(index, 1);
+      const { ids } = action.payload;
+      return state.filter((r) => !ids.includes(r.id));
     },
     removeMany: (state, action) => {
-      const { ref } = action.payload;
-      const newReservations = state.filter((r) => r.ref === ref);
-      for (let r of newReservations) {
-        const index = state.findIndex((curr) => curr.ref === r.ref);
-        state.splice(index, 1);
-      }
+      const refToRemove = action.payload.ref;
+      return state.filter((r) => r.ref !== refToRemove);
     },
-    removeManyByOwner: (state, action) => {
-      const { owner } = action.payload;
-
-      state.forEach((reservation, index) => {;
-        if (reservation.owner === owner) state.splice(index, 1);
-      });
+    removeManyByManyRefs: (state, action) => {
+      const refs = action.payload.refs;
+      return state.filter((r) => !refs.includes(r.ref));
     },
     clean: (state, action) => (state = []),
   },
 });
 
-export const {
-  add,
-  change,
-  remove,
-  edit,
-  clean,
-  removeMany,
-  removeManyByOwner,
-} = accommodationReservationsSlice.actions;
+export const { add, change, remove, edit, clean, removeMany, removeManyByManyRefs } =
+  accommodationReservationsSlice.actions;
 export default accommodationReservationsSlice.reducer;

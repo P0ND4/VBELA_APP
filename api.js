@@ -17,36 +17,20 @@ export const connect = async ({ data = {}, url, syncData = true }) => {
 
     return await result.data;
   } catch (e) {
-    const error = { error: true, details: "api", type: e.message };
+    const error = { error: true, details: "API", type: e.message };
 
     if (!syncData) return error;
 
     const r = await readFile({ name: "data.json" });
     const value = !r.error ? r : [];
     const info = { url, data, creationDate: new Date().getTime() };
-    const options = [
-      "helper",
-      "nomenclature",
-      "table",
-      "menu",
-      "kitchen",
-      "people",
-      "economy",
-      "inventory",
-      "sale",
-      "product",
-      "accommodation",
-      "group"
-    ];
     const typeOfData = url.slice(1).split("/")[0];
-    const identification = options.includes(typeOfData) ? "id" : "ref";
 
     const index = value?.findIndex(
       (r) =>
         r.url.slice(1).split("/")[1] === "edit" &&
         r.url === url &&
-        r.data?.[typeOfData]?.[identification] ===
-          data?.[typeOfData]?.[identification]
+        r.data?.[typeOfData]?.id === data?.[typeOfData]?.id
     );
 
     if (index !== -1) {
@@ -57,13 +41,11 @@ export const connect = async ({ data = {}, url, syncData = true }) => {
       }
     } else if (url.slice(1).split("/")[1] === "remove") {
       const toDelete = value.filter(
-        (v) => v.data?.[typeOfData]?.[identification] === data?.[identification]
+        (v) => v.data?.[typeOfData]?.id === data?.id
       );
       for (let d of toDelete) {
         const index = value.findIndex(
-          (v) =>
-            v.data?.[typeOfData]?.[identification] ===
-            d.data?.[typeOfData]?.[identification]
+          (v) => v.data?.[typeOfData]?.id === d.data?.[typeOfData]?.id
         );
         value.splice(index, 1);
       }
@@ -151,8 +133,8 @@ export const editEconomy = async (data) =>
 export const removeEconomy = async (data) =>
   await connect({ data, url: "/economy/remove" });
 
-export const removeManyEconomy = async (data) =>
-  await connect({ data, url: "/economy/remove/many" });
+export const removeManyEconomiesByIds = async (data) =>
+  await connect({ data, url: "/economy/remove/many/by/ids" });
 
 export const getRule = async () =>
   await connect({ url: "/rule", syncData: false });
@@ -174,9 +156,6 @@ export const editKitchen = async (data) =>
 
 export const removeKitchen = async (data) =>
   await connect({ data, url: "/kitchen/remove" });
-
-export const removeManyKitchen = async (data) =>
-  await connect({ data, url: "/kitchen/remove/many" });
 
 export const addRoster = async (data) =>
   await connect({ data, url: "/roster/add" });
@@ -222,9 +201,6 @@ export const editInventory = async (data) =>
 
 export const removeInventory = async (data) =>
   await connect({ data, url: "/inventory/remove" });
-
-export const discountInventory= async (data) =>
-  await connect({ data, url: "/inventory/discount" });
 
 export const addSale = async (data) =>
   await connect({ data, url: "/sale/add" });

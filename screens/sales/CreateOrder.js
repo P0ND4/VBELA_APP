@@ -15,32 +15,18 @@ import {
 } from "react-native";
 import { thousandsSystem, random, getFontSize } from "@helpers/libs";
 import { add as addM, edit, remove } from "@features/tables/ordersSlice";
-import { edit as editInv } from "@features/inventory/informationSlice";
 import { change as changeM } from "@features/tables/menuSlice";
 import {
   add as addK,
   removeMany as removeManyK,
 } from "@features/tables/kitchenSlice";
-import {
-  add as addE,
-  edit as editE,
-  remove as removeE,
-} from "@features/function/economySlice";
 import { add as addCustomer } from "@features/people/customersSlice";
 import helperNotification from "@helpers/helperNotification";
 import {
-  addOrder,
-  editOrder,
   addKitchen,
-  removeManyKitchen,
-  addEconomy,
-  editEconomy,
   removeOrder,
-  removeEconomy,
   editUser,
-  addPerson,
   editReservation,
-  discountInventory,
 } from "@api";
 import { edit as editRS } from "@features/zones/standardReservationsSlice";
 import { edit as editRA } from "@features/zones/accommodationReservationsSlice";
@@ -61,10 +47,8 @@ const CreateOrder = ({ route, navigation }) => {
   const orders = useSelector((state) => state.orders);
   const menu = useSelector((state) => state.menu);
   const mode = useSelector((state) => state.mode);
-  const economy = useSelector((state) => state.economy);
   const customers = useSelector((state) => state.customers);
   const groupsREF = useSelector((state) => state.groups);
-  const inventory = useSelector((state) => state.inventory);
 
   const initialState = {
     active: false,
@@ -83,7 +67,7 @@ const CreateOrder = ({ route, navigation }) => {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState(false);
   const [filters, setFilters] = useState(initialState);
-  const [order, setOrder] = useState("");
+  const [order, setOrder] = useState(null);
   const [categorySelected, setCategorySelected] = useState({
     id: "everything",
     category: "Todos",
@@ -118,7 +102,7 @@ const CreateOrder = ({ route, navigation }) => {
   const createClient = route.params?.createClient;
 
   const code = useRef(
-    information ? information?.invoice : random(6, { number: true })
+    information?.invoice ? information?.invoice : random(6, { number: true })
   ).current;
 
   useEffect(() => {
@@ -127,191 +111,67 @@ const CreateOrder = ({ route, navigation }) => {
     }
   }, []);
 
-  const getTotal = (totalDiscount = 0, selection = [], tip = 0, tax = 0) =>
-    totalDiscount !== 0
-      ? selection.reduce((a, b) => {
-          const value = b.value * b.paid;
-          const percentage = (value / b.total).toFixed(2);
-          return (
-            a + (b.discount !== 0 ? value - b.discount * percentage : value)
-          );
-        }, 0) -
-        totalDiscount +
-        tip +
-        tax
-      : selection.reduce((a, b) => {
-          const value = b.value * b.paid;
-          const percentage = (value / b.total).toFixed(2);
-          return (
-            a + (b.discount !== 0 ? value - b.discount * percentage : value)
-          );
-        }, 0) +
-        tip +
-        tax;
+  const getTotal = ({ discount = 0, selection = [], tip = 0, tax = 0 }) => {
+    const total =
+      selection.reduce((a, b) => {
+        const value = b.value * b.paid;
+        const percentage = (value / b.total).toFixed(2);
+        return a + (b.discount !== 0 ? value - b.discount * percentage : value);
+      }, 0) +
+      tip +
+      tax;
 
-  const manageEconomy = async ({ total, callBack, person }) => {
-    const foundEconomy = economy.find((e) => e.ref === person?.id);
+    return discount !== 0 ? total - discount : total;
+  };
+
+  const createCustomer = async ({ callBack }) => {
     const clientID = random(20);
     const hosted = createClient?.hosted?.find(
       (h) => (h.id || h.owner) === route.params.ref
     );
-    if (createClient && !person) {
-      //TODO ---------------------------------- ACOMODAR PONER BONITO
-      //TODO ---------------------------------- HAY MUCHAS PETICIONES AL SERVIDOR CAMBIARLO A FUTURO
-      const data = {
-        name: hosted.fullName,
-        identification: hosted.identification,
-      };
-      data.id = clientID;
-      data.type = "customer";
-      data.creationDate = new Date().getTime();
-      data.modificationDate = new Date().getTime();
-      dispatch(addCustomer(data));
 
-      const newReservation = { ...createClient };
-      const newHosted = { ...hosted, owner: clientID };
+    if (customers.find((c) => c.id === hosted.owner)) return await callBack();
 
-      if (createClient.type === "accommodation")
-        dispatch(editRA({ id: hosted.id, data: newHosted }));
-      if (createClient.type === "standard") {
-        const reservationUpdated = createClient?.hosted.map((h) => {
-          if ((h.id || h.owner) === route.params.ref)
-            return { ...h, owner: clientID };
-          return h;
-        });
-        newReservation.hosted = reservationUpdated;
-        dispatch(editRS({ ref: createClient.ref, data: newReservation }));
-      }
+    const data = {
+      name: hosted.fullName,
+      identification: hosted.identification,
+    };
+    data.id = clientID;
+    data.type = "customer";
+    data.creationDate = new Date().getTime();
+    data.modificationDate = new Date().getTime();
+    dispatch(addCustomer(data));
 
-      await editReservation({
-        //TODO  1
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        reservation: {
-          data: createClient.type === "standard" ? newReservation : [newHosted],
-          type: createClient.type,
-        },
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
+    const newReservation = { ...createClient };
+    const newHosted = { ...hosted, owner: clientID };
+
+    if (createClient.type === "accommodation")
+      dispatch(editRA({ id: hosted.id, data: newHosted }));
+    if (createClient.type === "standard") {
+      const reservationUpdated = createClient?.hosted.map((h) => {
+        if ((h.id || h.owner) === route.params.ref)
+          return { ...h, owner: clientID };
+        return h;
       });
-
-      await addPerson({
-        //TODO  2
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        person: { type: "customer", data },
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-
-      //TODO ---------------------------------- ACOMODAR PONER BONITO
+      newReservation.hosted = reservationUpdated;
+      dispatch(editRS({ ref: createClient.ref, data: newReservation }));
     }
 
-    if (!foundEconomy) {
-      const id = random(20);
-      let data = {};
-      if (!createClient) data = { ...person };
-      else data = { ...hosted, name: hosted.fullName, id: clientID };
-
-      const newEconomy = {
-        id,
-        ref: data.id,
-        owner: {
-          identification: data.identification || "",
-          name: data.name,
-        },
-        type: "debt",
-        amount: total,
-        name: `Deuda ${data.name}`,
-        payment: 0,
-        creationDate: new Date().getTime(),
-        modificationDate: new Date().getTime(),
-      };
-
-      dispatch(addE(newEconomy));
-      await addEconomy({
-        //TODO  3
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        economy: newEconomy,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-    } else {
-      const currentEconomy = { ...foundEconomy };
-      currentEconomy.amount += total;
-      currentEconomy.modificationDate = new Date().getTime();
-      dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
-      await editEconomy({
-        //TODO  3
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        economy: currentEconomy,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-    }
-    await callBack();
-  };
-
-  const inventoryDiscountHandler = async (selection) => {
-    const ingredients = selection.flatMap((s) =>
-      s.recipe?.ingredients.map((i) => {
-        const iUpdate = { ...i };
-        iUpdate.quantity *= s.count;
-        return iUpdate;
-      })
-    );
-
-    let inventories = [];
-
-    for (let ingredient of ingredients) {
-      const inv = inventory.find((i) => i.id === ingredient.id);
-      const obj = {
-        id: random(20),
-        quantity: ingredient.quantity,
-        creationDate: new Date().getTime(),
-        currentValue: inv.currentValue,
-        element: ingredient.id,
-      };
-
-      const validation = inventories.find((i) => i.id === ingredient.id);
-      if (validation) {
-        inventories = inventories.map((i) => {
-          if (i.id === validation.id) {
-            const newI = { ...i };
-            newI.output = [...newI.output, obj];
-            return newI;
-          }
-          return i;
-        });
-      } else {
-        const output = [...inv.output, obj];
-        inventories.push({ ...inv, output });
-      }
-    }
-
-    for (let inventory of inventories) {
-      dispatch(editInv({ id: inventory.id, data: inventory }));
-    }
-
-    await discountInventory({
+    await editReservation({
       identifier: helperStatus.active
         ? helperStatus.identifier
         : user.identifier,
-      inventories,
+      reservation: {
+        data: createClient.type === "standard" ? newReservation : [newHosted],
+        type: createClient.type,
+        createCustomer: data,
+      },
       helpers: helperStatus.active
         ? [helperStatus.id]
         : user.helpers.map((h) => h.id),
     });
+
+    await callBack();
   };
 
   const saveOrder = async ({
@@ -322,11 +182,6 @@ const CreateOrder = ({ route, navigation }) => {
     back = false,
   }) => {
     const id = dat.ID || random(20);
-    const person =
-      customers.find((p) => p.id === route.params.ref) ||
-      customers.find((p) =>
-        p?.clientList?.some((c) => c.id === route.params.ref)
-      );
 
     if (orders.find((order) => order.id === id))
       return saveOrder({
@@ -337,7 +192,12 @@ const CreateOrder = ({ route, navigation }) => {
         back,
       });
     const data = {};
-    const total = getTotal(dat.discount, completeSelection, dat.tip, dat.tax);
+    const total = getTotal({
+      discount: dat.discount,
+      selection: completeSelection,
+      tip: dat.tip,
+      tax: dat.tax,
+    });
 
     data.id = id;
     data.ref = route.params.ref;
@@ -379,42 +239,21 @@ const CreateOrder = ({ route, navigation }) => {
         },
       });
 
-      const selectionWithRecipe = completeSelection.filter((c) => c.recipe);
-      if (selectionWithRecipe.length && dat.pay)
-        inventoryDiscountHandler(selectionWithRecipe);
+      const change = {};
+      if (dat.pay) change.menu = newMenu;
 
-      if (dat.pay) {
-        await editUser({
-          //TODO 4
-          identifier: helperStatus.active
-            ? helperStatus.identifier
-            : user.identifier,
-          change: { menu: newMenu },
-          helpers: helperStatus.active
-            ? [helperStatus.id]
-            : user.helpers.map((h) => h.id),
-        });
-      }
-      await addOrder({
-        //TODO  5
+      await editUser({
         identifier: helperStatus.active
           ? helperStatus.identifier
           : user.identifier,
-        order: data,
+        change: { ...change, orders: [...orders, data] },
         helpers: helperStatus.active
           ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     };
 
-    if (person || createClient)
-      await manageEconomy({
-        editing: dat.pay,
-        total: totalPaid,
-        kitchen: dat.isSendtoKitchen,
-        callBack: close,
-        person,
-      });
+    if (createClient) createCustomer();
     else close();
   };
 
@@ -426,17 +265,17 @@ const CreateOrder = ({ route, navigation }) => {
     back = false,
   }) => {
     const data = {};
-    const total = getTotal(dat.discount, completeSelection, dat.tip, dat.tax);
-    const person =
-      customers.find((p) => p.id === route.params.ref) ||
-      customers.find((p) =>
-        p?.clientList?.some((c) => c.id === route.params.ref)
-      );
+    const total = getTotal({
+      discount: dat.discount,
+      selection: completeSelection,
+      tip: dat.tip,
+      tax: dat.tax,
+    });
 
     data.id = route.params.id;
     data.ref = route.params.ref;
     data.table = information.table;
-    data.invoice = information.invoice;
+    data.invoice = order?.invoice;
     data.reservation = reservation;
     data.selection = completeSelection;
     data.pay = dat.pay;
@@ -444,7 +283,7 @@ const CreateOrder = ({ route, navigation }) => {
     data.tax = dat.tax || null;
     data.tip = dat.tip || null;
     data.total = total;
-    data.creationDate = order.creationDate;
+    data.creationDate = order?.creationDate;
     data.modificationDate = new Date().getTime();
 
     const close = async () => {
@@ -472,40 +311,26 @@ const CreateOrder = ({ route, navigation }) => {
           tip: dat.tip || null,
         },
       });
-      const selectionWithRecipe = completeSelection.filter((c) => c.recipe);
-      if (selectionWithRecipe.length && dat.pay)
-        inventoryDiscountHandler(selectionWithRecipe);
 
-      if (dat.pay) {
-        await editUser({
-          identifier: helperStatus.active
-            ? helperStatus.identifier
-            : user.identifier,
-          change: { menu: newMenu },
-          helpers: helperStatus.active
-            ? [helperStatus.id]
-            : user.helpers.map((h) => h.id),
-        });
-      }
-      await editOrder({
+      const change = {};
+      if (dat.pay) change.menu = newMenu;
+      const newOrders = orders.map((order) => {
+        if (order.id === data.id) return data;
+        return order;
+      });
+
+      await editUser({
         identifier: helperStatus.active
           ? helperStatus.identifier
           : user.identifier,
-        order: data,
+        change: { ...change, orders: newOrders },
         helpers: helperStatus.active
           ? [helperStatus.id]
           : user.helpers.map((h) => h.id),
       });
     };
 
-    if (person || createClient)
-      await manageEconomy({
-        editing: dat.pay,
-        total: totalPaid,
-        kitchen: dat.isSendtoKitchen,
-        callBack: close,
-        person,
-      });
+    if (createClient) createCustomer();
     else close();
   };
 
@@ -656,56 +481,10 @@ const CreateOrder = ({ route, navigation }) => {
       {
         text: "Si",
         onPress: async () => {
-          const person =
-            customers.find((p) => p.id === route.params.ref) ||
-            customers.find((p) =>
-              p?.clientList?.some((c) => c.id === route.params.ref)
-            );
-          const foundEconomy = economy.find((e) => e.ref === person?.id);
-
-          dispatch(removeManyK({ ref: route.params.id }));
+          dispatch(removeManyK({ ref: information.id }));
           dispatch(remove({ id: information.id }));
           navigation.pop();
-          if (foundEconomy) {
-            const currentEconomy = { ...foundEconomy };
-            currentEconomy.amount -= route.params.selection.reduce(
-              (a, b) => a + b.paid * b.value,
-              0
-            );
-            if (currentEconomy.amount === 0) {
-              dispatch(removeE({ id: currentEconomy.id }));
-              await removeEconomy({
-                identifier: helperStatus.active
-                  ? helperStatus.identifier
-                  : user.identifier,
-                id: currentEconomy.id,
-                helpers: helperStatus.active
-                  ? [helperStatus.id]
-                  : user.helpers.map((h) => h.id),
-              });
-            } else {
-              currentEconomy.modificationDate = new Date().getTime();
-              dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
-              await editEconomy({
-                identifier: helperStatus.active
-                  ? helperStatus.identifier
-                  : user.identifier,
-                economy: currentEconomy,
-                helpers: helperStatus.active
-                  ? [helperStatus.id]
-                  : user.helpers.map((h) => h.id),
-              });
-            }
-          }
-          await removeManyKitchen({
-            identifier: helperStatus.active
-              ? helperStatus.identifier
-              : user.identifier,
-            ref: route.params.id,
-            helpers: helperStatus.active
-              ? [helperStatus.id]
-              : user.helpers.map((h) => h.id),
-          });
+
           await removeOrder({
             identifier: helperStatus.active
               ? helperStatus.identifier
@@ -1092,7 +871,9 @@ const CreateOrder = ({ route, navigation }) => {
                                   }
                                 >
                                   {item.recipe.name.length > 12
-                                    ? `${item.recipe.name.slice(0, 12).toUpperCase()}...`
+                                    ? `${item.recipe.name
+                                        .slice(0, 12)
+                                        .toUpperCase()}...`
                                     : item.recipe.name.toUpperCase()}
                                 </TextStyle>
                               )}
@@ -1166,6 +947,7 @@ const CreateOrder = ({ route, navigation }) => {
                       sendToKitchen,
                       editing: information.editing,
                       code,
+                      owner: route.params.ref,
                     });
                 }}
               >

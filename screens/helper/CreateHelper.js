@@ -181,6 +181,7 @@ const CreateHelper = ({ navigation, route }) => {
   const permissionValidation = (data) => {
     if (
       !data.accessToTables &&
+      !data.accessToProductsAndServices &&
       !data.accessToReservations &&
       !data.accessToStatistics &&
       !data.accessToSupplier &&

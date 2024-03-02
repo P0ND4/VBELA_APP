@@ -16,18 +16,12 @@ import {
 import { thousandsSystem, random, getFontSize } from "@helpers/libs";
 import { add as addS } from "@features/sales/salesSlice";
 import { change as changeP } from "@features/sales/productsSlice";
-import { add as addE, edit as editE } from "@features/function/economySlice";
 import { add as addCustomer } from "@features/people/customersSlice";
 import { edit as editRS } from "@features/zones/standardReservationsSlice";
 import { edit as editRA } from "@features/zones/accommodationReservationsSlice";
-import { edit as editInv } from "@features/inventory/informationSlice";
 import {
   editUser,
-  editEconomy,
-  addEconomy,
-  addPerson,
   editReservation,
-  discountInventory
 } from "@api";
 import { useNavigation } from "@react-navigation/native";
 import FullFilterDate from "@components/FullFilterDate";
@@ -43,14 +37,11 @@ const { light, dark } = theme();
 
 const Sales = ({ route }) => {
   const user = useSelector((state) => state.user);
-  const inventory = useSelector(state => state.inventory);
   const helperStatus = useSelector((state) => state.helperStatus);
   const productsRef = useSelector((state) => state.products);
   const mode = useSelector((state) => state.mode);
   const sales = useSelector((state) => state.sales);
   const groupsREF = useSelector((state) => state.groups);
-  const economy = useSelector((state) => state.economy);
-  const customers = useSelector((state) => state.customers);
 
   const initialState = {
     active: false,
@@ -177,187 +168,17 @@ const Sales = ({ route }) => {
     }
   }, [productsRef, search, filters, categorySelected, subcategorySelected]);
 
-  const manageEconomy = async ({ total, callBack, person }) => {
-    const foundEconomy = economy.find((e) => e.ref === person?.id);
-    const clientID = random(20);
-    const hosted = createClient?.hosted?.find(
-      (h) => (h.id || h.owner) === route.params.ref
-    );
-    if (createClient && !person) {
-      //TODO ---------------------------------- ACOMODAR PONER BONITO
-      //TODO ---------------------------------- HAY MUCHAS PETICIONES AL SERVIDOR CAMBIARLO A FUTURO
-      const data = {
-        name: hosted.fullName,
-        identification: hosted.identification,
-      };
-      data.id = clientID;
-      data.type = "customer";
-      data.creationDate = new Date().getTime();
-      data.modificationDate = new Date().getTime();
-      dispatch(addCustomer(data));
+  const getTotal = ({ discount = 0, selection = [], tip = 0, tax = 0 }) => {
+    const total =
+      selection.reduce((a, b) => {
+        const value = b.value * b.paid;
+        const percentage = (value / b.total).toFixed(2);
+        return a + (b.discount !== 0 ? value - b.discount * percentage : value);
+      }, 0) +
+      tip +
+      tax;
 
-      const newReservation = { ...createClient };
-      const newHosted = { ...hosted, owner: clientID };
-
-      if (createClient.type === "accommodation")
-        dispatch(editRA({ id: hosted.id, data: newHosted }));
-      if (createClient.type === "standard") {
-        const reservationUpdated = createClient?.hosted.map((h) => {
-          if ((h.id || h.owner) === route.params.ref)
-            return { ...h, owner: clientID };
-          return h;
-        });
-        newReservation.hosted = reservationUpdated;
-        dispatch(editRS({ ref: createClient.ref, data: newReservation }));
-      }
-
-      await editReservation({
-        //TODO  1
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        reservation: {
-          data: createClient.type === "standard" ? newReservation : [newHosted],
-          type: createClient.type,
-        },
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-
-      await addPerson({
-        //TODO  2
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        person: { type: "customer", data },
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-
-      //TODO ---------------------------------- ACOMODAR PONER BONITO
-    }
-    if (!foundEconomy) {
-      const id = random(20);
-      let data = {};
-      if (!createClient) data = { ...person };
-      else data = { ...hosted, name: hosted.fullName, id: clientID };
-      const newEconomy = {
-        id,
-        ref: data.id,
-        owner: {
-          identification: data.identification || "",
-          name: data.name,
-        },
-        type: "debt",
-        amount: total,
-        name: `Deuda ${data.name}`,
-        payment: 0,
-        creationDate: new Date().getTime(),
-        modificationDate: new Date().getTime(),
-      };
-
-      dispatch(addE(newEconomy));
-      await addEconomy({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        economy: newEconomy,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-    } else {
-      const currentEconomy = { ...foundEconomy };
-      currentEconomy.amount += total;
-      currentEconomy.modificationDate = new Date().getTime();
-      dispatch(editE({ id: foundEconomy.id, data: currentEconomy }));
-      await editEconomy({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
-        economy: currentEconomy,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
-      });
-    }
-    await callBack();
-  };
-
-  const getTotal = (totalDiscount = 0, selection = [], tip = 0, tax = 0) =>
-    totalDiscount !== 0
-      ? selection.reduce((a, b) => {
-          const value = b.value * b.paid;
-          const percentage = (value / b.total).toFixed(2);
-          return (
-            a + (b.discount !== 0 ? value - b.discount * percentage : value)
-          );
-        }, 0) -
-        totalDiscount +
-        tip +
-        tax
-      : selection.reduce((a, b) => {
-          const value = b.value * b.paid;
-          const percentage = (value / b.total).toFixed(2);
-          return (
-            a + (b.discount !== 0 ? value - b.discount * percentage : value)
-          );
-        }, 0) +
-        tip +
-        tax;
-
-  const inventoryDiscountHandler = async (selection) => {
-    const ingredients = selection.flatMap((s) =>
-      s.recipe?.ingredients.map((i) => {
-        const iUpdate = { ...i };
-        iUpdate.quantity *= s.count;
-        return iUpdate;
-      })
-    );
-
-    let inventories = [];
-
-    for (let ingredient of ingredients) {
-      const inv = inventory.find((i) => i.id === ingredient.id);
-      const obj = {
-        id: random(20),
-        quantity: ingredient.quantity,
-        creationDate: new Date().getTime(),
-        currentValue: inv.currentValue,
-        element: ingredient.id,
-      };
-
-      const validation = inventories.find((i) => i.id === ingredient.id);
-      if (validation) {
-        inventories = inventories.map((i) => {
-          if (i.id === validation.id) {
-            const newI = { ...i };
-            newI.output = [...newI.output, obj];
-            return newI;
-          }
-          return i;
-        });
-      } else {
-        const output = [...inv.output, obj];
-        inventories.push({ ...inv, output });
-      }
-    }
-
-    for (let inventory of inventories) {
-      dispatch(editInv({ id: inventory.id, data: inventory }));
-    }
-
-    await discountInventory({
-      identifier: helperStatus.active
-        ? helperStatus.identifier
-        : user.identifier,
-      inventories,
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
-    });
+    return discount !== 0 ? total - discount : total;
   };
 
   const saveOrder = async ({
@@ -368,10 +189,6 @@ const Sales = ({ route }) => {
   }) => {
     const id = dat.ID ? dat.ID : random(20);
 
-    const person =
-      customers.find((p) => p.id === ref) ||
-      customers.find((p) => p?.clientList?.some((c) => c.id === ref));
-
     if (sales.find((sale) => sale.id === id))
       return saveOrder({
         data: dat,
@@ -381,7 +198,12 @@ const Sales = ({ route }) => {
         back,
       });
     const data = {};
-    const total = getTotal(dat.discount, completeSelection, dat.tip, dat.tax);
+    const total = getTotal({
+      discount: dat.discount,
+      selection: completeSelection,
+      tip: dat.tip,
+      tax: dat.tax,
+    });
 
     data.id = id;
     data.ref = ref || null;
@@ -423,10 +245,6 @@ const Sales = ({ route }) => {
         },
       });
 
-      const selectionWithRecipe = selection.filter((c) => c.recipe);
-      if (selectionWithRecipe.length && dat.pay)
-        inventoryDiscountHandler(selectionWithRecipe);
-
       await editUser({
         identifier: helperStatus.active
           ? helperStatus.identifier
@@ -441,9 +259,52 @@ const Sales = ({ route }) => {
       });
     };
 
-    if (person || createClient)
-      await manageEconomy({ total, callBack: close, person });
-    else close();
+    if (createClient) {
+      const clientID = random(20);
+      const hosted = createClient?.hosted?.find(
+        (h) => (h.id || h.owner) === route.params.ref
+      );
+      const data = {
+        id: clientID,
+        name: hosted.fullName,
+        identification: hosted.identification,
+        type: "customer",
+        creationDate: new Date().getTime(),
+        modificationDate: new Date().getTime(),
+      };
+      dispatch(addCustomer(data));
+
+      const newReservation = { ...createClient };
+      const newHosted = { ...hosted, owner: clientID };
+
+      if (createClient.type === "accommodation")
+        dispatch(editRA({ id: hosted.id, data: newHosted }));
+      if (createClient.type === "standard") {
+        const hostedUpdated = createClient?.hosted.map((h) => {
+          if ((h.id || h.owner) === route.params.ref)
+            return { ...h, owner: clientID };
+          return h;
+        });
+        newReservation.hosted = hostedUpdated;
+        dispatch(editRS({ ref: createClient.ref, data: newReservation }));
+      }
+
+      await editReservation({
+        identifier: helperStatus.active
+          ? helperStatus.identifier
+          : user.identifier,
+        reservation: {
+          data: createClient.type === "standard" ? newReservation : [newHosted],
+          type: createClient.type,
+          createCustomer: data,
+        },
+        helpers: helperStatus.active
+          ? [helperStatus.id]
+          : user.helpers.map((h) => h.id),
+      });
+      
+      close();
+    } else close();
   };
 
   return (
@@ -845,6 +706,7 @@ const Sales = ({ route }) => {
                     setSelection,
                     sales: true,
                     saveOrder,
+                    owner: ref,
                   });
               }}
             >

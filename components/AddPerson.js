@@ -25,18 +25,8 @@ const AddPerson = ({
   editing,
   setEditing,
   handleSubmit,
-  type,
-  discount,
-  subtitle = 'Añade la persona que quieres alojar',
-  options = {
-    email: true,
-    identification: true,
-    phoneNumber: true,
-    country: true,
-    days: true,
-    checkIn: true,
-    discount: true,
-  },
+  subtitle = "Añade la persona que quieres alojar",
+  settings = {},
 }) => {
   const {
     register,
@@ -44,6 +34,16 @@ const AddPerson = ({
     formState: { errors: hostedErrors },
     handleSubmit: handleHostedSubmit,
   } = useForm();
+
+  const [options, setOptions] = useState({
+    email: true,
+    identification: true,
+    phoneNumber: true,
+    country: true,
+    days: true,
+    checkIn: true,
+    discount: false,
+  });
 
   const mode = useSelector((state) => state.mode);
 
@@ -72,6 +72,15 @@ const AddPerson = ({
     editing?.active ? thousandsSystem(editing?.discount || "") : ""
   );
 
+  useEffect(() => setOptions({...options, ...settings }),[]);
+  
+  useEffect(() => {
+    register("days", {
+      value: editing?.active ? editing.days || null : null,
+      required: options.days,
+    });
+  },[options.days]);
+
   useEffect(() => {
     register("fullName", {
       value: editing?.active ? editing?.fullName || "" : "",
@@ -86,10 +95,6 @@ const AddPerson = ({
     });
     register("country", {
       value: editing?.active ? editing?.country || "" : "",
-    });
-    register("days", {
-      value: editing?.active ? editing.days || null : null,
-      required: type === "accommodation",
     });
     register("checkIn", {
       value: editing?.active ? editing?.checkIn || null : null,
@@ -260,7 +265,7 @@ const AddPerson = ({
                   }}
                 />
               )}
-              {type === "accommodation" && (
+              {options.days && (
                 <InputStyle
                   placeholder="Número de días"
                   value={days}
@@ -284,7 +289,7 @@ const AddPerson = ({
                     : hostedErrors.days.message}
                 </TextStyle>
               )}
-              {discount && (
+              {options.discount && (
                 <InputStyle
                   placeholder="Descuento"
                   value={discountInput}

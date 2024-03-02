@@ -272,7 +272,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
                           mode === "light" ? light.textDark : dark.textWhite
                         }
                       />
-                      {inventory.map((i) => (
+                      {inventory.filter(i => i.visible === 'none').map((i) => (
                         <Picker.Item
                           key={i.id}
                           label={i.name}

@@ -123,8 +123,9 @@ const SignIn = ({ navigation }) => {
 
   const googleHandlePessAsync = async () => {
     const result = await googlePromptAsync();
+
     if (result.type !== "success") {
-      alert("No set termino el inicio de sesión con Google");
+      alert("No se termino el inicio de sesión con Google");
       return;
     }
   };
@@ -134,12 +135,15 @@ const SignIn = ({ navigation }) => {
     setPercentage(50);
     let data = await addUser({ identifier: email, expoID: expoPushToken });
 
-    if (data.error) return alert("Ha ocurrido un problema al iniciar sesión");
-    if (!data.type) return navigation.navigate("Selection", { value: email });
+    if (data.error)
+      alert(
+        `Ha ocurrido un problema al iniciar sesión, tipo de error: ${data.type}, detalles: ${data.details}`
+      );
     if (data.error || !data.type) {
-      setModalVisible(false)
+      setModalVisible(false);
       setPercentage(0);
-    };
+    }
+    if (!data.type) return navigation.navigate("Selection", { value: email });
     dispatch(changeMode(data.mode));
     changeGeneralInformation(dispatch, data);
     dispatch(changeUser(data));
@@ -192,7 +196,11 @@ const SignIn = ({ navigation }) => {
     return (
       <View style={{ position: "relative", bottom: 40, flexDirection: "row" }}>
         {DATA.map((_, i) => {
-          const inputRange = [(i - 1) * SCREEN_WIDTH, i * SCREEN_WIDTH, (i + 1) * SCREEN_WIDTH];
+          const inputRange = [
+            (i - 1) * SCREEN_WIDTH,
+            i * SCREEN_WIDTH,
+            (i + 1) * SCREEN_WIDTH,
+          ];
 
           const scale = scrollX.interpolate({
             inputRange,
@@ -317,7 +325,9 @@ const SignIn = ({ navigation }) => {
         showsHorizontalScrollIndicator={false}
         renderItem={({ item }) => {
           return (
-            <View style={{ width: SCREEN_WIDTH, alignItems: "center", padding: 20 }}>
+            <View
+              style={{ width: SCREEN_WIDTH, alignItems: "center", padding: 20 }}
+            >
               <View style={{ flex: 1, justifyContent: "center" }}>
                 <Image
                   source={item.image}

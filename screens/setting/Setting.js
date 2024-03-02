@@ -11,7 +11,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { change as changeUser } from "@features/user/informationSlice";
 import { change as changeMode } from "@features/settings/modeSlice";
 import { editUser } from "@api";
-import { getFontSize } from '@helpers/libs';
+import { getFontSize } from "@helpers/libs";
 
 import Layout from "@components/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -31,7 +31,7 @@ const Setting = ({ navigation }) => {
   const mode = useSelector((state) => state.mode);
   const language = useSelector((state) => state.language);
   const user = useSelector((state) => state.user);
-//TODO TERMINAR CONFIGURACION
+  //TODO TERMINAR CONFIGURACION
   const timerChangeMode = useRef();
 
   const dispatch = useDispatch();
@@ -45,7 +45,10 @@ const Setting = ({ navigation }) => {
     timerChangeMode.current = setTimeout(async () => {
       if (user.mode !== newMode) {
         dispatch(changeUser({ ...user, mode: newMode }));
-        await editUser({ identifier: user.identifier, change: { mode: newMode } });
+        await editUser({
+          identifier: user.identifier,
+          change: { mode: newMode },
+        });
       }
     }, 1000);
   };
@@ -89,6 +92,35 @@ const Setting = ({ navigation }) => {
               color={mode === "light" ? light.textDark : dark.textWhite}
             >
               {mode === "light" ? "DIURNO" : "NOCTURNO"}
+            </TextStyle>
+          )}
+        />
+        <Card
+          onPress={() =>
+            navigation.navigate("Selection", {
+              value: user.identifier,
+              editing: true,
+            })
+          }
+          left={() => (
+            <Ionicons
+              name="person"
+              size={getFontSize(28)}
+              color={light.main2}
+            />
+          )}
+          right={() => (
+            <TextStyle
+              paragrahp
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            >
+              Cambio de usuario (
+              {user.type === "both"
+                ? "Alojamiento + Ventas"
+                : user.type === "accommodation"
+                ? "Alojamiento"
+                : "Ventas"}
+              )
             </TextStyle>
           )}
         />
@@ -187,7 +219,11 @@ const Setting = ({ navigation }) => {
             )
           }
           left={() => (
-            <Ionicons name="logo-whatsapp" size={getFontSize(28)} color={light.main2} />
+            <Ionicons
+              name="logo-whatsapp"
+              size={getFontSize(28)}
+              color={light.main2}
+            />
           )}
           right={() => (
             <View>
@@ -210,7 +246,11 @@ const Setting = ({ navigation }) => {
             )
           }
           left={() => (
-            <Ionicons name="document" size={getFontSize(28)} color={light.main2} />
+            <Ionicons
+              name="document"
+              size={getFontSize(28)}
+              color={light.main2}
+            />
           )}
           right={() => (
             <TextStyle
@@ -227,7 +267,9 @@ const Setting = ({ navigation }) => {
               "https://sites.google.com/view/terminos-y-condiciones-vbela/inicio"
             )
           }
-          left={() => <Ionicons name="book" size={getFontSize(28)} color={light.main2} />}
+          left={() => (
+            <Ionicons name="book" size={getFontSize(28)} color={light.main2} />
+          )}
           right={() => (
             <TextStyle
               paragrahp

@@ -32,13 +32,15 @@ import CreateHelper from "@screens/helper/CreateHelper";
 import CreateElement from "@screens/inventory/CreateElement";
 import CreateEntryOutput from "@screens/inventory/CreateEntryOutput";
 import CreatePerson from "@screens/people/CreatePerson";
-import PeopleInformation from "@screens/people/PeopleInformation";
-import CreatePlace from "@screens/reservation/CreatePlace";
-import CreateReserve from "@screens/reservation/CreateReserve";
-import CreateZone from "@screens/reservation/CreateZone";
-import Place from "@screens/reservation/Place";
-import PlaceInformation from "@screens/reservation/PlaceInformation";
-import ReserveInformation from "@screens/reservation/ReserveInformation";
+import CreateAccommodationReserve from "@screens/reservation/accommodation/Create";
+import CreateStandardReserve from "@screens/reservation/standard/Create";
+import CreateZone from "@screens/reservation/zone/Create";
+import ZoneInformation from "@screens/reservation/zone/Information";
+import Place from "@screens/reservation/place/Place";
+import CreatePlace from "@screens/reservation/place/Create";
+import PlaceInformation from "@screens/reservation/place/Information";
+import StandardReserveInformation from "@screens/reservation/standard/Information";
+import AccommodationReserveInformation from "@screens/reservation/accommodation/Information";
 import CreateOrder from "@screens/sales/CreateOrder";
 import CreateRecipe from "@screens/sales/CreateRecipe";
 import CreatePercentage from "@screens/sales/CreatePercentage";
@@ -60,6 +62,12 @@ import EntryOutputInformation from "@screens/inventory/EntryOutputInformation";
 import InventoryInformation from "@screens/inventory/InventoryInformation";
 import History from "@screens/statistic/History";
 import Wifi from "@screens/setting/Wifi";
+import SupplierDebts from "@screens/people/supplier/Debts";
+import SupplierInformation from "@screens/people/supplier/Information";
+import CustomerDebts from "@screens/people/customer/Debts";
+import CustomerInformation from "@screens/people/customer/Information";
+import CustomerReservations from "@screens/people/customer/Reservations";
+import CustomerSales from "@screens/people/customer/Sales";
 import theme from "@theme";
 
 import * as BackgroundFetch from "expo-background-fetch";
@@ -586,15 +594,26 @@ const Main = () => {
           component={CreateZone}
           options={{ title: "Creación de zona" }}
         />
+        <Stack.Screen name="ZoneInformation" component={ZoneInformation} />
         <Stack.Screen
-          name="CreateReserve"
-          component={CreateReserve}
-          options={{ title: "Reservar" }}
+          name="CreateAccommodationReserve"
+          component={CreateAccommodationReserve}
+          options={{ title: "Reservar: Acomodación" }}
         />
         <Stack.Screen
-          name="ReserveInformation"
-          component={ReserveInformation}
-          options={{ title: "Información de reservación" }}
+          name="CreateStandardReserve"
+          component={CreateStandardReserve}
+          options={{ title: "Reservar: Estandar" }}
+        />
+        <Stack.Screen
+          name="StandardReserveInformation"
+          component={StandardReserveInformation}
+          options={{ title: "Infomación: Estandar" }}
+        />
+        <Stack.Screen
+          name="AccommodationReserveInformation"
+          component={AccommodationReserveInformation}
+          options={{ title: "Infomación: Acomodación" }}
         />
         <Stack.Screen
           name="CreateHelper"
@@ -613,10 +632,7 @@ const Main = () => {
           component={CreateOrder}
           options={{ title: "Vender" }}
         />
-        <Stack.Screen
-          name="CreateRecipe"
-          component={CreateRecipe}
-        />
+        <Stack.Screen name="CreateRecipe" component={CreateRecipe} />
         <Stack.Screen name="CreateProduct" component={CreateProduct} />
         <Stack.Screen
           name="PreviewOrder"
@@ -651,11 +667,6 @@ const Main = () => {
         />
         <Stack.Screen name="CreatePerson" component={CreatePerson} />
         <Stack.Screen
-          name="PeopleInformation"
-          component={PeopleInformation}
-          options={{ title: "Detalles" }}
-        />
-        <Stack.Screen
           name="CreateElement"
           component={CreateElement}
           options={{ title: "Crear elemento" }}
@@ -680,6 +691,40 @@ const Main = () => {
           component={History}
           options={{ title: "Historial" }}
         />
+        <Stack.Group>
+          <Stack.Screen
+            name="CustomerDebts"
+            component={CustomerDebts}
+            options={{ title: "Deudas: Clientes" }}
+          />
+          <Stack.Screen
+            name="CustomerInformation"
+            component={CustomerInformation}
+            options={{ title: "Información: Clientes" }}
+          />
+          <Stack.Screen
+            name="CustomerReservations"
+            component={CustomerReservations}
+            options={{ title: "Reservaciones: Clientes" }}
+          />
+          <Stack.Screen
+            name="CustomerSales"
+            component={CustomerSales}
+            options={{ title: "Ventas: Clientes" }}
+          />
+        </Stack.Group>
+        <Stack.Group>
+          <Stack.Screen
+            name="SupplierDebts"
+            component={SupplierDebts}
+            options={{ title: "Deudas: Proveedores" }}
+          />
+          <Stack.Screen
+            name="SupplierInformation"
+            component={SupplierInformation}
+            options={{ title: "Información: Proveedores" }}
+          />
+        </Stack.Group>
       </Stack.Group>
       <Stack.Screen
         name="Event"

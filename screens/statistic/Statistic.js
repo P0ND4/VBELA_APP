@@ -8,17 +8,13 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Alert
 } from "react-native";
 import { useSelector } from "react-redux";
 import { ProgressChart, LineChart } from "react-native-chart-kit";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
-import {
-  thousandsSystem,
-  randomColor,
-  months,
-  getFontSize,
-} from "@helpers/libs";
+import { thousandsSystem, randomColor, months, getFontSize } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
 import theme from "@theme";
 import { TouchableOpacity } from "react-native";
@@ -28,18 +24,14 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import Premium from "@assets/icons/premium.png";
 
 const { light, dark } = theme();
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("screen");
 
 const Statistic = ({ navigation }) => {
   const mode = useSelector((state) => state.mode);
   const economy = useSelector((state) => state.economy);
   const orders = useSelector((state) => state.orders);
-  const standardReservations = useSelector(
-    (state) => state.standardReservations
-  );
-  const accommodationReservations = useSelector(
-    (state) => state.accommodationReservations
-  );
+  const standardReservations = useSelector((state) => state.standardReservations);
+  const accommodationReservations = useSelector((state) => state.accommodationReservations);
   const roster = useSelector((state) => state.roster);
   const salesProductsAndServices = useSelector((state) => state.sales);
   const user = useSelector((state) => state.user);
@@ -73,8 +65,7 @@ const Statistic = ({ navigation }) => {
 
   const [accountsPayable, setAccountsPayable] = useState([]);
   const [accountsPayableAmount, setAccountsPayableAmount] = useState(0);
-  const [accountsPayableAmountTotal, setAccountsPayableAmountTotal] =
-    useState(0);
+  const [accountsPayableAmountTotal, setAccountsPayableAmountTotal] = useState(0);
 
   const [averageUtility, setAverageUtility] = useState(0);
   const [discharge, setDischarge] = useState(0);
@@ -89,161 +80,166 @@ const Statistic = ({ navigation }) => {
   };
 
   useEffect(() => {
-    const date = new Date();
-    let years = [date.getFullYear()];
+    // const date = new Date();
+    // let years = [date.getFullYear()];
 
-    for (let i = 5; i >= 0; i--) {
-      years.push(years[years.length - 1] - 1);
-    }
+    // for (let i = 5; i >= 0; i--) {
+    //   years.push(years[years.length - 1] - 1);
+    // }
 
-    setYears(years);
+    // setYears(years);
 
-    let menuSales = 0;
-    let people = 0;
-    let amount = 0;
-    let purchase = 0;
-    let expense = 0;
-    let accountsPayableAmount = 0;
-    let accountsPayableAmountTotal = 0;
-    let expenseAndInvestmentAccountPayable = 0;
-    let purchaseAndCostAccountPayable = 0;
-    let receivable = 0;
-    let receivableTotal = 0;
-    let receivables = [];
-    let ro = 0;
-    let purchases = [];
-    let expenses = [];
-    let ros = [];
-    let accountsPayable = [];
-    let productsAndServices = 0;
-    let sales = [];
-    let menu = [];
+    // let menuSales = 0;
+    // let people = 0;
+    // let amount = 0;
+    // let purchase = 0;
+    // let expense = 0;
+    // let accountsPayableAmount = 0;
+    // let accountsPayableAmountTotal = 0;
+    // let expenseAndInvestmentAccountPayable = 0;
+    // let purchaseAndCostAccountPayable = 0;
+    // let receivable = 0;
+    // let receivableTotal = 0;
+    // let receivables = [];
+    // let ro = 0;
+    // let purchases = [];
+    // let expenses = [];
+    // let ros = [];
+    // let accountsPayable = [];
+    // let productsAndServices = 0;
+    // let sales = [];
+    // let menu = [];
 
-    for (let data of roster) {
-      const date = new Date(data.creationDate);
-      if (dateValidation(date)) continue;
-      ro += parseInt(data.amount);
-      ros.push(data);
-    }
+    // for (let data of roster) {
+    //   const date = new Date(data.creationDate);
+    //   if (dateValidation(date)) continue;
+    //   ro += parseInt(data.amount);
+    //   ros.push(data);
+    // }
 
-    for (let reservation of standardReservations) {
-      const date = new Date(reservation.creationDate);
-      const calculatedAmount = reservation?.amount;
-      if (reservation?.hosted?.some(r => !r.checkOut)) continue
-      if (reservation.payment !== 'business') amount += calculatedAmount;
-      if (dateValidation(date)) continue;
-      people += reservation.hosted.length;
+    // for (let reservation of standardReservations) {
+    //   const date = new Date(reservation.creationDate);
+    //   if (dateValidation(date)) continue;
+    //   amount += reservation?.payment.reduce((a, b) => a + b.amount, 0);
+    //   people += reservation.hosted.length;
 
-      const ids = reservation.hosted.filter((h) => h.owner).map((h) => h.owner);
+    //   const ids = reservation.hosted.filter((h) => h.owner).map((h) => h.owner);
 
-      for (let id of ids) {
-        const eco = economy.find((e) => e.ref === id);
-        if (!eco || eco?.amount !== eco?.payment) continue;
-        menuSales += amount;
-      }
-    }
+    //   for (let id of ids) {
+    //     const eco = economy.find((e) => e.ref === id);
+    //     if (!eco || eco?.amount !== eco?.payment) continue;
+    //     menuSales += amount;
+    //   }
+    // }
 
-    for (let reservation of accommodationReservations) {
-      const date = new Date(reservation.creationDate);
-      const value = reservation?.amount;
+    // for (let reservation of accommodationReservations) {
+    //   const date = new Date(reservation.creationDate);
+    //   const value = reservation?.amount;
 
-      if (dateValidation(date) || !reservation.checkOut) continue;
-      if (!dateValidation(new Date(reservation.checkOut)) &&  reservation.payment !== "business") {
-        amount += reservation.payment;
-      }
+    //   if (dateValidation(date) || !reservation.checkOut) continue;
+    //   if (
+    //     !dateValidation(new Date(reservation.checkOut)) &&
+    //     reservation.payment !== "business"
+    //   ) {
+    //     amount += reservation.payment;
+    //   }
 
-      people += 1;
+    //   people += 1;
 
-      for (let id of [reservation.id]) {
-        const eco = economy.find((e) => e.ref === id);
-        if (!eco || eco?.amount !== eco?.payment) continue;
-        menuSales += value;
-      }
-    }
+    //   for (let id of [reservation.id]) {
+    //     const eco = economy.find((e) => e.ref === id);
+    //     if (!eco || eco?.amount !== eco?.payment) continue;
+    //     menuSales += value;
+    //   }
+    // }
 
-    for (let data of economy) {
-      const date = new Date(data.creationDate);
-      if (dateValidation(date)) continue;
-      if (data.amount !== data.payment) {
-        if (data.type !== "debt") {
-          accountsPayableAmount += parseInt(data.amount - data.payment);
-          accountsPayableAmountTotal += parseInt(data.amount);
-          accountsPayable.push(data);
-        }
+    // for (let data of economy) {
+    //   const date = new Date(data.creationDate);
+    //   if (dateValidation(date)) continue;
+    //   if (data.amount !== data.payment) {
+    //     if (data.type !== "debt") {
+    //       accountsPayableAmount += parseInt(data.amount - data.payment);
+    //       accountsPayableAmountTotal += parseInt(data.amount);
+    //       accountsPayable.push(data);
+    //     }
 
-        if (data.type === "expense")
-          expenseAndInvestmentAccountPayable += parseInt(data.amount);
-        if (data.type === "purchase")
-          purchaseAndCostAccountPayable += parseInt(data.amount);
+    //     if (data.type === "expense")
+    //       expenseAndInvestmentAccountPayable += parseInt(data.amount);
+    //     if (data.type === "purchase") purchaseAndCostAccountPayable += parseInt(data.amount);
 
-        if (data.type === "debt") {
-          receivable += parseInt(data.amount - data.payment);
-          receivableTotal += parseInt(data.amount);
-          receivables.push(data);
-        }
-      } else {
-        if (data.type === "purchase") {
-          purchase += parseInt(data.amount);
-          purchases.push(data);
-        }
-        if (data.type === "expense") {
-          expense += parseInt(data.amount);
-          expenses.push(data);
-        }
-      }
-    }
+    //     if (data.type === "debt") {
+    //       receivable += parseInt(data.amount - data.payment);
+    //       receivableTotal += parseInt(data.amount);
+    //       receivables.push(data);
+    //     }
+    //   } else {
+    //     if (data.type === "purchase") {
+    //       purchase += parseInt(data.amount);
+    //       purchases.push(data);
+    //     }
+    //     if (data.type === "expense") {
+    //       expense += parseInt(data.amount);
+    //       expenses.push(data);
+    //     }
+    //   }
+    // }
 
-    for (let order of orders) {
-      const date = new Date(order.creationDate);
-      if (dateValidation(date) || !order.pay) continue;
-      const eco = economy.find((e) => e.ref === order.ref);
-      if (eco && eco.amount !== eco.payment) continue;
-      menu.push(order);
-      menuSales += order.total;
-    }
+    // for (let order of orders) {
+    //   const date = new Date(order.creationDate);
+    //   if (dateValidation(date) || !order.pay) continue;
+    //   const eco = economy.find((e) => e.ref === order.ref);
+    //   if (eco && eco.amount !== eco.payment) continue;
+    //   menu.push(order);
+    //   menuSales += order.total;
+    // }
 
-    for (let s of salesProductsAndServices) {
-      const date = new Date(s.creationDate);
-      if (dateValidation(date)) continue;
-      sales.push(s);
-      productsAndServices += s.total;
-    }
+    // for (let s of salesProductsAndServices) {
+    //   const date = new Date(s.creationDate);
+    //   if (dateValidation(date)) continue;
+    //   sales.push(s);
+    //   productsAndServices += s.total;
+    // }
 
-    setMenu(menu);
-    setSales(sales);
-    setProductsAndServices(productsAndServices);
-    setMenuSales(menuSales);
-    setPeople(people);
-    setAmount(amount);
-    setPurchase(purchase);
-    setExpense(expense);
-    setPurchases(purchases);
-    setExpenses(expenses);
-    setRos(ros);
-    setRo(ro);
-    setAccountsPayable(accountsPayable);
-    setAccountsPayableAmount(accountsPayableAmount);
-    setAccountsPayableAmountTotal(accountsPayableAmountTotal);
-    setReceivable(receivable);
-    setReceivableTotal(receivableTotal);
-    setReceivables(receivables);
-    setAverageUtility(
-      menuSales +
-        purchase +
-        ro +
-        receivableTotal -
-        expense -
-        expenseAndInvestmentAccountPayable +
-        productsAndServices
-    );
-    setDischarge(expense + expenseAndInvestmentAccountPayable);
-    setIncome(
-      menuSales +
-        purchase +
-        ro +
-        receivableTotal +
-        purchaseAndCostAccountPayable +
-        productsAndServices
+    // setMenu(menu);
+    // setSales(sales);
+    // setProductsAndServices(productsAndServices);
+    // setMenuSales(menuSales);
+    // setPeople(people);
+    // setAmount(amount);
+    // setPurchase(purchase);
+    // setExpense(expense);
+    // setPurchases(purchases);
+    // setExpenses(expenses);
+    // setRos(ros);
+    // setRo(ro);
+    // setAccountsPayable(accountsPayable);
+    // setAccountsPayableAmount(accountsPayableAmount);
+    // setAccountsPayableAmountTotal(accountsPayableAmountTotal);
+    // setReceivable(receivable);
+    // setReceivableTotal(receivableTotal);
+    // setReceivables(receivables);
+    // setAverageUtility(
+    //   menuSales +
+    //     purchase +
+    //     ro +
+    //     receivableTotal -
+    //     expense -
+    //     expenseAndInvestmentAccountPayable +
+    //     productsAndServices
+    // );
+    // setDischarge(expense + expenseAndInvestmentAccountPayable);
+    // setIncome(
+    //   menuSales +
+    //     purchase +
+    //     ro +
+    //     receivableTotal +
+    //     purchaseAndCostAccountPayable +
+    //     productsAndServices
+    // );
+
+    Alert.alert(
+      "PROXIMAMENTE",
+      "ESTO POR AHORA NO FUNCIONARA, OSEA SI FUNCIONA, PERO YO LE PUSE QUE NO FUNCIONARA, DADO A LOS CAMBIOS DE VENTANAS"
     );
 
     setTimeout(() => {
@@ -331,10 +327,7 @@ const Statistic = ({ navigation }) => {
             });
         }}
       >
-        <TextStyle
-          color={mode === "light" ? light.textDark : dark.textWhite}
-          verySmall
-        >
+        <TextStyle color={mode === "light" ? light.textDark : dark.textWhite} verySmall>
           {item.name}
         </TextStyle>
         <TextStyle color={light.main2} verySmall>
@@ -373,10 +366,7 @@ const Statistic = ({ navigation }) => {
             if (onPress) setActive(!active);
           }}
         >
-          <TextStyle
-            {...restText}
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
+          <TextStyle {...restText} color={mode === "light" ? light.textDark : dark.textWhite}>
             {name}
           </TextStyle>
           <View style={{ maxWidth: SCREEN_WIDTH / 2.5 }}>
@@ -399,16 +389,10 @@ const Statistic = ({ navigation }) => {
           Hay {count} ventas realizadas
         </TextStyle>
         <TouchableOpacity
-          onPress={() =>
-            navigation.navigate("History", { item: [...item].reverse(), type })
-          }
+          onPress={() => navigation.navigate("History", { item: [...item].reverse(), type })}
           style={{ flexDirection: "row", alignItems: "center" }}
         >
-          <Ionicons
-            name="information-circle"
-            size={getFontSize(24)}
-            color={light.main2}
-          />
+          <Ionicons name="information-circle" size={getFontSize(24)} color={light.main2} />
           <TextStyle verySmall color={light.main2} style={{ margin: 5 }}>
             Ver información
           </TextStyle>
@@ -419,9 +403,7 @@ const Statistic = ({ navigation }) => {
 
   let amountTotal = 0;
   let sale = 0;
-  const dataD = ["both", "accommodation"].includes(user?.type)
-    ? [0, 0, 0, 0]
-    : [0, 0, 0];
+  const dataD = ["both", "accommodation"].includes(user?.type) ? [0, 0, 0, 0] : [0, 0, 0];
 
   for (let data of economy) {
     const date = new Date(data.creationDate);
@@ -488,20 +470,7 @@ const Statistic = ({ navigation }) => {
   };
 
   const dataLine = {
-    labels: [
-      "En",
-      "Fe",
-      "Ma",
-      "Ab",
-      "Ma",
-      "Ju",
-      "Jul",
-      "Ag",
-      "Se",
-      "Oc",
-      "No",
-      "Di",
-    ],
+    labels: ["En", "Fe", "Ma", "Ab", "Ma", "Ju", "Jul", "Ag", "Se", "Oc", "No", "Di"],
     datasets: [
       {
         data: DPeople,
@@ -539,9 +508,7 @@ const Statistic = ({ navigation }) => {
               <Picker
                 mode="dropdown"
                 selectedValue={day}
-                dropdownIconColor={
-                  mode === "light" ? light.textDark : dark.textWhite
-                }
+                dropdownIconColor={mode === "light" ? light.textDark : dark.textWhite}
                 onValueChange={(itemValue) => setDay(itemValue)}
                 style={{
                   width: SCREEN_WIDTH / 3.4,
@@ -554,8 +521,7 @@ const Statistic = ({ navigation }) => {
                   label="Día"
                   value="all"
                   style={{
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
+                    backgroundColor: mode === "light" ? light.main5 : dark.main2,
                   }}
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 />
@@ -565,8 +531,7 @@ const Statistic = ({ navigation }) => {
                     label={`${day}`}
                     value={day}
                     style={{
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
+                      backgroundColor: mode === "light" ? light.main5 : dark.main2,
                     }}
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   />
@@ -585,9 +550,7 @@ const Statistic = ({ navigation }) => {
                 mode="dropdown"
                 selectedValue={month}
                 onValueChange={(itemValue) => setMonth(itemValue)}
-                dropdownIconColor={
-                  mode === "light" ? light.textDark : dark.textWhite
-                }
+                dropdownIconColor={mode === "light" ? light.textDark : dark.textWhite}
                 style={{
                   width: SCREEN_WIDTH / 3.4,
                   backgroundColor: mode === "light" ? light.main5 : dark.main2,
@@ -599,8 +562,7 @@ const Statistic = ({ navigation }) => {
                   label="Mes"
                   value="all"
                   style={{
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
+                    backgroundColor: mode === "light" ? light.main5 : dark.main2,
                   }}
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 />
@@ -610,8 +572,7 @@ const Statistic = ({ navigation }) => {
                     label={month}
                     value={index + 1}
                     style={{
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
+                      backgroundColor: mode === "light" ? light.main5 : dark.main2,
                     }}
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   />
@@ -630,9 +591,7 @@ const Statistic = ({ navigation }) => {
                 mode="dropdown"
                 selectedValue={year}
                 onValueChange={(itemValue) => setYear(itemValue)}
-                dropdownIconColor={
-                  mode === "light" ? light.textDark : dark.textWhite
-                }
+                dropdownIconColor={mode === "light" ? light.textDark : dark.textWhite}
                 style={{
                   width: SCREEN_WIDTH / 3.4,
                   backgroundColor: mode === "light" ? light.main5 : dark.main2,
@@ -644,8 +603,7 @@ const Statistic = ({ navigation }) => {
                   label="Año"
                   value="all"
                   style={{
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
+                    backgroundColor: mode === "light" ? light.main5 : dark.main2,
                   }}
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 />
@@ -655,8 +613,7 @@ const Statistic = ({ navigation }) => {
                     label={`${year}`}
                     value={year}
                     style={{
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
+                      backgroundColor: mode === "light" ? light.main5 : dark.main2,
                     }}
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   />
@@ -678,11 +635,7 @@ const Statistic = ({ navigation }) => {
                   menu.length !== 0 ? (
                     <GeneralSales count={menu.length} item={menu} type="menu" />
                   ) : (
-                    <TextStyle
-                      verySmall
-                      color={light.main2}
-                      style={{ margin: 5 }}
-                    >
+                    <TextStyle verySmall color={light.main2} style={{ margin: 5 }}>
                       No hay ventas diarias (menú)
                     </TextStyle>
                   )
@@ -695,17 +648,9 @@ const Statistic = ({ navigation }) => {
                 value={thousandsSystem(productsAndServices)}
                 onPress={() =>
                   sales.length !== 0 ? (
-                    <GeneralSales
-                      count={sales.length}
-                      item={sales}
-                      type="sales"
-                    />
+                    <GeneralSales count={sales.length} item={sales} type="sales" />
                   ) : (
-                    <TextStyle
-                      verySmall
-                      color={light.main2}
-                      style={{ margin: 5 }}
-                    >
+                    <TextStyle verySmall color={light.main2} style={{ margin: 5 }}>
                       No hay ventas de productos y servicios
                     </TextStyle>
                   )
@@ -729,11 +674,7 @@ const Statistic = ({ navigation }) => {
                     renderItem={(item) => <Economy {...item} />}
                   />
                 ) : (
-                  <TextStyle
-                    verySmall
-                    color={light.main2}
-                    style={{ margin: 5 }}
-                  >
+                  <TextStyle verySmall color={light.main2} style={{ margin: 5 }}>
                     No hay gatos o inversiones realizados
                   </TextStyle>
                 )
@@ -753,11 +694,7 @@ const Statistic = ({ navigation }) => {
                     renderItem={(item) => <Economy {...item} />}
                   />
                 ) : (
-                  <TextStyle
-                    verySmall
-                    color={light.main2}
-                    style={{ margin: 5 }}
-                  >
+                  <TextStyle verySmall color={light.main2} style={{ margin: 5 }}>
                     No hay compras o costos realizados
                   </TextStyle>
                 )
@@ -779,8 +716,7 @@ const Statistic = ({ navigation }) => {
                         style={[
                           styles.card,
                           {
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
+                            backgroundColor: mode === "light" ? light.main5 : dark.main2,
                           },
                         ]}
                         onPress={() =>
@@ -791,9 +727,7 @@ const Statistic = ({ navigation }) => {
                         }
                       >
                         <TextStyle
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
+                          color={mode === "light" ? light.textDark : dark.textWhite}
                           verySmall
                         >
                           {item.name}
@@ -805,11 +739,7 @@ const Statistic = ({ navigation }) => {
                     )}
                   />
                 ) : (
-                  <TextStyle
-                    verySmall
-                    color={light.main2}
-                    style={{ margin: 5 }}
-                  >
+                  <TextStyle verySmall color={light.main2} style={{ margin: 5 }}>
                     No hay nominas realizadas
                   </TextStyle>
                 )
@@ -817,9 +747,7 @@ const Statistic = ({ navigation }) => {
             />
             <Information
               name="CUENTAS POR PAGAR"
-              value={`${thousandsSystem(
-                accountsPayableAmountTotal
-              )}/${thousandsSystem(
+              value={`${thousandsSystem(accountsPayableAmountTotal)}/${thousandsSystem(
                 accountsPayableAmountTotal - accountsPayableAmount
               )}`}
               onPress={() =>
@@ -835,12 +763,12 @@ const Statistic = ({ navigation }) => {
                         style={[
                           styles.card,
                           {
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
+                            backgroundColor: mode === "light" ? light.main5 : dark.main2,
                           },
                         ]}
                         onPress={() =>
                           navigation.navigate("CreateEconomy", {
+                            type: item.type,
                             editing: true,
                             item,
                             pay: true,
@@ -848,9 +776,7 @@ const Statistic = ({ navigation }) => {
                         }
                       >
                         <TextStyle
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
+                          color={mode === "light" ? light.textDark : dark.textWhite}
                           verySmall
                         >
                           {item.name}
@@ -862,17 +788,13 @@ const Statistic = ({ navigation }) => {
                     )}
                   />
                 ) : (
-                  <TextStyle
-                    verySmall
-                    color={light.main2}
-                    style={{ margin: 5 }}
-                  >
+                  <TextStyle verySmall color={light.main2} style={{ margin: 5 }}>
                     No hay cuentas por pagar
                   </TextStyle>
                 )
               }
             />
-            <Information
+            {/* <Information
               name="CUENTAS POR COBRAR"
               value={`${thousandsSystem(receivableTotal)}/${thousandsSystem(
                 receivableTotal - receivable
@@ -928,18 +850,12 @@ const Statistic = ({ navigation }) => {
                   </TextStyle>
                 )
               }
-            />
+            /> */}
             {["both", "accommodation"].includes(user?.type) && (
               <Information name="HUÉSPEDES" value={thousandsSystem(people)} />
             )}
-            <Information
-              name="UTILIDAD PROMEDIO"
-              value={thousandsSystem(averageUtility)}
-            />
-            <Information
-              name="TOTAL EGRESO"
-              value={thousandsSystem(discharge)}
-            />
+            <Information name="UTILIDAD PROMEDIO" value={thousandsSystem(averageUtility)} />
+            <Information name="TOTAL EGRESO" value={thousandsSystem(discharge)} />
             <Information
               name="TOTAL INGRESO"
               value={thousandsSystem(income)}
@@ -979,8 +895,7 @@ const Statistic = ({ navigation }) => {
         <View
           style={{
             flex: 1,
-            backgroundColor:
-              mode === "light" ? `${light.main4}FF` : `${dark.main1}FF`,
+            backgroundColor: mode === "light" ? `${light.main4}FF` : `${dark.main1}FF`,
             alignItems: "center",
             justifyContent: "center",
           }}

@@ -35,8 +35,10 @@ const Information = ({
   modalVisible,
   setModalVisible,
   title,
-  content,
+  content = () => {},
   style,
+  headerRight = () => {},
+  onClose = () => {},
 }) => {
   const stylesTaken = [styles.default, style];
 
@@ -50,18 +52,22 @@ const Information = ({
       visible={modalVisible}
       onRequestClose={() => {
         setModalVisible(!modalVisible);
+        onClose();
       }}
     >
-      <TouchableWithoutFeedback onPress={() => setModalVisible(!modalVisible)}>
-        <View
-          style={[{ backgroundColor: "#0004" }, StyleSheet.absoluteFillObject]}
-        />
+      <TouchableWithoutFeedback
+        onPress={() => {
+          setModalVisible(!modalVisible);
+          onClose();
+        }}
+      >
+        <View style={[{ backgroundColor: "#0004" }, StyleSheet.absoluteFillObject]} />
       </TouchableWithoutFeedback>
       <View style={styles.centeredView}>
         <View
           style={[
             { backgroundColor: mode === "light" ? light.main4 : dark.main2 },
-            stylesTaken
+            stylesTaken,
           ]}
         >
           <View style={{ width: "100%" }}>
@@ -69,13 +75,21 @@ const Information = ({
               <TextStyle center bigSubtitle color={light.main2}>
                 {title}
               </TextStyle>
-              <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
-                <Ionicons
-                  name="close"
-                  size={30}
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                />
-              </TouchableOpacity>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                {headerRight()}
+                <TouchableOpacity
+                  onPress={() => {
+                    setModalVisible(!modalVisible);
+                    onClose();
+                  }}
+                >
+                  <Ionicons
+                    name="close"
+                    size={30}
+                    color={mode === "light" ? light.textDark : dark.textWhite}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
             {content()}
           </View>
