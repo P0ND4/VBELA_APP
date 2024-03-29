@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -13,7 +13,15 @@ import { useSelector, useDispatch } from "react-redux";
 import { getFontSize, thousandsSystem, random } from "@helpers/libs";
 import { edit as editRS } from "@features/zones/standardReservationsSlice";
 import { useNavigation } from "@react-navigation/native";
-import { editReservation } from "@api";
+import { editReservation, editUser } from "@api";
+import { remove as removeC } from "@features/people/customersSlice";
+import { remove as removeRA, edit as editRA } from "@features/zones/accommodationReservationsSlice";
+import { updateMany as updateManyO, removeMany as removeManyO } from "@features/tables/ordersSlice";
+import { updateMany as updateManyS, removeMany as removeManyS } from "@features/sales/salesSlice";
+import {
+  removeMany as removeManyRS,
+  updateMany as updateManyRS,
+} from "@features/zones/standardReservationsSlice";
 import ChooseDate from "@components/ChooseDate";
 import AddPerson from "@components/AddPerson";
 import TextStyle from "@components/TextStyle";
@@ -22,14 +30,16 @@ import InputStyle from "@components/InputStyle";
 import Layout from "@components/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
-import Filters from "@utils/people/customer/Filters";
+import Filters from "@utils/customer/Filters";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const { light, dark } = theme();
 
 const Card = ({ item, activeChooseDate }) => {
+  const user = useSelector((state) => state.user);
+  const helperStatus = useSelector((state) => state.helperStatus);
+  const customers = useSelector((state) => state.customers);
   const mode = useSelector((state) => state.mode);
-  const nomenclatures = useSelector((state) => state.nomenclatures);
   const orders = useSelector((state) => state.orders);
   const sales = useSelector((state) => state.sales);
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
@@ -46,18 +56,12 @@ const Card = ({ item, activeChooseDate }) => {
   useEffect(() => setIsName(true), [item.identification]);
 
   const getSalesPrice = (sales) => {
-    // const found = sales.filter(
-    //   (s) => s.ref === item.id || item.clientList?.some((c) => s.ref === c.id)
-    // );
+    const found = sales.filter((s) => s.ref === item.id || item.clientList?.some((c) => s.ref === c.id));
 
-    // const selections = found.reduce((a, b) => [...a, ...b.selection], []);
-    // const methods = selections.reduce((a, b) => [...a, ...b.method], []);
+    const selections = found.reduce((a, b) => [...a, ...b.selection], []);
+    const methods = selections.reduce((a, b) => [...a, ...b.method], []);
 
-    // return methods.reduce((a, b) => {
-    //   if (b.method === "credit") return a + b.total;
-    //   return a;
-    // }, 0);
-    return 0;
+    return methods.reduce((sum, method) => (method.method === "credit" ? sum + method.total : sum), 0);
   };
 
   const getAccommodationPrice = (accommodations) => {
@@ -68,68 +72,53 @@ const Card = ({ item, activeChooseDate }) => {
 
     const reservations = accommodations.filter((a) => a.status === "credit" && condition(a));
     const total = reservations.reduce((a, b) => a + b?.total, 0);
-    const payment = reservations.reduce(
-      (a, b) => a + b?.payment.reduce((a, b) => a + b.amount, 0),
-      0
-    );
+    const payment = reservations.reduce((a, b) => a + b?.payment.reduce((a, b) => a + b.amount, 0), 0);
 
     return total - payment;
   };
 
   useEffect(() => {
-    // const SalesDebt = getSalesPrice(sales);
-    // const OrdersDebt = getSalesPrice(orders);
+    const salesDebt = getSalesPrice(sales);
+    const ordersDebt = getSalesPrice(orders);
     const accommodationDebt = getAccommodationPrice(accommodationReservations);
     const standardDebt = getAccommodationPrice(standardReservations);
-    setDebt(accommodationDebt + standardDebt);
+    setDebt(accommodationDebt + standardDebt + salesDebt + ordersDebt);
   }, [sales, orders, accommodationReservations, standardReservations]);
 
-  const salesHandler = ({ item, OF }) => {
+  const salesHandler = ({ item }) => {
     const navigateToMenu = () => {
-      navigation.navigate("CreateOrder", {
-        editing: OF ? true : false,
-        id: OF ? OF.id : undefined,
+      const order = orders.find((o) => o.ref === item.id && o.status === "pending");
+      navigation.navigate("RestaurantCreateOrder", {
         ref: item.id,
-        table: item.name,
-        selection: OF ? OF.selection : [],
-        reservation: "Cliente",
+        title: { name: "Cliente", value: item.name },
+        order,
       });
     };
 
     const navigateToSales = () => {
+      const order = sales.find((o) => o.ref === item.id && o.status === "pending");
       navigation.navigate("Sales", {
-        ref: item.id,
-        name: item.name,
+        ref: item.owner || item.id,
+        title: { name: "Cliente", value: item.name },
+        order,
       });
     };
 
     Alert.alert(
-      "AAAAAA :)",
-      "COMO NECESITO RECONSTRUIR VENTAS Y RESTAURANTE/BAR Y ME DEMORARE UN POCO PARA NO ATRASARLO MAS, LAS DEUDAS POR AHORA NO FUNCIONARAN AQUI, PORQUE AL FIN Y AL CABO LO VOY A HACER DE NUEVO",
+      "VENTAS",
+      "¿A cuál de estas ventas quieres ingresar?",
       [
         {
-          text: "ok",
-          onPress: () => {
-            Alert.alert(
-              "VENTAS",
-              "¿A cuál de estas ventas quieres ingresar?",
-              [
-                {
-                  text: "Cancelar",
-                  style: "cancel",
-                },
-                {
-                  text: "Menú",
-                  onPress: () => navigateToMenu(),
-                },
-                {
-                  text: "Productos&Servicios",
-                  onPress: () => navigateToSales(),
-                },
-              ],
-              { cancelable: true }
-            );
-          },
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Menú",
+          onPress: () => navigateToMenu(),
+        },
+        {
+          text: "Productos&Servicios",
+          onPress: () => navigateToSales(),
         },
       ],
       { cancelable: true }
@@ -147,31 +136,19 @@ const Card = ({ item, activeChooseDate }) => {
     activeChooseDate({ item });
   };
 
-  const textColor = (
-    condition //ESTO LO VAMOS A REUTILIZAR POR ESO ESTA ACA ARRIBA, APARTE QUE SIMPLIFICAMOS CODIGO
-  ) => (condition ? light.textDark : mode === "light" ? dark.textWhite : light.textDark);
+  const textColor = (condition) =>
+    condition ? light.textDark : mode === "light" ? dark.textWhite : light.textDark;
 
-  const backgroundColor = (
-    condition //ESTO LO VAMOS A REUTILIZAR POR ESO ESTA ACA ARRIBA, APARTE QUE SIMPLIFICAMOS CODIGO
-  ) => (condition ? light.main2 : mode === "light" ? dark.main2 : light.main4);
+  const backgroundColor = (condition) =>
+    condition ? light.main2 : mode === "light" ? dark.main2 : light.main4;
 
   const checkReservation = ({ id }) => {
-    //REVISAMOS LAS RESERVACIONES LO COLOCAMOS ACA ARRIBA PARA REUTILIZARLO
     const allReservations = [...standardReservations, ...accommodationReservations];
-    return allReservations.find(
-      (r) => r?.owner === id || r?.hosted?.some((h) => h.owner === id)
-    );
+    return allReservations.find((r) => r?.owner === id || r?.hosted?.some((h) => h.owner === id));
   };
 
   const StandardCustomer = () => {
-    const [OF, setOF] = useState(null);
     const [reservationFound, setReservationFound] = useState(null);
-
-    useEffect(() => {
-      const found = orders.find((o) => o.ref === item.id && !o.pay);
-      if (found) setOF(found);
-      else setOF(false);
-    }, [orders]);
 
     useEffect(() => {
       const found = checkReservation({ id: item.id });
@@ -181,15 +158,23 @@ const Card = ({ item, activeChooseDate }) => {
 
     return (
       <View style={styles.row}>
-        <ButtonStyle
-          backgroundColor={backgroundColor(!OF)}
-          style={{ width: SCREEN_WIDTH / 2.4 }}
-          onPress={() => salesHandler({ item, OF })}
-        >
-          <TextStyle paragrahp center color={textColor(!OF)}>
-            Ventas
-          </TextStyle>
-        </ButtonStyle>
+        {(() => {
+          const exists =
+            orders.some((o) => o.ref === item.id && o.status === "pending") ||
+            sales.some((o) => o.ref === item.id && o.status === "pending");
+
+          return (
+            <ButtonStyle
+              backgroundColor={backgroundColor(!exists)}
+              style={{ width: SCREEN_WIDTH / 2.4 }}
+              onPress={() => salesHandler({ item })}
+            >
+              <TextStyle paragrahp center color={textColor(!exists)}>
+                Ventas
+              </TextStyle>
+            </ButtonStyle>
+          );
+        })()}
         <ButtonStyle
           style={{ width: SCREEN_WIDTH / 2.4 }}
           backgroundColor={backgroundColor(!reservationFound)}
@@ -205,14 +190,7 @@ const Card = ({ item, activeChooseDate }) => {
 
   const SpecialCustomer = ({ item }) => {
     const [isName, setIsName] = useState(true);
-    const [OF, setOF] = useState(null);
     const [reservationFound, setReservationFound] = useState(null);
-
-    useEffect(() => {
-      const found = orders.find((o) => o.ref === item.id && !o.pay);
-      if (found) setOF(found);
-      else setOF(false);
-    }, [orders]);
 
     useEffect(() => {
       const found = checkReservation({ id: item.id });
@@ -230,29 +208,266 @@ const Card = ({ item, activeChooseDate }) => {
           </TextStyle>
         </TouchableOpacity>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity
-            style={[
-              styles.swipeIcon,
-              {
-                backgroundColor: backgroundColor(!OF),
-              },
-            ]}
-            onPress={() => salesHandler({ item, OF })}
-          >
-            <Ionicons name="card-outline" size={getFontSize(20)} color={textColor(!OF)} />
-          </TouchableOpacity>
+          {(() => {
+            const exists =
+              orders.some((o) => o.ref === item.id && o.status === "pending") ||
+              sales.some((o) => o.ref === item.id && o.status === "pending");
+            return (
+              <TouchableOpacity
+                style={[
+                  styles.swipeIcon,
+                  {
+                    backgroundColor: backgroundColor(!exists),
+                  },
+                ]}
+                onPress={() => salesHandler({ item })}
+              >
+                <Ionicons name="card-outline" size={getFontSize(20)} color={textColor(!exists)} />
+              </TouchableOpacity>
+            );
+          })()}
           <TouchableOpacity
             style={[styles.swipeIcon, { backgroundColor: backgroundColor(!reservationFound) }]}
             onPress={() => reservationHandler({ reservation: reservationFound, item })}
           >
-            <Ionicons
-              name="home-outline"
-              size={getFontSize(20)}
-              color={textColor(!reservationFound)}
-            />
+            <Ionicons name="home-outline" size={getFontSize(20)} color={textColor(!reservationFound)} />
           </TouchableOpacity>
         </View>
       </View>
+    );
+  };
+
+  const removeCustomer = () => {
+    //TODO MEJORAR ESTO
+    const customerStandard = item?.special
+      ? standardReservations.filter((s) => {
+          s.hosted.some((h) => item.clientList.some((cc) => h.owner === cc.id));
+        })
+      : standardReservations.filter((s) => s.hosted.some((h) => h.owner === item.id));
+
+    const standardHostedFilter = (c) =>
+      c.hosted.filter((h) => {
+        if (item.special) return item.clientList.some((cc) => h.owner === cc.id);
+        else return h.owner === item.id;
+      });
+
+    const customerAccommodation = item?.special
+      ? accommodationReservations.filter((a) => item.clientList.some((cc) => a.owner === cc.id))
+      : accommodationReservations.filter((a) => a.owner === item.id);
+
+    const getOrder = (orders) =>
+      (item?.special
+        ? orders.filter((o) => item.clientList.some((cc) => o.ref === cc.id))
+        : orders.filter((o) => o.ref === item.id)
+      ).map((o) => o.id);
+
+    const customerOrders = getOrder(orders);
+    const customerSales = getOrder(sales);
+
+    const exists = () => {
+      if (customerAccommodation.length || customerStandard.length) {
+        if (customerOrders.length || customerSales.length) return "all";
+        return "reservation";
+      } else if (customerOrders.length || customerSales.length) return "sale";
+      return null;
+    };
+
+    const send = async ({ reservation = null, sale = null }) => {
+      let change = {};
+      const standardToEdit = customerStandard.filter((c) => standardHostedFilter(c).length > 0);
+      const standardToRemove = customerStandard.filter((c) => standardHostedFilter(c).length === 0);
+
+      dispatch(removeC({ id: item.id }));
+      if (reservation) {
+        const ACOIDS = customerAccommodation.map((a) => a.id);
+        const STAIDS = standardToRemove.map((s) => s.id);
+        const standardUpdated = standardToEdit.map((s) => ({
+          ...s,
+          hosted: c.hosted.filter((h) =>
+            item?.special ? !item.clientList.some((cc) => h.owner === cc.id) : h.owner !== item.id
+          ),
+        }));
+        change = {
+          ...change,
+          reservations: {
+            accommodation: accommodationReservations.filter((a) => !ACOIDS.includes(a.id)),
+            standard: standardReservations
+              .filter((s) => !STAIDS.includes(s.id))
+              .map((s) => {
+                const found = standardUpdated.find((ss) => ss.id === s.id);
+                if (found) return found;
+                else s;
+              }),
+          },
+        };
+        dispatch(removeRA({ ids: ACOIDS }));
+        dispatch(updateManyRS({ data: standardUpdated }));
+        dispatch(removeManyRS({ ids: STAIDS }));
+      }
+
+      if (sale) {
+        change = {
+          ...change,
+          orders: orders.filter((o) => !customerOrders.includes(o.id)),
+          sales: sales.filter((s) => !customerSales.includes(s.id)),
+        };
+        dispatch(removeManyO({ ids: customerOrders }));
+        dispatch(removeManyS({ ids: customerSales }));
+      }
+
+      if (!sale && customerSales.length) {
+        const salesUpdated = customerSales.map((c) => ({ ...c, ref: null }));
+        change = {
+          ...change,
+          sales: sales.map((s) => {
+            const found = salesUpdated.find((su) => su.id === s.id);
+            if (found) return found;
+            else s;
+          }),
+        };
+        dispatch(updateManyS({ data: salesUpdated }));
+      }
+
+      if (!sale && customerOrders.length) {
+        const ordersUpdated = customerOrders.map((c) => ({ ...c, ref: null }));
+        change = {
+          ...change,
+          orders: orders.map((s) => {
+            const found = ordersUpdated.find((su) => su.id === s.id);
+            if (found) return found;
+            else s;
+          }),
+        };
+        dispatch(updateManyO({ data: ordersUpdated }));
+      }
+
+      if (!reservation && customerAccommodation.length) {
+        const accommodationUpdated = customerAccommodation.map((c) => ({ ...c, owner: null }));
+        change = {
+          ...change,
+          reservations: {
+            ...change?.reservations,
+            accommodation: accommodationReservations.map((a) => {
+              const found = accommodationUpdated.find((au) => au.id === a.id);
+              if (found) return found;
+              else return a;
+            }),
+          },
+        };
+        dispatch(editRA({ data: accommodationUpdated }));
+      }
+      if (!reservation && standardReservations.length) {
+        const standardUpdated = customerStandard.map((c) => ({
+          ...c,
+          hosted: c.hosted.map((h) =>
+            (item?.special ? item.clientList.some((cc) => h.owner === cc.id) : h.owner === item.id)
+              ? { ...h, owner: null }
+              : h
+          ),
+        }));
+        change = {
+          ...change,
+          reservations: {
+            ...change?.reservations,
+            accommodation: standardReservations.map((s) => {
+              const found = standardUpdated.find((su) => su.id === s.id);
+              if (found) return found;
+              else return s;
+            }),
+          },
+        };
+        dispatch(updateManyRS({ data: standardUpdated }));
+      }
+      await editUser({
+        //TODO ESTO NO DEBE SER ASI - ACOMODARLO
+        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+        change: {
+          people: { customers: customers.filter((c) => c.id !== item.id) },
+          ...change,
+        },
+        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
+      });
+    };
+
+    Alert.alert(
+      "ATENCIÓN",
+      "¿Desea eliminar los datos de este cliente, no se podrá recuperar la infomación?",
+      [
+        {
+          text: "No estoy seguro",
+          style: "cancel",
+        },
+        {
+          text: "Estoy seguro",
+          onPress: () => {
+            if (!exists()) return send({});
+            if (exists() === "sale")
+              return Alert.alert(
+                "BIEN :)",
+                "¿Desea eliminar las ventas asociada al cliente?",
+                [
+                  {
+                    text: "No",
+                    onPress: () => send({}),
+                  },
+                  { text: "Si", onPress: () => send({ sale: true }) },
+                ],
+                { cancelable: true }
+              );
+
+            if (exists() === "reservation")
+              return Alert.alert(
+                "BIEN :)",
+                "¿Desea eliminar las reservaciones asociada al cliente?",
+                [
+                  {
+                    text: "No",
+                    onPress: () => send({}),
+                  },
+                  { text: "Si", onPress: () => send({ reservation: true }) },
+                ],
+                { cancelable: true }
+              );
+
+            return Alert.alert(
+              "BIEN :)",
+              "¿Desea eliminar la información asociada al cliente (Reservaciones, Ventas), o solo un dato?",
+              [
+                {
+                  text: "No eliminar la información",
+                  onPress: () => send({}),
+                },
+                {
+                  text: "Eliminar un solo dato",
+                  onPress: () => {
+                    Alert.alert(
+                      "OK :)",
+                      "¿Cuál de las dos informaciones desea eliminar?",
+                      [
+                        {
+                          text: "Reservaciones",
+                          onPress: () => send({ reservation: true }),
+                        },
+                        {
+                          text: "Ventas",
+                          onPress: () => send({ sale: true }),
+                        },
+                      ],
+                      { cancelable: true }
+                    );
+                  },
+                },
+                {
+                  text: "Eliminar toda la información asociada",
+                  onPress: () => send({}),
+                },
+              ],
+              { cancelable: true }
+            );
+          },
+        },
+      ],
+      { cancelable: true }
     );
   };
 
@@ -260,12 +475,7 @@ const Card = ({ item, activeChooseDate }) => {
     <View style={{ flexDirection: "row", alignItems: "center" }}>
       <TouchableOpacity
         style={[styles.swipeIcon, { backgroundColor: "red" }]}
-        onPress={() =>
-          Alert.alert(
-            "PROXIMAMENTE",
-            "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR"
-          )
-        }
+        onPress={() => removeCustomer()}
       >
         <Ionicons
           name="trash"
@@ -301,9 +511,7 @@ const Card = ({ item, activeChooseDate }) => {
 
   return (
     <SwipeableValidation condition={!isOpen}>
-      <View
-        style={[styles.card, { backgroundColor: mode === "light" ? light.main5 : dark.main2 }]}
-      >
+      <View style={[styles.card, { backgroundColor: mode === "light" ? light.main5 : dark.main2 }]}>
         <TouchableOpacity onPress={() => setIsOpen(!isOpen)} style={styles.row}>
           <TouchableOpacity onPress={() => item.identification && setIsName(!isName)}>
             <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
@@ -357,6 +565,8 @@ const Customer = ({ navigation }) => {
   const mode = useSelector((state) => state.mode);
   const customers = useSelector((state) => state.customers);
   const standardReservations = useSelector((state) => state.standardReservations);
+  const accommodationReservations = useSelector((state) => state.accommodationReservations);
+  const orders = useSelector((state) => state.orders);
   const nomenclatures = useSelector((state) => state.nomenclatures);
 
   const [people, setPeople] = useState(null);
@@ -389,27 +599,110 @@ const Customer = ({ navigation }) => {
   const [personSelected, setPersonSelected] = useState(null);
   const [changeKey, setChangeKey] = useState(Math.random());
 
-  // const dateValidation = (date, dateCompare) => {
-  //   let error = false;
-  //   if (dateCompare.day !== "all" && date.getDate() !== dateCompare.day)
-  //     error = true;
-  //   if (
-  //     dateCompare.month !== "all" &&
-  //     date.getMonth() + 1 !== dateCompare.month
-  //   )
-  //     error = true;
-  //   if (dateCompare.year !== "all" && date.getFullYear() !== dateCompare.year)
-  //     error = true;
-  //   return error;
-  // };
+  const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
+  const textColor = useMemo(() => getTextColor(mode), [mode]);
+
+  const dateValidation = (date, dateCompare) => {
+    let error = false;
+    if (dateCompare.day !== "all" && date.getDate() !== dateCompare.day) error = true;
+    if (dateCompare.month !== "all" && date.getMonth() + 1 !== dateCompare.month) error = true;
+    if (dateCompare.year !== "all" && date.getFullYear() !== dateCompare.year) error = true;
+    return error;
+  };
 
   useEffect(() => {
     setPeople(null);
     if (search || filters) {
-      const customersFiltered = customers;
+      const customersFiltered = customers.filter((customer) => {
+        const firstCondition =
+          customer.name.toLowerCase()?.includes(search.toLowerCase()) ||
+          customer.identification?.includes(search) ||
+          thousandsSystem(customer.identification)?.includes(search);
+
+        let secondCondition;
+
+        if (customer.special) {
+          secondCondition = customer.clientList.some(
+            (c) =>
+              c.name.toLowerCase()?.includes(search.toLocaleLowerCase()) ||
+              c.identification?.includes(search) ||
+              thousandsSystem(c.identification)?.includes(search)
+          );
+        }
+
+        if (firstCondition || secondCondition) {
+          if (!filters.active) return customer;
+          if (
+            dateValidation(new Date(customer.creationDate), {
+              day: filters.day,
+              month: filters.month,
+              year: filters.year,
+            })
+          )
+            return;
+          if (filters.identification === "yes-identification" && !customer.identification) return;
+          if (filters.identification === "no-identification" && customer.identification) return;
+          if (filters.type === "customer") {
+            if (customer.special) return;
+            if (filters.activeReservation) {
+              const hostedStandard = standardReservations.find((s) =>
+                s.hosted.some((h) => h.owner === customer.id)
+              );
+              const hostedAccommodation = accommodationReservations.find((a) => a.owner === customer.id);
+              if (!hostedStandard && !hostedAccommodation) return;
+            }
+            if (filters.activeDebt) {
+              const debt = orders.find((o) => o.ref === customer.id && o.status === "pending");
+              if (!debt) return;
+            }
+          }
+
+          if (filters.type === "agency") {
+            if (!customer.special) return;
+
+            const hostedClients = customer.clientList.filter((pc) => {
+              return (
+                standardReservations.some((s) => s.hosted.some((h) => h.owner === pc.id)) ||
+                accommodationReservations.some((a) => a.owner === pc.id)
+              );
+            });
+
+            const debts = customer.clientList.filter((pc) =>
+              orders.some((o) => o.ref === pc.id && o.status === "pending")
+            );
+
+            if (filters.activeReservation && hostedClients.length !== customer.clientList.length) return;
+            if (filters.activeDebt && debts.length !== customer.clientList.length) return;
+            if (
+              filters.minSubClient &&
+              customer.clientList.length < parseInt(filters.minSubClient.replace(/\D/g, ""))
+            )
+              return;
+            if (
+              filters.maxSubClient &&
+              customer.clientList.length > parseInt(filters.maxSubClient.replace(/\D/g, ""))
+            )
+              return;
+            if (
+              filters.minReservation &&
+              hostedClients.length < parseInt(filters.minReservation.replace(/\D/g, ""))
+            )
+              return;
+            if (
+              filters.maxReservation &&
+              hostedClients.length > parseInt(filters.maxReservation.replace(/\D/g, ""))
+            )
+              return;
+            if (filters.minDebt && debts.length < parseInt(filters.minDebt.replace(/\D/g, ""))) return;
+            if (filters.maxDebt && debts.length > parseInt(filters.maxDebt.replace(/\D/g, ""))) return;
+          }
+
+          return customer;
+        }
+      });
       setPeople([...customersFiltered].reverse());
     } else setPeople([...customers].reverse());
-  }, [customers, search, filters]);
+  }, [customers, search, filters, orders, standardReservations, accommodationReservations]);
 
   const dispatch = useDispatch();
   const searchRef = useRef();
@@ -479,7 +772,7 @@ const Customer = ({ navigation }) => {
   return (
     <Layout>
       <View style={styles.row}>
-        <TextStyle subtitle color={mode === "light" ? light.textDark : dark.textWhite}>
+        <TextStyle subtitle color={textColor}>
           General
         </TextStyle>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -487,12 +780,8 @@ const Customer = ({ navigation }) => {
             <TouchableOpacity
               style={{ marginHorizontal: 4 }}
               onPress={() => {
-                Alert.alert(
-                  "PROXIMAMENTE",
-                  "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR"
-                );
-                // setActiveSearch(!activeSearch);
-                // setTimeout(() => searchRef.current?.focus());
+                setActiveSearch(!activeSearch);
+                setTimeout(() => searchRef.current?.focus());
               }}
             >
               <Ionicons name="search" size={getFontSize(28)} color={light.main2} />
@@ -513,15 +802,7 @@ const Customer = ({ navigation }) => {
         </View>
       </View>
       {activeSearch && (
-        <View
-          style={[
-            styles.row,
-            {
-              width: "100%",
-              marginTop: 10,
-            },
-          ]}
-        >
+        <View style={[styles.row, { width: "100%", marginTop: 10 }]}>
           <TouchableOpacity
             onPress={() => {
               setActiveSearch(false);
@@ -529,11 +810,7 @@ const Customer = ({ navigation }) => {
               setFilters(initialState);
             }}
           >
-            <Ionicons
-              name="close"
-              size={getFontSize(24)}
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            />
+            <Ionicons name="close" size={getFontSize(24)} color={textColor} />
           </TouchableOpacity>
           <InputStyle
             innerRef={searchRef}
@@ -541,11 +818,7 @@ const Customer = ({ navigation }) => {
             value={search}
             onChangeText={(text) => setSearch(text)}
             stylesContainer={{ width: "78%", marginVertical: 0 }}
-            stylesInput={{
-              paddingHorizontal: 6,
-              paddingVertical: 5,
-              fontSize: 18,
-            }}
+            stylesInput={styles.search}
           />
           <TouchableOpacity onPress={() => setActiveFilter(!activeFilter)}>
             <Ionicons name="filter" size={getFontSize(24)} color={light.main2} />
@@ -565,25 +838,13 @@ const Customer = ({ navigation }) => {
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={() => {
-              Alert.alert(
-                "PROXIMAMENTE",
-                "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR"
-              );
-              // navigation.navigate("CustomerReservations")
-            }}
+            onPress={() => navigation.navigate("CustomerReservations")}
           >
             <Ionicons name="home" size={getFontSize(20)} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={() => {
-              Alert.alert(
-                "PROXIMAMENTE",
-                "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR"
-              );
-              // navigation.navigate("CustomerSales")
-            }}
+            onPress={() => navigation.navigate("CustomerSales")}
           >
             <Ionicons name="ticket" size={getFontSize(20)} />
           </TouchableOpacity>
@@ -593,11 +854,7 @@ const Customer = ({ navigation }) => {
         {!people && (
           <View style={{ marginTop: 20 }}>
             <ActivityIndicator color={light.main2} size="large" />
-            <TextStyle
-              style={{ marginTop: 8 }}
-              center
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
+            <TextStyle style={{ marginTop: 8 }} center color={textColor}>
               CARGANDO
             </TextStyle>
           </View>
@@ -690,6 +947,11 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     paddingHorizontal: 8,
     borderRadius: 2,
+  },
+  search: {
+    paddingHorizontal: 6,
+    paddingVertical: 5,
+    fontSize: 18,
   },
 });
 

@@ -3,11 +3,7 @@ import { AppState, Easing } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { editUser, getRule, getUser } from "@api";
 import { socket } from "@socket";
-import {
-  active,
-  inactive,
-  inactive as inactiveGroup,
-} from "@features/helpers/statusSlice";
+import { active, inactive, inactive as inactiveGroup } from "@features/helpers/statusSlice";
 import { change as changeHelpers } from "@features/helpers/informationSlice";
 import { change as changeLanguage } from "@features/settings/languageSlice";
 import { change as changeMode } from "@features/settings/modeSlice";
@@ -21,10 +17,7 @@ import changeGeneralInformation from "@helpers/changeGeneralInformation";
 import cleanData from "@helpers/cleanData";
 import { readFile, removeFile, writeFile } from "@helpers/offline";
 import NetInfo from "@react-native-community/netinfo";
-import {
-  CardStyleInterpolators,
-  createStackNavigator,
-} from "@react-navigation/stack";
+import { CardStyleInterpolators, createStackNavigator } from "@react-navigation/stack";
 import SignIn from "@screens/SignIn";
 import CreateEconomy from "@screens/event/CreateEconomy";
 import Event from "@screens/event/Event";
@@ -43,15 +36,12 @@ import StandardReserveInformation from "@screens/reservation/standard/Informatio
 import AccommodationReserveInformation from "@screens/reservation/accommodation/Information";
 import CreateOrder from "@screens/sales/CreateOrder";
 import CreateRecipe from "@screens/sales/CreateRecipe";
-import CreatePercentage from "@screens/sales/CreatePercentage";
 import CreateProduct from "@screens/sales/CreateProduct";
 import CreateTable from "@screens/sales/CreateTable";
 import EditInvoice from "@screens/sales/EditInvoice";
-import EditOrder from "@screens/sales/EditOrder";
-import Invoice from "@screens/sales/Invoice";
-import InvoiceByEmail from "@screens/sales/InvoiceByEmail";
-import OrderCompletion from "@screens/sales/OrderCompletion";
-import PreviewOrder from "@screens/sales/PreviewOrder";
+import Invoice from "@utils/order/screens/Invoice";
+import OrderStatus from "@utils/order/screens/Complete";
+import SalesPreviewOrder from "@screens/salesM/Preview";
 import TableInformation from "@screens/sales/TableInformation";
 import CreateGroup from "@screens/sales/CreateGroup";
 import EmailAndPhone from "@screens/register/EmailAndPhone";
@@ -68,6 +58,8 @@ import CustomerDebts from "@screens/people/customer/Debts";
 import CustomerInformation from "@screens/people/customer/Information";
 import CustomerReservations from "@screens/people/customer/Reservations";
 import CustomerSales from "@screens/people/customer/Sales";
+import RestaurantPreviewOrder from "@screens/restaurant/order/Preview";
+import RestaurantCreateOrder from "@screens/restaurant/order/Create";
 import theme from "@theme";
 
 import * as BackgroundFetch from "expo-background-fetch";
@@ -148,15 +140,10 @@ const Main = () => {
 
   const checkUser = async (data) => {
     const information = await readFile({ name: "user.json" });
-    const userFound = data.helpers?.find(
-      (helper) => helper.id === helperStatus.id
-    );
+    const userFound = data.helpers?.find((helper) => helper.id === helperStatus.id);
 
     if (userFound) {
-      if (
-        userFound.user !== helperStatus.user ||
-        userFound.password !== helperStatus.password
-      ) {
+      if (userFound.user !== helperStatus.user || userFound.password !== helperStatus.password) {
         dispatch(inactive());
         if (!information.error) changeGeneralInformation(dispatch, information);
         return { error: true, type: "User or password changed" };
@@ -186,8 +173,7 @@ const Main = () => {
           await sendSync(file);
         } else {
           for (let i = 0; i < file?.length; i++) {
-            if (file[i].creationDate < check.userFound.modificationDate)
-              file.splice(i, 1);
+            if (file[i].creationDate < check.userFound.modificationDate) file.splice(i, 1);
           }
           await sendSync(file);
         }
@@ -215,8 +201,7 @@ const Main = () => {
 
       if (!res.error) {
         if (res.block) {
-          if (name !== "Event")
-            navigation.current.replace("Event", { mode: "blocked" });
+          if (name !== "Event") navigation.current.replace("Event", { mode: "blocked" });
           return;
         }
 
@@ -228,10 +213,7 @@ const Main = () => {
           }
         };
 
-        if (
-          convertToNumber(process.env.EXPO_PUBLIC_VERSION) <
-          convertToNumber(res.version.detail)
-        ) {
+        if (convertToNumber(process.env.EXPO_PUBLIC_VERSION) < convertToNumber(res.version.detail)) {
           if (name !== "Event")
             navigation.current.replace("Event", {
               mode: "update",
@@ -240,8 +222,7 @@ const Main = () => {
           return;
         }
 
-        if (name === "Event")
-          navigation.current.replace(!session ? "SignIn" : "App");
+        if (name === "Event") navigation.current.replace(!session ? "SignIn" : "App");
       }
     };
     if (connected) getAppInformation();
@@ -251,9 +232,7 @@ const Main = () => {
     const initializeSync = async () => {
       if (status === null) return checkStatusAsync();
       if (status === 3) {
-        const isRegistered = await TaskManager.isTaskRegisteredAsync(
-          BACKGROUND_FETCH_TASK
-        );
+        const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK);
         if (connected && session) {
           if (!isRegistered) await registerBackgroundFetchAsync();
         } else if (isRegistered) await unregisterBackgroundFetchAsync();
@@ -288,10 +267,8 @@ const Main = () => {
     const sendSocket = () => {
       if (connected && session) {
         const rooms = helpers.map((h) => h.id);
-        if (user && helperStatus.active)
-          socket.emit("enter_room", { helpers: [helperStatus.id] });
-        else if (user && helpers.length > 0)
-          socket.emit("enter_room", { helpers: rooms });
+        if (user && helperStatus.active) socket.emit("enter_room", { helpers: [helperStatus.id] });
+        else if (user && helpers.length > 0) socket.emit("enter_room", { helpers: rooms });
       }
     };
 
@@ -301,10 +278,7 @@ const Main = () => {
       }
     };
     // Registra el oyente de cambio de estado de la aplicación
-    const appStateListener = AppState.addEventListener(
-      "change",
-      handleAppStateChange
-    );
+    const appStateListener = AppState.addEventListener("change", handleAppStateChange);
 
     if (connected && session) sendSocket();
 
@@ -315,12 +289,9 @@ const Main = () => {
   useEffect(() => {
     const getInformation = async () => {
       const res = await getUser({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user?.identifier,
+        identifier: helperStatus.active ? helperStatus.identifier : user?.identifier,
       });
-      if (!helperStatus.active)
-        await writeFile({ name: "user.json", value: res });
+      if (!helperStatus.active) await writeFile({ name: "user.json", value: res });
       if (res.error && res?.details === "api") return;
 
       if (res.error && res.type === "Username does not exist" && connected) {
@@ -364,10 +335,7 @@ const Main = () => {
       }
     };
     // Registra el oyente de cambio de estado de la aplicación
-    const appStateListener = AppState.addEventListener(
-      "change",
-      handleAppStateChange
-    );
+    const appStateListener = AppState.addEventListener("change", handleAppStateChange);
 
     if (connected && session) getInformation();
 
@@ -393,12 +361,7 @@ const Main = () => {
 
   useEffect(() => {
     const rooms = helpers.map((h) => h.id);
-    if (
-      connected &&
-      session &&
-      (rooms.length > 0 || helperStatus.active) &&
-      synchronization.connected
-    ) {
+    if (connected && session && (rooms.length > 0 || helperStatus.active) && synchronization.connected) {
       let pingSend = false;
       const interval = setInterval(() => {
         if (!pingSend) {
@@ -423,13 +386,7 @@ const Main = () => {
       });
       return () => clearInterval(interval);
     }
-  }, [
-    connected,
-    session,
-    helpers,
-    helperStatus.active,
-    synchronization.connected,
-  ]);
+  }, [connected, session, helpers, helperStatus.active, synchronization.connected]);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -544,11 +501,7 @@ const Main = () => {
       }}
     >
       <Stack.Group>
-        <Stack.Screen
-          name="SignIn"
-          component={SignIn}
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
         <Stack.Screen name="EmailAndPhone" component={EmailAndPhone} />
         <Stack.Screen
           name="Verification"
@@ -564,18 +517,10 @@ const Main = () => {
           }}
         />
       </Stack.Group>
-      <Stack.Screen
-        name="App"
-        component={App}
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="App" component={App} options={{ headerShown: false }} />
       <Stack.Group>
         <Stack.Group>
-          <Stack.Screen
-            name="Wifi"
-            component={Wifi}
-            options={{ title: "WIFI" }}
-          />
+          <Stack.Screen name="Wifi" component={Wifi} options={{ title: "WIFI" }} />
           <Stack.Screen
             name="ClientSupplier"
             component={ClientSupplier}
@@ -589,11 +534,7 @@ const Main = () => {
           component={CreatePlace}
           options={{ title: "Creación de nomenclatura" }}
         />
-        <Stack.Screen
-          name="CreateZone"
-          component={CreateZone}
-          options={{ title: "Creación de zona" }}
-        />
+        <Stack.Screen name="CreateZone" component={CreateZone} options={{ title: "Creación de zona" }} />
         <Stack.Screen name="ZoneInformation" component={ZoneInformation} />
         <Stack.Screen
           name="CreateAccommodationReserve"
@@ -620,46 +561,35 @@ const Main = () => {
           component={CreateHelper}
           options={{ title: "Creación de grupo" }}
         />
-        <Stack.Screen
-          name="CreateTable"
-          component={CreateTable}
-          options={{ title: "Crear mesa" }}
-        />
+        <Stack.Screen name="CreateTable" component={CreateTable} options={{ title: "Crear mesa" }} />
         <Stack.Screen name="TableInformation" component={TableInformation} />
         <Stack.Screen name="CreateEconomy" component={CreateEconomy} />
-        <Stack.Screen
-          name="CreateOrder"
-          component={CreateOrder}
-          options={{ title: "Vender" }}
-        />
+        <Stack.Screen name="CreateOrder" component={CreateOrder} options={{ title: "Vender" }} />
         <Stack.Screen name="CreateRecipe" component={CreateRecipe} />
         <Stack.Screen name="CreateProduct" component={CreateProduct} />
-        <Stack.Screen
-          name="PreviewOrder"
-          component={PreviewOrder}
-          options={{ title: "Carrito" }}
-        />
-        <Stack.Screen
-          name="OrderCompletion"
-          component={OrderCompletion}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="CreatePercentage"
-          component={CreatePercentage}
-          options={{ title: "Crear descuento" }}
-        />
-        <Stack.Screen name="EditOrder" component={EditOrder} />
-        <Stack.Screen
-          name="Invoice"
-          component={Invoice}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="InvoiceByEmail"
-          component={InvoiceByEmail}
-          options={{ title: "Enviar por Email" }}
-        />
+
+        <Stack.Group>
+          <Stack.Screen
+            name="RestaurantPreviewOrder"
+            component={RestaurantPreviewOrder}
+            options={{ title: "Carrito" }}
+          />
+          <Stack.Screen
+            name="RestaurantCreateOrder"
+            component={RestaurantCreateOrder}
+            options={{ title: "Vender" }}
+          />
+        </Stack.Group>
+        <Stack.Group>
+          <Stack.Screen
+            name="SalesPreviewOrder"
+            component={SalesPreviewOrder}
+            options={{ title: "Carrito" }}
+          />
+        </Stack.Group>
+
+        <Stack.Screen name="OrderStatus" component={OrderStatus} options={{ headerShown: false }} />
+        <Stack.Screen name="Invoice" component={Invoice} options={{ headerShown: false }} />
         <Stack.Screen
           name="EditInvoice"
           component={EditInvoice}
@@ -672,25 +602,14 @@ const Main = () => {
           options={{ title: "Crear elemento" }}
         />
         <Stack.Screen name="CreateEntryOutput" component={CreateEntryOutput} />
-        <Stack.Screen
-          name="EntryOutputInformation"
-          component={EntryOutputInformation}
-        />
+        <Stack.Screen name="EntryOutputInformation" component={EntryOutputInformation} />
         <Stack.Screen
           name="InventoryInformation"
           component={InventoryInformation}
           options={{ title: "Información de inventario" }}
         />
-        <Stack.Screen
-          name="CreateGroup"
-          component={CreateGroup}
-          options={{ title: "Crear grupo" }}
-        />
-        <Stack.Screen
-          name="History"
-          component={History}
-          options={{ title: "Historial" }}
-        />
+        <Stack.Screen name="CreateGroup" component={CreateGroup} options={{ title: "Crear grupo" }} />
+        <Stack.Screen name="History" component={History} options={{ title: "Historial" }} />
         <Stack.Group>
           <Stack.Screen
             name="CustomerDebts"
@@ -726,11 +645,7 @@ const Main = () => {
           />
         </Stack.Group>
       </Stack.Group>
-      <Stack.Screen
-        name="Event"
-        component={Event}
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="Event" component={Event} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 };

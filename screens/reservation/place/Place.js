@@ -20,9 +20,9 @@ import InputStyle from "@components/InputStyle";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import Layout from "@components/Layout";
-import Header from "@utils/reservation/place/Header";
+import Header from "@utils/place/Header";
 import AddPerson from "@components/AddPerson";
-import ColorInformation from "@utils/reservation/place/ColorInformation";
+import ColorInformation from "@utils/place/ColorInformation";
 import theme from "@theme";
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("screen");

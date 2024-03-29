@@ -6,12 +6,19 @@ import {
   FlatList,
   StyleSheet,
   Dimensions,
-  Alert
+  Alert,
 } from "react-native";
-import { useSelector } from "react-redux";
-import { getFontSize, thousandsSystem } from "@helpers/libs";
+import { useDispatch, useSelector } from "react-redux";
+import { getFontSize, thousandsSystem, random } from "@helpers/libs";
 import { Swipeable } from "react-native-gesture-handler";
 import { useNavigation } from "@react-navigation/native";
+import { edit as editO, remove as removeO } from "@features/tables/ordersSlice";
+import { edit as editS, remove as removeS } from "@features/sales/salesSlice";
+import { remove as removeRA } from "@features/zones/accommodationReservationsSlice";
+import { remove as removeRS } from "@features/zones/standardReservationsSlice";
+import { editOrder, editSale, removeReservation, removeOrder, removeSale } from "@api";
+import DebtInformation from "@utils/customer/debt/Information";
+import PaymentManager from "@utils/order/preview/PaymentManager";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -21,18 +28,45 @@ const { light, dark } = theme();
 const { height: SCREEN_HEIGHT } = Dimensions.get("screen");
 
 const Card = ({ item }) => {
+  const user = useSelector((state) => state.user);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const mode = useSelector((state) => state.mode);
+  const orders = useSelector((state) => state.orders);
+  const sales = useSelector((state) => state.sales);
 
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
 
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+
+  const [paymentManagerVisible, setPaymentManagerVisible] = useState(false);
+  const [order, setOrder] = useState(null);
+  const [previews, setPreviews] = useState(null);
+  const [informationVisible, setInformationVisible] = useState(false);
+
+  useEffect(() => {
+    (() => {
+      if (!order) return;
+      const filtered = order?.selection.filter((s) => s.method.some((m) => m.method === "credit"));
+      const previews = filtered.map((s) => {
+        const quantity = s.method.reduce((a, b) => (b.method === "credit" ? a + b.quantity : a), 0);
+        return { ...s, quantity, paid: 0 };
+      });
+      setPreviews(previews);
+    })();
+  }, [order]);
+
+  useEffect(() => {
+    if (item.details === "sale") setOrder(sales.find((s) => s.id === item.id));
+    if (item.details === "order") setOrder(orders.find((o) => o.id === item.id));
+  }, [item, orders, sales]);
 
   const leftSwipe = () => (
     <View style={{ justifyContent: "center" }}>
       <TouchableOpacity
         style={[styles.swipe, { marginHorizontal: 2, backgroundColor: light.main2 }]}
-        onPress={() => Alert.alert("PROXIMAMENTE", "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR")}
+        onPress={() => setInformationVisible(!informationVisible)}
       >
         <Ionicons
           name="information-circle-outline"
@@ -43,11 +77,64 @@ const Card = ({ item }) => {
     </View>
   );
 
+  const remove = () => {
+    const send = async () => {
+      if (item.details === "accommodation" || item.details === "standard") {
+        if (item.details === "accommodation") dispatch(removeRA({ ids: [item.id] }));
+        else dispatch(removeRS({ id: item.id }));
+        await removeReservation({
+          identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+          reservation: {
+            identifier: item.details === "accommodation" ? [item.id] : item.id,
+            type: item.details,
+          },
+          helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
+        });
+      }
+
+      if (item.details === "order") {
+        dispatch(removeO({ id: item.id }));
+        await removeOrder({
+          identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+          id: item?.id,
+          helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
+        });
+      }
+
+      if (item.details === "sale") {
+        dispatch(removeS({ id: item.id }));
+        await removeSale({
+          identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+          id: item?.id,
+          helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
+        });
+      }
+    };
+
+    Alert.alert(
+      "EY!",
+      `¿Estás seguro que desea eliminar ${
+        item.details === "accommodation" || item.details === "standard" ? "la reservación" : "la orden"
+      }?`,
+      [
+        {
+          text: "No estoy seguro",
+          style: "cancel",
+        },
+        {
+          text: "Estoy seguro",
+          onPress: () => send(),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   const rightSwipe = () => (
     <View style={{ flexDirection: "row", alignItems: "center" }}>
       <TouchableOpacity
         style={[styles.swipe, { marginHorizontal: 2, backgroundColor: "red" }]}
-        onPress={() => Alert.alert("PROXIMAMENTE", "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR")}
+        onPress={() => remove()}
       >
         <Ionicons
           name="trash"
@@ -58,27 +145,119 @@ const Card = ({ item }) => {
     </View>
   );
 
+  const saveOrder = async ({ order, change }) => {
+    const quantity = change.reduce((a, b) => a + b.quantity, 0);
+    const paid = change.reduce((a, b) => a + b.paid, 0);
+
+    if (item.details === "sale") dispatch(editS({ id: order.id, data: order }));
+    else dispatch(editO({ id: order.id, data: order }));
+
+    const orderStatus = {
+      ...order,
+      selection: change,
+      total: change.reduce((a, b) => a + b.total, 0),
+    };
+
+    navigation.navigate("OrderStatus", {
+      data: orderStatus,
+      status: quantity === paid ? "paid" : "pending",
+    });
+
+    if (item.details === "sale") {
+      //TODO QUE PUEDA HABER UN GESTOR DE ORDENES DE LOS 2 PARA EVIAR LA CONDICIONAL
+      await editSale({
+        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+        sale: order,
+        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
+      });
+    } else {
+      await editOrder({
+        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+        order,
+        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
+      });
+    }
+  };
+
   return (
-    <Swipeable renderLeftActions={leftSwipe} renderRightActions={rightSwipe}>
-      <TouchableOpacity
-        style={[
-          styles.card,
-          styles.row,
-          { backgroundColor: mode === "light" ? light.main5 : dark.main2 },
-        ]}
-        onPress={() => {
-          if (item.details === "accommodation")
-            navigation.navigate("AccommodationReserveInformation", { ids: [item.id] });
-          if (item.details === "standard")
-            navigation.navigate("StandardReserveInformation", { id: item.id });
-        }}
-      >
-        <TextStyle color={textColor}>
-          {item.details === "accommodation" ? "Acomodación" : "Estandar"}
-        </TextStyle>
-        <TextStyle color={light.main2}>{thousandsSystem(item.debt || "0")}</TextStyle>
-      </TouchableOpacity>
-    </Swipeable>
+    <>
+      <Swipeable renderLeftActions={leftSwipe} renderRightActions={rightSwipe}>
+        <TouchableOpacity
+          style={[
+            styles.card,
+            styles.row,
+            { backgroundColor: mode === "light" ? light.main5 : dark.main2 },
+          ]}
+          onPress={() => {
+            if (item.details === "accommodation")
+              navigation.navigate("AccommodationReserveInformation", { ids: [item.id] });
+            if (item.details === "standard")
+              navigation.navigate("StandardReserveInformation", { id: item.id });
+            if (item.details === "sale" || item.details === "order")
+              setPaymentManagerVisible(!paymentManagerVisible);
+          }}
+        >
+          <TextStyle color={textColor}>
+            {item.details === "accommodation"
+              ? "Acomodación"
+              : item.details === "standard"
+              ? "Estandar"
+              : item.details === "sale"
+              ? "P&S"
+              : "Restaurante"}
+          </TextStyle>
+          <TextStyle color={light.main2}>{thousandsSystem(item.debt || "0")}</TextStyle>
+        </TouchableOpacity>
+      </Swipeable>
+      {["sale", "order"].includes(item.details) && (
+        <PaymentManager
+          key={paymentManagerVisible}
+          modalVisible={paymentManagerVisible}
+          setModalVisible={setPaymentManagerVisible}
+          toPay={previews || []}
+          tax={order?.tax}
+          tip={order?.tip}
+          discount={order?.discount}
+          code={order?.invoice}
+          paymentMethodActive={true}
+          onSubmit={async ({ change, paymentMethod }) => {
+            const selection = order?.selection.map((s) => {
+              const found = change.find((c) => c.id === s.id);
+              if (!found) return s;
+              const getTotal = (quantity) => quantity * s.price * (1 - s.discount || 0);
+              const total = getTotal(found?.paid);
+
+              let remaining = found.paid;
+              const method = s.method.reduce((acc, m) => {
+                if (m.method !== "credit") return [...acc, m];
+                const currentQuantity = m.quantity - remaining;
+                if (currentQuantity > 0) {
+                  const total = getTotal(currentQuantity);
+                  acc.push({ ...m, quantity: currentQuantity, total });
+                  remaining = 0;
+                } else remaining -= m.quantity;
+                return acc;
+              }, []);
+
+              return {
+                ...s,
+                status: found.paid !== found.quantity ? "credit" : "paid",
+                method: [
+                  ...method,
+                  { id: random(6), method: paymentMethod, total, quantity: found?.paid },
+                ],
+              };
+            });
+            await saveOrder({ order: { ...order, selection }, change });
+          }}
+        />
+      )}
+      <DebtInformation
+        modalVisible={informationVisible}
+        setModalVisible={setInformationVisible}
+        item={item}
+      />
+    </>
   );
 };
 
@@ -89,16 +268,71 @@ const Debts = () => {
   const customers = useSelector((state) => state.customers);
   const standardReservations = useSelector((state) => state.standardReservations);
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
+  const orders = useSelector((state) => state.orders);
+  const sales = useSelector((state) => state.sales);
 
   const [debts, setDebts] = useState(null);
 
-  useEffect(() => {
-    const ids = customers.flatMap((c) =>
-      c.special ? c.clientList?.map((c) => c.id) : [c.id]
+  const getOwners = ({ condition }) => {
+    const allTheCustomers = customers.flatMap((c) =>
+      c.special ? c.clientList.map((cc) => ({ ...cc, special: true, agency: c.name })) : [{ ...c }]
+    );
+    const found = allTheCustomers.filter(condition);
+    return {
+      agency: found
+        .filter((f) => f.agency)
+        .map((f) => f.agency)
+        .join(" - "),
+      owner: found.map((f) => f.name).join(" - "),
+    };
+  };
+
+  const getSales = ({ sales, type }) => {
+    const found = sales.filter((s) =>
+      s.selection.some((s) => s.method.some((m) => m.method === "credit"))
     );
 
-    const filterInformation = (reservations) =>
-      reservations.map((r) => ({ id: r.id, details: r.type, debt: r.total }));
+    return found.map((f) => {
+      const { agency, owner } = getOwners({ condition: (c) => c.id === f.ref });
+
+      const methods = f.selection.reduce((a, b) => [...a, ...b.method], []);
+      return {
+        id: f.id,
+        details: type,
+        debt: methods.reduce((a, b) => (b.method === "credit" ? a + b.total : a), 0),
+        total: f.total,
+        agency,
+        owner,
+        paid: methods.reduce((a, b) => (b.method !== "credit" ? a + b.total : a), 0),
+        type: type === "sale" ? "P&S" : "Restaurante",
+        creationDate: f.creationDate,
+        modificationDate: f.modificationDate,
+      };
+    });
+  };
+
+  const getAccommodation = (reservations) =>
+    reservations.map((r) => {
+      const { owner, agency } = getOwners({
+        condition: (c) => c.id === r.owner || r.hosted.some((h) => h.owner === c.id),
+      });
+
+      return {
+        id: r.id,
+        details: r.type,
+        debt: r.total,
+        total: r.total,
+        agency,
+        owner,
+        paid: 0,
+        type: r.type === "accommodation" ? "Acomodación" : "Estandar",
+        creationDate: r.creationDate,
+        modificationDate: r.modificationDate,
+      };
+    });
+
+  useEffect(() => {
+    const ids = customers.flatMap((c) => (c.special ? c.clientList?.map((c) => c.id) : [c.id]));
 
     const accommodation = standardReservations.filter(
       (s) => s.status === "credit" && s.hosted.some((h) => h.owner && ids.includes(h.owner))
@@ -107,9 +341,14 @@ const Debts = () => {
       (a) => a.status === "credit" && a.owner && ids.includes(a.owner)
     );
 
-    const debts = [...filterInformation(accommodation), ...filterInformation(standard)];
+    const debts = [
+      ...getAccommodation(accommodation),
+      ...getAccommodation(standard),
+      ...getSales({ sales, type: "sale" }),
+      ...getSales({ sales: orders, type: "order" }),
+    ];
     setDebts(debts.sort((d) => d.creationDate));
-  }, [customers, standardReservations, accommodationReservations]);
+  }, [customers, standardReservations, accommodationReservations, sales, orders]);
 
   return (
     <Layout>
@@ -117,8 +356,8 @@ const Debts = () => {
         <TextStyle subtitle color={mode === "light" ? light.textDark : dark.textWhite}>
           Deudas
         </TextStyle>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {/* {debts?.length > 0 && (
+        {/* <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {debts?.length > 0 && (
             <TouchableOpacity onPress={() => removeEverything()}>
               <Ionicons
                 name="trash"
@@ -127,8 +366,8 @@ const Debts = () => {
                 style={{ marginHorizontal: 5 }}
               />
             </TouchableOpacity>
-          )} */}
-          {/* {debts?.length > 0 && (
+          )}
+          {debts?.length > 0 && (
             <TouchableOpacity onPress={() => print({ html })}>
               <Ionicons
                 name="print"
@@ -137,8 +376,8 @@ const Debts = () => {
                 style={{ marginHorizontal: 5 }}
               />
             </TouchableOpacity>
-          )} */}
-          {/* {debts?.length > 0 && (
+          )}
+          {debts?.length > 0 && (
             <TouchableOpacity onPress={() => generatePDF({ html })}>
               <Ionicons
                 name="document-attach"
@@ -147,8 +386,8 @@ const Debts = () => {
                 style={{ marginHorizontal: 5 }}
               />
             </TouchableOpacity>
-          )} */}
-          {/*logs?.length > 0 && (
+          )}
+          {debts?.length > 0 && (
             <TouchableOpacity>
               <Ionicons
                 name="filter"
@@ -157,8 +396,8 @@ const Debts = () => {
                 style={{ marginHorizontal: 5 }}
               />
             </TouchableOpacity>
-          )*/}
-        </View>
+          )}
+        </View> */}
       </View>
       <View style={{ marginTop: 20 }}>
         {!debts && (

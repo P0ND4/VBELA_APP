@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -12,13 +12,7 @@ import {
 } from "react-native";
 import { useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
-import {
-  thousandsSystem,
-  changeDate,
-  generatePDF,
-  print,
-  getFontSize,
-} from "@helpers/libs";
+import { thousandsSystem, changeDate, generatePDF, print, getFontSize } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
 import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
@@ -66,6 +60,11 @@ const Inventory = () => {
 
   const [filters, setFilters] = useState(initialState);
 
+  const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
+  const textColor = useMemo(() => getTextColor(mode), [mode]);
+  const getBackgroundColor = (mode) => (mode === "light" ? light.main5 : dark.main2);
+  const backgroundColor = useMemo(() => getBackgroundColor(mode), [mode]);
+
   const navigation = useNavigation();
   const searchRef = useRef();
   const unitRef = useRef();
@@ -97,10 +96,8 @@ const Inventory = () => {
   const dateValidation = (date) => {
     let error = false;
     if (filters.day !== "all" && date.getDate() !== filters.day) error = true;
-    if (filters.month !== "all" && date.getMonth() + 1 !== filters.month)
-      error = true;
-    if (filters.year !== "all" && date.getFullYear() !== filters.year)
-      error = true;
+    if (filters.month !== "all" && date.getMonth() + 1 !== filters.month) error = true;
+    if (filters.year !== "all" && date.getFullYear() !== filters.year) error = true;
     return error;
   };
 
@@ -108,48 +105,28 @@ const Inventory = () => {
     if (search || filters.active) {
       setInventory(
         [...inventoryInformation].reverse().filter((i) => {
-          const removeSymbols = (text) =>
-            text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          const removeSymbols = (text) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
           const keyword = removeSymbols(search.toLocaleLowerCase());
           if (filters.active) {
-            const item = removeSymbols(String(i.name).toLowerCase()).includes(
-              keyword
-            );
+            const item = removeSymbols(String(i.name).toLowerCase()).includes(keyword);
 
             if (!item) return;
 
             const stock =
-              i.entry.reduce((a, b) => a + b.quantity, 0) -
-              i.output.reduce((a, b) => a + b.quantity, 0);
+              i.entry.reduce((a, b) => a + b.quantity, 0) - i.output.reduce((a, b) => a + b.quantity, 0);
 
             const getTotalEntry = () =>
-              i.entry
-                .filter((e) => e.entry)
-                .reduce((a, b) => a + b.quantity, 0);
+              i.entry.filter((e) => e.entry).reduce((a, b) => a + b.quantity, 0);
             const getTotalValue = () =>
               i.entry.reduce((a, b) => a + b.currentValue * b.quantity, 0) -
               i.output.reduce((a, b) => a + b.currentValue * b.quantity, 0);
 
             if (dateValidation(new Date(i.creationDate))) return;
-            if (
-              filters.minQuantity &&
-              stock < parseInt(filters.minQuantity.replace(/\D/g, ""))
-            )
+            if (filters.minQuantity && stock < parseInt(filters.minQuantity.replace(/\D/g, ""))) return;
+            if (filters.maxQuantity && stock > parseInt(filters.maxQuantity.replace(/\D/g, ""))) return;
+            if (filters.minEntry && getTotalEntry() < parseInt(filters.minEntry.replace(/\D/g, "")))
               return;
-            if (
-              filters.maxQuantity &&
-              stock > parseInt(filters.maxQuantity.replace(/\D/g, ""))
-            )
-              return;
-            if (
-              filters.minEntry &&
-              getTotalEntry() < parseInt(filters.minEntry.replace(/\D/g, ""))
-            )
-              return;
-            if (
-              filters.maxEntry &&
-              getTotalEntry() > parseInt(filters.maxEntry.replace(/\D/g, ""))
-            )
+            if (filters.maxEntry && getTotalEntry() > parseInt(filters.maxEntry.replace(/\D/g, "")))
               return;
             if (
               filters.minOutput &&
@@ -163,25 +140,13 @@ const Inventory = () => {
                 parseInt(filters.maxOutput.replace(/\D/g, ""))
             )
               return;
-            if (
-              filters.minValue &&
-              getTotalValue() < parseInt(filters.minValue.replace(/\D/g, ""))
-            )
+            if (filters.minValue && getTotalValue() < parseInt(filters.minValue.replace(/\D/g, "")))
               return;
-            if (
-              filters.maxValue &&
-              getTotalValue() > parseInt(filters.maxValue.replace(/\D/g, ""))
-            )
+            if (filters.maxValue && getTotalValue() > parseInt(filters.maxValue.replace(/\D/g, "")))
               return;
-            if (
-              filters.minReorden &&
-              i.reorder < parseInt(filters.minReorden.replace(/\D/g, ""))
-            )
+            if (filters.minReorden && i.reorder < parseInt(filters.minReorden.replace(/\D/g, "")))
               return;
-            if (
-              filters.maxReorden &&
-              i.reorder > parseInt(filters.maxReorden.replace(/\D/g, ""))
-            )
+            if (filters.maxReorden && i.reorder > parseInt(filters.maxReorden.replace(/\D/g, "")))
               return;
             if (filters.unit && i.unit !== filters.unit) return;
             if (filters.visible && i.visible !== filters.visible) return;
@@ -189,10 +154,7 @@ const Inventory = () => {
             if (filters.belowReorder && stock >= i.reorder) return;
 
             return item;
-          } else
-            return removeSymbols(String(i.name))
-              .toLowerCase()
-              .includes(keyword);
+          } else return removeSymbols(String(i.name)).toLowerCase().includes(keyword);
         })
       );
     } else setInventory([...inventoryInformation].reverse());
@@ -204,8 +166,7 @@ const Inventory = () => {
     setText("");
     const text = inventory.reduce((a, item) => {
       const stock =
-        item.entry.reduce((a, b) => a + b.quantity, 0) -
-        item.output.reduce((a, b) => a + b.quantity, 0);
+        item.entry.reduce((a, b) => a + b.quantity, 0) - item.output.reduce((a, b) => a + b.quantity, 0);
 
       const value =
         item.entry.reduce((a, b) => a + b.currentValue * b.quantity, 0) -
@@ -219,9 +180,7 @@ const Inventory = () => {
             </td>
             <td style="width: 50px; border: 1px solid #000; padding: 8px">
               <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(
-                item.entry
-                  .filter((e) => e.entry)
-                  .reduce((a, b) => a + b.quantity, 0)
+                item.entry.filter((e) => e.entry).reduce((a, b) => a + b.quantity, 0)
               )}</p>
             </td>
             <td style="width: 50px; border: 1px solid #000; padding: 8px">
@@ -232,9 +191,7 @@ const Inventory = () => {
             <td style="width: 50px; border: 1px solid #000; padding: 8px">
               <p style="font-size: 18px; font-weight: 600; color: ${
                 stock < item.reorder ? "#F70000" : "#000000"
-              }; display: inline-block;">${
-          stock < 0 ? "-" : ""
-        }${thousandsSystem(Math.abs(stock))}</p>
+              }; display: inline-block;">${stock < 0 ? "-" : ""}${thousandsSystem(Math.abs(stock))}</p>
               <p style="font-size: 18px; font-weight: 600; display: inline-block;">
                 /${thousandsSystem(item.reorder)}
               </p>
@@ -243,9 +200,7 @@ const Inventory = () => {
               <p style="font-size: 18px; font-weight: 600;">${item.unit}</p>
             </td>
             <td style="width: 50px; border: 1px solid #000; padding: 8px">
-              <p style="font-size: 18px; font-weight: 600; color: ${
-                value < 0 ? "#F70000" : "#000000"
-              }">
+              <p style="font-size: 18px; font-weight: 600; color: ${value < 0 ? "#F70000" : "#000000"}">
               ${value < 0 ? "-" : ""}${thousandsSystem(Math.abs(value))}</p>
             </td>
           </tr>`
@@ -323,11 +278,9 @@ const Inventory = () => {
     )}</p>
     
   </view>
-  <p style="text-align: center; font-size: 30px; font-weight: 600;">${changeDate(
-    new Date()
-  )} ${("0" + new Date().getHours()).slice(-2)}:${(
-    "0" + new Date().getMinutes()
-  ).slice(-2)}</p>
+  <p style="text-align: center; font-size: 30px; font-weight: 600;">${changeDate(new Date())} ${(
+    "0" + new Date().getHours()
+  ).slice(-2)}:${("0" + new Date().getMinutes()).slice(-2)}</p>
 </view>
 </body>
 
@@ -338,44 +291,25 @@ const Inventory = () => {
     return (
       <View style={{ flexDirection: "row" }}>
         <TouchableOpacity
-          onPress={() =>
-            navigation.navigate("CreateElement", { editing: true, item })
-          }
-          style={[
-            styles.table,
-            { borderColor: mode === "light" ? light.textDark : dark.textWhite },
-          ]}
+          onPress={() => navigation.navigate("CreateElement", { editing: true, item })}
+          style={[styles.table, { borderColor: textColor }]}
         >
-          <TextStyle
-            smallParagraph
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
+          <TextStyle smallParagraph color={textColor}>
             {item.name}
           </TextStyle>
         </TouchableOpacity>
-        <View
-          style={[
-            styles.table,
-            { borderColor: mode === "light" ? light.textDark : dark.textWhite },
-          ]}
-        >
-          <TextStyle
-            smallParagraph
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
+        <View style={[styles.table, { borderColor: textColor }]}>
+          <TextStyle smallParagraph color={textColor}>
             {item.unit}
           </TextStyle>
         </View>
-        <View
-          style={[
-            styles.table,
-            { borderColor: mode === "light" ? light.textDark : dark.textWhite },
-          ]}
-        >
-          <TextStyle
-            smallParagraph
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
+        <View style={[styles.table, { borderColor: textColor }]}>
+          <TextStyle smallParagraph color={textColor}>
+            {item.portion}
+          </TextStyle>
+        </View>
+        <View style={[styles.table, { borderColor: textColor }]}>
+          <TextStyle smallParagraph color={textColor}>
             {thousandsSystem(item.currentValue)}
           </TextStyle>
         </View>
@@ -385,8 +319,7 @@ const Inventory = () => {
 
   const UnanchoredTable = ({ item }) => {
     const stock =
-      item.entry.reduce((a, b) => a + b.quantity, 0) -
-      item.output.reduce((a, b) => a + b.quantity, 0);
+      item.entry.reduce((a, b) => a + b.quantity, 0) - item.output.reduce((a, b) => a + b.quantity, 0);
 
     const value =
       item.entry.reduce((a, b) => a + b.currentValue * b.quantity, 0) -
@@ -395,26 +328,15 @@ const Inventory = () => {
     return (
       <View style={{ flexDirection: "row" }}>
         <TouchableOpacity
-          onPress={() =>
-            navigation.navigate("CreateElement", { editing: true, item })
-          }
-          style={[
-            styles.table,
-            { borderColor: mode === "light" ? light.textDark : dark.textWhite },
-          ]}
+          onPress={() => navigation.navigate("CreateElement", { editing: true, item })}
+          style={[styles.table, { borderColor: textColor }]}
         >
-          <TextStyle
-            smallParagraph
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
+          <TextStyle smallParagraph color={textColor}>
             {item.name}
           </TextStyle>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[
-            styles.table,
-            { borderColor: mode === "light" ? light.textDark : dark.textWhite },
-          ]}
+          style={[styles.table, { borderColor: textColor }]}
           onPress={() =>
             navigation.navigate("EntryOutputInformation", {
               type: "entry",
@@ -422,22 +344,12 @@ const Inventory = () => {
             })
           }
         >
-          <TextStyle
-            smallParagraph
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
-            {thousandsSystem(
-              item.entry
-                .filter((e) => e.entry)
-                .reduce((a, b) => a + b.quantity, 0)
-            )}
+          <TextStyle smallParagraph color={textColor}>
+            {thousandsSystem(item.entry.filter((e) => e.entry).reduce((a, b) => a + b.quantity, 0))}
           </TextStyle>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[
-            styles.table,
-            { borderColor: mode === "light" ? light.textDark : dark.textWhite },
-          ]}
+          style={[styles.table, { borderColor: textColor }]}
           onPress={() =>
             navigation.navigate("EntryOutputInformation", {
               type: "output",
@@ -445,33 +357,13 @@ const Inventory = () => {
             })
           }
         >
-          <TextStyle
-            smallParagraph
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
+          <TextStyle smallParagraph color={textColor}>
             {thousandsSystem(item.output.reduce((a, b) => a + b.quantity, 0))}
           </TextStyle>
         </TouchableOpacity>
-        <View
-          style={[
-            styles.table,
-            { borderColor: mode === "light" ? light.textDark : dark.textWhite },
-          ]}
-        >
-          <TextStyle
-            smallParagraph
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
-            <TextStyle
-              smallParagraph
-              color={
-                stock < item.reorder
-                  ? "#F70000"
-                  : mode === "light"
-                  ? light.textDark
-                  : dark.textWhite
-              }
-            >
+        <View style={[styles.table, { borderColor: textColor }]}>
+          <TextStyle smallParagraph color={textColor}>
+            <TextStyle smallParagraph color={stock < item.reorder ? "#F70000" : textColor}>
               {stock < 0 ? "-" : ""}
               {thousandsSystem(Math.abs(stock))}/
             </TextStyle>
@@ -480,35 +372,13 @@ const Inventory = () => {
             </TextStyle>
           </TextStyle>
         </View>
-        <View
-          style={[
-            styles.table,
-            { borderColor: mode === "light" ? light.textDark : dark.textWhite },
-          ]}
-        >
-          <TextStyle
-            smallParagraph
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
+        <View style={[styles.table, { borderColor: textColor }]}>
+          <TextStyle smallParagraph color={textColor}>
             {item.unit}
           </TextStyle>
         </View>
-        <View
-          style={[
-            styles.table,
-            { borderColor: mode === "light" ? light.textDark : dark.textWhite },
-          ]}
-        >
-          <TextStyle
-            smallParagraph
-            color={
-              value < 0
-                ? "#F70000"
-                : mode === "light"
-                ? light.textDark
-                : dark.textWhite
-            }
-          >
+        <View style={[styles.table, { borderColor: textColor }]}>
+          <TextStyle smallParagraph color={value < 0 ? "#F70000" : textColor}>
             {value < 0 ? "-" : ""}
             {thousandsSystem(Math.abs(value))}
           </TextStyle>
@@ -522,10 +392,7 @@ const Inventory = () => {
       <View style={styles.row}>
         {(inventory.length > 0 || activeSearch) && (
           <View>
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-              bigParagraph
-            >
+            <TextStyle color={textColor} bigParagraph>
               PRODUCTOS
             </TextStyle>
             <TextStyle color={light.main2} smallParagraph>
@@ -535,34 +402,18 @@ const Inventory = () => {
         )}
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           {(inventory.length > 0 || activeSearch) && (
-            <TouchableOpacity
-              onPress={() => navigation.navigate("InventoryInformation")}
-            >
-              <Ionicons
-                name="information-circle"
-                size={getFontSize(32)}
-                color={light.main2}
-              />
+            <TouchableOpacity onPress={() => navigation.navigate("InventoryInformation")}>
+              <Ionicons name="information-circle" size={getFontSize(32)} color={light.main2} />
             </TouchableOpacity>
           )}
           {(inventory.length > 0 || activeSearch) && (
-            <TouchableOpacity
-              onPress={() => generatePDF({ html, code: "INVENTARIO VBELA" })}
-            >
-              <Ionicons
-                name="document"
-                size={getFontSize(32)}
-                color={light.main2}
-              />
+            <TouchableOpacity onPress={() => generatePDF({ html, code: "INVENTARIO VBELA" })}>
+              <Ionicons name="document" size={getFontSize(32)} color={light.main2} />
             </TouchableOpacity>
           )}
           {(inventory.length > 0 || activeSearch) && (
             <TouchableOpacity onPress={() => print({ html })}>
-              <Ionicons
-                name="print"
-                size={getFontSize(32)}
-                color={light.main2}
-              />
+              <Ionicons name="print" size={getFontSize(32)} color={light.main2} />
             </TouchableOpacity>
           )}
           {(inventory.length > 0 || activeSearch) && (
@@ -573,11 +424,7 @@ const Inventory = () => {
                 if (state) setTimeout(() => searchRef.current.focus());
               }}
             >
-              <Ionicons
-                name="search"
-                size={getFontSize(32)}
-                color={light.main2}
-              />
+              <Ionicons name="search" size={getFontSize(32)} color={light.main2} />
             </TouchableOpacity>
           )}
           {(inventory.length > 0 || activeSearch) && (
@@ -585,11 +432,7 @@ const Inventory = () => {
               onPress={() => navigation.navigate("CreateElement")}
               style={{ marginHorizontal: 2 }}
             >
-              <Ionicons
-                name="add-circle"
-                size={getFontSize(32)}
-                color={light.main2}
-              />
+              <Ionicons name="add-circle" size={getFontSize(32)} color={light.main2} />
             </TouchableOpacity>
           )}
         </View>
@@ -611,11 +454,7 @@ const Inventory = () => {
               setFilters(initialState);
             }}
           >
-            <Ionicons
-              name="close"
-              size={30}
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            />
+            <Ionicons name="close" size={30} color={textColor} />
           </TouchableOpacity>
           <InputStyle
             innerRef={searchRef}
@@ -623,11 +462,7 @@ const Inventory = () => {
             value={search}
             onChangeText={(text) => setSearch(text)}
             stylesContainer={{ width: "78%", marginVertical: 0 }}
-            stylesInput={{
-              paddingHorizontal: 6,
-              paddingVertical: 5,
-              fontSize: 18,
-            }}
+            stylesInput={styles.search}
           />
           <TouchableOpacity onPress={() => setActiveFilter(!activeFilter)}>
             <Ionicons name="filter" size={30} color={light.main2} />
@@ -642,28 +477,23 @@ const Inventory = () => {
       <View
         style={{
           marginTop: 20,
-          maxHeight: SCREEN_HEIGHT / 2.7
+          maxHeight: SCREEN_HEIGHT / 2.7,
         }}
       >
         {inventory.filter((i) => i.visible !== "none").length > 0 && (
           <>
-            <TextStyle
-              style={{ marginBottom: 5 }}
-              color={mode === "light" ? light.textDark : dark.textWhite}
-              smallParagraph
-            >
+            <TextStyle style={{ marginBottom: 5 }} color={textColor} smallParagraph>
               ANCLADO
             </TextStyle>
             <ScrollView showsVerticalScrollIndicator={false}>
-              {/* <ScrollView horizontal showsHorizontalScrollIndicator={false}> */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View>
                   <View style={{ flexDirection: "row" }}>
                     <View
                       style={[
                         styles.table,
                         {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
+                          borderColor: textColor,
                         },
                       ]}
                     >
@@ -675,8 +505,7 @@ const Inventory = () => {
                       style={[
                         styles.table,
                         {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
+                          borderColor: textColor,
                         },
                       ]}
                     >
@@ -688,8 +517,19 @@ const Inventory = () => {
                       style={[
                         styles.table,
                         {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
+                          borderColor: textColor,
+                        },
+                      ]}
+                    >
+                      <TextStyle color={light.main2} smallParagraph>
+                        PORCIÓN
+                      </TextStyle>
+                    </View>
+                    <View
+                      style={[
+                        styles.table,
+                        {
+                          borderColor: textColor,
                         },
                       ]}
                     >
@@ -700,13 +540,13 @@ const Inventory = () => {
                   </View>
                   <FlatList
                     data={inventory.filter((i) => i.visible !== "none")}
-                    renderItem={AnchoredTable}
+                    renderItem={({ item }) => <AnchoredTable item={item} />}
                     showsVerticalScrollIndicator={false}
                     keyExtractor={(item) => item.id}
                     scrollEnabled={false}
                   />
                 </View>
-              {/* </ScrollView> */}
+              </ScrollView>
             </ScrollView>
           </>
         )}
@@ -714,16 +554,13 @@ const Inventory = () => {
       <View
         style={{
           marginTop: 20,
-          maxHeight: SCREEN_HEIGHT / 2.7
+          maxHeight: SCREEN_HEIGHT / 2.7,
         }}
       >
         {inventory.filter((i) => i.visible === "none").length > 0 && (
           <>
             <View style={[styles.row, { marginBottom: 5 }]}>
-              <TextStyle
-                color={mode === "light" ? light.textDark : dark.textWhite}
-                smallParagraph
-              >
+              <TextStyle color={textColor} smallParagraph>
                 NO ANCLADO
               </TextStyle>
               <View style={{ flexDirection: "row" }}>
@@ -773,8 +610,7 @@ const Inventory = () => {
                       style={[
                         styles.table,
                         {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
+                          borderColor: textColor,
                         },
                       ]}
                     >
@@ -786,8 +622,7 @@ const Inventory = () => {
                       style={[
                         styles.table,
                         {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
+                          borderColor: textColor,
                         },
                       ]}
                     >
@@ -799,8 +634,7 @@ const Inventory = () => {
                       style={[
                         styles.table,
                         {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
+                          borderColor: textColor,
                         },
                       ]}
                     >
@@ -812,8 +646,7 @@ const Inventory = () => {
                       style={[
                         styles.table,
                         {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
+                          borderColor: textColor,
                         },
                       ]}
                     >
@@ -825,8 +658,7 @@ const Inventory = () => {
                       style={[
                         styles.table,
                         {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
+                          borderColor: textColor,
                         },
                       ]}
                     >
@@ -838,8 +670,7 @@ const Inventory = () => {
                       style={[
                         styles.table,
                         {
-                          borderColor:
-                            mode === "light" ? light.textDark : dark.textWhite,
+                          borderColor: textColor,
                         },
                       ]}
                     >
@@ -894,10 +725,7 @@ const Inventory = () => {
         <View
           style={[
             StyleSheet.absoluteFillObject,
-            {
-              backgroundColor: mode === "light" ? light.main4 : dark.main1,
-              padding: 30,
-            },
+            { backgroundColor: mode === "light" ? light.main4 : dark.main1, padding: 30 },
           ]}
         >
           <ScrollView showsVerticalScrollIndicator={false}>
@@ -912,35 +740,23 @@ const Inventory = () => {
                     setFilters(initialState);
                   }}
                 >
-                  <Ionicons
-                    name="close"
-                    size={30}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  />
+                  <Ionicons name="close" size={30} color={textColor} />
                 </TouchableOpacity>
               </View>
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
+              <TextStyle smallParagraph color={textColor}>
                 Para una búsqueda más precisa
               </TextStyle>
             </View>
             <View style={{ marginTop: 6 }}>
               <View style={[styles.row, { marginTop: 15 }]}>
                 <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                  <TextStyle smallParagraph color={textColor}>
                     Cantidad MIN
                   </TextStyle>
                   <InputStyle
                     value={filters.minQuantity}
                     onChangeText={(text) => {
-                      const quantity = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const quantity = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, minQuantity: quantity });
                     }}
                     placeholder="MIN"
@@ -949,18 +765,13 @@ const Inventory = () => {
                   />
                 </View>
                 <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                  <TextStyle smallParagraph color={textColor}>
                     Cantida MAX
                   </TextStyle>
                   <InputStyle
                     value={filters.maxQuantity}
                     onChangeText={(text) => {
-                      const quantity = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const quantity = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, maxQuantity: quantity });
                     }}
                     placeholder="MAX"
@@ -972,18 +783,13 @@ const Inventory = () => {
 
               <View style={[styles.row, { marginTop: 15 }]}>
                 <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                  <TextStyle smallParagraph color={textColor}>
                     Entrada MIN
                   </TextStyle>
                   <InputStyle
                     value={filters.minEntry}
                     onChangeText={(text) => {
-                      const entry = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const entry = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, minEntry: entry });
                     }}
                     placeholder="MIN"
@@ -992,18 +798,13 @@ const Inventory = () => {
                   />
                 </View>
                 <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                  <TextStyle smallParagraph color={textColor}>
                     Entrada MAX
                   </TextStyle>
                   <InputStyle
                     value={filters.maxEntry}
                     onChangeText={(text) => {
-                      const entry = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const entry = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, maxEntry: entry });
                     }}
                     placeholder="MAX"
@@ -1014,18 +815,13 @@ const Inventory = () => {
               </View>
               <View style={[styles.row, { marginTop: 15 }]}>
                 <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                  <TextStyle smallParagraph color={textColor}>
                     Salida MIN
                   </TextStyle>
                   <InputStyle
                     value={filters.minOutput}
                     onChangeText={(text) => {
-                      const output = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const output = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, minOutput: output });
                     }}
                     placeholder="MIN"
@@ -1034,18 +830,13 @@ const Inventory = () => {
                   />
                 </View>
                 <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                  <TextStyle smallParagraph color={textColor}>
                     Salida MAX
                   </TextStyle>
                   <InputStyle
                     value={filters.maxOutput}
                     onChangeText={(text) => {
-                      const output = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const output = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, maxOutput: output });
                     }}
                     placeholder="MAX"
@@ -1057,18 +848,13 @@ const Inventory = () => {
 
               <View style={[styles.row, { marginTop: 15 }]}>
                 <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                  <TextStyle smallParagraph color={textColor}>
                     Valor MIN
                   </TextStyle>
                   <InputStyle
                     value={filters.minValue}
                     onChangeText={(text) => {
-                      const value = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const value = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, minValue: value });
                     }}
                     placeholder="MIN"
@@ -1077,18 +863,13 @@ const Inventory = () => {
                   />
                 </View>
                 <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                  <TextStyle smallParagraph color={textColor}>
                     Valor MAX
                   </TextStyle>
                   <InputStyle
                     value={filters.maxValue}
                     onChangeText={(text) => {
-                      const value = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const value = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, maxValue: value });
                     }}
                     placeholder="MAX"
@@ -1100,18 +881,13 @@ const Inventory = () => {
 
               <View style={[styles.row, { marginTop: 15 }]}>
                 <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                  <TextStyle smallParagraph color={textColor}>
                     Punto de reorden MIN
                   </TextStyle>
                   <InputStyle
                     value={filters.minReorder}
                     onChangeText={(text) => {
-                      const reorder = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const reorder = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, minReorder: reorder });
                     }}
                     placeholder="MIN"
@@ -1120,18 +896,13 @@ const Inventory = () => {
                   />
                 </View>
                 <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                  <TextStyle smallParagraph color={textColor}>
                     Punto de reorden MAX
                   </TextStyle>
                   <InputStyle
                     value={filters.maxReorden}
                     onChangeText={(text) => {
-                      const reorder = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const reorder = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, maxReorden: reorder });
                     }}
                     placeholder="MAX"
@@ -1150,38 +921,17 @@ const Inventory = () => {
                   year: filters.year,
                 }}
                 onChangeDay={(value) => setFilters({ ...filters, day: value })}
-                onChangeMonth={(value) =>
-                  setFilters({ ...filters, month: value })
-                }
-                onChangeYear={(value) =>
-                  setFilters({ ...filters, year: value })
-                }
+                onChangeMonth={(value) => setFilters({ ...filters, month: value })}
+                onChangeYear={(value) => setFilters({ ...filters, year: value })}
               />
               <View style={{ marginTop: 15 }}>
-                <ButtonStyle
-                  backgroundColor={mode === "light" ? light.main5 : dark.main2}
-                  onPress={() => unitRef.current?.focus()}
-                >
+                <ButtonStyle backgroundColor={backgroundColor} onPress={() => unitRef.current?.focus()}>
                   <View style={styles.row}>
-                    <TextStyle
-                      color={
-                        filters.unit
-                          ? mode === "light"
-                            ? light.textDark
-                            : dark.textWhite
-                          : "#888888"
-                      }
-                    >
+                    <TextStyle color={filters.unit ? textColor : "#888888"}>
                       {unitOptions.find((u) => u.value === filters.unit)?.label}
                     </TextStyle>
                     <Ionicons
-                      color={
-                        filters.unit
-                          ? mode === "light"
-                            ? light.textDark
-                            : dark.textWhite
-                          : "#888888"
-                      }
+                      color={filters.unit ? textColor : "#888888"}
                       size={getFontSize(15)}
                       name="caret-down"
                     />
@@ -1193,9 +943,7 @@ const Inventory = () => {
                     ref={unitRef}
                     style={{ opacity: 0 }}
                     selectedValue={filters.unit}
-                    onValueChange={(value) =>
-                      setFilters({ ...filters, unit: value })
-                    }
+                    onValueChange={(value) => setFilters({ ...filters, unit: value })}
                   >
                     {unitOptions.map((u) => (
                       <Picker.Item
@@ -1203,12 +951,9 @@ const Inventory = () => {
                         label={u.label}
                         value={u.value}
                         style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
+                          backgroundColor: backgroundColor,
                         }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
+                        color={textColor}
                       />
                     ))}
                   </Picker>
@@ -1217,32 +962,15 @@ const Inventory = () => {
 
               <View style={{ marginTop: 15 }}>
                 <ButtonStyle
-                  backgroundColor={mode === "light" ? light.main5 : dark.main2}
+                  backgroundColor={backgroundColor}
                   onPress={() => visibleRef.current?.focus()}
                 >
                   <View style={styles.row}>
-                    <TextStyle
-                      color={
-                        filters.visible
-                          ? mode === "light"
-                            ? light.textDark
-                            : dark.textWhite
-                          : "#888888"
-                      }
-                    >
-                      {
-                        visibleOptions.find((u) => u.value === filters.visible)
-                          ?.label
-                      }
+                    <TextStyle color={filters.visible ? textColor : "#888888"}>
+                      {visibleOptions.find((u) => u.value === filters.visible)?.label}
                     </TextStyle>
                     <Ionicons
-                      color={
-                        filters.visible
-                          ? mode === "light"
-                            ? light.textDark
-                            : dark.textWhite
-                          : "#888888"
-                      }
+                      color={filters.visible ? textColor : "#888888"}
                       size={getFontSize(15)}
                       name="caret-down"
                     />
@@ -1254,9 +982,7 @@ const Inventory = () => {
                     ref={visibleRef}
                     style={{ opacity: 0 }}
                     selectedValue={filters.visible}
-                    onValueChange={(value) =>
-                      setFilters({ ...filters, visible: value })
-                    }
+                    onValueChange={(value) => setFilters({ ...filters, visible: value })}
                   >
                     {visibleOptions.map((u) => (
                       <Picker.Item
@@ -1264,12 +990,9 @@ const Inventory = () => {
                         label={u.label}
                         value={u.value}
                         style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
+                          backgroundColor: backgroundColor,
                         }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
+                        color={textColor}
                       />
                     ))}
                   </Picker>
@@ -1324,16 +1047,13 @@ const Inventory = () => {
               {filters.active && (
                 <ButtonStyle
                   style={{ width: "30%" }}
-                  backgroundColor={mode === "light" ? light.main5 : dark.main2}
+                  backgroundColor={backgroundColor}
                   onPress={() => {
                     setActiveFilter(false);
                     setFilters(initialState);
                   }}
                 >
-                  <TextStyle
-                    center
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                  <TextStyle center color={textColor}>
                     Remover
                   </TextStyle>
                 </ButtonStyle>
@@ -1343,9 +1063,7 @@ const Inventory = () => {
                   setActiveFilter(!activeFilter);
                   const compare = { ...filters, active: false };
 
-                  if (
-                    JSON.stringify(compare) === JSON.stringify(initialState)
-                  ) {
+                  if (JSON.stringify(compare) === JSON.stringify(initialState)) {
                     setFilters(initialState);
                     return;
                   }
@@ -1393,6 +1111,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+  },
+  search: {
+    paddingHorizontal: 6,
+    paddingVertical: 5,
+    fontSize: 18,
   },
 });
 

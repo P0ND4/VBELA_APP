@@ -1,13 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  FlatList,
-  ScrollView,
-  Alert,
-  Image,
-} from "react-native";
+import { View, TouchableOpacity, StyleSheet, FlatList, ScrollView, Alert, Image } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { getFontSize, thousandsSystem, changeDate } from "@helpers/libs";
 import { remove, edit } from "@features/zones/standardReservationsSlice";
@@ -51,7 +43,7 @@ const Table = ({ item, reserve, event, deleteReservation }) => {
           text: "Estoy seguro",
           onPress: async () => {
             const hostedUpdated = reserve?.hosted.filter((h) => h.id !== item.id);
-            if (!hostedUpdated.length) deleteReservation();
+            if (!hostedUpdated.length) return deleteReservation();
             const reserveUpdated = { ...reserve, hosted: hostedUpdated };
             dispatch(edit({ id: reserve.id, data: reserveUpdated }));
             await editReservation({
@@ -178,9 +170,7 @@ const Information = ({ route, navigation }) => {
         a +
         `<tr>
             <td style="width: 100px; border: 1px solid #000; padding: 8px">
-              <p style="font-size: 14px; font-weight: 600; word-break: break-word;">${
-                item.fullName
-              }</p>
+              <p style="font-size: 14px; font-weight: 600; word-break: break-word;">${item.fullName}</p>
             </td>
             <td style="width: 50px; border: 1px solid #000; padding: 8px">
               <p style="font-size: 14px; font-weight: 600; word-break: break-word;">${
@@ -328,9 +318,7 @@ const Information = ({ route, navigation }) => {
       )}</p>
       <p style="text-align: center; font-size: 30px; font-weight: 600; margin: 0; padding: 0;">${changeDate(
         new Date()
-      )} ${("0" + new Date().getHours()).slice(-2)}:${("0" + new Date().getMinutes()).slice(
-      -2
-    )}</p>
+      )} ${("0" + new Date().getHours()).slice(-2)}:${("0" + new Date().getMinutes()).slice(-2)}</p>
   </view>
 `;
   };
@@ -495,11 +483,7 @@ const Information = ({ route, navigation }) => {
         </ButtonStyle>
         {showMore && (
           <View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={{ maxHeight: 150 }}
-            >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 150 }}>
               <View>
                 <View style={{ flexDirection: "row" }}>
                   <View style={[styles.table, { borderColor: textColor }]}>
@@ -595,12 +579,9 @@ const Information = ({ route, navigation }) => {
               ? "PAGADO"
               : "ESPERANDO POR PAGO"
           }
-          tip={
-            reservePayment > reserve?.total && thousandsSystem(reservePayment - reserve?.total)
-          }
+          tip={reservePayment > reserve?.total && thousandsSystem(reservePayment - reserve?.total)}
           payment={
-            !["credit", "business"].includes(reserve?.status) &&
-            thousandsSystem(reservePayment || "0")
+            !["credit", "business"].includes(reserve?.status) && thousandsSystem(reservePayment || "0")
           }
           type="ESTANDAR"
           hosted={thousandsSystem(reserve?.hosted?.length || "0")}
@@ -637,7 +618,7 @@ const Information = ({ route, navigation }) => {
         payment={reservePayment || "0"}
         modalVisible={showPaymentManagement}
         setModalVisible={setShowPaymentManagement}
-        toPay={[{ id: reserve?.id, name: "Pago general", amount: reserve?.total }]}
+        toPay={[{ id: reserve?.id, name: "Pago general", amount: Math.max(reserve?.total - reservePayment, 0) }]}
         business={!isEditPay}
         paymentType={!isEditPay && reserve?.hosted.some((h) => h.owner) ? "credit" : "others"}
         handleSubmit={handlePayment}

@@ -11,16 +11,8 @@ import {
   FlatList,
   TouchableOpacity,
 } from "react-native";
-import {
-  add as addM,
-  edit as editM,
-  remove as removeM,
-} from "@features/tables/menuSlice";
-import {
-  add as addP,
-  edit as editP,
-  remove as removeP,
-} from "@features/sales/productsSlice";
+import { add as addM, edit as editM, remove as removeM } from "@features/tables/menuSlice";
+import { add as addP, edit as editP, remove as removeP } from "@features/sales/productsSlice";
 import {
   addMenu,
   editMenu,
@@ -67,37 +59,23 @@ const CreateProduct = ({ route, navigation }) => {
 
   const [name, setName] = useState(editing ? item.name : "");
   const [identifier, setIdentifier] = useState(editing ? item.identifier : "");
-  const [price, setPrice] = useState(
-    editing ? thousandsSystem(item.value) : ""
-  );
-  const [purchase, setPurchase] = useState(
-    editing ? thousandsSystem(item.purchase) : ""
-  );
+  const [price, setPrice] = useState(editing ? thousandsSystem(item.value) : "");
+  const [purchase, setPurchase] = useState(editing ? thousandsSystem(item.purchase) : "");
   const [unit, setUnit] = useState(editing ? item.unit : "");
-  const [quantity, setQuantity] = useState(
-    editing ? thousandsSystem(item.quantity || 0) : ""
-  );
-  const [reorder, setReorder] = useState(
-    editing ? thousandsSystem(item.reorder || 0) : ""
-  );
-  const [utility, setUtility] = useState(
-    editing ? item.value - item.purchase : 0
-  );
+  const [quantity, setQuantity] = useState(editing ? thousandsSystem(item.quantity || 0) : "");
+  const [reorder, setReorder] = useState(editing ? thousandsSystem(item.reorder || 0) : "");
+  const [utility, setUtility] = useState(editing ? item.value - item.purchase : 0);
 
   const [subcategoryKey, setSubcategoryKey] = useState(Math.random());
   const [categoryKey, setCategoryKey] = useState(Math.random());
 
-  const [recipeSelected, setRecipeSelected] = useState(
-    editing ? item.recipe : null
-  );
+  const [recipeSelected, setRecipeSelected] = useState(editing ? item.recipe : null);
   const [modalVisibleRecipe, setModalVisibleRecipe] = useState(false);
   const [modalCategory, setModalCategory] = useState(false);
   const [modalSubcategory, setModalSubcategory] = useState(false);
   const [category, setCategory] = useState(editing ? item.category : []);
   const [recipeList, setRecipeList] = useState([]);
-  const [subcategory, setSubcategory] = useState(
-    editing ? item.subcategory : []
-  );
+  const [subcategory, setSubcategory] = useState(editing ? item.subcategory : []);
   const [subcategoryOptions, setSubcategoryOptions] = useState(
     editing
       ? groups
@@ -125,8 +103,7 @@ const CreateProduct = ({ route, navigation }) => {
   }, []);
 
   useEffect(() => {
-    const validation = (condition) =>
-      recipes.filter((r) => r.type === condition);
+    const validation = (condition) => recipes.filter((r) => r.type === condition);
     if (sales) setRecipeList(validation("sales"));
     else setRecipeList(validation("menu"));
   }, [sales, recipes]);
@@ -158,25 +135,17 @@ const CreateProduct = ({ route, navigation }) => {
       dispatch(addP(data));
       navigation.pop();
       await addProduct({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
+        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
         product: data,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
+        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
       });
     } else {
       dispatch(addM(data));
       navigation.pop();
       await addMenu({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
+        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
         menu: data,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
+        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
       });
     }
   };
@@ -192,25 +161,17 @@ const CreateProduct = ({ route, navigation }) => {
       dispatch(editP({ id: item.id, data }));
       navigation.pop();
       await editProduct({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
+        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
         product: data,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
+        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
       });
     } else {
       dispatch(editM({ id: item.id, data }));
       navigation.pop();
       await editMenu({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
+        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
         menu: data,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
+        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
       });
     }
   };
@@ -229,25 +190,17 @@ const CreateProduct = ({ route, navigation }) => {
             dispatch(removeP({ id: item.id }));
             navigation.pop();
             await removeProduct({
-              identifier: helperStatus.active
-                ? helperStatus.identifier
-                : user.identifier,
+              identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
               id: item.id,
-              helpers: helperStatus.active
-                ? [helperStatus.id]
-                : user.helpers.map((h) => h.id),
+              helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
             });
           } else {
             dispatch(removeM({ id: item.id }));
             navigation.pop();
             await removeMenu({
-              identifier: helperStatus.active
-                ? helperStatus.identifier
-                : user.identifier,
+              identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
               id: item.id,
-              helpers: helperStatus.active
-                ? [helperStatus.id]
-                : user.helpers.map((h) => h.id),
+              helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
             });
           }
         },
@@ -305,9 +258,7 @@ const CreateProduct = ({ route, navigation }) => {
                 style={{ marginRight: 5 }}
               />
             </TouchableOpacity>
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
+            <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
               {item.name.slice(0, 20)}
               {item.name.length > 20 ? "..." : ""}
             </TextStyle>
@@ -322,11 +273,7 @@ const CreateProduct = ({ route, navigation }) => {
                 })
               }
             >
-              <Ionicons
-                name="create-outline"
-                color={light.main2}
-                size={getFontSize(23)}
-              />
+              <Ionicons name="create-outline" color={light.main2} size={getFontSize(23)} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
@@ -343,9 +290,7 @@ const CreateProduct = ({ route, navigation }) => {
                       onPress: async () => {
                         dispatch(removeR({ id: item?.id }));
                         await removeRecipe({
-                          identifier: helperStatus.active
-                            ? helperStatus.identifier
-                            : user.identifier,
+                          identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
                           id: item.id,
                           helpers: helperStatus.active
                             ? [helperStatus.id]
@@ -376,10 +321,7 @@ const CreateProduct = ({ route, navigation }) => {
           title="INFORMACIÓN"
           content={() => (
             <View>
-              <TextStyle
-                smallParagraph
-                color={mode === "light" ? light.textDark : dark.textWhite}
-              >
+              <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
                 Ingredientes de ({item.name.toUpperCase()})
               </TextStyle>
               <FlatList
@@ -390,12 +332,9 @@ const CreateProduct = ({ route, navigation }) => {
                 renderItem={({ item }) => (
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <TextStyle smallParagraph color={light.main2}>
-                      {thousandsSystem(item.quantity)} ({item.unit})
+                      {thousandsSystem(item.portion || "0")} ({item.unit})
                     </TextStyle>
-                    <TextStyle
-                      smallParagraph
-                      color={mode === "light" ? light.textDark : dark.textWhite}
-                    >
+                    <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
                       {" "}
                       {item.name}
                     </TextStyle>
@@ -427,15 +366,9 @@ const CreateProduct = ({ route, navigation }) => {
   return (
     <Layout>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           <View style={{ justifyContent: "space-between", flexGrow: 1 }}>
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-              subtitle
-            >
+            <TextStyle color={mode === "light" ? light.textDark : dark.textWhite} subtitle>
               Utilidad neta:{" "}
               <TextStyle subtitle color={utility < 0 ? "#F70000" : light.main2}>
                 {utility < 0 ? "-" : ""}
@@ -448,8 +381,7 @@ const CreateProduct = ({ route, navigation }) => {
                   styles.catalogueCard,
                   {
                     marginVertical: 20,
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
+                    backgroundColor: mode === "light" ? light.main5 : dark.main2,
                   },
                 ]}
               >
@@ -461,50 +393,31 @@ const CreateProduct = ({ route, navigation }) => {
                     padding: 14,
                   }}
                 >
-                  <TextStyle
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                    smallParagraph
-                  >
+                  <TextStyle color={mode === "light" ? light.textDark : dark.textWhite} smallParagraph>
                     {!name ? "Nombre" : name}
                   </TextStyle>
                   <View style={{ flexDirection: "row" }}>
                     <TextStyle
                       verySmall
                       color={
-                        parseInt(
-                          quantity ? quantity.replace(/[^0-9]/g, "") : 0
-                        ) <
+                        parseInt(quantity ? quantity.replace(/[^0-9]/g, "") : 0) <
                         parseInt(reorder ? reorder.replace(/[^0-9]/g, "") : 0)
                           ? "#F70000"
                           : light.main2
                       }
                     >
-                      {parseInt(
-                        quantity ? quantity.replace(/[^0-9]/g, "") : 0
-                      ) < 0
-                        ? "-"
-                        : ""}
+                      {parseInt(quantity ? quantity.replace(/[^0-9]/g, "") : 0) < 0 ? "-" : ""}
                       {thousandsSystem(
-                        Math.abs(
-                          parseInt(
-                            quantity ? quantity.replace(/[^0-9]/g, "") : 0
-                          )
-                        )
+                        Math.abs(parseInt(quantity ? quantity.replace(/[^0-9]/g, "") : 0))
                       )}
                       /
                     </TextStyle>
-                    <TextStyle
-                      verySmall
-                      color={mode === "light" ? light.textDark : dark.textWhite}
-                    >
+                    <TextStyle verySmall color={mode === "light" ? light.textDark : dark.textWhite}>
                       {reorder || 0}
                     </TextStyle>
                   </View>
                   {recipeSelected && (
-                    <TextStyle
-                      verySmall
-                      color={mode === "light" ? light.textDark : dark.textWhite}
-                    >
+                    <TextStyle verySmall color={mode === "light" ? light.textDark : dark.textWhite}>
                       {recipeSelected.name.length > 12
                         ? `${recipeSelected.name.slice(0, 12).toUpperCase()}...`
                         : recipeSelected.name.toUpperCase()}
@@ -532,11 +445,7 @@ const CreateProduct = ({ route, navigation }) => {
                     setValue("name", text);
                     setName(text);
                   }}
-                  right={
-                    name
-                      ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
-                      : null
-                  }
+                  right={name ? () => <TextStyle color={light.main2}>Nombre</TextStyle> : null}
                   maxLength={16}
                   placeholder="Nombre del producto"
                 />
@@ -548,13 +457,7 @@ const CreateProduct = ({ route, navigation }) => {
                 <InputStyle
                   value={identifier}
                   right={
-                    identifier
-                      ? () => (
-                          <TextStyle color={light.main2}>
-                            Identificador
-                          </TextStyle>
-                        )
-                      : null
+                    identifier ? () => <TextStyle color={light.main2}>Identificador</TextStyle> : null
                   }
                   onChangeText={(text) => {
                     setValue("identifier", text);
@@ -565,9 +468,7 @@ const CreateProduct = ({ route, navigation }) => {
                 />
                 <View>
                   <ButtonStyle
-                    backgroundColor={
-                      mode === "light" ? light.main5 : dark.main2
-                    }
+                    backgroundColor={mode === "light" ? light.main5 : dark.main2}
                     onPress={() => pickerRef.current?.focus()}
                   >
                     <View
@@ -578,24 +479,12 @@ const CreateProduct = ({ route, navigation }) => {
                       }}
                     >
                       <TextStyle
-                        color={
-                          unit
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
+                        color={unit ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"}
                       >
                         {unitOptions.find((u) => u.value === unit)?.label}
                       </TextStyle>
                       <Ionicons
-                        color={
-                          unit
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
-                        }
+                        color={unit ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"}
                         size={getFontSize(15)}
                         name="caret-down"
                       />
@@ -606,8 +495,7 @@ const CreateProduct = ({ route, navigation }) => {
                     <Picker
                       ref={pickerRef}
                       style={{
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
+                        color: mode === "light" ? light.textDark : dark.textWhite,
                       }}
                       selectedValue={unit}
                       onValueChange={(value) => {
@@ -621,12 +509,9 @@ const CreateProduct = ({ route, navigation }) => {
                           label={u.label}
                           value={u.value}
                           style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
+                            backgroundColor: mode === "light" ? light.main5 : dark.main2,
                           }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
+                          color={mode === "light" ? light.textDark : dark.textWhite}
                         />
                       ))}
                     </Picker>
@@ -639,47 +524,27 @@ const CreateProduct = ({ route, navigation }) => {
                 )}
                 <InputStyle
                   value={quantity}
-                  right={
-                    quantity
-                      ? () => (
-                          <TextStyle color={light.main2}>Cantidad</TextStyle>
-                        )
-                      : null
-                  }
+                  right={quantity ? () => <TextStyle color={light.main2}>Cantidad</TextStyle> : null}
                   placeholder="Cantidad en stock"
                   keyboardType="numeric"
                   maxLength={9}
                   onChangeText={(text) => {
                     if (text === "") setValue("quantity", 0);
-                    else
-                      setValue(
-                        "quantity",
-                        parseInt(text.replace(/[^0-9]/g, ""))
-                      );
+                    else setValue("quantity", parseInt(text.replace(/[^0-9]/g, "")));
                     setQuantity(thousandsSystem(text.replace(/[^0-9]/g, "")));
                   }}
                 />
                 <InputStyle
                   value={reorder}
                   right={
-                    reorder
-                      ? () => (
-                          <TextStyle color={light.main2}>
-                            Punto de reorden
-                          </TextStyle>
-                        )
-                      : null
+                    reorder ? () => <TextStyle color={light.main2}>Punto de reorden</TextStyle> : null
                   }
                   placeholder="Punto de reorden"
                   keyboardType="numeric"
                   maxLength={9}
                   onChangeText={(text) => {
                     if (text === "") setValue("reorder", 0);
-                    else
-                      setValue(
-                        "reorder",
-                        parseInt(text.replace(/[^0-9]/g, ""))
-                      );
+                    else setValue("reorder", parseInt(text.replace(/[^0-9]/g, "")));
                     setReorder(thousandsSystem(text.replace(/[^0-9]/g, "")));
                   }}
                 />
@@ -687,20 +552,11 @@ const CreateProduct = ({ route, navigation }) => {
                   value={price}
                   placeholder="Precio de venta"
                   maxLength={15}
-                  right={
-                    price
-                      ? () => (
-                          <TextStyle color={light.main2}>
-                            Precio de venta
-                          </TextStyle>
-                        )
-                      : null
-                  }
+                  right={price ? () => <TextStyle color={light.main2}>Precio de venta</TextStyle> : null}
                   keyboardType="numeric"
                   onChangeText={(num) => {
                     if (num === "") setValue("value", "");
-                    else
-                      setValue("value", parseInt(num.replace(/[^0-9]/g, "")));
+                    else setValue("value", parseInt(num.replace(/[^0-9]/g, "")));
                     setPrice(thousandsSystem(num.replace(/[^0-9]/g, "")));
                   }}
                 />
@@ -713,23 +569,13 @@ const CreateProduct = ({ route, navigation }) => {
                   value={purchase}
                   placeholder="Precio de compra"
                   right={
-                    purchase
-                      ? () => (
-                          <TextStyle color={light.main2}>
-                            Precio de compra
-                          </TextStyle>
-                        )
-                      : null
+                    purchase ? () => <TextStyle color={light.main2}>Precio de compra</TextStyle> : null
                   }
                   maxLength={15}
                   keyboardType="numeric"
                   onChangeText={(num) => {
                     if (num === "") setValue("purchase", "");
-                    else
-                      setValue(
-                        "purchase",
-                        parseInt(num.replace(/[^0-9]/g, ""))
-                      );
+                    else setValue("purchase", parseInt(num.replace(/[^0-9]/g, "")));
                     setPurchase(thousandsSystem(num.replace(/[^0-9]/g, "")));
                   }}
                 />
@@ -746,29 +592,29 @@ const CreateProduct = ({ route, navigation }) => {
                     justifyContent: "center",
                   }}
                   onPress={() => {
-                    Alert.alert("PROXIMAMENTE NUEVO DISENO", "VOY A RECREAR VENTAS (GENERAL) PARA REDISEÑARLO Y HACERLO ESCALABLE")
-                    // if (recipeSelected)
-                    //   return Alert.alert(
-                    //     "REMOVER",
-                    //     `¿Quieres eliminar ${
-                    //       sales ? "el reconteo" : "la receta"
-                    //     } (${recipeSelected.name})?`,
-                    //     [
-                    //       {
-                    //         text: "No",
-                    //         style: "cancel",
-                    //       },
-                    //       {
-                    //         text: "Si",
-                    //         onPress: () => {
-                    //           setRecipeSelected(null);
-                    //           setValue("recipe", null);
-                    //         },
-                    //       },
-                    //     ],
-                    //     { cancelable: true }
-                    //   );
-                    // setModalVisibleRecipe(!modalVisibleRecipe);
+                    // Alert.alert("PROXIMAMENTE NUEVO DISENO", "VOY A RECREAR VENTAS (GENERAL) PARA REDISEÑARLO Y HACERLO ESCALABLE")
+                    if (recipeSelected)
+                      return Alert.alert(
+                        "REMOVER",
+                        `¿Quieres eliminar ${sales ? "el reconteo" : "la receta"} (${
+                          recipeSelected.name
+                        })?`,
+                        [
+                          {
+                            text: "No",
+                            style: "cancel",
+                          },
+                          {
+                            text: "Si",
+                            onPress: () => {
+                              setRecipeSelected(null);
+                              setValue("recipe", null);
+                            },
+                          },
+                        ],
+                        { cancelable: true }
+                      );
+                    setModalVisibleRecipe(!modalVisibleRecipe);
                   }}
                 >
                   <TextStyle>
@@ -804,23 +650,14 @@ const CreateProduct = ({ route, navigation }) => {
                 >
                   <TextStyle
                     color={
-                      category.length
-                        ? mode === "light"
-                          ? light.textDark
-                          : dark.textWhite
-                        : "#888888"
+                      category.length ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"
                     }
                   >
-                    Seleccionar categorías{" "}
-                    {category.length ? `(${category.length})` : ""}
+                    Seleccionar categorías {category.length ? `(${category.length})` : ""}
                   </TextStyle>
                   <Ionicons
                     color={
-                      category.length
-                        ? mode === "light"
-                          ? light.textDark
-                          : dark.textWhite
-                        : "#888888"
+                      category.length ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"
                     }
                     size={getFontSize(15)}
                     name="caret-down"
@@ -850,8 +687,7 @@ const CreateProduct = ({ route, navigation }) => {
                         : "#888888"
                     }
                   >
-                    Seleccionar subcategorías{" "}
-                    {subcategory.length ? `(${subcategory.length})` : ""}
+                    Seleccionar subcategorías {subcategory.length ? `(${subcategory.length})` : ""}
                   </TextStyle>
                   <Ionicons
                     color={
@@ -906,10 +742,7 @@ const CreateProduct = ({ route, navigation }) => {
         title={sales ? "RECONTEO" : "RECETA"}
         content={() => (
           <View>
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
+            <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
               Lista de {sales ? "reconteos" : "recetas"}
             </TextStyle>
             <FlatList
@@ -923,9 +756,7 @@ const CreateProduct = ({ route, navigation }) => {
               backgroundColor={light.main2}
               onPress={() => navigation.navigate("CreateRecipe", { sales })}
             >
-              <TextStyle center>
-                Crear {sales ? "reconteo" : "receta"}
-              </TextStyle>
+              <TextStyle center>Crear {sales ? "reconteo" : "receta"}</TextStyle>
             </ButtonStyle>
           </View>
         )}
@@ -938,18 +769,12 @@ const CreateProduct = ({ route, navigation }) => {
         onSelectedItemsChange={(value) => {
           const options = groups.filter((g) => value.includes(g.id));
           const subcategories = options.map((o) => o.subcategory).flat();
-          setSubcategoryOptions(
-            subcategories.map((sub) => ({ ...sub, name: sub.subcategory }))
-          );
+          setSubcategoryOptions(subcategories.map((sub) => ({ ...sub, name: sub.subcategory })));
           setCategory(value);
           setSubcategoryKey(Math.random());
           setValue("category", value);
         }}
-        selected={
-          editing
-            ? groups.filter((g) => category.includes(g.id)).map((g) => g.id)
-            : []
-        }
+        selected={editing ? groups.filter((g) => category.includes(g.id)).map((g) => g.id) : []}
         data={groups
           .filter((g) => {
             const type = sales ? "sales" : "menu";

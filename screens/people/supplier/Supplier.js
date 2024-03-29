@@ -21,7 +21,7 @@ import InputStyle from "@components/InputStyle";
 import Layout from "@components/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
-import Filters from "@utils/people/supplier/Filters";
+import Filters from "@utils/supplier/Filters";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const { light, dark } = theme();

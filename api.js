@@ -40,13 +40,9 @@ export const connect = async ({ data = {}, url, syncData = true }) => {
         value.push(info);
       }
     } else if (url.slice(1).split("/")[1] === "remove") {
-      const toDelete = value.filter(
-        (v) => v.data?.[typeOfData]?.id === data?.id
-      );
+      const toDelete = value.filter((v) => v.data?.[typeOfData]?.id === data?.id);
       for (let d of toDelete) {
-        const index = value.findIndex(
-          (v) => v.data?.[typeOfData]?.id === d.data?.[typeOfData]?.id
-        );
+        const index = value.findIndex((v) => v.data?.[typeOfData]?.id === d.data?.[typeOfData]?.id);
         value.splice(index, 1);
       }
       value.push(info);
@@ -58,122 +54,86 @@ export const connect = async ({ data = {}, url, syncData = true }) => {
   }
 };
 
-export const getUser = async (data) =>
-  await connect({ data, url: "/user", syncData: false });
+export const getUser = async (data) => await connect({ data, url: "/user", syncData: false });
 
-export const addUser = async (data) =>
-  await connect({ data, url: "/user/add", syncData: false });
+export const addUser = async (data) => await connect({ data, url: "/user/add", syncData: false });
 
-export const editUser = async (data) =>
-  await connect({ data, url: "/user/edit" });
+export const editUser = async (data) => await connect({ data, url: "/user/edit" });
 
-export const addZone = async (data) =>
-  await connect({ data, url: "/zone/add" });
+export const addZone = async (data) => await connect({ data, url: "/zone/add" });
 
-export const editZone = async (data) =>
-  await connect({ data, url: "/zone/edit" });
+export const editZone = async (data) => await connect({ data, url: "/zone/edit" });
 
-export const removeZone = async (data) =>
-  await connect({ data, url: "/zone/remove" });
+export const removeZone = async (data) => await connect({ data, url: "/zone/remove" });
 
-export const addNomenclature = async (data) =>
-  await connect({ data, url: "/nomenclature/add" });
+export const addNomenclature = async (data) => await connect({ data, url: "/nomenclature/add" });
 
-export const editNomenclature = async (data) =>
-  await connect({ data, url: "/nomenclature/edit" });
+export const editNomenclature = async (data) => await connect({ data, url: "/nomenclature/edit" });
 
-export const removeNomenclature = async (data) =>
-  await connect({ data, url: "/nomenclature/remove" });
+export const removeNomenclature = async (data) => await connect({ data, url: "/nomenclature/remove" });
 
-export const addTable = async (data) =>
-  await connect({ data, url: "/table/add" });
+export const addTable = async (data) => await connect({ data, url: "/table/add" });
 
-export const editTable = async (data) =>
-  await connect({ data, url: "/table/edit" });
+export const editTable = async (data) => await connect({ data, url: "/table/edit" });
 
-export const removeTable = async (data) =>
-  await connect({ data, url: "/table/remove" });
+export const removeTable = async (data) => await connect({ data, url: "/table/remove" });
 
-export const addHelper = async (data) =>
-  await connect({ data, url: "/helper/add" });
+export const addHelper = async (data) => await connect({ data, url: "/helper/add" });
 
-export const editHelper = async (data) =>
-  await connect({ data, url: "/helper/edit" });
+export const editHelper = async (data) => await connect({ data, url: "/helper/edit" });
 
-export const removeHelper = async (data) =>
-  await connect({ data, url: "/helper/remove" });
+export const removeHelper = async (data) => await connect({ data, url: "/helper/remove" });
 
-export const addOrder = async (data) =>
-  await connect({ data, url: "/order/add" });
+export const orderHandler = async (data) => await connect({ data, url: "/order/handler" });
 
-export const editOrder = async (data) =>
-  await connect({ data, url: "/order/edit" });
+export const addOrder = async (data) => await connect({ data, url: "/order/add" });
 
-export const removeOrder = async (data) =>
-  await connect({ data, url: "/order/remove" });
+export const editOrder = async (data) => await connect({ data, url: "/order/edit" });
 
-export const orderInvoice = async (data) =>
-  await connect({ data, url: "/order/invoice" });
+export const removeOrder = async (data) => await connect({ data, url: "/order/remove" });
 
-export const addReservation = async (data) =>
-  await connect({ data, url: "/reservation/add" });
+export const orderInvoice = async (data) => await connect({ data, url: "/order/invoice" });
 
-export const editReservation = async (data) =>
-  await connect({ data, url: "/reservation/edit" });
+export const addReservation = async (data) => await connect({ data, url: "/reservation/add" });
 
-export const removeReservation = async (data) =>
-  await connect({ data, url: "/reservation/remove" });
+export const editReservation = async (data) => await connect({ data, url: "/reservation/edit" });
 
-export const addEconomy = async (data) =>
-  await connect({ data, url: "/economy/add" });
+export const removeReservation = async (data) => await connect({ data, url: "/reservation/remove" });
 
-export const editEconomy = async (data) =>
-  await connect({ data, url: "/economy/edit" });
+export const addEconomy = async (data) => await connect({ data, url: "/economy/add" });
 
-export const removeEconomy = async (data) =>
-  await connect({ data, url: "/economy/remove" });
+export const editEconomy = async (data) => await connect({ data, url: "/economy/edit" });
+
+export const removeEconomy = async (data) => await connect({ data, url: "/economy/remove" });
 
 export const removeManyEconomiesByIds = async (data) =>
   await connect({ data, url: "/economy/remove/many/by/ids" });
 
-export const getRule = async () =>
-  await connect({ url: "/rule", syncData: false });
+export const getRule = async () => await connect({ url: "/rule", syncData: false });
 
-export const addMenu = async (data) =>
-  await connect({ data, url: "/menu/add" });
+export const addMenu = async (data) => await connect({ data, url: "/menu/add" });
 
-export const editMenu = async (data) =>
-  await connect({ data, url: "/menu/edit" });
+export const editMenu = async (data) => await connect({ data, url: "/menu/edit" });
 
-export const removeMenu = async (data) =>
-  await connect({ data, url: "/menu/remove" });
+export const removeMenu = async (data) => await connect({ data, url: "/menu/remove" });
 
-export const addKitchen = async (data) =>
-  await connect({ data, url: "/kitchen/add" });
+export const addKitchen = async (data) => await connect({ data, url: "/kitchen/add" });
 
-export const editKitchen = async (data) =>
-  await connect({ data, url: "/kitchen/edit" });
+export const editKitchen = async (data) => await connect({ data, url: "/kitchen/edit" });
 
-export const removeKitchen = async (data) =>
-  await connect({ data, url: "/kitchen/remove" });
+export const removeKitchen = async (data) => await connect({ data, url: "/kitchen/remove" });
 
-export const addRoster = async (data) =>
-  await connect({ data, url: "/roster/add" });
+export const addRoster = async (data) => await connect({ data, url: "/roster/add" });
 
-export const editRoster = async (data) =>
-  await connect({ data, url: "/roster/edit" });
+export const editRoster = async (data) => await connect({ data, url: "/roster/edit" });
 
-export const removeRoster = async (data) =>
-  await connect({ data, url: "/roster/remove" });
+export const removeRoster = async (data) => await connect({ data, url: "/roster/remove" });
 
-export const addPerson = async (data) =>
-  await connect({ data, url: "/people/add" });
+export const addPerson = async (data) => await connect({ data, url: "/people/add" });
 
-export const editPerson = async (data) =>
-  await connect({ data, url: "/people/edit" });
+export const editPerson = async (data) => await connect({ data, url: "/people/edit" });
 
-export const removePerson = async (data) =>
-  await connect({ data, url: "/people/remove" });
+export const removePerson = async (data) => await connect({ data, url: "/people/remove" });
 
 export const verifyPhoneNumber = async ({ phoneNumber, channel }) =>
   await connect({
@@ -193,56 +153,38 @@ export const verifyEmail = async ({ email }) =>
 export const checkEmailVerification = async ({ email, code }) =>
   await connect({ url: `/check/email/${email}/${code}`, syncData: false });
 
-export const addInventory = async (data) =>
-  await connect({ data, url: "/inventory/add" });
+export const addInventory = async (data) => await connect({ data, url: "/inventory/add" });
 
-export const editInventory = async (data) =>
-  await connect({ data, url: "/inventory/edit" });
+export const editInventory = async (data) => await connect({ data, url: "/inventory/edit" });
 
-export const removeInventory = async (data) =>
-  await connect({ data, url: "/inventory/remove" });
+export const removeInventory = async (data) => await connect({ data, url: "/inventory/remove" });
 
-export const addSale = async (data) =>
-  await connect({ data, url: "/sale/add" });
+export const addSale = async (data) => await connect({ data, url: "/sale/add" });
 
-export const editSale = async (data) =>
-  await connect({ data, url: "/sale/edit" });
+export const editSale = async (data) => await connect({ data, url: "/sale/edit" });
 
-export const removeSale = async (data) =>
-  await connect({ data, url: "/sale/remove" });
+export const removeSale = async (data) => await connect({ data, url: "/sale/remove" });
 
-export const addProduct = async (data) =>
-  await connect({ data, url: "/product/add" });
+export const addProduct = async (data) => await connect({ data, url: "/product/add" });
 
-export const editProduct = async (data) =>
-  await connect({ data, url: "/product/edit" });
+export const editProduct = async (data) => await connect({ data, url: "/product/edit" });
 
-export const removeProduct = async (data) =>
-  await connect({ data, url: "/product/remove" });
+export const removeProduct = async (data) => await connect({ data, url: "/product/remove" });
 
-export const addAccommodation = async (data) =>
-  await connect({ data, url: "/accommodation/add" });
+export const addAccommodation = async (data) => await connect({ data, url: "/accommodation/add" });
 
-export const editAccommodation = async (data) =>
-  await connect({ data, url: "/accommodation/edit" });
+export const editAccommodation = async (data) => await connect({ data, url: "/accommodation/edit" });
 
-export const removeAccommodation = async (data) =>
-  await connect({ data, url: "/accommodation/remove" });
+export const removeAccommodation = async (data) => await connect({ data, url: "/accommodation/remove" });
 
-export const addGroup = async (data) =>
-  await connect({ data, url: "/group/add" });
+export const addGroup = async (data) => await connect({ data, url: "/group/add" });
 
-export const editGroup = async (data) =>
-  await connect({ data, url: "/group/edit" });
+export const editGroup = async (data) => await connect({ data, url: "/group/edit" });
 
-export const removeGroup = async (data) =>
-  await connect({ data, url: "/group/remove" });
+export const removeGroup = async (data) => await connect({ data, url: "/group/remove" });
 
-export const addRecipe = async (data) =>
-  await connect({ data, url: "/recipe/add" });
+export const addRecipe = async (data) => await connect({ data, url: "/recipe/add" });
 
-export const editRecipe = async (data) =>
-  await connect({ data, url: "/recipe/edit" });
+export const editRecipe = async (data) => await connect({ data, url: "/recipe/edit" });
 
-export const removeRecipe = async (data) =>
-  await connect({ data, url: "/recipe/remove" });
+export const removeRecipe = async (data) => await connect({ data, url: "/recipe/remove" });

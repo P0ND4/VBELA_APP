@@ -1,7 +1,7 @@
-const { createSlice } = require('@reduxjs/toolkit');
+const { createSlice } = require("@reduxjs/toolkit");
 
 export const ordersSlice = createSlice({
-  name: 'orders',
+  name: "orders",
   initialState: [],
   reducers: {
     add: (state, action) => void (state = state.push(action.payload)),
@@ -11,12 +11,8 @@ export const ordersSlice = createSlice({
       state.splice(index, 1);
     },
     removeMany: (state, action) => {
-      const { ref } = action.payload;
-      const newOrders = state.filter((o) => o.ref === ref);
-      for (let n of newOrders) {
-        const index = state.findIndex((curr) => curr.id === n.id);
-        state.splice(index, 1);
-      }
+      const { ids } = action.payload;
+      return state.filter((s) => !ids.includes(s.id));
     },
     removeManyByOwner: (state, action) => {
       const { ref } = action.payload;
@@ -31,10 +27,19 @@ export const ordersSlice = createSlice({
       const index = state.findIndex((o) => o.id === id);
       state[index] = data;
     },
-    change: (state, action) => state = action.payload,
-    clean: (state, action) => state = []
-  }
+    updateMany: (state, action) => {
+      const { data } = action.payload;
+      return state.map((s) => {
+        const found = data.find((d) => d.id === s.id);
+        if (found) return { ...s, ...found };
+        return s;
+      });
+    },
+    change: (state, action) => (state = action.payload),
+    clean: (state, action) => (state = []),
+  },
 });
 
-export const { change, clean, add, remove, removeMany, edit, removeManyByOwner } = ordersSlice.actions;
+export const { change, clean, add, remove, removeMany, edit, updateMany, removeManyByOwner } =
+  ordersSlice.actions;
 export default ordersSlice.reducer;

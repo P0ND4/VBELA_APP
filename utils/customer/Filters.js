@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   View,
   Modal,
@@ -8,7 +9,7 @@ import {
 } from "react-native";
 import { useSelector } from "react-redux";
 import { Picker } from "@react-native-picker/picker";
-import { getFontSize } from "@helpers/libs";
+import { getFontSize, thousandsSystem } from "@helpers/libs";
 import TextStyle from "@components/TextStyle";
 import FullFilterDate from "@components/FullFilterDate";
 import ButtonStyle from "@components/ButtonStyle";
@@ -20,6 +21,11 @@ const { light, dark } = theme();
 
 const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
   const mode = useSelector((state) => state.mode);
+
+  const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
+  const textColor = useMemo(() => getTextColor(mode), [mode]);
+  const getBackgroundColor = (mode) => (mode === "light" ? light.main5 : dark.main2);
+  const backgroundColor = useMemo(() => getBackgroundColor(mode), [mode]);
 
   return (
     <Modal
@@ -34,23 +40,8 @@ const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
       <TouchableWithoutFeedback onPress={() => setActive(!active)}>
         <View style={{ backgroundColor: "#0005", height: "100%" }} />
       </TouchableWithoutFeedback>
-      <View
-        style={[
-          StyleSheet.absoluteFillObject,
-          {
-            justifyContent: "center",
-            alignItems: "center",
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: mode === "light" ? light.main4 : dark.main1,
-            },
-          ]}
-        >
+      <View style={[StyleSheet.absoluteFillObject, { justifyContent: "center", alignItems: "center" }]}>
+        <View style={[styles.card, { backgroundColor: mode === "light" ? light.main4 : dark.main1 }]}>
           <View>
             <View style={styles.row}>
               <TextStyle bigSubtitle color={light.main2} bold>
@@ -62,36 +53,24 @@ const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
                   setFilters(initialState);
                 }}
               >
-                <Ionicons
-                  name="close"
-                  size={getFontSize(24)}
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                />
+                <Ionicons name="close" size={getFontSize(24)} color={textColor} />
               </TouchableOpacity>
             </View>
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
+            <TextStyle smallParagraph color={textColor}>
               Para una búsqueda más precisa
             </TextStyle>
           </View>
           <View style={{ marginTop: 25 }}>
             {filters.type === "agency" && (
               <View style={styles.row}>
-                <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                <View style={[styles.symmetry, { marginRight: 2 }]}>
+                  <TextStyle smallParagraph color={textColor}>
                     Sub-Clientes MIN
                   </TextStyle>
                   <InputStyle
                     value={filters.minSubClient}
                     onChangeText={(text) => {
-                      const value = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const value = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, minSubClient: value });
                     }}
                     placeholder="MIN"
@@ -99,19 +78,14 @@ const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
                     maxLength={11}
                   />
                 </View>
-                <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                <View style={[styles.symmetry, { marginLeft: 2 }]}>
+                  <TextStyle smallParagraph color={textColor}>
                     Sub-Clientes MAX
                   </TextStyle>
                   <InputStyle
                     value={filters.maxSubClient}
                     onChangeText={(text) => {
-                      const value = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const value = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, maxSubClient: value });
                     }}
                     placeholder="MAX"
@@ -123,19 +97,14 @@ const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
             )}
             {filters.type === "agency" && !filters.activeReservation && (
               <View style={styles.row}>
-                <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                <View style={[styles.symmetry, { marginRight: 2 }]}>
+                  <TextStyle smallParagraph color={textColor}>
                     Reservaciones MIN
                   </TextStyle>
                   <InputStyle
                     value={filters.minReservation}
                     onChangeText={(text) => {
-                      const value = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const value = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, minReservation: value });
                     }}
                     placeholder="MIN"
@@ -143,19 +112,14 @@ const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
                     maxLength={11}
                   />
                 </View>
-                <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                <View style={[styles.symmetry, { marginLeft: 2 }]}>
+                  <TextStyle smallParagraph color={textColor}>
                     Reservaciones MAX
                   </TextStyle>
                   <InputStyle
                     value={filters.maxReservation}
                     onChangeText={(text) => {
-                      const value = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const value = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, maxReservation: value });
                     }}
                     placeholder="MAX"
@@ -167,19 +131,14 @@ const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
             )}
             {filters.type === "agency" && !filters.activeDebt && (
               <View style={styles.row}>
-                <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                <View style={[styles.symmetry, { marginRight: 2 }]}>
+                  <TextStyle smallParagraph color={textColor}>
                     Deudas MIN
                   </TextStyle>
                   <InputStyle
                     value={filters.minDebt}
                     onChangeText={(text) => {
-                      const value = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const value = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, minDebt: value });
                     }}
                     placeholder="MIN"
@@ -187,19 +146,14 @@ const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
                     maxLength={11}
                   />
                 </View>
-                <View style={{ width: "48%" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                <View style={[styles.symmetry, { marginLeft: 2 }]}>
+                  <TextStyle smallParagraph color={textColor}>
                     Deudas MAX
                   </TextStyle>
                   <InputStyle
                     value={filters.maxDebt}
                     onChangeText={(text) => {
-                      const value = thousandsSystem(
-                        text.replace(/[^0-9]/g, "")
-                      );
+                      const value = thousandsSystem(text.replace(/[^0-9]/g, ""));
                       setFilters({ ...filters, maxDebt: value });
                     }}
                     placeholder="MAX"
@@ -210,115 +164,51 @@ const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
               </View>
             )}
             <View style={[styles.row, { marginTop: 10 }]}>
-              <View
-                style={[
-                  styles.cardPicker,
-                  {
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
-                    width: "49%",
-                  },
-                ]}
-              >
+              <View style={[styles.cardPicker, styles.symmetry, { backgroundColor, marginRight: 2 }]}>
                 <Picker
                   mode="dropdown"
                   selectedValue={filters.type}
-                  onValueChange={(itemValue) =>
-                    setFilters({ ...filters, type: itemValue })
-                  }
-                  dropdownIconColor={
-                    mode === "light" ? light.textDark : dark.textWhite
-                  }
-                  style={{
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
-                    color: mode === "light" ? light.textDark : dark.textWhite,
-                    fontSize: 20,
-                  }}
+                  onValueChange={(itemValue) => setFilters({ ...filters, type: itemValue })}
+                  dropdownIconColor={textColor}
+                  style={{ backgroundColor, color: textColor, fontSize: 20 }}
                 >
-                  <Picker.Item
-                    label="Tipo"
-                    value=""
-                    style={{
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    }}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  />
+                  <Picker.Item label="Tipo" value="" style={{ backgroundColor }} color={textColor} />
                   <Picker.Item
                     label="Cliente"
                     value="customer"
-                    style={{
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    }}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
+                    style={{ backgroundColor }}
+                    color={textColor}
                   />
 
                   <Picker.Item
                     label="Agencia"
                     value="agency"
-                    style={{
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    }}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
+                    style={{ backgroundColor }}
+                    color={textColor}
                   />
                 </Picker>
               </View>
-              <View
-                style={[
-                  styles.cardPicker,
-                  {
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
-                    width: "49%",
-                  },
-                ]}
-              >
+              <View style={[styles.cardPicker, styles.symmetry, { backgroundColor, marginLeft: 2 }]}>
                 <Picker
                   mode="dropdown"
                   selectedValue={filters.identification}
-                  onValueChange={(itemValue) =>
-                    setFilters({ ...filters, identification: itemValue })
-                  }
-                  dropdownIconColor={
-                    mode === "light" ? light.textDark : dark.textWhite
-                  }
-                  style={{
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
-                    color: mode === "light" ? light.textDark : dark.textWhite,
-                    fontSize: 20,
-                  }}
+                  onValueChange={(itemValue) => setFilters({ ...filters, identification: itemValue })}
+                  dropdownIconColor={textColor}
+                  style={{ backgroundColor, color: textColor, fontSize: 20 }}
                 >
-                  <Picker.Item
-                    label="Cédula"
-                    value=""
-                    style={{
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    }}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  />
+                  <Picker.Item label="Cédula" value="" style={{ backgroundColor }} color={textColor} />
                   <Picker.Item
                     label="Inactiva"
                     value="no-identification"
-                    style={{
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    }}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
+                    style={{ backgroundColor }}
+                    color={textColor}
                   />
 
                   <Picker.Item
                     label="Activa"
                     value="yes-identification"
-                    style={{
-                      backgroundColor:
-                        mode === "light" ? light.main5 : dark.main2,
-                    }}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
+                    style={{ backgroundColor }}
+                    color={textColor}
                   />
                 </Picker>
               </View>
@@ -332,18 +222,14 @@ const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
                 year: filters.year,
               }}
               onChangeDay={(value) => setFilters({ ...filters, day: value })}
-              onChangeMonth={(value) =>
-                setFilters({ ...filters, month: value })
-              }
+              onChangeMonth={(value) => setFilters({ ...filters, month: value })}
               onChangeYear={(value) => setFilters({ ...filters, year: value })}
             />
             {filters.type && (
               <View style={{ marginTop: 15 }}>
                 <View style={styles.row}>
                   <TextStyle verySmall color={light.main2}>
-                    {filters.type === "agency"
-                      ? "Todas las reservas activas"
-                      : "Reserva activa"}
+                    {filters.type === "agency" ? "Todas las reservas activas" : "Reserva activa"}
                   </TextStyle>
                   <Switch
                     trackColor={{ false: dark.main2, true: light.main2 }}
@@ -362,9 +248,7 @@ const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
                 </View>
                 <View style={styles.row}>
                   <TextStyle verySmall color={light.main2}>
-                    {filters.type === "agency"
-                      ? "Todas las deudas activas"
-                      : "Deuda activa"}
+                    {filters.type === "agency" ? "Todas las deudas activas" : "Deuda activa"}
                   </TextStyle>
                   <Switch
                     trackColor={{ false: dark.main2, true: light.main2 }}
@@ -387,17 +271,14 @@ const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
           <View style={[styles.row, { marginTop: 20 }]}>
             {filters.active && (
               <ButtonStyle
-                style={{ width: "35%" }}
-                backgroundColor={mode === "light" ? light.main5 : dark.main2}
+                style={{ flexGrow: 1, width: "auto", marginRight: 4 }}
+                backgroundColor={backgroundColor}
                 onPress={() => {
                   setActive(false);
                   setFilters(initialState);
                 }}
               >
-                <TextStyle
-                  center
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
+                <TextStyle center color={textColor}>
                   Remover
                 </TextStyle>
               </ButtonStyle>
@@ -414,9 +295,7 @@ const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
                 setFilters({ ...filters, active: true });
               }}
               backgroundColor={light.main2}
-              style={{
-                width: filters.active ? "60%" : "99%",
-              }}
+              style={{ width: "auto", flexGrow: 3 }}
             >
               <TextStyle center>Buscar</TextStyle>
             </ButtonStyle>
@@ -441,6 +320,10 @@ const styles = StyleSheet.create({
   cardPicker: {
     padding: 2,
     borderRadius: 8,
+  },
+  symmetry: {
+    width: "auto",
+    flexGrow: 1,
   },
 });
 

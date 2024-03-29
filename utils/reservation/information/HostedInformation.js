@@ -27,8 +27,8 @@ const HostedInformation = ({
 }) => {
   const mode = useSelector((state) => state.mode);
   const orders = useSelector((state) => state.orders);
+  const sales = useSelector((state) => state.sales);
 
-  const [OF, setOF] = useState(null);
   const [open, setIsOpen] = useState(false);
   const [activeEdit, setActiveEdit] = useState(false);
   const [handler, setHandler] = useState({
@@ -42,33 +42,6 @@ const HostedInformation = ({
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
   const backgroundColor = useMemo(() => getBackgroundColor(mode), [mode]);
-
-  useEffect(() => {
-    setOF(orders.find((o) => o.ref === (item.owner || item.id) && !o.pay));
-  }, [orders]);
-
-  const validationToNavigate = ({ callBack }) => {
-    if (!item.owner) {
-      Alert.alert(
-        "NO REGISTRADO",
-        "¿El huésped no esta registrado como cliente, desea registrarlo?",
-        [
-          {
-            text: "Cancelar",
-            style: "cancel",
-          },
-          {
-            text: "No",
-            onPress: () => callBack({ createClient: false }),
-          },
-          {
-            text: "Si",
-            onPress: () => callBack({ createClient: true }),
-          },
-        ]
-      );
-    } else callBack({ createClient: false });
-  };
 
   return (
     <>
@@ -85,10 +58,7 @@ const HostedInformation = ({
         )}
         content={() => (
           <>
-            <ScrollView
-              style={{ maxHeight: 360, marginTop: 15 }}
-              showsVerticalScrollIndicator={false}
-            >
+            <ScrollView style={{ maxHeight: 360, marginTop: 15 }} showsVerticalScrollIndicator={false}>
               <TextStyle color={textColor}>
                 Nombre completo: <TextStyle color={light.main2}>{item.fullName}</TextStyle>
               </TextStyle>
@@ -96,21 +66,16 @@ const HostedInformation = ({
                 Correo electrónico: <TextStyle color={light.main2}>{item.email}</TextStyle>
               </TextStyle>
               <TextStyle color={textColor}>
-                Cédula:{" "}
-                <TextStyle color={light.main2}>
-                  {thousandsSystem(item.identification)}
-                </TextStyle>
+                Cédula: <TextStyle color={light.main2}>{thousandsSystem(item.identification)}</TextStyle>
               </TextStyle>
               <TextStyle color={textColor}>
-                Número de teléfono:{" "}
-                <TextStyle color={light.main2}>{item.phoneNumber}</TextStyle>
+                Número de teléfono: <TextStyle color={light.main2}>{item.phoneNumber}</TextStyle>
               </TextStyle>
               <TextStyle color={textColor}>
                 País: <TextStyle color={light.main2}>{item.country}</TextStyle>
               </TextStyle>
               <TextStyle color={textColor}>
-                Cliente:{" "}
-                <TextStyle color={light.main2}>{item?.customer ? "SI" : "NO"}</TextStyle>
+                Cliente: <TextStyle color={light.main2}>{item?.customer ? "SI" : "NO"}</TextStyle>
               </TextStyle>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <TextStyle color={textColor}>CHECK IN: </TextStyle>
@@ -140,10 +105,7 @@ const HostedInformation = ({
                     onPress={() => setIsOpen(!open)}
                     style={{ width: "auto", flexGrow: 4 }}
                   >
-                    <TextStyle
-                      center
-                      color={open && mode === "light" ? dark.textWhite : light.textDark}
-                    >
+                    <TextStyle center color={open && mode === "light" ? dark.textWhite : light.textDark}>
                       {open ? "Mostrar menos" : "Mostrar más"}
                     </TextStyle>
                   </ButtonStyle>
@@ -151,40 +113,46 @@ const HostedInformation = ({
                 </View>
               )}
               <View style={styles.row}>
-                <ButtonStyle
-                  backgroundColor={light.main2}
-                  style={{ width: "49%" }}
-                  onPress={() => {
-                    const callBack = ({ createClient }) =>
-                      navigation.navigate("Sales", {
-                        ref: item.owner || item.id,
-                        name: item.fullName,
-                      });
-
-                    validationToNavigate({ callBack });
-                  }}
-                >
-                  <TextStyle center>P&S</TextStyle>
-                </ButtonStyle>
-                <ButtonStyle
-                  onPress={() => {
-                    const callBack = ({ createClient }) =>
-                      navigation.navigate("CreateOrder", {
-                        editing: OF ? true : false,
-                        id: OF ? OF.id : undefined,
-                        ref: item.owner || item.id,
-                        table: item.fullName,
-                        selection: OF ? OF.selection : [],
-                        invoice: OF ? OF.invoice : null,
-                        reservation: "Cliente",
-                      });
-                    validationToNavigate({ callBack });
-                  }}
-                  style={{ width: "49%" }}
-                  backgroundColor={!OF ? light.main2 : backgroundColor}
-                >
-                  <TextStyle center>Menú</TextStyle>
-                </ButtonStyle>
+                {(() => {
+                  const order = sales.find(
+                    (o) => o.ref === (item.owner || item.id) && o.status === "pending"
+                  );
+                  return (
+                    <ButtonStyle
+                      backgroundColor={!order ? light.main2 : backgroundColor}
+                      style={{ width: "49%" }}
+                      onPress={() => {
+                        navigation.navigate("Sales", {
+                          ref: item.owner || item.id,
+                          title: { name: "Habitación", value: item.fullName },
+                          order,
+                        });
+                      }}
+                    >
+                      <TextStyle center>P&S</TextStyle>
+                    </ButtonStyle>
+                  );
+                })()}
+                {(() => {
+                  const order = orders.find(
+                    (o) => o.ref === (item.owner || item.id) && o.status === "pending"
+                  );
+                  return (
+                    <ButtonStyle
+                      onPress={() => {
+                        navigation.navigate("RestaurantCreateOrder", {
+                          ref: item.owner || item.id,
+                          title: { name: "Habitación", value: item.fullName },
+                          order,
+                        });
+                      }}
+                      style={{ width: "49%" }}
+                      backgroundColor={!order ? light.main2 : backgroundColor}
+                    >
+                      <TextStyle center>Menú</TextStyle>
+                    </ButtonStyle>
+                  );
+                })()}
               </View>
               <ButtonStyle backgroundColor={light.main2} onPress={() => remove()}>
                 <TextStyle center>Eliminar huésped</TextStyle>

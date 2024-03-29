@@ -1,28 +1,14 @@
 import { useState, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  Keyboard,
-  Switch,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
+import { View, StyleSheet, Keyboard, Switch, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
-import {
-  add as addCustomer,
-  edit as editCustomer,
-} from "@features/people/customersSlice";
-import {
-  add as addSupplier,
-  edit as editSupplier,
-} from "@features/people/suppliersSlice";
+import { add as addCustomer, edit as editCustomer } from "@features/people/customersSlice";
+import { add as addSupplier, edit as editSupplier } from "@features/people/suppliersSlice";
 import { edit as editE } from "@features/function/economySlice";
 import { random, thousandsSystem, getFontSize } from "@helpers/libs";
 import { addPerson, editPerson, editEconomy } from "@api";
 import AddPerson from "@components/AddPerson";
-import Information from '@components/Information';
+import Information from "@components/Information";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import InputStyle from "@components/InputStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -46,12 +32,8 @@ const CreatePerson = ({ route, navigation }) => {
   const customers = useSelector((state) => state.customers);
   const suppliers = useSelector((state) => state.suppliers);
 
-  const standardReservations = useSelector(
-    (state) => state.standardReservations
-  );
-  const accommodationReservations = useSelector(
-    (state) => state.accommodationReservations
-  );
+  const standardReservations = useSelector((state) => state.standardReservations);
+  const accommodationReservations = useSelector((state) => state.accommodationReservations);
 
   const economy = useSelector((state) => state.economy);
   const helperStatus = useSelector((state) => state.helperStatus);
@@ -68,25 +50,25 @@ const CreatePerson = ({ route, navigation }) => {
   const [activeInformation, setActiveInformation] = useState(false);
   const [special, setSpecial] = useState(editing ? dataP.special : false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [completeClientList, setCompleteClientList] = useState(editing ? dataP.clientList : []);
+  const [completeClientList, setCompleteClientList] = useState(editing ? dataP.clientList || [] : []);
   const [clientList, setClientList] = useState([]);
   const [checkOutClientList, setCheckOutClientList] = useState([]);
   const [clientCountFinished, setClientCountFinished] = useState(null);
 
   useEffect(() => {
     if (editing && special && dataP?.clientList) {
-      const separateClients = ({ c, isCheckOut }) =>{
+      const separateClients = ({ c, isCheckOut }) => {
         const exists =
-          standardReservations.some((s) =>
-            s.hosted.some((h) => h.owner === c.id && h.checkOut)
-          ) ||
+          standardReservations.some((s) => s.hosted.some((h) => h.owner === c.id && h.checkOut)) ||
           accommodationReservations.some((h) => h.owner === c.id && h.checkOut);
 
         return isCheckOut ? exists : !exists;
-      }
+      };
 
       const clientList = dataP.clientList?.filter((c) => separateClients({ c, isCheckOut: false }));
-      const checkOutClientList = dataP.clientList?.filter((c) => separateClients({ c, isCheckOut: true }));
+      const checkOutClientList = dataP.clientList?.filter((c) =>
+        separateClients({ c, isCheckOut: true })
+      );
 
       const count = dataP?.clientList.length - clientList.length;
       setClientCountFinished(count || null);
@@ -105,8 +87,7 @@ const CreatePerson = ({ route, navigation }) => {
   useEffect(() => {
     register("name", { value: editing ? dataP.name : "", required: true });
     register("identification", { value: editing ? dataP.identification : "" });
-    if (type === "customer")
-      register("special", { value: editing ? dataP.special : false });
+    if (type === "customer") register("special", { value: editing ? dataP.special : false });
 
     navigation.setOptions({
       title: type === "supplier" ? "Crear Proveedor" : "Crear Cliente",
@@ -117,8 +98,7 @@ const CreatePerson = ({ route, navigation }) => {
     register("clientList", {
       value: editing && value ? dataP.clientList : [],
       validate: (array) => {
-        if (value)
-          return array.length > 0 || "Tiene que haber mínimo 1 cliente";
+        if (value) return array.length > 0 || "Tiene que haber mínimo 1 cliente";
       },
     });
   };
@@ -131,10 +111,8 @@ const CreatePerson = ({ route, navigation }) => {
     setLoading(true);
     Keyboard.dismiss();
     const id = random(20);
-    if (type === "customer" && customers.find((p) => p.id === id))
-      return onSubmitCreate(data);
-    if (type === "supplier" && suppliers.find((p) => p.id === id))
-      return onSubmitCreate(data);
+    if (type === "customer" && customers.find((p) => p.id === id)) return onSubmitCreate(data);
+    if (type === "supplier" && suppliers.find((p) => p.id === id)) return onSubmitCreate(data);
 
     data.id = id;
     data.creationDate = new Date().getTime();
@@ -150,13 +128,9 @@ const CreatePerson = ({ route, navigation }) => {
     if (type === "supplier") dispatch(addSupplier(data));
     navigation.pop();
     await addPerson({
-      identifier: helperStatus.active
-        ? helperStatus.identifier
-        : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       person: { type, data },
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
+      helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
     });
   };
 
@@ -175,16 +149,12 @@ const CreatePerson = ({ route, navigation }) => {
         })
       );
       await editEconomy({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
+        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
         economy: {
           ...foundEconomy,
           owner: { identification: data.identification, name: data.name },
         },
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
+        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
       });
     }
     data.modificationDate = new Date().getTime();
@@ -197,18 +167,13 @@ const CreatePerson = ({ route, navigation }) => {
         dispatch(editCustomer({ id: dataP.id, data }));
       }
     }
-    if (type === "supplier")
-      dispatch(editSupplier({ id: dataP.id, data }));
+    if (type === "supplier") dispatch(editSupplier({ id: dataP.id, data }));
     navigation.pop();
 
     await editPerson({
-      identifier: helperStatus.active
-        ? helperStatus.identifier
-        : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       person: { type, data },
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
+      helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
     });
   };
 
@@ -222,11 +187,11 @@ const CreatePerson = ({ route, navigation }) => {
     const validation = (h) => {
       if (h.id === editingClient.id) return obj;
       return h;
-    }
+    };
 
     const newArrayCompleteClientList = completeClientList.map(validation);
-    setCompleteClientList(newArrayCompleteClientList)
-    setCheckOutClientList(checkOutClientList.map(validation))
+    setCompleteClientList(newArrayCompleteClientList);
+    setCheckOutClientList(checkOutClientList.map(validation));
     setClientList(clientList.map(validation));
     setValue("clientList", newArrayCompleteClientList);
     cleanData();
@@ -235,99 +200,92 @@ const CreatePerson = ({ route, navigation }) => {
   const saveHosted = ({ data: { fullName, identification }, cleanData }) => {
     const id = random(10, { number: true });
     const newDate = { id, name: fullName, identification };
-    setCompleteClientList([...completeClientList, newDate])
+    setCompleteClientList([...completeClientList, newDate]);
     setClientList([...clientList, newDate]);
     setValue("clientList", [...completeClientList, newDate]);
     cleanData();
   };
 
   const SubClient = ({ item }) => {
-    return <View
-    key={item.id}
-    style={[
-      styles.row,
-      {
-        marginVertical: 4,
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        backgroundColor:
-          mode === "light" ? light.main5 : dark.main2,
-        borderRadius: 8,
-      },
-    ]}
-  >
-    <TextStyle
-      color={mode === "light" ? light.textDark : dark.textWhite}
-    >
-      {`${item?.name?.slice(0, 20)}${
-        item?.name?.length > 20 ? "..." : ""
-      }`}
-    </TextStyle>
-    <View style={{ flexDirection: "row" }}>
-      <TouchableOpacity
-        onPress={() => {
-          setEditingClient({
-            key: Math.random(),
-            active: true,
-            ...item,
-            fullName: item.name,
-          });
-          setModalVisible(!modalVisible);
-        }}
+    return (
+      <View
+        key={item.id}
+        style={[
+          styles.row,
+          {
+            marginVertical: 4,
+            paddingVertical: 10,
+            paddingHorizontal: 16,
+            backgroundColor: mode === "light" ? light.main5 : dark.main2,
+            borderRadius: 8,
+          },
+        ]}
       >
-        <Ionicons
-          name="create-outline"
-          size={getFontSize(19)}
-          style={{ marginHorizontal: 4 }}
-          color={
-            mode === "light" ? light.textDark : dark.textWhite
-          }
-        />
-      </TouchableOpacity>
+        <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
+          {`${item?.name?.slice(0, 20)}${item?.name?.length > 20 ? "..." : ""}`}
+        </TextStyle>
+        <View style={{ flexDirection: "row" }}>
+          <TouchableOpacity
+            onPress={() => {
+              setEditingClient({
+                key: Math.random(),
+                active: true,
+                ...item,
+                fullName: item.name,
+              });
+              setModalVisible(!modalVisible);
+            }}
+          >
+            <Ionicons
+              name="create-outline"
+              size={getFontSize(19)}
+              style={{ marginHorizontal: 4 }}
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            />
+          </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={() => {
-          Alert.alert(
-            "Eliminar",
-            `¿Quieres eliminar el cliente ${item.name}?`,
-            [
-              {
-                text: "No",
-                style: "cancel",
-              },
-              {
-                text: "Si",
-                onPress: async () => {
-                  const validation = (h) => h.id !== item.id;
-                  const newArrayClientList = clientList.filter(validation);
-                  const newArrayCompleteClientList = completeClientList.filter(validation);
-                  const newArrayCheckOutClientList = checkOutClientList.filter(validation);
-                  setClientList(newArrayClientList);
-                  setCompleteClientList(newArrayCompleteClientList);
-                  setCheckOutClientList(newArrayCheckOutClientList);
-                  if (!newArrayCheckOutClientList.length) {
-                    setActiveInformation(false);
-                    setClientCountFinished(null);
-                  }
-                },
-              },
-            ],
-            { cancelable: true }
-          );
-        }}
-      >
-        <Ionicons
-          name="trash"
-          size={getFontSize(19)}
-          style={{ marginHorizontal: 4 }}
-          color={
-            mode === "light" ? light.textDark : dark.textWhite
-          }
-        />
-      </TouchableOpacity>
-    </View>
-  </View>
-  }
+          <TouchableOpacity
+            onPress={() => {
+              Alert.alert(
+                "Eliminar",
+                `¿Quieres eliminar el cliente ${item.name}?`,
+                [
+                  {
+                    text: "No",
+                    style: "cancel",
+                  },
+                  {
+                    text: "Si",
+                    onPress: async () => {
+                      const validation = (h) => h.id !== item.id;
+                      const newArrayClientList = clientList.filter(validation);
+                      const newArrayCompleteClientList = completeClientList.filter(validation);
+                      const newArrayCheckOutClientList = checkOutClientList.filter(validation);
+                      setClientList(newArrayClientList);
+                      setCompleteClientList(newArrayCompleteClientList);
+                      setCheckOutClientList(newArrayCheckOutClientList);
+                      if (!newArrayCheckOutClientList.length) {
+                        setActiveInformation(false);
+                        setClientCountFinished(null);
+                      }
+                    },
+                  },
+                ],
+                { cancelable: true }
+              );
+            }}
+          >
+            <Ionicons
+              name="trash"
+              size={getFontSize(19)}
+              style={{ marginHorizontal: 4 }}
+              color={mode === "light" ? light.textDark : dark.textWhite}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <Layout style={styles.layout}>
@@ -335,16 +293,12 @@ const CreatePerson = ({ route, navigation }) => {
         <TextStyle bigTitle center color={light.main2}>
           VBELA
         </TextStyle>
-        <TextStyle
-          bigParagraph
-          center
-          color={mode === "light" ? null : dark.textWhite}
-        >
+        <TextStyle bigParagraph center color={mode === "light" ? null : dark.textWhite}>
           Crear nuevo {type === "supplier" ? "proveedor" : "cliente"}
         </TextStyle>
       </View>
       <View style={{ marginVertical: 20, width: "100%" }}>
-        {type === "customer" && (
+        {type === "customer" && !editing && (
           <View>
             <View style={styles.row}>
               <TextStyle smallParagraph color={light.main2}>
@@ -358,14 +312,9 @@ const CreatePerson = ({ route, navigation }) => {
                   setSpecial(value);
                   setValue("special", value);
                   setValue("name", "");
-                  setValue(
-                    "identification",
-                    !value && editing ? dataP.identification : ""
-                  );
+                  setValue("identification", !value && editing ? dataP.identification : "");
                   setName("");
-                  setIdentification(
-                    !value && editing ? dataP.identification : ""
-                  );
+                  setIdentification(!value && editing ? dataP.identification : "");
                   setEditingClient({
                     key: Math.random(),
                     active: false,
@@ -376,15 +325,13 @@ const CreatePerson = ({ route, navigation }) => {
               />
             </View>
             {editing && clientCountFinished && (
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <TextStyle smallParagraph color={light.main2}>
                   {clientCountFinished} PERSONA
                   {clientCountFinished === 1 ? "" : "S"} HA
                   {clientCountFinished === 1 ? "" : "N"} HECHO CHECK OUT
                 </TextStyle>
-                <TouchableOpacity
-                  onPress={() => setActiveInformation(!activeInformation)}
-                >
+                <TouchableOpacity onPress={() => setActiveInformation(!activeInformation)}>
                   <Ionicons
                     name="help-circle-outline"
                     style={{ marginLeft: 5 }}
@@ -397,11 +344,10 @@ const CreatePerson = ({ route, navigation }) => {
           </View>
         )}
         {special && (
-          <ScrollView
-            style={{ maxHeight: 220, marginTop: 5 }}
-            showsVerticalScrollIndicator={false}
-          >
-            {clientList.map((item) => <SubClient item={item} key={item.id}/>)}
+          <ScrollView style={{ maxHeight: 220, marginTop: 5 }} showsVerticalScrollIndicator={false}>
+            {clientList.map((item) => (
+              <SubClient item={item} key={item.id} />
+            ))}
           </ScrollView>
         )}
         {special && (
@@ -433,11 +379,7 @@ const CreatePerson = ({ route, navigation }) => {
           placeholder={!special ? "Nombre" : "Nombre de la agencia"}
           maxLength={50}
           value={name}
-          right={
-            name
-              ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
-              : null
-          }
+          right={name ? () => <TextStyle color={light.main2}>Nombre</TextStyle> : null}
           onChangeText={(text) => {
             setValue("name", text);
             setName(text);
@@ -452,11 +394,7 @@ const CreatePerson = ({ route, navigation }) => {
           placeholder={special ? "Identificación" : "Cédula"}
           value={identification}
           maxLength={15}
-          right={
-            identification
-              ? () => <TextStyle color={light.main2}>Cédula</TextStyle>
-              : null
-          }
+          right={identification ? () => <TextStyle color={light.main2}>Cédula</TextStyle> : null}
           keyboardType="numeric"
           onChangeText={(text) => {
             setValue("identification", text.replace(/[^0-9]/g, ""));
@@ -480,17 +418,13 @@ const CreatePerson = ({ route, navigation }) => {
         title="CHECK OUT"
         content={() => (
           <View>
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
+            <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
               Lista de personas que han hecho CHECK OUT
             </TextStyle>
-            <ScrollView
-              style={{ maxHeight: 220, marginTop: 15 }}
-              showsVerticalScrollIndicator={false}
-            >
-              {checkOutClientList.map((item) => <SubClient item={item} key={item.id}/>)}
+            <ScrollView style={{ maxHeight: 220, marginTop: 15 }} showsVerticalScrollIndicator={false}>
+              {checkOutClientList.map((item) => (
+                <SubClient item={item} key={item.id} />
+              ))}
             </ScrollView>
           </View>
         )}

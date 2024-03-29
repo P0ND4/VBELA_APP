@@ -68,10 +68,7 @@ const PaymentManager = ({
   const textColor = useMemo(() => getTextColor(mode), [mode]);
 
   useEffect(() => setElements(toPay), [toPay]);
-  useEffect(
-    () => setAmount(elements?.reduce((a, b) => a + b?.amount || 0, 0) || "0"),
-    [elements]
-  );
+  useEffect(() => setAmount(elements?.reduce((a, b) => a + b?.amount || 0, 0) || "0"), [elements]);
 
   const onClose = () => {
     setPaymentMethod("cash");
@@ -106,9 +103,7 @@ const PaymentManager = ({
                     element={item}
                     onChangeText={(num) => {
                       const amount = parseInt(num || "0");
-                      setElements(
-                        elements.map((e) => (e.id === item.id ? { ...e, amount } : e))
-                      );
+                      setElements(elements.map((e) => (e.id === item.id ? { ...e, amount } : e)));
                     }}
                   />
                 )}
@@ -117,8 +112,7 @@ const PaymentManager = ({
             {!paymentByBusiness && paymentMethod !== "credit" && (
               <View style={{ marginVertical: 5 }}>
                 <TextStyle color={textColor}>
-                  Monto pagado:{" "}
-                  <TextStyle color={light.main2}>{thousandsSystem(payment)}</TextStyle>
+                  Monto pagado: <TextStyle color={light.main2}>{thousandsSystem(payment)}</TextStyle>
                 </TextStyle>
                 <TextStyle color={textColor}>
                   Monto faltante:{" "}
@@ -127,8 +121,7 @@ const PaymentManager = ({
                   </TextStyle>
                 </TextStyle>
                 <TextStyle color={textColor}>
-                  Monto a pagar:{" "}
-                  <TextStyle color={light.main2}>{thousandsSystem(amount)}</TextStyle>
+                  Monto a pagar: <TextStyle color={light.main2}>{thousandsSystem(amount)}</TextStyle>
                 </TextStyle>
                 {amount > total - payment && (
                   <TextStyle color={textColor}>

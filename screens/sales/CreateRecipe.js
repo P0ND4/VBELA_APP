@@ -35,11 +35,7 @@ const Ingredient = ({ item, onChange, initialCount = 0 }) => {
   return (
     <>
       <View style={{ alignItems: "center", marginBottom: 8 }}>
-        <TextStyle
-          style={{ marginBottom: 4 }}
-          smallParagraph
-          color={light.main2}
-        >
+        <TextStyle style={{ marginBottom: 4 }} smallParagraph color={light.main2}>
           {item.name} ({item.unit})
         </TextStyle>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -62,17 +58,14 @@ const Ingredient = ({ item, onChange, initialCount = 0 }) => {
               paddingVertical: 7,
             }}
           >
-            <TextStyle
-              color={mode === "light" ? light.textDark : dark.textWhite}
-              smallParagraph
-            >
+            <TextStyle color={mode === "light" ? light.textDark : dark.textWhite} smallParagraph>
               {item.name}
             </TextStyle>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.button}
             onPress={() => {
-              if (count === 9999999999) return;
+              if (count === item.portion) return;
               const quantity = count + 1;
               setCount(quantity);
               onChange(quantity);
@@ -87,7 +80,7 @@ const Ingredient = ({ item, onChange, initialCount = 0 }) => {
             smallParagraph
             color={mode === "light" ? light.textDark : dark.textWhite}
           >
-            {thousandsSystem(count)}
+            {thousandsSystem(count)} {count ? (count === 1 ? "(Porción)" : "(Porciones)") : ""}
           </TextStyle>
         </TouchableOpacity>
       </View>
@@ -100,35 +93,26 @@ const Ingredient = ({ item, onChange, initialCount = 0 }) => {
         title={item.name}
         content={() => (
           <View>
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
+            <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
               Cantidad total a utilizar
             </TextStyle>
             <InputStyle
               value={informationCount}
               placeholder="Cantidad"
-              right={
-                informationCount
-                  ? () => <TextStyle color={light.main2}>Cantidad</TextStyle>
-                  : null
-              }
+              right={informationCount ? () => <TextStyle color={light.main2}>Cantidad</TextStyle> : null}
               maxLength={13}
               stylesContainer={{ marginVertical: 10 }}
               keyboardType="numeric"
               onChangeText={(num) => {
+                if (parseInt(num.replace(/[^0-9]/g, "")) > item.portion) return;
                 if (num === "") return setInformationCount("");
-                setInformationCount(
-                  thousandsSystem(num.replace(/[^0-9]/g, ""))
-                );
+                setInformationCount(thousandsSystem(num.replace(/[^0-9]/g, "")));
               }}
             />
             <ButtonStyle
               backgroundColor={light.main2}
               onPress={() => {
-                const quantity =
-                  parseInt(informationCount.replace(/[^0-9]/g, "")) || 0;
+                const quantity = parseInt(informationCount.replace(/[^0-9]/g, "")) || 0;
                 setCount(quantity);
                 onChange(quantity);
                 setModalVisible(false);
@@ -164,9 +148,7 @@ const CreateRecipe = ({ route, navigation }) => {
   const sales = route.params?.sales;
 
   const [name, setName] = useState(editing ? item.name : "");
-  const [ingredients, setIngredients] = useState(
-    editing ? item.ingredients : []
-  );
+  const [ingredients, setIngredients] = useState(editing ? item.ingredients : []);
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -183,8 +165,7 @@ const CreateRecipe = ({ route, navigation }) => {
     register("name", { value: editing ? item.name : "", required: true });
     register("ingredients", {
       value: editing ? item.ingredients : "",
-      validate: (array) =>
-        array.length > 0 || "Tiene que tener mínimo 1 ingrediente",
+      validate: (array) => array.length > 0 || "Tiene que tener mínimo 1 ingrediente",
     });
   }, []);
 
@@ -192,23 +173,18 @@ const CreateRecipe = ({ route, navigation }) => {
     setLoading(true);
     Keyboard.dismiss();
     const id = random(20);
-    if (recipes.find((ingredient) => ingredient.id === id))
-      onSubmitCreate(data);
+    if (recipes.find((ingredient) => ingredient.id === id)) onSubmitCreate(data);
     else {
       data.id = id;
-      data.type = sales ? 'sales' : 'menu';
+      data.type = sales ? "sales" : "menu";
       data.creationDate = new Date().getTime();
       data.modificationDate = new Date().getTime();
       dispatch(add(data));
       navigation.pop();
       await addRecipe({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
+        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
         recipe: data,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
+        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
       });
     }
   };
@@ -224,23 +200,16 @@ const CreateRecipe = ({ route, navigation }) => {
     dispatch(edit({ id: item.id, data }));
     navigation.pop();
     await editRecipe({
-      identifier: helperStatus.active
-        ? helperStatus.identifier
-        : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       recipe: data,
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
+      helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
     });
   };
 
   return (
     <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           <View
             style={{
               justifyContent: "center",
@@ -252,11 +221,7 @@ const CreateRecipe = ({ route, navigation }) => {
               <TextStyle bigTitle center color={light.main2}>
                 VBELA
               </TextStyle>
-              <TextStyle
-                bigParagraph
-                center
-                color={mode === "light" ? null : dark.textWhite}
-              >
+              <TextStyle bigParagraph center color={mode === "light" ? null : dark.textWhite}>
                 Crear {sales ? "reconteo" : "receta"}
               </TextStyle>
             </View>
@@ -274,11 +239,7 @@ const CreateRecipe = ({ route, navigation }) => {
                   setValue("name", text);
                   setName(text);
                 }}
-                right={
-                  name
-                    ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
-                    : null
-                }
+                right={name ? () => <TextStyle color={light.main2}>Nombre</TextStyle> : null}
                 maxLength={30}
                 placeholder={`Nombre de${sales ? "l reconteo" : " la receta"}`}
               />
@@ -292,32 +253,20 @@ const CreateRecipe = ({ route, navigation }) => {
                   style={{ maxHeight: 250, marginTop: 20 }}
                   showsVerticalScrollIndicator={false}
                 >
-                  <View
-                    style={[
-                      styles.row,
-                      { flexWrap: "wrap", justifyContent: "space-evenly" },
-                    ]}
-                  >
+                  <View style={[styles.row, { flexWrap: "wrap", justifyContent: "space-evenly" }]}>
                     {list.map((item) => (
                       <Ingredient
                         item={item}
-                        initialCount={
-                          ingredients.find((i) => i.id === item.id)?.quantity ||
-                          0
-                        }
-                        onChange={(quantity) => {
-                          const found = ingredients.find(
-                            (i) => i.id === item.id
-                          );
+                        initialCount={ingredients.find((i) => i.id === item.id)?.portion || 0}
+                        onChange={(portion) => {
+                          const found = ingredients.find((i) => i.id === item.id);
                           if (found) {
                             let newIngredients;
-                            if (quantity === 0)
-                              newIngredients = ingredients.filter(
-                                (i) => i.id !== item.id
-                              );
+                            if (portion === 0)
+                              newIngredients = ingredients.filter((i) => i.id !== item.id);
                             else {
                               newIngredients = ingredients.map((i) => {
-                                if (i.id === item.id) return { ...i, quantity };
+                                if (i.id === item.id) return { ...i, portion };
                                 return i;
                               });
                             }
@@ -330,7 +279,7 @@ const CreateRecipe = ({ route, navigation }) => {
                                 id: item.id,
                                 unit: item.unit,
                                 name: item.name,
-                                quantity,
+                                portion,
                               },
                             ];
                             setValue("ingredients", newIngredients);

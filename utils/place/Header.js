@@ -44,7 +44,7 @@ const Header = ({ zoneID, month, setMonth, year, setYear, searchEvent }) => {
           </TextStyle>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={() => {
               Alert.alert(
                 "UYUYUYUYUYU",
@@ -54,13 +54,9 @@ const Header = ({ zoneID, month, setMonth, year, setYear, searchEvent }) => {
             }}
           >
             <Ionicons name="search" size={getFontSize(31)} color={light.main2} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity onPress={() => navigation.navigate("ZoneInformation", { zoneID })}>
-            <Ionicons
-              name="information-circle-outline"
-              size={getFontSize(31)}
-              color={light.main2}
-            />
+            <Ionicons name="information-circle-outline" size={getFontSize(31)} color={light.main2} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate("CreatePlace", { zoneID })}>
             <Ionicons name="add-circle" size={getFontSize(32)} color={light.main2} />

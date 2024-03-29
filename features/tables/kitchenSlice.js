@@ -4,7 +4,7 @@ export const kitchenSlice = createSlice({
   name: "kitchen",
   initialState: [],
   reducers: {
-    change: (state, action) => state = action.payload,
+    change: (state, action) => (state = action.payload),
     add: (state, action) => void (state = state.push(action.payload)),
     remove: (state, action) => {
       const { id } = action.payload;
@@ -13,11 +13,11 @@ export const kitchenSlice = createSlice({
     },
     removeMany: (state, action) => {
       const { ref } = action.payload;
-      const kitchen = state.filter((k) => k.ref === ref);
+      const kitchen = state.filter((k) => k.ref === ref && k.status === "processing");
       for (let k of kitchen) {
-        const index = state.findIndex((kit) => kit.ref === k.ref && kit.finished === false);
+        const index = state.findIndex((kit) => kit.ref === k.ref);
         state.splice(index, 1);
-      };
+      }
     },
     edit: (state, action) => {
       const { id, data } = action.payload;

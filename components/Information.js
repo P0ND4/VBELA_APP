@@ -64,35 +64,28 @@ const Information = ({
         <View style={[{ backgroundColor: "#0004" }, StyleSheet.absoluteFillObject]} />
       </TouchableWithoutFeedback>
       <View style={styles.centeredView}>
-        <View
-          style={[
-            { backgroundColor: mode === "light" ? light.main4 : dark.main2 },
-            stylesTaken,
-          ]}
-        >
-          <View style={{ width: "100%" }}>
-            <View style={styles.row}>
-              <TextStyle center bigSubtitle color={light.main2}>
-                {title}
-              </TextStyle>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                {headerRight()}
-                <TouchableOpacity
-                  onPress={() => {
-                    setModalVisible(!modalVisible);
-                    onClose();
-                  }}
-                >
-                  <Ionicons
-                    name="close"
-                    size={30}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  />
-                </TouchableOpacity>
-              </View>
+        <View style={[{ backgroundColor: mode === "light" ? light.main4 : dark.main2 }, stylesTaken]}>
+          <View style={styles.row}>
+            <TextStyle center bigSubtitle color={light.main2}>
+              {title}
+            </TextStyle>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              {headerRight()}
+              <TouchableOpacity
+                onPress={() => {
+                  setModalVisible(!modalVisible);
+                  onClose();
+                }}
+              >
+                <Ionicons
+                  name="close"
+                  size={30}
+                  color={mode === "light" ? light.textDark : dark.textWhite}
+                />
+              </TouchableOpacity>
             </View>
-            {content()}
           </View>
+          {content()}
         </View>
       </View>
       <StatusBar backgroundColor="#0004" />

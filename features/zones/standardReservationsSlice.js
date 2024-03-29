@@ -13,13 +13,21 @@ export const standardReservationsSlice = createSlice({
         return s;
       });
     },
+    updateMany: (state, action) => {
+      const { data } = action.payload;
+      return state.map((s) => {
+        const found = data.find((d) => d.id === s.id);
+        if (found) return { ...s, ...found };
+        return s;
+      });
+    },
     remove: (state, action) => {
       const { id } = action.payload;
       return state.filter((r) => r.id !== id);
     },
     removeMany: (state, action) => {
-      const refToRemove = action.payload.ref;
-      return state.filter((r) => r.ref !== refToRemove);
+      const { ids } = action.payload;
+      return state.filter((s) => !ids.includes(s.id));
     },
     removeManyByManyRefs: (state, action) => {
       const refs = action.payload.refs;
@@ -29,6 +37,6 @@ export const standardReservationsSlice = createSlice({
   },
 });
 
-export const { add, change, remove, edit, clean, removeMany, removeManyByManyRefs } =
+export const { add, change, remove, edit, clean, removeMany, removeManyByManyRefs, updateMany } =
   standardReservationsSlice.actions;
 export default standardReservationsSlice.reducer;

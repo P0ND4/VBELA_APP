@@ -1,12 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  TouchableOpacity,
-  View,
-  StyleSheet,
-  Image,
-  ScrollView,
-  Alert
-} from "react-native";
+import { TouchableOpacity, View, StyleSheet, Image, ScrollView, Alert } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { getExpoID } from "@helpers/libs";
 import { addUser } from "@api";
@@ -103,7 +96,7 @@ const Selection = ({ route, navigation }) => {
         ],
         { cancelable: true }
       );
-    } else send();
+    } else send({});
   };
 
   const Card = ({ source, title, description, type }) => {
@@ -123,11 +116,7 @@ const Selection = ({ route, navigation }) => {
         </TextStyle>
 
         <Image source={source} style={{ width: 80, height: 80 }} />
-        <TextStyle
-          smallParagraph
-          justify
-          color={mode === "light" ? light.textDark : dark.textWhite}
-        >
+        <TextStyle smallParagraph justify color={mode === "light" ? light.textDark : dark.textWhite}>
           {description}
         </TextStyle>
       </TouchableOpacity>
@@ -146,9 +135,8 @@ const Selection = ({ route, navigation }) => {
           style={{ marginTop: 10 }}
           color={mode === "light" ? light.textDark : dark.textWhite}
         >
-          Queremos conocer tus preferencias y el propósito de uso de la
-          aplicación. Por favor, elige la opción que mejor se adapte a tus
-          necesidades.
+          Queremos conocer tus preferencias y el propósito de uso de la aplicación. Por favor, elige la
+          opción que mejor se adapte a tus necesidades.
         </TextStyle>
       </View>
       <View style={{ alignItems: "center", maxHeight: 620 }}>

@@ -23,6 +23,7 @@ const FullFilterDate = ({
   dayButtonStyle = {},
   monthButtonStyle = {},
   yearButtonStyle = {},
+  style = {},
 }) => {
   const mode = useSelector((state) => state.mode);
 
@@ -81,30 +82,19 @@ const FullFilterDate = ({
                 paddingVertical: 16,
               },
               dayButtonStyle,
+              style,
             ]}
             onPress={() => dayRef.current?.focus()}
           >
             <View style={styles.row}>
               <TextStyle
-                color={
-                  day !== "all"
-                    ? mode === "light"
-                      ? light.textDark
-                      : dark.textWhite
-                    : "#888888"
-                }
+                color={day !== "all" ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"}
                 smallParagraph
               >
                 {day !== "all" ? day : "Día"}
               </TextStyle>
               <Ionicons
-                color={
-                  day !== "all"
-                    ? mode === "light"
-                      ? light.textDark
-                      : dark.textWhite
-                    : "#888888"
-                }
+                color={day !== "all" ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"}
                 size={getFontSize(10)}
                 name="caret-down"
               />
@@ -136,8 +126,7 @@ const FullFilterDate = ({
                   label={`${day}`}
                   value={day}
                   style={{
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
+                    backgroundColor: mode === "light" ? light.main5 : dark.main2,
                   }}
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 />
@@ -154,17 +143,14 @@ const FullFilterDate = ({
                 paddingVertical: 16,
               },
               monthButtonStyle,
+              style,
             ]}
             onPress={() => monthRef.current?.focus()}
           >
             <View style={styles.row}>
               <TextStyle
                 color={
-                  month !== "all"
-                    ? mode === "light"
-                      ? light.textDark
-                      : dark.textWhite
-                    : "#888888"
+                  month !== "all" ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"
                 }
                 smallParagraph
               >
@@ -172,11 +158,7 @@ const FullFilterDate = ({
               </TextStyle>
               <Ionicons
                 color={
-                  month !== "all"
-                    ? mode === "light"
-                      ? light.textDark
-                      : dark.textWhite
-                    : "#888888"
+                  month !== "all" ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"
                 }
                 size={getFontSize(10)}
                 name="caret-down"
@@ -208,8 +190,7 @@ const FullFilterDate = ({
                   label={month}
                   value={index + 1}
                   style={{
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
+                    backgroundColor: mode === "light" ? light.main5 : dark.main2,
                   }}
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 />
@@ -226,30 +207,19 @@ const FullFilterDate = ({
                 paddingVertical: 16,
               },
               yearButtonStyle,
+              style,
             ]}
             onPress={() => yearRef.current?.focus()}
           >
             <View style={styles.row}>
               <TextStyle
-                color={
-                  year !== "all"
-                    ? mode === "light"
-                      ? light.textDark
-                      : dark.textWhite
-                    : "#888888"
-                }
+                color={year !== "all" ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"}
                 smallParagraph
               >
                 {year !== "all" ? year : "Año"}
               </TextStyle>
               <Ionicons
-                color={
-                  year !== "all"
-                    ? mode === "light"
-                      ? light.textDark
-                      : dark.textWhite
-                    : "#888888"
-                }
+                color={year !== "all" ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"}
                 size={getFontSize(10)}
                 name="caret-down"
               />
@@ -280,8 +250,7 @@ const FullFilterDate = ({
                   label={`${year}`}
                   value={year}
                   style={{
-                    backgroundColor:
-                      mode === "light" ? light.main5 : dark.main2,
+                    backgroundColor: mode === "light" ? light.main5 : dark.main2,
                   }}
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 />

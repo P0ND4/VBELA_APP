@@ -1,13 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  FlatList,
-  ScrollView,
-  Alert,
-  Image,
-} from "react-native";
+import { View, TouchableOpacity, StyleSheet, FlatList, ScrollView, Alert, Image } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { thousandsSystem, changeDate } from "@helpers/libs";
 import { edit, remove } from "@features/zones/accommodationReservationsSlice";
@@ -93,11 +85,13 @@ const Table = ({
   const openPaymentToPay = () => {
     setEditPay(true);
     setShowPaymentManagement(true);
+    const amount = item.total - reservePayment;
     setReservesToPay([
       {
         id: item.id,
+        total: item.total,
         name: `${item.fullName}: ${item.total}`,
-        amount: 0,
+        amount: Math.max(amount, 0),
         payment: reservePayment,
         owner: item.owner,
       },
@@ -199,9 +193,7 @@ const Table = ({
             {!["credit", "business"].includes(item?.status) && (
               <TextStyle color={textColor}>
                 Dinero pagado:{" "}
-                <TextStyle color={light.main2}>
-                  {thousandsSystem(reservePayment || "0")}
-                </TextStyle>
+                <TextStyle color={light.main2}>{thousandsSystem(reservePayment || "0")}</TextStyle>
               </TextStyle>
             )}
             {reservePayment > item?.total && (
@@ -213,8 +205,7 @@ const Table = ({
               </TextStyle>
             )}
             <TextStyle color={textColor}>
-              Días reservado:{" "}
-              <TextStyle color={light.main2}>{thousandsSystem(item.days)}</TextStyle>
+              Días reservado: <TextStyle color={light.main2}>{thousandsSystem(item.days)}</TextStyle>
             </TextStyle>
             <View>
               <TextStyle color={textColor}>Tipo de acomodación: </TextStyle>
@@ -285,9 +276,7 @@ const Information = ({ route, navigation }) => {
 
   useEffect(() => {
     const reserves = accommodationReservations.filter((a) => ids.includes(a.id));
-    setReservesPayment(
-      reserves?.reduce((a, b) => a + b?.payment?.reduce((a, p) => a + p.amount, 0), 0)
-    );
+    setReservesPayment(reserves?.reduce((a, b) => a + b?.payment?.reduce((a, p) => a + p.amount, 0), 0));
     setReservesTotal(reserves?.reduce((a, b) => a + b.total, 0));
     setReserves(reserves);
   }, [accommodationReservations]);
@@ -306,9 +295,7 @@ const Information = ({ route, navigation }) => {
         a +
         `<tr>
             <td style="width: 100px; border: 1px solid #000; padding: 8px">
-              <p style="font-size: 14px; font-weight: 600; word-break: break-word;">${
-                item.fullName
-              }</p>
+              <p style="font-size: 14px; font-weight: 600; word-break: break-word;">${item.fullName}</p>
             </td>
             <td style="width: 50px; border: 1px solid #000; padding: 8px">
               <p style="font-size: 14px; font-weight: 600; word-break: break-word;">${
@@ -436,8 +423,7 @@ const Information = ({ route, navigation }) => {
              ${
                !reserves
                  ? "CARGANDO"
-                 : reserves?.filter((r) => r.start === reserves[0]?.start)?.length ===
-                   reserves?.length
+                 : reserves?.filter((r) => r.start === reserves[0]?.start)?.length === reserves?.length
                  ? changeDate(new Date(reserves[0]?.start))
                  : "MIXTO"
              }
@@ -453,8 +439,7 @@ const Information = ({ route, navigation }) => {
              ${
                !reserves
                  ? "CARGANDO"
-                 : reserves?.filter((r) => r.end === reserves[0]?.end)?.length ===
-                   reserves?.length
+                 : reserves?.filter((r) => r.end === reserves[0]?.end)?.length === reserves?.length
                  ? changeDate(new Date(reserves[0]?.end))
                  : "MIXTO"
              }
@@ -468,9 +453,7 @@ const Information = ({ route, navigation }) => {
         )}</p>
         <p style="text-align: center; font-size: 30px; font-weight: 600; margin: 0; padding: 0;">${changeDate(
           new Date()
-        )} ${("0" + new Date().getHours()).slice(-2)}:${("0" + new Date().getMinutes()).slice(
-      -2
-    )}</p>
+        )} ${("0" + new Date().getHours()).slice(-2)}:${("0" + new Date().getMinutes()).slice(-2)}</p>
     </view>
 `;
   };
@@ -517,8 +500,7 @@ const Information = ({ route, navigation }) => {
       const reserve = reserves.find((re) => re.id === r.id);
       const found = elements.find((e) => e.id === r.id);
       if (found) {
-        const tip =
-          found.amount > r.amount - r.payment ? found.amount - (r.amount - r.payment) : null;
+        const tip = found.amount > r.amount - r.payment ? found.amount - (r.amount - r.payment) : null;
         let status = null;
 
         if (r.amount - r.payment > found.amount) status = "pending";
@@ -557,7 +539,7 @@ const Information = ({ route, navigation }) => {
         hosted.map((r) => {
           const name = `${r.fullName}: ${thousandsSystem(r.total)}`;
           const payment = r.payment?.reduce((a, b) => a + b.amount, 0);
-          return { id: r.id, name, amount: r.total, payment, owner: r.owner };
+          return { id: r.id, name, total: r.total, amount: r.total, payment, owner: r.owner };
         })
       );
       setShowPaymentManagement(!showPaymentManagement);
@@ -638,11 +620,7 @@ const Information = ({ route, navigation }) => {
         </ButtonStyle>
         {showMore && (
           <View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={{ maxHeight: 150 }}
-            >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 150 }}>
               <View>
                 <View style={{ flexDirection: "row" }}>
                   <View style={[styles.table, { borderColor: textColor }]}>
@@ -704,9 +682,7 @@ const Information = ({ route, navigation }) => {
               onPress={() => activePayment({ hosted: reserves })}
             >
               <TextStyle center>
-                {reserves.filter((r) => r.status).length === reserves.length
-                  ? "Eliminar pago"
-                  : "Pagar"}
+                {reserves.filter((r) => r.status).length === reserves.length ? "Eliminar pago" : "Pagar"}
               </TextStyle>
             </ButtonStyle>
           </View>
@@ -738,9 +714,7 @@ const Information = ({ route, navigation }) => {
               ? "ESPERANDO POR PAGO"
               : "MIXTO"
           }
-          tip={
-            reservesPayment > reservesTotal && thousandsSystem(reservesPayment - reservesTotal)
-          }
+          tip={reservesPayment > reservesTotal && thousandsSystem(reservesPayment - reservesTotal)}
           payment={
             reserves?.filter((r) => ["credit", "business"].includes(r.status)).length ===
             reserves?.length
@@ -755,16 +729,14 @@ const Information = ({ route, navigation }) => {
           start={
             reserves === null
               ? "CARGANDO"
-              : reserves?.filter((r) => r.start === reserves[0]?.start)?.length ===
-                reserves?.length
+              : reserves?.filter((r) => r.start === reserves[0]?.start)?.length === reserves?.length
               ? changeDate(new Date(reserves[0]?.start))
               : "MIXTO"
           }
           end={
             reserves === null
               ? "CARGANDO"
-              : reserves?.filter((r) => r.end === reserves[0]?.end)?.length ===
-                reserves?.length
+              : reserves?.filter((r) => r.end === reserves[0]?.end)?.length === reserves?.length
               ? changeDate(new Date(reserves[0]?.end))
               : "MIXTO"
           }
@@ -788,16 +760,12 @@ const Information = ({ route, navigation }) => {
                   dispatch(remove({ ids: reserves.map((r) => r.id) }));
                   navigation.pop();
                   await removeReservation({
-                    identifier: helperStatus.active
-                      ? helperStatus.identifier
-                      : user.identifier,
+                    identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
                     reservation: {
                       identifier: reserves.map((r) => r.id),
                       type: "accommodation",
                     },
-                    helpers: helperStatus.active
-                      ? [helperStatus.id]
-                      : user.helpers.map((h) => h.id),
+                    helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
                   });
                   await helperNotification(
                     helperStatus,
@@ -816,7 +784,7 @@ const Information = ({ route, navigation }) => {
         <TextStyle center>Eliminar reservación</TextStyle>
       </ButtonStyle>
       <PaymentManager
-        total={reservesToPay?.reduce((a, b) => a + b.amount, 0) || "0"}
+        total={reservesToPay?.reduce((a, b) => a + b.total, 0) || "0"}
         payment={reservesToPay?.reduce((a, b) => a + b.payment, 0) || "0"}
         modalVisible={showPaymentManagement}
         setModalVisible={setShowPaymentManagement}

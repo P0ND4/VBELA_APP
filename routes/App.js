@@ -1,6 +1,6 @@
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { useSelector } from "react-redux";
-import Reservation from "@screens/reservation/Reservation";
+import Accommodation from "@screens/reservation/Accommodation";
 import Statistic from "@screens/statistic/Statistic";
 import CreateRoster from "@screens/event/CreateRoster";
 import Helper from "@screens/helper/Helper";
@@ -8,9 +8,9 @@ import Inventory from "@screens/inventory/Inventory";
 import Supplier from "screens/people/supplier/Supplier";
 import Customer from "screens/people/customer/Customer";
 import Setting from "@screens/setting/Setting";
-import Kitchen from "@screens/sales/Kitchen";
-import Tables from "@screens/sales/Tables";
-import Sales from "@screens/sales/Sales";
+import Kitchen from "@screens/restaurant/Kitchen";
+import Restaurant from "@screens/restaurant/Restaurant";
+import Sales from "@screens/salesM/Create";
 import CustomDrawer from "@utils/CustomDrawer";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
@@ -45,16 +45,13 @@ function App() {
       unmountInactiveRoutes={true}
     >
       {((!helperStatus.active && ["both", "accommodation"].includes(user?.type)) ||
-        (helperStatus.active &&
-          (helperStatus.accessToTables || helperStatus.accessToReservations))) && (
+        (helperStatus.active && (helperStatus.accessToTables || helperStatus.accessToReservations))) && (
         <Drawer.Screen
           name="Reservation"
-          component={Reservation}
+          component={Accommodation}
           options={{
             title: "Alojamiento y reservas",
-            drawerIcon: ({ color }) => (
-              <Ionicons name="business-outline" size={22} color={color} />
-            ),
+            drawerIcon: ({ color }) => <Ionicons name="business-outline" size={22} color={color} />,
           }}
         />
       )}
@@ -64,9 +61,7 @@ function App() {
           component={Statistic}
           options={{
             title: "Estadísticas",
-            drawerIcon: ({ color }) => (
-              <Ionicons name="stats-chart-outline" size={22} color={color} />
-            ),
+            drawerIcon: ({ color }) => <Ionicons name="stats-chart-outline" size={22} color={color} />,
           }}
         />
       )}
@@ -76,9 +71,7 @@ function App() {
           component={Helper}
           options={{
             title: "Equipo de trabajo",
-            drawerIcon: ({ color }) => (
-              <Ionicons name="recording-outline" size={22} color={color} />
-            ),
+            drawerIcon: ({ color }) => <Ionicons name="recording-outline" size={22} color={color} />,
           }}
         />
       )}
@@ -87,11 +80,12 @@ function App() {
         <Drawer.Screen
           name="Sales"
           component={Sales}
+          listeners={({ navigation }) => ({
+            blur: () => navigation.setParams({ order: undefined, ref: undefined, title: undefined }),
+          })}
           options={{
             title: "Venta de Productos&Servicios",
-            drawerIcon: ({ color }) => (
-              <Ionicons name="layers-outline" size={22} color={color} />
-            ),
+            drawerIcon: ({ color }) => <Ionicons name="layers-outline" size={22} color={color} />,
           }}
         />
       )}
@@ -99,26 +93,21 @@ function App() {
         (helperStatus.active && helperStatus.accessToTables)) && (
         <Drawer.Screen
           name="Tables"
-          component={Tables}
+          component={Restaurant}
           options={{
             title: "Restaurante/Bar",
-            drawerIcon: ({ color }) => (
-              <Ionicons name="pricetag-outline" size={22} color={color} />
-            ),
+            drawerIcon: ({ color }) => <Ionicons name="pricetag-outline" size={22} color={color} />,
           }}
         />
       )}
       {((!helperStatus.active && ["both", "sales"].includes(user?.type)) ||
-        (helperStatus.active &&
-          (helperStatus.accessToKitchen || helperStatus.accessToTables))) && (
+        (helperStatus.active && (helperStatus.accessToKitchen || helperStatus.accessToTables))) && (
         <Drawer.Screen
           name="Kitchen"
           component={Kitchen}
           options={{
             title: "Producción",
-            drawerIcon: ({ color }) => (
-              <Ionicons name="flame-outline" size={22} color={color} />
-            ),
+            drawerIcon: ({ color }) => <Ionicons name="flame-outline" size={22} color={color} />,
           }}
         />
       )}
@@ -128,26 +117,20 @@ function App() {
           component={CreateRoster}
           options={{
             title: "Nómina",
-            drawerIcon: ({ color }) => (
-              <Ionicons name="clipboard-outline" size={22} color={color} />
-            ),
+            drawerIcon: ({ color }) => <Ionicons name="clipboard-outline" size={22} color={color} />,
           }}
           listeners={({ navigation }) => ({
             blur: () => navigation.setParams({ editing: false, item: null }),
           })}
         />
       )}
-      {(!helperStatus.active ||
-        helperStatus.accessToCustomer ||
-        helperStatus.accessToTables) && (
+      {(!helperStatus.active || helperStatus.accessToCustomer || helperStatus.accessToTables) && (
         <Drawer.Screen
           name="Customers"
           component={Customer}
           options={{
             title: "Clientes",
-            drawerIcon: ({ color }) => (
-              <Ionicons name="people-outline" size={22} color={color} />
-            ),
+            drawerIcon: ({ color }) => <Ionicons name="people-outline" size={22} color={color} />,
           }}
         />
       )}
@@ -158,9 +141,7 @@ function App() {
           component={Supplier}
           options={{
             title: "Proveedores",
-            drawerIcon: ({ color }) => (
-              <Ionicons name="cube-outline" size={22} color={color} />
-            ),
+            drawerIcon: ({ color }) => <Ionicons name="cube-outline" size={22} color={color} />,
           }}
         />
       )}
@@ -171,9 +152,7 @@ function App() {
           component={Inventory}
           options={{
             title: "Inventario",
-            drawerIcon: ({ color }) => (
-              <Ionicons name="grid-outline" size={22} color={color} />
-            ),
+            drawerIcon: ({ color }) => <Ionicons name="grid-outline" size={22} color={color} />,
           }}
         />
       )}
@@ -182,9 +161,7 @@ function App() {
         component={Setting}
         options={{
           title: "Preferencias",
-          drawerIcon: ({ color }) => (
-            <Ionicons name="settings-outline" size={22} color={color} />
-          ),
+          drawerIcon: ({ color }) => <Ionicons name="settings-outline" size={22} color={color} />,
         }}
       />
     </Drawer.Navigator>

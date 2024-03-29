@@ -32,12 +32,12 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
 
   useEffect(() => {
     if (nomenclaturesToChoose.length > 0) {
+      const nom = nomenclatures.find((n) => n.id === nomenclatureSelected);
+
       let nomenclatureReservations =
         nom?.type === "standard"
           ? standardReservations.filter((r) => r.ref === nomenclatureSelected)
           : accommodationReservations.filter((r) => r.ref === nomenclatureSelected);
-          
-      const nom = nomenclatures.find((n) => n.id === nomenclatureSelected);
 
       let markedDates = {};
       for (let reservation of nomenclatureReservations) {

@@ -13,7 +13,6 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import { getFontSize, thousandsSystem, changeDate, print, generatePDF } from "@helpers/libs";
 import { useNavigation } from "@react-navigation/native";
-import { Swipeable } from "react-native-gesture-handler";
 import Logo from "@assets/logo.png";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
@@ -55,12 +54,28 @@ const Table = ({ item }) => {
         }}
       >
         <TextStyle color={textColor} smallParagraph>
-          {item.details === "accommodation" ? "Acomodación" : "Estandar"}
+          {item.details === "accommodation"
+            ? "Acomodación"
+            : item.details === "standard"
+            ? "Estandar"
+            : item.details === "sale"
+            ? "P&S"
+            : "Restaurante"}
         </TextStyle>
       </TouchableOpacity>
       <View style={[styles.table, { borderColor: textColor, width: 85 }]}>
         <TextStyle color={textColor} smallParagraph>
           {thousandsSystem(item.total || "0")}
+        </TextStyle>
+      </View>
+      <View style={[styles.table, { borderColor: textColor, width: 85 }]}>
+        <TextStyle color={textColor} smallParagraph>
+          {thousandsSystem(item.payment || "0")}
+        </TextStyle>
+      </View>
+      <View style={[styles.table, { borderColor: textColor, width: 85 }]}>
+        <TextStyle color={textColor} smallParagraph>
+          {item.debt ? thousandsSystem(item.debt || "0") : "SIN DEUDA"}
         </TextStyle>
       </View>
       <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
@@ -86,6 +101,8 @@ const Card = ({ item }) => {
   const helperStatus = useSelector((state) => state.helperStatus);
   const standardReservations = useSelector((state) => state.standardReservations);
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
+  const orders = useSelector((state) => state.orders);
+  const sales = useSelector((state) => state.sales);
 
   const navigation = useNavigation();
 
@@ -104,6 +121,43 @@ const Card = ({ item }) => {
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
 
+  const getSalesPrice = ({ sales, type }) => {
+    const found = sales.filter((s) => s.ref === item.id || item.clientList?.some((c) => s.ref === c.id));
+
+    const selections = found.reduce((a, b) => [...a, ...b.selection], []);
+    const methods = selections.reduce((a, b) => [...a, ...b.method], []);
+
+    const total = selections.reduce((a, b) => a + b.total, 0);
+    const debt = methods.reduce((a, b) => (b.method === "credit" ? a + b.total : a), 0);
+    const payment = methods.reduce((a, b) => (b.method !== "credit" ? a + b.total : a), 0);
+
+    return {
+      total,
+      debt,
+      payment,
+      orders: found.map((f) => {
+        const quantity = f.selection.reduce((a, b) => a + b.quantity, 0);
+        const paid = f.selection.reduce((a, b) => a + b.paid, 0);
+        const methods = f.selection.reduce((a, b) => [...a, ...b.method], []);
+
+        return {
+          id: f.id,
+          date: f.creationDate,
+          quantity,
+          details: type,
+          total: f.total,
+          payment: methods.reduce((a, b) => (b.method !== "credit" ? a + b.total : a), 0),
+          debt: methods.reduce((a, b) => (b.method === "credit" ? a + b.total : a), 0),
+          status: methods.some((m) => m.method === "credit")
+            ? "credit"
+            : quantity === paid
+            ? "paid"
+            : "pending",
+        };
+      }),
+    };
+  };
+
   const getAccommodationPrice = ({ accommodations }) => {
     const condition = (a) => {
       const itemIds = item.special ? item.clientList.map((i) => i.id) : [item.id];
@@ -111,8 +165,7 @@ const Card = ({ item }) => {
     };
 
     const getTotal = (r) => r.reduce((a, b) => a + b?.total, 0);
-    const getPayment = (r) =>
-      r.reduce((a, b) => a + b?.payment.reduce((a, b) => a + b.amount, 0), 0);
+    const getPayment = (r) => r.reduce((a, b) => a + b?.payment.reduce((a, b) => a + b.amount, 0), 0);
 
     const debts = accommodations.filter((a) => a.status === "credit" && condition(a));
     const all = accommodations.filter((a) => condition(a));
@@ -127,6 +180,8 @@ const Card = ({ item }) => {
         quantity: a.hosted?.length || 1,
         details: a.type,
         total: a.total,
+        payment: a.payment.reduce((a, b) => a + b.amount, 0),
+        debt: a.status === "credit" ? a.total : 0,
         status: a.status,
       })),
     };
@@ -135,11 +190,18 @@ const Card = ({ item }) => {
   useEffect(() => {
     const accommodation = getAccommodationPrice({ accommodations: accommodationReservations });
     const standard = getAccommodationPrice({ accommodations: standardReservations });
-    setDebt(accommodation.debt + standard.debt);
-    setTotal(accommodation.total + standard.total);
-    setPayment(accommodation.payment + standard.payment);
+    const order = getSalesPrice({ sales: orders, type: "order" });
+    const sale = getSalesPrice({ sales, type: "sale" });
+    setDebt(accommodation.debt + standard.debt + order.debt + sale.debt);
+    setTotal(accommodation.total + standard.total + order.total + sale.total);
+    setPayment(accommodation.payment + standard.payment + order.payment + sale.payment);
 
-    const details = [...accommodation.reservations, ...standard.reservations];
+    const details = [
+      ...accommodation.reservations,
+      ...standard.reservations,
+      ...order.orders,
+      ...sale.orders,
+    ];
     setDetails(details.sort((d) => d.date));
   }, [accommodationReservations, standardReservations]);
 
@@ -161,66 +223,10 @@ const Card = ({ item }) => {
     );
   };
 
-  const leftSwipe = () => (
-    <View style={{ justifyContent: "center" }}>
-      <TouchableOpacity
-        style={[styles.swipe, { marginHorizontal: 2, backgroundColor: light.main2 }]}
-        onPress={() => {
-          Alert.alert(
-            "PROXIMAMENTE",
-            "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR"
-          );
-          // setActiveInformation(!activeInformation)
-        }}
-      >
-        <Ionicons
-          name="information-circle-outline"
-          color={mode === "light" ? dark.main2 : light.main5}
-          size={getFontSize(21)}
-        />
-      </TouchableOpacity>
-    </View>
-  );
-
-  const rightSwipe = () => (
-    <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <TouchableOpacity
-        style={[styles.swipe, { marginHorizontal: 2, backgroundColor: "red" }]}
-        onPress={() => {
-          Alert.alert(
-            "PROXIMAMENTE",
-            "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR"
-          );
-          // deleteInformation({ id: item.id })
-        }}
-      >
-        <Ionicons
-          name="trash"
-          size={getFontSize(21)}
-          color={mode === "light" ? dark.main2 : light.main5}
-        />
-      </TouchableOpacity>
-    </View>
-  );
-
-  const SwipeableValidation = ({ condition, children }) =>
-    condition ? (
-      <Swipeable renderLeftActions={leftSwipe} renderRightActions={rightSwipe}>
-        {children}
-      </Swipeable>
-    ) : (
-      <View>{children}</View>
-    );
-
   return (
     <>
-      <SwipeableValidation condition={!isOpen}>
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: mode === "light" ? light.main5 : dark.main2 },
-          ]}
-        >
+      <View>
+        <View style={[styles.card, { backgroundColor: mode === "light" ? light.main5 : dark.main2 }]}>
           <TouchableOpacity onPress={() => setIsOpen(!isOpen)} style={styles.row}>
             <TouchableOpacity onPress={() => item.identification && setIsName(!isName)}>
               <TextStyle color={textColor}>
@@ -234,21 +240,15 @@ const Card = ({ item }) => {
           {isOpen && (
             <View style={{ marginTop: 8 }}>
               <TextStyle color={textColor}>
-                Total:{" "}
-                <TextStyle color={light.main2}>{thousandsSystem(total || "0")}</TextStyle>
+                Total: <TextStyle color={light.main2}>{thousandsSystem(total || "0")}</TextStyle>
               </TextStyle>
-              {debt > 0 && (
-                <TextStyle color={textColor}>
-                  Deuda:{" "}
-                  <TextStyle color={light.main2}>{thousandsSystem(debt || "0")}</TextStyle>
-                </TextStyle>
-              )}
-              {debt > 0 && (
-                <TextStyle color={textColor}>
-                  Pagado:{" "}
-                  <TextStyle color={light.main2}>{thousandsSystem(payment || "0")}</TextStyle>
-                </TextStyle>
-              )}
+              <TextStyle color={textColor}>
+                Pagado: <TextStyle color={light.main2}>{thousandsSystem(payment || "0")}</TextStyle>
+              </TextStyle>
+              <TextStyle color={textColor}>
+                Deuda: <TextStyle color={light.main2}>{thousandsSystem(debt || "0")}</TextStyle>
+              </TextStyle>
+
               {showDetails && (
                 <ScrollView
                   horizontal
@@ -277,6 +277,16 @@ const Card = ({ item }) => {
                           TOTAL
                         </TextStyle>
                       </View>
+                      <View style={[styles.table, { borderColor: textColor, width: 85 }]}>
+                        <TextStyle color={light.main2} smallParagraph>
+                          PAGADO
+                        </TextStyle>
+                      </View>
+                      <View style={[styles.table, { borderColor: textColor, width: 85 }]}>
+                        <TextStyle color={light.main2} smallParagraph>
+                          CRÉDITO
+                        </TextStyle>
+                      </View>
                       <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
                         <TextStyle color={light.main2} smallParagraph>
                           ESTADO
@@ -292,17 +302,21 @@ const Card = ({ item }) => {
                   </View>
                 </ScrollView>
               )}
-              <ButtonStyle
-                style={{ marginTop: 10 }}
-                backgroundColor={mode === "light" ? dark.main2 : dark.main5}
-                onPress={() => setShowDetails(!showDetails)}
-              >
-                <TextStyle center>{showDetails ? "Cerrar" : "Mostrar"} detalles</TextStyle>
-              </ButtonStyle>
+              {details.length > 0 && (
+                <ButtonStyle
+                  style={{ marginTop: 10 }}
+                  backgroundColor={mode === "light" ? dark.main2 : dark.main5}
+                  onPress={() => setShowDetails(!showDetails)}
+                >
+                  <TextStyle center color={mode === "light" ? dark.textWhite : light.textDark}>
+                    {showDetails ? "Cerrar" : "Mostrar"} detalles
+                  </TextStyle>
+                </ButtonStyle>
+              )}
             </View>
           )}
         </View>
-      </SwipeableValidation>
+      </View>
       <Information
         modalVisible={activeInformation}
         setModalVisible={setActiveInformation}
@@ -310,24 +324,17 @@ const Card = ({ item }) => {
         title="INFORMACIÓN"
         content={() => (
           <View>
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
+            <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
               Más detalle de la deuda
             </TextStyle>
             <View style={{ marginTop: 10 }}>
               <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
                 Creación:{" "}
-                <TextStyle color={light.main2}>
-                  {changeDate(new Date(item.creationDate))}
-                </TextStyle>
+                <TextStyle color={light.main2}>{changeDate(new Date(item.creationDate))}</TextStyle>
               </TextStyle>
               <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
                 Modificación:{" "}
-                <TextStyle color={light.main2}>
-                  {changeDate(new Date(item.modificationDate))}
-                </TextStyle>
+                <TextStyle color={light.main2}>{changeDate(new Date(item.modificationDate))}</TextStyle>
               </TextStyle>
             </View>
           </View>
@@ -380,7 +387,7 @@ const CustomerInformation = ({ route }) => {
         <TextStyle subtitle color={mode === "light" ? light.textDark : dark.textWhite}>
           {type === "individual" ? "Específico" : "General"}
         </TextStyle>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {/* <View style={{ flexDirection: "row", alignItems: "center" }}>
           {logs?.length > 0 && (
             <TouchableOpacity
               onPress={() => {
@@ -388,22 +395,9 @@ const CustomerInformation = ({ route }) => {
                   "PROXIMAMENTE",
                   "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR"
                 );
-                // removeEverything()
+                // print({ html })
               }}
             >
-              <Ionicons
-                name="trash"
-                size={getFontSize(28)}
-                color={light.main2}
-                style={{ marginHorizontal: 5 }}
-              />
-            </TouchableOpacity>
-          )}
-          {logs?.length > 0 && (
-            <TouchableOpacity onPress={() => {
-              Alert.alert("PROXIMAMENTE", "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR")
-              // print({ html })
-              }}>
               <Ionicons
                 name="print"
                 size={getFontSize(28)}
@@ -413,10 +407,15 @@ const CustomerInformation = ({ route }) => {
             </TouchableOpacity>
           )}
           {logs?.length > 0 && (
-            <TouchableOpacity onPress={() => {
-              Alert.alert("PROXIMAMENTE", "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR")
-              // generatePDF({ html })
-              }}>
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert(
+                  "PROXIMAMENTE",
+                  "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR"
+                );
+                // generatePDF({ html })
+              }}
+            >
               <Ionicons
                 name="document-attach"
                 size={getFontSize(28)}
@@ -426,9 +425,14 @@ const CustomerInformation = ({ route }) => {
             </TouchableOpacity>
           )}
           {logs?.length > 0 && (
-            <TouchableOpacity onPress={() => {
-              Alert.alert("PROXIMAMENTE", "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR")
-            }}>
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert(
+                  "PROXIMAMENTE",
+                  "ME DEDIQUE A RESERVACIONES, EN RESERVACIONES NO PASA ESTO XD :) EN LA PROXIMA ACTUALIZACION ESTO LO HAGO FUNCIONAR"
+                );
+              }}
+            >
               <Ionicons
                 name="filter"
                 size={getFontSize(28)}
@@ -437,7 +441,7 @@ const CustomerInformation = ({ route }) => {
               />
             </TouchableOpacity>
           )}
-        </View>
+        </View> */}
       </View>
       <View style={{ marginTop: 20 }}>
         {!logs && (
