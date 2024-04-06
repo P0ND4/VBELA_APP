@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "VBELA",
     slug: "vbela",
-    version: "3.8.0",
+    version: "3.8.1",
     orientation: "portrait",
     icon: "./assets/logo.png",
     userInterfaceStyle: "light",
@@ -25,7 +25,7 @@ export default {
     android: {
       googleServicesFile: process.env.EXPO_PUBLIC_GOOGLE_SERVICES,
       package: "com.app.vbela",
-      versionCode: 57,
+      versionCode: 58,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#FFFFFF",

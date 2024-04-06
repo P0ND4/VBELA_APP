@@ -23,7 +23,7 @@ import {
   removeRecipe,
 } from "@api";
 import { remove as removeR } from "@features/sales/recipesSlice";
-import { thousandsSystem, random, getFontSize } from "@helpers/libs";
+import { thousandsSystem, convertThousandsSystem, random, getFontSize } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import TextStyle from "@components/TextStyle";
@@ -332,7 +332,7 @@ const CreateProduct = ({ route, navigation }) => {
                 renderItem={({ item }) => (
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <TextStyle smallParagraph color={light.main2}>
-                      {thousandsSystem(item.portion || "0")} ({item.unit})
+                      {thousandsSystem(item.quantity || "0")} ({item.unit})
                     </TextStyle>
                     <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
                       {" "}
@@ -555,7 +555,7 @@ const CreateProduct = ({ route, navigation }) => {
                   right={price ? () => <TextStyle color={light.main2}>Precio de venta</TextStyle> : null}
                   keyboardType="numeric"
                   onChangeText={(num) => {
-                    if (num === "") setValue("value", "");
+                    if (num === "") setValue("value", 0);
                     else setValue("value", parseInt(num.replace(/[^0-9]/g, "")));
                     setPrice(thousandsSystem(num.replace(/[^0-9]/g, "")));
                   }}
@@ -574,7 +574,7 @@ const CreateProduct = ({ route, navigation }) => {
                   maxLength={15}
                   keyboardType="numeric"
                   onChangeText={(num) => {
-                    if (num === "") setValue("purchase", "");
+                    if (num === "") setValue("purchase", 0);
                     else setValue("purchase", parseInt(num.replace(/[^0-9]/g, "")));
                     setPurchase(thousandsSystem(num.replace(/[^0-9]/g, "")));
                   }}

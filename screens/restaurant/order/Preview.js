@@ -10,9 +10,10 @@ import {
   Alert,
 } from "react-native";
 import { thousandsSystem, getFontSize, random, print } from "@helpers/libs";
+import { updateMany as updateManyInventory } from "@features/inventory/informationSlice";
 import { add as addO, edit as editO } from "@features/tables/ordersSlice";
 import { change as changeM } from "@features/tables/menuSlice";
-import { editUser } from "@api";
+import { editUser, discountInventory } from "@api";
 import PaymentManager from "@utils/order/preview/PaymentManager";
 import getHTML from "@utils/order/helpers/getHTML";
 import PaymentButtons from "@components/PaymentButtons";
@@ -36,6 +37,7 @@ const Preview = ({ route, navigation }) => {
   const orders = useSelector((state) => state.orders);
   const user = useSelector((state) => state.user);
   const customers = useSelector((state) => state.customers);
+  const inventory = useSelector((state) => state.inventory);
   const helperStatus = useSelector((state) => state.helperStatus);
 
   const [total, setTotal] = useState(null);
@@ -130,6 +132,46 @@ const Preview = ({ route, navigation }) => {
     });
   };
 
+  const inventoryDiscountHandler = async (selection) => {
+    console.log("OK")
+    const ingredients = selection.flatMap((s) =>
+      (s.recipe?.ingredients || []).map((i) => ({ ...i, quantity: i.quantity * s.paid }))
+    );
+
+    const inventoriesMap = ingredients.reduce((map, ingredient) => {
+      const inv = inventory.find((i) => i.id === ingredient.id);
+      const obj = {
+        id: random(20),
+        quantity: ingredient.quantity,
+        creationDate: Date.now(),
+        currentValue: inv.currentValue,
+        element: ingredient.id,
+      };
+
+      if (!map.has(ingredient.id)) {
+        map.set(ingredient.id, { ...inv, output: [...inv.output, obj] });
+      } else {
+        const existing = map.get(ingredient.id);
+        existing.output.push(obj);
+        map.set(ingredient.id, existing);
+      }
+
+      return map;
+    }, new Map());
+
+    console.log("EO")
+
+    const inventories = [...inventoriesMap.values()];
+    dispatch(updateManyInventory({ data: inventories }));
+    console.log("AOK")
+
+    await discountInventory({
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+      inventories,
+      helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
+    });
+  };
+
   const saveOrder = async ({ selection, change }) => {
     const quantity = selection.reduce((a, b) => a + b.quantity, 0);
     const paid = selection.reduce((a, b) => a + b.paid, 0);
@@ -163,6 +205,14 @@ const Preview = ({ route, navigation }) => {
       const found = change.find((s) => s.id === p.id);
       return found ? { ...p, quantity: p.quantity - found.paid } : p;
     }); //TODO ESTO MEJORAR
+
+    const recipe = selection
+      .filter((s) => change.some((c) => c.id === s.id))
+      .map((f) => {
+        const found = change.find((c) => c.id === f.id);
+        return { ...f, paid: found.paid };
+      });
+    if (recipe.length) inventoryDiscountHandler(recipe);
     dispatch(changeM(newMenu)); //TODO CHANGE THIS
 
     const orderStatus = {

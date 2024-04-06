@@ -34,7 +34,6 @@ const CreateElement = ({ route, navigation }) => {
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState(editing ? element.name : "");
   const [unit, setUnit] = useState(editing ? element.unit : "");
-  const [portion, setPortion] = useState(editing ? String(element.portion) : "");
   const [visible, setVisible] = useState(editing ? element.visible : "both");
   const [reorder, setReorder] = useState(editing ? thousandsSystem(element.reorder || 0) : "");
   const [quantity, setQuantity] = useState(
@@ -71,7 +70,6 @@ const CreateElement = ({ route, navigation }) => {
       },
     });
     register("unit", { value: editing ? element.unit : "", required: true });
-    register("portion", { value: editing ? element.portion : 0 });
     register("visible", { value: editing ? element.visible : "both" });
     register("reorder", { value: editing ? element.reorder : 0 });
     register("currentValue", {
@@ -247,10 +245,6 @@ const CreateElement = ({ route, navigation }) => {
                     onValueChange={(value) => {
                       setValue("unit", value);
                       setUnit(value);
-                      if (value === "UND") {
-                        setValue("portion", 0);
-                        setPortion("");
-                      }
                     }}
                   >
                     {unitOptions.map((u) => (
@@ -296,9 +290,7 @@ const CreateElement = ({ route, navigation }) => {
                       setValue("visible", value);
                       setVisible(value);
                       if (value !== "none") {
-                        setValue("portion", 0);
                         setValue("reorder", 0);
-                        setPortion("");
                         setReorder("");
                         setQuantity("");
                       }
@@ -316,46 +308,28 @@ const CreateElement = ({ route, navigation }) => {
                   </Picker>
                 </View>
               </View>
-              {visible === "none" && (
-                <InputStyle
-                  value={quantity}
-                  right={quantity ? () => <TextStyle color={light.main2}>Cantidad</TextStyle> : null}
-                  placeholder="Cantidad en inventario"
-                  keyboardType="numeric"
-                  maxLength={9}
-                  onChangeText={(text) => setQuantity(thousandsSystem(text.replace(/[^0-9]/g, "")))}
-                />
-              )}
-              {visible === "none" && (
-                <InputStyle
-                  value={reorder}
-                  right={
-                    reorder ? () => <TextStyle color={light.main2}>Punto de reorden</TextStyle> : null
-                  }
-                  placeholder="Punto de reorden"
-                  keyboardType="numeric"
-                  maxLength={9}
-                  onChangeText={(text) => {
-                    if (text === "") setValue("reorder", 0);
-                    else setValue("reorder", parseInt(text.replace(/[^0-9]/g, "")));
-                    setReorder(thousandsSystem(text.replace(/[^0-9]/g, "")));
-                  }}
-                />
-              )}
-              {visible !== "none" && unit !== "UND" && (
-                <InputStyle
-                  value={portion}
-                  right={portion ? () => <TextStyle color={light.main2}>Porción</TextStyle> : null}
-                  placeholder="Porciones"
-                  keyboardType="numeric"
-                  maxLength={3}
-                  onChangeText={(text) => {
-                    if (text === "") setValue("portion", 0);
-                    else setValue("portion", parseInt(text.replace(/[^0-9]/g, "")));
-                    setPortion(text.replace(/[^0-9]/g, ""));
-                  }}
-                />
-              )}
+              <InputStyle
+                value={quantity}
+                right={quantity ? () => <TextStyle color={light.main2}>Cantidad</TextStyle> : null}
+                placeholder="Cantidad en inventario"
+                keyboardType="numeric"
+                maxLength={9}
+                onChangeText={(text) => setQuantity(thousandsSystem(text.replace(/[^0-9]/g, "")))}
+              />
+              <InputStyle
+                value={reorder}
+                right={
+                  reorder ? () => <TextStyle color={light.main2}>Punto de reorden</TextStyle> : null
+                }
+                placeholder="Punto de reorden"
+                keyboardType="numeric"
+                maxLength={9}
+                onChangeText={(text) => {
+                  if (text === "") setValue("reorder", 0);
+                  else setValue("reorder", parseInt(text.replace(/[^0-9]/g, "")));
+                  setReorder(thousandsSystem(text.replace(/[^0-9]/g, "")));
+                }}
+              />
               <InputStyle
                 value={elementValue}
                 right={elementValue ? () => <TextStyle color={light.main2}>Valor</TextStyle> : null}

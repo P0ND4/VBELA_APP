@@ -8,7 +8,7 @@ import {
   Keyboard,
 } from "react-native";
 import { useForm } from "react-hook-form";
-import { thousandsSystem, random } from "@helpers/libs";
+import { thousandsSystem, convertThousandsSystem, random } from "@helpers/libs";
 import { useSelector, useDispatch } from "react-redux";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
@@ -42,8 +42,8 @@ const Ingredient = ({ item, onChange, initialCount = 0 }) => {
           <TouchableOpacity
             style={styles.button}
             onPress={() => {
-              if (count === 0) return;
               const quantity = count - 1;
+              if (quantity < 0) return;
               setCount(quantity);
               onChange(quantity);
             }}
@@ -65,8 +65,8 @@ const Ingredient = ({ item, onChange, initialCount = 0 }) => {
           <TouchableOpacity
             style={styles.button}
             onPress={() => {
-              if (count === item.portion) return;
               const quantity = count + 1;
+              if (quantity > 9999999999) return;
               setCount(quantity);
               onChange(quantity);
             }}
@@ -80,7 +80,7 @@ const Ingredient = ({ item, onChange, initialCount = 0 }) => {
             smallParagraph
             color={mode === "light" ? light.textDark : dark.textWhite}
           >
-            {thousandsSystem(count)} {count ? (count === 1 ? "(Porción)" : "(Porciones)") : ""}
+            {thousandsSystem(count)}
           </TextStyle>
         </TouchableOpacity>
       </View>
@@ -104,15 +104,14 @@ const Ingredient = ({ item, onChange, initialCount = 0 }) => {
               stylesContainer={{ marginVertical: 10 }}
               keyboardType="numeric"
               onChangeText={(num) => {
-                if (parseInt(num.replace(/[^0-9]/g, "")) > item.portion) return;
-                if (num === "") return setInformationCount("");
-                setInformationCount(thousandsSystem(num.replace(/[^0-9]/g, "")));
+                const converted = convertThousandsSystem(num);
+                setInformationCount(thousandsSystem(converted));
               }}
             />
             <ButtonStyle
               backgroundColor={light.main2}
               onPress={() => {
-                const quantity = parseInt(informationCount.replace(/[^0-9]/g, "")) || 0;
+                const quantity = +convertThousandsSystem(informationCount) || 0;
                 setCount(quantity);
                 onChange(quantity);
                 setModalVisible(false);
@@ -257,16 +256,16 @@ const CreateRecipe = ({ route, navigation }) => {
                     {list.map((item) => (
                       <Ingredient
                         item={item}
-                        initialCount={ingredients.find((i) => i.id === item.id)?.portion || 0}
-                        onChange={(portion) => {
+                        initialCount={ingredients.find((i) => i.id === item.id)?.quantity || 0}
+                        onChange={(quantity) => {
                           const found = ingredients.find((i) => i.id === item.id);
                           if (found) {
                             let newIngredients;
-                            if (portion === 0)
+                            if (quantity === 0)
                               newIngredients = ingredients.filter((i) => i.id !== item.id);
                             else {
                               newIngredients = ingredients.map((i) => {
-                                if (i.id === item.id) return { ...i, portion };
+                                if (i.id === item.id) return { ...i, quantity };
                                 return i;
                               });
                             }
@@ -279,7 +278,7 @@ const CreateRecipe = ({ route, navigation }) => {
                                 id: item.id,
                                 unit: item.unit,
                                 name: item.name,
-                                portion,
+                                quantity,
                               },
                             ];
                             setValue("ingredients", newIngredients);

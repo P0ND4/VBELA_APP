@@ -1,18 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  View,
-  KeyboardAvoidingView,
-  ScrollView,
-  Keyboard,
-  Alert,
-} from "react-native";
+import { View, KeyboardAvoidingView, ScrollView, Keyboard, Alert } from "react-native";
 import { useForm } from "react-hook-form";
 import { useSelector, useDispatch } from "react-redux";
 import TextStyle from "@components/TextStyle";
 import InputStyle from "@components/InputStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import { Picker } from "@react-native-picker/picker";
-import { thousandsSystem, random, getFontSize } from "@helpers/libs";
+import { thousandsSystem, convertThousandsSystem, random, getFontSize } from "@helpers/libs";
 import { edit } from "@features/inventory/informationSlice";
 import { editInventory } from "@api";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -40,12 +34,8 @@ const CreateEntryOutput = ({ route, navigation }) => {
 
   const [loading, setLoading] = useState(false);
   const [element, setElement] = useState(editing ? item.element : "");
-  const [quantity, setQuantity] = useState(
-    editing ? thousandsSystem(item.quantity) : ""
-  );
-  const [elementValue, setElementValue] = useState(
-    editing ? thousandsSystem(item.currentValue) : ""
-  );
+  const [quantity, setQuantity] = useState(editing ? thousandsSystem(item.quantity) : "");
+  const [elementValue, setElementValue] = useState(editing ? thousandsSystem(item.currentValue) : "");
   const [elementName, setElementName] = useState();
 
   const pickerRef = useRef();
@@ -93,9 +83,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
     await editInventory({
       identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       inventory: editable,
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
+      helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
     });
   };
 
@@ -123,13 +111,9 @@ const CreateEntryOutput = ({ route, navigation }) => {
       dispatch(edit({ id: editable.id, data: editable }));
       navigation.pop();
       await editInventory({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
+        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
         inventory: editable,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
+        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
       });
     }
   };
@@ -137,9 +121,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
   const deleteEntryOutput = () => {
     Keyboard.dismiss();
     Alert.alert(
-      `¿Estás seguro que quieres eliminar la ${
-        type === "entry" ? "entrada" : "salida"
-      } de unidad?`,
+      `¿Estás seguro que quieres eliminar la ${type === "entry" ? "entrada" : "salida"} de unidad?`,
       "No podrá recuperar esta información una vez borrada",
       [
         {
@@ -157,13 +139,9 @@ const CreateEntryOutput = ({ route, navigation }) => {
             dispatch(edit({ id: item.element, data: editable }));
             navigation.pop();
             await editInventory({
-              identifier: helperStatus.active
-                ? helperStatus.identifier
-                : user.identifier,
+              identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
               inventory: editable,
-              helpers: helperStatus.active
-                ? [helperStatus.id]
-                : user.helpers.map((h) => h.id),
+              helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
             });
           },
         },
@@ -175,10 +153,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
   return (
     <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           <View
             style={{
               justifyContent: "center",
@@ -190,29 +165,20 @@ const CreateEntryOutput = ({ route, navigation }) => {
               <TextStyle bigTitle center color={light.main2}>
                 VBELA
               </TextStyle>
-              <TextStyle
-                bigParagraph
-                center
-                color={mode === "light" ? null : dark.textWhite}
-              >
+              <TextStyle bigParagraph center color={mode === "light" ? null : dark.textWhite}>
                 Crear {type === "entry" ? "entrada" : "salida"}
               </TextStyle>
             </View>
             <View style={{ marginVertical: 10 }}>
               {editing && (
-                <TextStyle
-                  color={light.main2}
-                  style={{ marginVertical: 10 }}
-                >
+                <TextStyle color={light.main2} style={{ marginVertical: 10 }}>
                   Elemento: {elementName}
                 </TextStyle>
               )}
               {!editing && (
                 <View>
                   <ButtonStyle
-                    backgroundColor={
-                      mode === "light" ? light.main5 : dark.main2
-                    }
+                    backgroundColor={mode === "light" ? light.main5 : dark.main2}
                     onPress={() => pickerRef.current?.focus()}
                   >
                     <View
@@ -224,11 +190,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
                     >
                       <TextStyle
                         color={
-                          element
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
+                          element ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"
                         }
                       >
                         {element
@@ -237,11 +199,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
                       </TextStyle>
                       <Ionicons
                         color={
-                          element
-                            ? mode === "light"
-                              ? light.textDark
-                              : dark.textWhite
-                            : "#888888"
+                          element ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"
                         }
                         size={getFontSize(15)}
                         name="caret-down"
@@ -252,8 +210,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
                     <Picker
                       ref={pickerRef}
                       style={{
-                        color:
-                          mode === "light" ? light.textDark : dark.textWhite,
+                        color: mode === "light" ? light.textDark : dark.textWhite,
                       }}
                       selectedValue={element}
                       onValueChange={(value) => {
@@ -265,25 +222,19 @@ const CreateEntryOutput = ({ route, navigation }) => {
                         label="SELECCIONE EL ELEMENTO"
                         value=""
                         style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
+                          backgroundColor: mode === "light" ? light.main5 : dark.main2,
                         }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
+                        color={mode === "light" ? light.textDark : dark.textWhite}
                       />
-                      {inventory.filter(i => i.visible === 'none').map((i) => (
+                      {inventory.map((i) => (
                         <Picker.Item
                           key={i.id}
                           label={i.name}
                           value={i.id}
                           style={{
-                            backgroundColor:
-                              mode === "light" ? light.main5 : dark.main2,
+                            backgroundColor: mode === "light" ? light.main5 : dark.main2,
                           }}
-                          color={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
+                          color={mode === "light" ? light.textDark : dark.textWhite}
                         />
                       ))}
                     </Picker>
@@ -297,17 +248,14 @@ const CreateEntryOutput = ({ route, navigation }) => {
               )}
               <InputStyle
                 value={quantity}
-                right={
-                  quantity
-                    ? () => <TextStyle color={light.main2}>Cantidad</TextStyle>
-                    : null
-                }
+                right={quantity ? () => <TextStyle color={light.main2}>Cantidad</TextStyle> : null}
                 placeholder="Cantidad"
                 keyboardType="numeric"
                 maxLength={9}
-                onChangeText={(text) => {
-                  setValue("quantity", parseInt(text.replace(/[^0-9]/g, "")));
-                  setQuantity(thousandsSystem(text.replace(/[^0-9]/g, "")));
+                onChangeText={(num) => {
+                  const converted = convertThousandsSystem(num);
+                  setValue("quantity", +converted);
+                  setQuantity(thousandsSystem(converted));
                 }}
               />
               {errors.quantity?.type && (
@@ -320,19 +268,13 @@ const CreateEntryOutput = ({ route, navigation }) => {
               {type === "entry" && (
                 <InputStyle
                   value={elementValue}
-                  right={
-                    elementValue
-                      ? () => <TextStyle color={light.main2}>Valor</TextStyle>
-                      : null
-                  }
+                  right={elementValue ? () => <TextStyle color={light.main2}>Valor</TextStyle> : null}
                   placeholder="Valor por unidad"
                   keyboardType="numeric"
                   maxLength={12}
                   onChangeText={(text) => {
                     setValue("value", parseInt(text.replace(/[^0-9]/g, "")));
-                    setElementValue(
-                      thousandsSystem(text.replace(/[^0-9]/g, ""))
-                    );
+                    setElementValue(thousandsSystem(text.replace(/[^0-9]/g, "")));
                   }}
                 />
               )}
@@ -345,10 +287,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
                 }}
                 backgroundColor={mode === "light" ? light.main5 : dark.main2}
               >
-                <TextStyle
-                  center
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
+                <TextStyle center color={mode === "light" ? light.textDark : dark.textWhite}>
                   Eliminar
                 </TextStyle>
               </ButtonStyle>

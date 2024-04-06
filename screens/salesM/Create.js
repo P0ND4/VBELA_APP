@@ -315,6 +315,7 @@ const Order = ({ route, navigation }) => {
                                 name: item.name,
                                 total: item.value,
                                 price: item.value,
+                                recipe: item.recipe,
                                 quantity: count,
                                 paid: 0,
                                 discount: null,

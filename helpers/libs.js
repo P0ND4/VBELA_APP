@@ -20,9 +20,7 @@ export const random = (repeat = 10, options = {}) => {
   let stringRandom = "";
 
   for (let i = 0; i < repeat; i++) {
-    stringRandom += possible.charAt(
-      Math.floor(Math.random() * possible.length)
-    );
+    stringRandom += possible.charAt(Math.floor(Math.random() * possible.length));
   }
 
   return stringRandom;
@@ -68,21 +66,24 @@ export const addDays = (date, days) => {
 };
 
 export const changeDate = (date) => {
-  return `${("0" + date.getDate()).slice(-2)}/${(
-    "0" +
-    (date.getMonth() + 1)
-  ).slice(-2)}/${date.getFullYear()}`;
+  return `${("0" + date.getDate()).slice(-2)}/${("0" + (date.getMonth() + 1)).slice(
+    -2
+  )}/${date.getFullYear()}`;
 };
 
-export const thousandsSystem = (num) => {
-  num = num
-    .toString()
-    .split("")
-    .reverse()
-    .join("")
-    .replace(/(?=\d*\.?)(\d{3})/g, "$1.");
-  num = num.split("").reverse().join("").replace(/^[.]/, "");
-  return num;
+export const thousandsSystem = (number) => {
+  const num = String(number);
+  const parts = num.split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  if (parts[1]) parts[1] = parts[1].slice(0, 2);
+  return parts.join(",");
+};
+
+export const convertThousandsSystem = (number) => {
+  const num = String(number);
+  const numberWithoutSeparators = num.replace(/\./g, "");
+  const normalizedNumber = numberWithoutSeparators.replace(",", ".");
+  return normalizedNumber;
 };
 
 export const reduce = (value) => {
@@ -92,13 +93,9 @@ export const reduce = (value) => {
   return Math.round(value / Math.pow(1000, i), 2) + " " + sizes[i];
 };
 
-export const randomColor = () =>
-  "#" + (((1 << 24) * Math.random()) | 0).toString(16).padStart(6, "0");
+export const randomColor = () => "#" + (((1 << 24) * Math.random()) | 0).toString(16).padStart(6, "0");
 
-export const generatePDF = async ({
-  html,
-  code = random(6, { number: true }),
-}) => {
+export const generatePDF = async ({ html, code = random(6, { number: true }) }) => {
   try {
     const { uri } = await Print.printToFileAsync({
       // VAMOS A SUPUESTAMENTE A IMPRIMIR PARA CONSEGUIR EL PDF
@@ -119,8 +116,7 @@ export const generatePDF = async ({
         encoding: base64, // USAMOS EL CODIFICADOR DE BASE64
       });
 
-      const permissions =
-        await storageAccess.requestDirectoryPermissionsAsync(); // PEDIMOS PERMISO PARA ACCEDER A SUS ARCHIVOS
+      const permissions = await storageAccess.requestDirectoryPermissionsAsync(); // PEDIMOS PERMISO PARA ACCEDER A SUS ARCHIVOS
 
       if (!permissions.granted) return; // SI NO NOS DA PERMISO RETORNAMOS
 
@@ -150,7 +146,7 @@ export const print = async ({ html }) => {
   await Sharing.shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
 };
 
-export const getExpoID = async () =>  {
+export const getExpoID = async () => {
   let token;
 
   if (Platform.OS === "android") {
@@ -163,8 +159,7 @@ export const getExpoID = async () =>  {
   }
 
   if (Device.isDevice) {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
     if (existingStatus !== "granted") {
       const { status } = await Notifications.requestPermissionsAsync();
@@ -181,13 +176,11 @@ export const getExpoID = async () =>  {
     ).data;
     console.log(token);
   } else {
-    alert(
-      "Debe usar un dispositivo físico para las notificaciones automáticas"
-    );
+    alert("Debe usar un dispositivo físico para las notificaciones automáticas");
   }
 
   return token;
-}
+};
 
 const fontScale = PixelRatio.getFontScale();
 export const getFontSize = (size) => size / fontScale;

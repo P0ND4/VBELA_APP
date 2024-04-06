@@ -287,37 +287,7 @@ const Inventory = () => {
 </html>
 `;
 
-  const AnchoredTable = ({ item }) => {
-    return (
-      <View style={{ flexDirection: "row" }}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("CreateElement", { editing: true, item })}
-          style={[styles.table, { borderColor: textColor }]}
-        >
-          <TextStyle smallParagraph color={textColor}>
-            {item.name}
-          </TextStyle>
-        </TouchableOpacity>
-        <View style={[styles.table, { borderColor: textColor }]}>
-          <TextStyle smallParagraph color={textColor}>
-            {item.unit}
-          </TextStyle>
-        </View>
-        <View style={[styles.table, { borderColor: textColor }]}>
-          <TextStyle smallParagraph color={textColor}>
-            {item.portion}
-          </TextStyle>
-        </View>
-        <View style={[styles.table, { borderColor: textColor }]}>
-          <TextStyle smallParagraph color={textColor}>
-            {thousandsSystem(item.currentValue)}
-          </TextStyle>
-        </View>
-      </View>
-    );
-  };
-
-  const UnanchoredTable = ({ item }) => {
+  const Table = ({ item }) => {
     const stock =
       item.entry.reduce((a, b) => a + b.quantity, 0) - item.output.reduce((a, b) => a + b.quantity, 0);
 
@@ -480,88 +450,11 @@ const Inventory = () => {
           maxHeight: SCREEN_HEIGHT / 2.7,
         }}
       >
-        {inventory.filter((i) => i.visible !== "none").length > 0 && (
-          <>
-            <TextStyle style={{ marginBottom: 5 }} color={textColor} smallParagraph>
-              ANCLADO
-            </TextStyle>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View>
-                  <View style={{ flexDirection: "row" }}>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor: textColor,
-                        },
-                      ]}
-                    >
-                      <TextStyle color={light.main2} smallParagraph>
-                        PRODUCTO
-                      </TextStyle>
-                    </View>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor: textColor,
-                        },
-                      ]}
-                    >
-                      <TextStyle color={light.main2} smallParagraph>
-                        UNIDAD
-                      </TextStyle>
-                    </View>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor: textColor,
-                        },
-                      ]}
-                    >
-                      <TextStyle color={light.main2} smallParagraph>
-                        PORCIÓN
-                      </TextStyle>
-                    </View>
-                    <View
-                      style={[
-                        styles.table,
-                        {
-                          borderColor: textColor,
-                        },
-                      ]}
-                    >
-                      <TextStyle color={light.main2} smallParagraph>
-                        VALOR
-                      </TextStyle>
-                    </View>
-                  </View>
-                  <FlatList
-                    data={inventory.filter((i) => i.visible !== "none")}
-                    renderItem={({ item }) => <AnchoredTable item={item} />}
-                    showsVerticalScrollIndicator={false}
-                    keyExtractor={(item) => item.id}
-                    scrollEnabled={false}
-                  />
-                </View>
-              </ScrollView>
-            </ScrollView>
-          </>
-        )}
-      </View>
-      <View
-        style={{
-          marginTop: 20,
-          maxHeight: SCREEN_HEIGHT / 2.7,
-        }}
-      >
-        {inventory.filter((i) => i.visible === "none").length > 0 && (
+        {inventory.length > 0 && (
           <>
             <View style={[styles.row, { marginBottom: 5 }]}>
               <TextStyle color={textColor} smallParagraph>
-                NO ANCLADO
+                ELEMENTOS
               </TextStyle>
               <View style={{ flexDirection: "row" }}>
                 <ButtonStyle
@@ -680,8 +573,8 @@ const Inventory = () => {
                     </View>
                   </View>
                   <FlatList
-                    data={inventory.filter((i) => i.visible === "none")}
-                    renderItem={UnanchoredTable}
+                    data={inventory}
+                    renderItem={Table}
                     showsVerticalScrollIndicator={false}
                     keyExtractor={(item) => item.id}
                     scrollEnabled={false}
