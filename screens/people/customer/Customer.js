@@ -222,7 +222,7 @@ const Card = ({ item, activeChooseDate }) => {
                 ]}
                 onPress={() => salesHandler({ item })}
               >
-                <Ionicons name="card-outline" size={getFontSize(20)} color={textColor(!exists)} />
+                <Ionicons name="restaurant-outline" size={getFontSize(20)} color={textColor(!exists)} />
               </TouchableOpacity>
             );
           })()}
@@ -230,7 +230,7 @@ const Card = ({ item, activeChooseDate }) => {
             style={[styles.swipeIcon, { backgroundColor: backgroundColor(!reservationFound) }]}
             onPress={() => reservationHandler({ reservation: reservationFound, item })}
           >
-            <Ionicons name="home-outline" size={getFontSize(20)} color={textColor(!reservationFound)} />
+            <Ionicons name="bed-outline" size={getFontSize(20)} color={textColor(!reservationFound)} />
           </TouchableOpacity>
         </View>
       </View>
@@ -840,13 +840,13 @@ const Customer = ({ navigation }) => {
             style={styles.iconButton}
             onPress={() => navigation.navigate("CustomerReservations")}
           >
-            <Ionicons name="home" size={getFontSize(20)} />
+            <Ionicons name="bed" size={getFontSize(20)} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => navigation.navigate("CustomerSales")}
           >
-            <Ionicons name="ticket" size={getFontSize(20)} />
+            <Ionicons name="restaurant" size={getFontSize(20)} />
           </TouchableOpacity>
         </View>
       </View>

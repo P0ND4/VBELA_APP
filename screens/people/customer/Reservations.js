@@ -62,11 +62,11 @@ const Reservations = () => {
 
   useEffect(() => {
     const condition = (r) =>
-      r.owner && type === "scheduled"
+      type === "scheduled"
         ? !r.checkIn
         : type === "check-in"
         ? !r.checkOut && r.checkIn
-        : r.checkIn && r.checkOut;
+        : r.checkOut && r.checkIn;
 
     const accommodation = accommodationReservations.filter(condition).map((a) => {
       const nom = nomenclatures.find((n) => n.id === a.ref);
@@ -79,8 +79,8 @@ const Reservations = () => {
         nomenclatureID: nom.id,
       };
     });
-    const standard = standardReservations.filter(condition).flatMap((s) =>
-      s.hosted.map((h) => {
+    const standard = standardReservations.flatMap((s) =>
+      s.hosted.filter(condition).map((h) => {
         const nom = nomenclatures.find((n) => n.id === h.ref);
         const zon = zones.find((z) => z.id === nom.ref);
         return {

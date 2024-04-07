@@ -113,8 +113,8 @@ const Hosted = ({ route }) => {
         nomenclatureID: nom.id,
       };
     });
-    const standard = standardReservations.filter(condition).flatMap((s) =>
-      s.hosted.map((h) => {
+    const standard = standardReservations.flatMap((s) =>
+      s.hosted.filter(condition).map((h) => {
         const nom = nomenclatures.find((n) => n.id === h.ref);
         const zon = zones.find((z) => z.id === nom.ref);
         return {
@@ -405,13 +405,17 @@ const Zone = () => {
     useEffect(() => {
       const hosted = nomenclatures.reduce((total, n) => {
         const reservations = n.type === "standard" ? standardReservations : accommodationReservations;
-        const value = reservations.reduce((count, r) => {
-          if (r.ref === n.id && !dateValidation(new Date(r.checkIn))) {
-            return count + 1;
-          }
-          return count;
-        }, 0);
-        return total + value;
+        return (
+          total +
+          reservations.reduce((count, r) => {
+            if (r.ref !== n.id) return count;
+            if (r.type === "standard")
+              return (
+                count + r.hosted.reduce((a, b) => (!dateValidation(new Date(b.checkIn)) ? a + 1 : a), 0)
+              );
+            return count + (r.type === "accommodation" && !dateValidation(new Date(r.checkIn)) ? 1 : 0);
+          }, 0)
+        );
       }, 0);
       setHosted(hosted);
     }, [item, standardReservations, accommodationReservations]);

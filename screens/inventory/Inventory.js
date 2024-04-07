@@ -334,8 +334,7 @@ const Inventory = () => {
         <View style={[styles.table, { borderColor: textColor }]}>
           <TextStyle smallParagraph color={textColor}>
             <TextStyle smallParagraph color={stock < item.reorder ? "#F70000" : textColor}>
-              {stock < 0 ? "-" : ""}
-              {thousandsSystem(Math.abs(stock))}/
+              {thousandsSystem(stock)}/
             </TextStyle>
             <TextStyle smallParagraph color={light.main2}>
               {thousandsSystem(item.reorder)}
@@ -349,8 +348,7 @@ const Inventory = () => {
         </View>
         <View style={[styles.table, { borderColor: textColor }]}>
           <TextStyle smallParagraph color={value < 0 ? "#F70000" : textColor}>
-            {value < 0 ? "-" : ""}
-            {thousandsSystem(Math.abs(value))}
+            {thousandsSystem(value)}
           </TextStyle>
         </View>
       </View>
@@ -442,6 +440,25 @@ const Inventory = () => {
       {inventory.length === 0 && activeSearch && (
         <TextStyle center color={light.main2} style={{ marginTop: 20 }}>
           NO HAY RESULTADOS
+        </TextStyle>
+      )}
+      {inventory.length > 0 && (
+        <TextStyle color={textColor} smallParagraph>
+          VALOR TOTAL:{" "}
+          {(() => {
+            const total = inventory.reduce((a, b) => {
+              const value =
+                b.entry.reduce((a, b) => a + b.currentValue * b.quantity, 0) -
+                b.output.reduce((a, b) => a + b.currentValue * b.quantity, 0);
+              return a + value;
+            }, 0);
+
+            return (
+              <TextStyle color={total < 0 ? "#F70000" : light.main2} smallParagraph>
+                {thousandsSystem(total || "0")}
+              </TextStyle>
+            );
+          })()}
         </TextStyle>
       )}
       <View

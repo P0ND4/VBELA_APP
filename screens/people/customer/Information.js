@@ -177,7 +177,7 @@ const Card = ({ item }) => {
       reservations: all.map((a) => ({
         id: a.id,
         date: a.creationDate,
-        quantity: a.hosted?.length || 1,
+        quantity: a.hosted?.filter((h) => h.owner)?.length || 1,
         details: a.type,
         total: a.total,
         payment: a.payment.reduce((a, b) => a + b.amount, 0),

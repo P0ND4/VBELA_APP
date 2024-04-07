@@ -71,12 +71,11 @@ const Sales = () => {
   const textColor = useMemo(() => getTextColor(mode), [mode]);
 
   useEffect(() => {
-    const foundOrders = orders
-      .filter((o) => customers.some((c) => c.id === o.ref))
-      .map((o) => ({ ...o, type: "order" }));
-    const foundSales = sales
-      .filter((s) => customers.some((c) => c.id === s.ref))
-      .map((o) => ({ ...o, type: "sale" }));
+    const condition = (o) =>
+      customers.some((c) => c.id === o.ref || c.clientList?.some((cc) => cc.id === o.ref));
+
+    const foundOrders = orders.filter(condition).map((o) => ({ ...o, type: "order" }));
+    const foundSales = sales.filter(condition).map((o) => ({ ...o, type: "sale" }));
 
     const union = [...foundOrders, ...foundSales]
       .filter((o) => o.status === type)
@@ -86,8 +85,8 @@ const Sales = () => {
       }));
 
     const details = union.sort((a, b) => {
-      if (a.start < b.start) return -1;
-      if (a.start > b.start) return 1;
+      if (a.creationDate < b.creationDate) return -1;
+      if (a.creationDate > b.creationDate) return 1;
       return 0;
     });
 

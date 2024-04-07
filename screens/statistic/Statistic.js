@@ -279,12 +279,14 @@ const Statistic = ({ navigation }) => {
   }, [orderDebts, saleDebts, accommodationDebts]);
 
   useEffect(() => {
-    setIncomeTotal(ordersTotal + purchaseTotal + salesTotal + rosterTotal + debts);
-  }, [ordersTotal, purchaseTotal, salesTotal, rosterTotal, debts]);
+    setIncomeTotal(ordersTotal + purchaseTotal + salesTotal + rosterTotal + accommodationTotal + debts);
+  }, [ordersTotal, purchaseTotal, salesTotal, rosterTotal, debts, accommodationTotal]);
 
   useEffect(() => {
-    setUtilityTotal(ordersTotal + purchaseTotal + rosterTotal + debts - expenseTotal + salesTotal);
-  }, [ordersTotal, purchaseTotal, rosterTotal, debts, expenseTotal, salesTotal]);
+    setUtilityTotal(
+      ordersTotal + purchaseTotal + rosterTotal + debts + accommodationTotal - expenseTotal + salesTotal
+    );
+  }, [ordersTotal, purchaseTotal, rosterTotal, debts, accommodationTotal, expenseTotal, salesTotal]);
 
   useEffect(() => {
     setExpenditureTotal(expenseTotal);
