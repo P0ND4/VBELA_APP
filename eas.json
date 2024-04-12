@@ -16,7 +16,7 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://vbelapp.com",
-        "EXPO_PUBLIC_VERSION": "3.8.2",
+        "EXPO_PUBLIC_VERSION": "3.8.3",
         "EXPO_PUBLIC_CLIENT_ID": "1235340873743796",
         "EXPO_PUBLIC_IOS_CLIENT_ID": "939036008047-jbhg7knqhb3moc29inolre83ggdbvg2l.apps.googleusercontent.com",
         "EXPO_PUBLIC_ANDROID_CLIENT_ID": "939036008047-0eiq62hbv8v9km142upli8bubojj6ib0.apps.googleusercontent.com",

@@ -21,12 +21,8 @@ const PlaceInformation = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
   const nomenclatures = useSelector((state) => state.nomenclatures);
   const helperStatus = useSelector((state) => state.helperStatus);
-  const standardReservations = useSelector(
-    (state) => state.standardReservations
-  );
-  const accommodationReservations = useSelector(
-    (state) => state.accommodationReservations
-  );
+  const standardReservations = useSelector((state) => state.standardReservations);
+  const accommodationReservations = useSelector((state) => state.accommodationReservations);
 
   const zoneID = route.params.zoneID;
   const nomenclatureID = route.params.nomenclatureID;
@@ -53,23 +49,15 @@ const PlaceInformation = ({ route, navigation }) => {
   useEffect(() => {
     const getMoney = (reservations) =>
       reservations.reduce((a, b) => {
-        if (b.payment.length)
-          return a + b.payment?.reduce(((a, b) => a + b.amount, 0));
+        if (b.payment?.length) return a + b.payment?.reduce((a, b) => a + b?.amount, 0);
         return a;
       }, 0);
 
-    const getDays = (reservations) =>
-      reservations.reduce((a, b) => a + b.days, 0);
+    const getDays = (reservations) => reservations.reduce((a, b) => a + b.days, 0);
+    const getPeople = (reservations) => reservations.reduce((a, b) => a + b?.hosted?.length || 1, 0);
 
-    const getPeople = (reservations) =>
-      reservations.reduce((a, b) => a + b?.hosted?.length || 1, 0);
-
-    const standard = standardReservations.filter(
-      (s) => s.ref === nomenclatureID
-    );
-    const accommodation = accommodationReservations.filter(
-      (a) => a.ref === nomenclatureID
-    );
+    const standard = standardReservations.filter((s) => s.ref === nomenclatureID);
+    const accommodation = accommodationReservations.filter((a) => a.ref === nomenclatureID);
 
     setTotalMoney(getMoney(standard) + getMoney(accommodation));
     setTotalDays(getDays(standard) + getDays(accommodation));
@@ -91,10 +79,7 @@ const PlaceInformation = ({ route, navigation }) => {
           justifyContent: "space-between",
         }}
       >
-        <TextStyle
-          smallTitle
-          color={mode === "light" ? light.textDark : dark.textWhite}
-        >
+        <TextStyle smallTitle color={mode === "light" ? light.textDark : dark.textWhite}>
           Información
         </TextStyle>
         <TouchableOpacity
@@ -106,11 +91,7 @@ const PlaceInformation = ({ route, navigation }) => {
             });
           }}
         >
-          <Ionicons
-            name="create-outline"
-            size={getFontSize(31)}
-            color={light.main2}
-          />
+          <Ionicons name="create-outline" size={getFontSize(31)} color={light.main2} />
         </TouchableOpacity>
       </View>
       <TextStyle smallSubtitle color={light.main2}>
@@ -118,22 +99,15 @@ const PlaceInformation = ({ route, navigation }) => {
       </TextStyle>
       <View style={{ marginVertical: 30 }}>
         <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-          Dinero total:{" "}
-          <TextStyle color={light.main2}>
-            {thousandsSystem(totalMoney || "0")}
-          </TextStyle>
+          Dinero total: <TextStyle color={light.main2}>{thousandsSystem(totalMoney || "0")}</TextStyle>
         </TextStyle>
         <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
           Personas reservadas:{" "}
-          <TextStyle color={light.main2}>
-            {thousandsSystem(totalPeople || "0")}
-          </TextStyle>
+          <TextStyle color={light.main2}>{thousandsSystem(totalPeople || "0")}</TextStyle>
         </TextStyle>
         <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
           Total de días reservado:{" "}
-          <TextStyle color={light.main2}>
-            {thousandsSystem(totalDays || "0")}
-          </TextStyle>
+          <TextStyle color={light.main2}>{thousandsSystem(totalDays || "0")}</TextStyle>
         </TextStyle>
         <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
           Ultima actualización:{" "}
@@ -143,9 +117,7 @@ const PlaceInformation = ({ route, navigation }) => {
         </TextStyle>
         <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
           Fecha de creación:{" "}
-          <TextStyle color={light.main2}>
-            {changeDate(new Date(nomenclature?.creationDate))}
-          </TextStyle>
+          <TextStyle color={light.main2}>{changeDate(new Date(nomenclature?.creationDate))}</TextStyle>
         </TextStyle>
       </View>
       <ButtonStyle
@@ -167,13 +139,9 @@ const PlaceInformation = ({ route, navigation }) => {
                   dispatch(removeManyRA({ ref: nomenclatureID }));
                   navigation.pop();
                   await removeNomenclature({
-                    identifier: helperStatus.active
-                      ? helperStatus.identifier
-                      : user.identifier,
+                    identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
                     id: nomenclatureID,
-                    helpers: helperStatus.active
-                      ? [helperStatus.id]
-                      : user.helpers.map((h) => h.id),
+                    helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
                   });
 
                   await helperNotification(

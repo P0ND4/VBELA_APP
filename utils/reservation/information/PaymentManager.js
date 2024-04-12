@@ -55,7 +55,6 @@ const PaymentManager = ({
   setModalVisible,
   toPay = [],
   business = true,
-  paymentType,
   handleSubmit,
 }) => {
   const [paymentMethod, setPaymentMethod] = useState("cash");
@@ -91,7 +90,7 @@ const PaymentManager = ({
             <TextStyle style={{ marginBottom: 5 }} smallParagraph color={textColor}>
               ¿Como y cuanto ha pagado el usuario?
             </TextStyle>
-            {!paymentByBusiness && paymentMethod !== "credit" && (
+            {!paymentByBusiness && (
               <FlatList
                 data={elements}
                 keyExtractor={(item) => item.id}
@@ -109,7 +108,7 @@ const PaymentManager = ({
                 )}
               />
             )}
-            {!paymentByBusiness && paymentMethod !== "credit" && (
+            {!paymentByBusiness && (
               <View style={{ marginVertical: 5 }}>
                 <TextStyle color={textColor}>
                   Monto pagado: <TextStyle color={light.main2}>{thousandsSystem(payment)}</TextStyle>
@@ -133,7 +132,7 @@ const PaymentManager = ({
                 )}
               </View>
             )}
-            {business && !["mixto", "credit"].includes(paymentType) && (
+            {business && (
               <View style={[styles.row, { marginBottom: 5 }]}>
                 <TextStyle smallParagraph color={light.main2}>
                   Lo pago la empresa
@@ -152,7 +151,7 @@ const PaymentManager = ({
                 value={paymentMethod}
                 setValue={setPaymentMethod}
                 cardStyle={{ width: SCREEN_WIDTH / 4.2 }}
-                type={paymentType}
+                type="others"
               />
             )}
             <ButtonStyle
@@ -198,15 +197,6 @@ const PaymentManager = ({
                       "El pago será gestionado por la empresa, puedes cambiar esto más adelante",
                     denial: "Cambie de opinión",
                     affirmation: "Esta bien",
-                  });
-
-                if (paymentMethod === "credit")
-                  return generateAlert({
-                    title: "CRÉDITO",
-                    description:
-                      "El pago del crédito se reflejara en CLIENTES, ¿está seguro que desea continuar?",
-                    denial: "No estoy seguro",
-                    affirmation: "Estoy seguro",
                   });
 
                 if (tip)

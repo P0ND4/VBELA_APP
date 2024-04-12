@@ -183,7 +183,7 @@ const Table = ({ item, tableOptions, activePayment, openPaymentToPay }) => {
             onPress={() => setShowInformationModal(!showInformationModal)}
           >
             <TextStyle smallParagraph color={textColor}>
-              {`${item.fullName.slice(0, 13)}${item.fullName.length > 13 ? "..." : ""}`}
+              {`${item.fullName?.slice(0, 13)}${item.fullName?.length > 13 ? "..." : ""}`}
             </TextStyle>
           </TouchableOpacity>
         )}

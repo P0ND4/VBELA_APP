@@ -397,10 +397,9 @@ const Information = ({ route, navigation }) => {
 
     if (total - payment > amount) reserveUpdated.status = "pending";
     if (total - payment === amount || tip) reserveUpdated.status = "paid";
-    if (paymentMethod === "credit") reserveUpdated.status = "credit";
     if (paymentByBusiness) reserveUpdated.status = "business";
 
-    if (paymentMethod !== "credit" && !paymentByBusiness)
+    if (!paymentByBusiness)
       reserveUpdated.payment = [...reserve.payment, { method: paymentMethod, amount }];
 
     setShowPaymentManagement(false);
@@ -529,7 +528,7 @@ const Information = ({ route, navigation }) => {
               </View>
             </ScrollView>
             <View style={[styles.row, { marginVertical: 15 }]}>
-              {reserve?.status && !["credit", "business"].includes(reserve.status) && (
+              {reserve?.status && reserve?.status !== "business" && (
                 <ButtonStyle
                   style={{ flexGrow: 1, width: "auto", marginRight: 5 }}
                   backgroundColor={mode === "light" ? light.main5 : dark.main2}
@@ -562,7 +561,7 @@ const Information = ({ route, navigation }) => {
         <Description
           cost={thousandsSystem(reserve?.total || "0")}
           debt={
-            ["credit", "business"].includes(reserve?.status)
+            reserve?.status === "business"
               ? null
               : reserve?.total - reservePayment > 0
               ? thousandsSystem(reserve?.total - reservePayment || "0")
@@ -571,8 +570,6 @@ const Information = ({ route, navigation }) => {
           status={
             reserve?.status === "pending"
               ? "PENDIENTE"
-              : reserve?.status === "credit"
-              ? "POR CRÉDITO"
               : reserve?.status === "business"
               ? "POR EMPRESA"
               : reserve?.status === "paid"
@@ -580,9 +577,7 @@ const Information = ({ route, navigation }) => {
               : "ESPERANDO POR PAGO"
           }
           tip={reservePayment > reserve?.total && thousandsSystem(reservePayment - reserve?.total)}
-          payment={
-            !["credit", "business"].includes(reserve?.status) && thousandsSystem(reservePayment || "0")
-          }
+          payment={reserve?.status !== "business" && thousandsSystem(reservePayment || "0")}
           type="ESTANDAR"
           hosted={thousandsSystem(reserve?.hosted?.length || "0")}
           days={thousandsSystem(reserve?.days || "0")}
@@ -618,9 +613,14 @@ const Information = ({ route, navigation }) => {
         payment={reservePayment || "0"}
         modalVisible={showPaymentManagement}
         setModalVisible={setShowPaymentManagement}
-        toPay={[{ id: reserve?.id, name: "Pago general", amount: Math.max(reserve?.total - reservePayment, 0) }]}
+        toPay={[
+          {
+            id: reserve?.id,
+            name: "Pago general",
+            amount: Math.max(reserve?.total - reservePayment, 0),
+          },
+        ]}
         business={!isEditPay}
-        paymentType={!isEditPay && reserve?.hosted.some((h) => h.owner) ? "credit" : "others"}
         handleSubmit={handlePayment}
       />
     </Layout>

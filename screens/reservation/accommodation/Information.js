@@ -21,8 +21,6 @@ const { light, dark } = theme();
 const checkStatus = (item) =>
   item?.status === "pending"
     ? "PENDIENTE"
-    : item?.status === "credit"
-    ? "POR CRÉDITO"
     : item?.status === "business"
     ? "POR EMPRESA"
     : item?.status === "paid"
@@ -131,9 +129,7 @@ const Table = ({
           </TextStyle>
         </TouchableOpacity>
         <TouchableOpacity
-          onLongPress={() =>
-            item.status && !["credit", "business"].includes(item.status) && openPaymentToPay()
-          }
+          onLongPress={() => item.status && !item?.status !== "business" && openPaymentToPay()}
           onPress={() => activePayment({ hosted: [item] })}
           style={[styles.table, { borderColor: textColor, width: 100 }]}
         >
@@ -161,8 +157,7 @@ const Table = ({
           </>
         )}
         showMoreRight={() =>
-          item?.status &&
-          !["credit", "business"].includes(item.status) && (
+          item?.status !== "business" && (
             <ButtonStyle
               style={{ flexGrow: 1, width: "auto", marginLeft: 5 }}
               backgroundColor={mode === "light" ? dark.main2 : light.main5}
@@ -180,7 +175,7 @@ const Table = ({
               Costo de alojamiento:{" "}
               <TextStyle color={light.main2}>{thousandsSystem(item.total)}</TextStyle>
             </TextStyle>
-            {!["credit", "business"].includes(item?.status) && (
+            {item?.status !== "business" && (
               <TextStyle color={textColor}>
                 Deuda:{" "}
                 <TextStyle color={light.main2}>
@@ -190,7 +185,7 @@ const Table = ({
                 </TextStyle>
               </TextStyle>
             )}
-            {!["credit", "business"].includes(item?.status) && (
+            {item?.status !== "business" && (
               <TextStyle color={textColor}>
                 Dinero pagado:{" "}
                 <TextStyle color={light.main2}>{thousandsSystem(reservePayment || "0")}</TextStyle>
@@ -505,10 +500,9 @@ const Information = ({ route, navigation }) => {
 
         if (r.amount - r.payment > found.amount) status = "pending";
         if (r.amount - r.payment === found.amount || tip) status = "paid";
-        if (paymentMethod === "credit") status = "credit";
         if (paymentByBusiness) status = "business";
 
-        if (paymentMethod !== "credit" && !paymentByBusiness) {
+        if (!paymentByBusiness) {
           return {
             ...reserve,
             status,
@@ -692,10 +686,9 @@ const Information = ({ route, navigation }) => {
         <Description
           cost={thousandsSystem(reservesTotal || "0")}
           debt={
-            reserves?.filter((r) => ["credit", "business"].includes(r.status)).length ===
-            reserves?.length
+            reserves?.filter((r) => r.status === "business").length === reserves?.length
               ? null
-              : reserves?.some((r) => ["credit", "business"].includes(r.status))
+              : reserves?.some((r) => r.status === "business")
               ? "MIXTO"
               : reserves.reduce((a, b) => a + b?.total, 0) - reservesPayment > 0
               ? thousandsSystem(reservesTotal - reservesPayment || "0")
@@ -704,8 +697,6 @@ const Information = ({ route, navigation }) => {
           status={
             reserves?.filter((r) => r.status === "pending").length === reserves?.length
               ? "PENDIENTE"
-              : reserves?.filter((r) => r.status === "credit").length === reserves?.length
-              ? "POR CRÉDITO"
               : reserves?.filter((r) => r.status === "business").length === reserves?.length
               ? "POR EMPRESA"
               : reserves?.filter((r) => r.status === "paid").length === reserves?.length
@@ -716,10 +707,9 @@ const Information = ({ route, navigation }) => {
           }
           tip={reservesPayment > reservesTotal && thousandsSystem(reservesPayment - reservesTotal)}
           payment={
-            reserves?.filter((r) => ["credit", "business"].includes(r.status)).length ===
-            reserves?.length
+            reserves?.filter((r) => r.status === "business").length === reserves?.length
               ? null
-              : reserves?.some((r) => ["credit", "business"].includes(r.status))
+              : reserves?.some((r) => r.status === "business")
               ? "MIXTO"
               : thousandsSystem(reservesPayment || "0")
           }
@@ -790,11 +780,6 @@ const Information = ({ route, navigation }) => {
         setModalVisible={setShowPaymentManagement}
         toPay={reservesToPay}
         business={!isEditPay}
-        paymentType={
-          !isEditPay && reservesToPay?.filter((h) => h.owner).length === reservesToPay?.length
-            ? "credit"
-            : "others"
-        }
         handleSubmit={handlePayment}
       />
     </Layout>

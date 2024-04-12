@@ -70,11 +70,11 @@ const Card = ({ item, activeChooseDate }) => {
       return itemIds.some((id) => id === a.owner || a.hosted?.some((h) => h.owner === id));
     };
 
-    const reservations = accommodations.filter((a) => a.status === "credit" && condition(a));
+    const reservations = accommodations.filter((a) => a.status !== "business" && condition(a));
     const total = reservations.reduce((a, b) => a + b?.total, 0);
     const payment = reservations.reduce((a, b) => a + b?.payment.reduce((a, b) => a + b.amount, 0), 0);
 
-    return total - payment;
+    return Math.max(total - payment, 0);
   };
 
   useEffect(() => {
@@ -144,17 +144,33 @@ const Card = ({ item, activeChooseDate }) => {
 
   const checkReservation = ({ id }) => {
     const allReservations = [...standardReservations, ...accommodationReservations];
-    return allReservations.find((r) => r?.owner === id || r?.hosted?.some((h) => h.owner === id));
+    const found = allReservations.find((r) => r?.owner === id || r?.hosted?.find((h) => h.owner === id));
+    return {
+      result: found,
+      active:
+        found?.status === "paid" &&
+        (found.checkOut || found.hosted?.find((h) => h.owner === id).checkOut),
+    };
   };
 
   const StandardCustomer = () => {
     const [reservationFound, setReservationFound] = useState(null);
+    const [active, setActive] = useState(true);
 
     useEffect(() => {
       const found = checkReservation({ id: item.id });
-      if (found) setReservationFound(found);
-      else setReservationFound(false);
+      setReservationFound(found.result || false);
+      setActive(found.active);
     }, [standardReservations, accommodationReservations]);
+
+    if (reservationFound === null) return <View />;
+
+    if (active)
+      return (
+        <TextStyle verySmall center color={light.main2} style={{ marginBottom: 10 }}>
+          EL CLIENTE YA SE HA IDO Y HA PAGADO
+        </TextStyle>
+      );
 
     return (
       <View style={styles.row}>
@@ -191,12 +207,22 @@ const Card = ({ item, activeChooseDate }) => {
   const SpecialCustomer = ({ item }) => {
     const [isName, setIsName] = useState(true);
     const [reservationFound, setReservationFound] = useState(null);
+    const [active, setActive] = useState(true);
 
     useEffect(() => {
       const found = checkReservation({ id: item.id });
-      if (found) setReservationFound(found);
-      else setReservationFound(false);
+      setReservationFound(found.result || false);
+      setActive(found.active);
     }, [standardReservations, accommodationReservations]);
+
+    if (reservationFound === null) return <View />;
+
+    if (active)
+      return (
+        <TextStyle verySmall center color={light.main2} style={{ marginBottom: 10 }}>
+          EL CLIENTE {item?.name.toUpperCase()} YA SE HA IDO Y HA PAGADO
+        </TextStyle>
+      );
 
     return (
       <View style={[styles.row, { marginVertical: 2 }]}>
@@ -471,7 +497,7 @@ const Card = ({ item, activeChooseDate }) => {
     );
   };
 
-  const rightSwipe = () => (
+  const RightSwipe = () => (
     <View style={{ flexDirection: "row", alignItems: "center" }}>
       <TouchableOpacity
         style={[styles.swipeIcon, { backgroundColor: "red" }]}
@@ -504,7 +530,7 @@ const Card = ({ item, activeChooseDate }) => {
 
   const SwipeableValidation = ({ condition, children }) =>
     condition ? (
-      <Swipeable renderRightActions={rightSwipe}>{children}</Swipeable>
+      <Swipeable renderRightActions={RightSwipe}>{children}</Swipeable>
     ) : (
       <View>{children}</View>
     );
@@ -539,19 +565,23 @@ const Card = ({ item, activeChooseDate }) => {
             ) : (
               <StandardCustomer />
             )}
-            <ButtonStyle
-              backgroundColor={light.main2}
-              onPress={() => {
-                navigation.navigate("CustomerInformation", {
-                  type: "individual",
-                  id: item.id,
-                });
-              }}
-            >
-              <TextStyle center paragrahp>
-                Detalles
-              </TextStyle>
-            </ButtonStyle>
+            <View style={styles.row}>
+              <ButtonStyle
+                backgroundColor={light.main2}
+                style={{ width: "70%" }}
+                onPress={() => {
+                  navigation.navigate("CustomerInformation", {
+                    type: "individual",
+                    id: item.id,
+                  });
+                }}
+              >
+                <TextStyle center paragrahp>
+                  Detalles
+                </TextStyle>
+              </ButtonStyle>
+              <RightSwipe />
+            </View>
           </View>
         )}
       </View>

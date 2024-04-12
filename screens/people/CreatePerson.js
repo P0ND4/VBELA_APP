@@ -4,9 +4,8 @@ import { useSelector, useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
 import { add as addCustomer, edit as editCustomer } from "@features/people/customersSlice";
 import { add as addSupplier, edit as editSupplier } from "@features/people/suppliersSlice";
-import { edit as editE } from "@features/function/economySlice";
 import { random, thousandsSystem, getFontSize } from "@helpers/libs";
-import { addPerson, editPerson, editEconomy } from "@api";
+import { addPerson, editPerson } from "@api";
 import AddPerson from "@components/AddPerson";
 import Information from "@components/Information";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -35,7 +34,6 @@ const CreatePerson = ({ route, navigation }) => {
   const standardReservations = useSelector((state) => state.standardReservations);
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
 
-  const economy = useSelector((state) => state.economy);
   const helperStatus = useSelector((state) => state.helperStatus);
 
   const type = route.params?.type;
@@ -56,11 +54,13 @@ const CreatePerson = ({ route, navigation }) => {
   const [clientCountFinished, setClientCountFinished] = useState(null);
 
   useEffect(() => {
-    if (editing && special && dataP?.clientList) {
+    if (editing && dataP?.clientList) {
       const separateClients = ({ c, isCheckOut }) => {
         const exists =
-          standardReservations.some((s) => s.hosted.some((h) => h.owner === c.id && h.checkOut)) ||
-          accommodationReservations.some((h) => h.owner === c.id && h.checkOut);
+          standardReservations.some(
+            (s) => s.status === "paid" && s.hosted.some((h) => h.owner === c.id && h.checkOut)
+          ) ||
+          accommodationReservations.some((h) => h.status === "paid" && h.owner === c.id && h.checkOut);
 
         return isCheckOut ? exists : !exists;
       };
@@ -75,7 +75,7 @@ const CreatePerson = ({ route, navigation }) => {
       setClientList(clientList);
       setCheckOutClientList(checkOutClientList);
     }
-  }, [editing, special, dataP?.clientList]);
+  }, [editing, dataP?.clientList]);
 
   const [editingClient, setEditingClient] = useState({
     key: Math.random(),
@@ -137,26 +137,6 @@ const CreatePerson = ({ route, navigation }) => {
   const onSubmitEdit = async (data) => {
     setLoading(true);
     Keyboard.dismiss();
-    const foundEconomy = economy.find((e) => e.ref === dataP.id);
-    if (foundEconomy) {
-      dispatch(
-        editE({
-          id: foundEconomy.id,
-          data: {
-            ...foundEconomy,
-            owner: { identification: data.identification, name: data.name },
-          },
-        })
-      );
-      await editEconomy({
-        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
-        economy: {
-          ...foundEconomy,
-          owner: { identification: data.identification, name: data.name },
-        },
-        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
-      });
-    }
     data.modificationDate = new Date().getTime();
     data.id = dataP.id;
     data.creationDate = dataP.creationDate;
@@ -264,6 +244,7 @@ const CreatePerson = ({ route, navigation }) => {
                       setClientList(newArrayClientList);
                       setCompleteClientList(newArrayCompleteClientList);
                       setCheckOutClientList(newArrayCheckOutClientList);
+                      setValue("clientList", newArrayCompleteClientList);
                       if (!newArrayCheckOutClientList.length) {
                         setActiveInformation(false);
                         setClientCountFinished(null);
@@ -324,23 +305,23 @@ const CreatePerson = ({ route, navigation }) => {
                 value={special}
               />
             </View>
-            {editing && clientCountFinished && (
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <TextStyle smallParagraph color={light.main2}>
-                  {clientCountFinished} PERSONA
-                  {clientCountFinished === 1 ? "" : "S"} HA
-                  {clientCountFinished === 1 ? "" : "N"} HECHO CHECK OUT
-                </TextStyle>
-                <TouchableOpacity onPress={() => setActiveInformation(!activeInformation)}>
-                  <Ionicons
-                    name="help-circle-outline"
-                    style={{ marginLeft: 5 }}
-                    size={getFontSize(23)}
-                    color={light.main2}
-                  />
-                </TouchableOpacity>
-              </View>
-            )}
+          </View>
+        )}
+        {editing && clientCountFinished && (
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TextStyle smallParagraph color={light.main2}>
+              {clientCountFinished} PERSONA
+              {clientCountFinished === 1 ? "" : "S"} HA
+              {clientCountFinished === 1 ? "" : "N"} HECHO CHECK OUT
+            </TextStyle>
+            <TouchableOpacity onPress={() => setActiveInformation(!activeInformation)}>
+              <Ionicons
+                name="help-circle-outline"
+                style={{ marginLeft: 5 }}
+                size={getFontSize(23)}
+                color={light.main2}
+              />
+            </TouchableOpacity>
           </View>
         )}
         {special && (

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { View, ScrollView, StyleSheet, TouchableOpacity, Dimensions, FlatList } from "react-native";
 import { useSelector } from "react-redux";
 import { getFontSize, thousandsSystem, changeDate } from "@helpers/libs";
+import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import InputStyle from "@components/InputStyle";
 import Layout from "@components/Layout";
@@ -18,6 +19,8 @@ const Table = ({ item }) => {
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
 
+  const navigation = useNavigation();
+
   return (
     <View style={{ flexDirection: "row" }}>
       <View style={[styles.table, { borderColor: textColor, width: 83 }]}>
@@ -25,6 +28,19 @@ const Table = ({ item }) => {
           {changeDate(new Date(item.creationDate))}
         </TextStyle>
       </View>
+      <TouchableOpacity
+        style={[styles.table, { borderColor: textColor, width: 100 }]}
+        onPress={() => {
+          navigation.navigate("CustomerInformation", {
+            type: "individual",
+            id: item.customer?.id,
+          });
+        }}
+      >
+        <TextStyle verySmall color={textColor}>
+          {item.customer?.name}
+        </TextStyle>
+      </TouchableOpacity>
       <View style={[styles.table, { borderColor: textColor, width: 83 }]}>
         <TextStyle verySmall color={textColor}>
           {item.quantity}
@@ -81,6 +97,15 @@ const Sales = () => {
       .filter((o) => o.status === type)
       .map((o) => ({
         ...o,
+        customer: customers.reduce(
+          (a, b) => {
+            const client = b?.clientList?.find((c) => c.id === o.ref);
+            if (client) return { id: b.id, name: client.name };
+            if (b.id === o.ref) return { id: b.id, name: b.name };
+            return a;
+          },
+          { id: "", name: "" }
+        ),
         payment: o.selection.reduce((a, b) => a + b.method.reduce((a, b) => a + b.total, 0), 0),
       }));
 
@@ -130,6 +155,11 @@ const Sales = () => {
                 <View style={[styles.table, { borderColor: textColor, width: 83 }]}>
                   <TextStyle smallParagraph color={textColor}>
                     FECHA
+                  </TextStyle>
+                </View>
+                <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
+                  <TextStyle smallParagraph color={textColor}>
+                    NOMBRE
                   </TextStyle>
                 </View>
                 <View style={[styles.table, { borderColor: textColor, width: 83 }]}>

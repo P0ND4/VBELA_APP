@@ -288,66 +288,77 @@ const Debts = () => {
   };
 
   const getSales = ({ sales, type }) => {
-    const found = sales.filter((s) =>
-      s.selection.some((s) => s.method.some((m) => m.method === "credit"))
-    );
-
-    return found.map((f) => {
+    return sales.reduce((result, f) => {
       const { agency, owner } = getOwners({ condition: (c) => c.id === f.ref });
-
       const methods = f.selection.reduce((a, b) => [...a, ...b.method], []);
-      return {
-        id: f.id,
-        details: type,
-        debt: methods.reduce((a, b) => (b.method === "credit" ? a + b.total : a), 0),
-        total: f.total,
-        agency,
-        owner,
-        paid: methods.reduce((a, b) => (b.method !== "credit" ? a + b.total : a), 0),
-        type: type === "sale" ? "P&S" : "Restaurante",
-        creationDate: f.creationDate,
-        modificationDate: f.modificationDate,
-      };
-    });
+      const debt = methods.reduce((a, b) => (b.method === "credit" ? a + b.total : a), 0);
+      const paid = methods.reduce((a, b) => (b.method !== "credit" ? a + b.total : a), 0);
+
+      if (debt !== 0) {
+        result.push({
+          id: f.id,
+          details: type,
+          debt,
+          total: f.total,
+          agency,
+          owner,
+          paid,
+          type: type === "sale" ? "P&S" : "Restaurante",
+          creationDate: f.creationDate,
+          modificationDate: f.modificationDate,
+        });
+      }
+      return result;
+    }, []);
   };
 
-  const getAccommodation = (reservations) =>
-    reservations.map((r) => {
+  const getAccommodation = (reservations) => {
+    return reservations.reduce((result, r) => {
       const { owner, agency } = getOwners({
-        condition: (c) => c.id === r.owner || r.hosted.some((h) => h.owner === c.id),
+        condition: (c) => c.id === r.owner || r?.hosted?.some((h) => h.owner === c.id),
       });
+      const payment = r.payment?.reduce((a, p) => a + p.amount, 0);
+      const debt = Math.max(r.total - payment, 0);
 
-      return {
-        id: r.id,
-        details: r.type,
-        debt: r.total,
-        total: r.total,
-        agency,
-        owner,
-        paid: 0,
-        type: r.type === "accommodation" ? "Acomodación" : "Estandar",
-        creationDate: r.creationDate,
-        modificationDate: r.modificationDate,
-      };
-    });
+      if (debt !== 0) {
+        result.push({
+          id: r.id,
+          details: r.type,
+          debt,
+          total: r.total,
+          agency,
+          owner,
+          paid: payment,
+          type: r.type === "accommodation" ? "Acomodación" : "Estandar",
+          creationDate: r.creationDate,
+          modificationDate: r.modificationDate,
+        });
+      }
+
+      return result;
+    }, []);
+  };
 
   useEffect(() => {
-    const ids = customers.flatMap((c) => (c.special ? c.clientList?.map((c) => c.id) : [c.id]));
+    const ids = customers
+      .map((c) => (c.special ? c.clientList?.map((c) => c.id) : [c.id]))
+      .reduce((a, b) => a.concat(b), []);
 
-    const accommodation = standardReservations.filter(
-      (s) => s.status === "credit" && s.hosted.some((h) => h.owner && ids.includes(h.owner))
-    );
-    const standard = accommodationReservations.filter(
-      (a) => a.status === "credit" && a.owner && ids.includes(a.owner)
-    );
+    const condition = (a) =>
+      a.status !== "business" &&
+      ids.some((id) => id === a.owner || a.hosted?.some((h) => h.owner === id));
+
+    const accommodation = standardReservations.filter((s) => condition(s));
+    const standard = accommodationReservations.filter((a) => condition(a));
 
     const debts = [
       ...getAccommodation(accommodation),
       ...getAccommodation(standard),
       ...getSales({ sales, type: "sale" }),
       ...getSales({ sales: orders, type: "order" }),
-    ];
-    setDebts(debts.sort((d) => d.creationDate));
+    ].sort((a, b) => a.creationDate - b.creationDate);
+
+    setDebts(debts);
   }, [customers, standardReservations, accommodationReservations, sales, orders]);
 
   return (

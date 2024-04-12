@@ -45,7 +45,7 @@ const Table = ({ item }) => {
         </TextStyle>
       </View>
       <TouchableOpacity
-        style={[styles.table, { borderColor: textColor, width: 85 }]}
+        style={[styles.table, { borderColor: textColor, width: 90 }]}
         onPress={() => {
           if (item.details === "accommodation")
             navigation.navigate("AccommodationReserveInformation", { ids: [item.id] });
@@ -82,8 +82,6 @@ const Table = ({ item }) => {
         <TextStyle color={textColor} smallParagraph>
           {item?.status === "pending"
             ? "PENDIENTE"
-            : item?.status === "credit"
-            ? "POR CRÉDITO"
             : item?.status === "business"
             ? "POR EMPRESA"
             : item?.status === "paid"
@@ -167,23 +165,26 @@ const Card = ({ item }) => {
     const getTotal = (r) => r.reduce((a, b) => a + b?.total, 0);
     const getPayment = (r) => r.reduce((a, b) => a + b?.payment.reduce((a, b) => a + b.amount, 0), 0);
 
-    const debts = accommodations.filter((a) => a.status === "credit" && condition(a));
+    const debts = accommodations.filter((a) => a.status !== "business" && condition(a));
     const all = accommodations.filter((a) => condition(a));
 
     return {
-      total: getTotal(all),
-      debt: getTotal(debts),
-      payment: getPayment(all),
-      reservations: all.map((a) => ({
-        id: a.id,
-        date: a.creationDate,
-        quantity: a.hosted?.filter((h) => h.owner)?.length || 1,
-        details: a.type,
-        total: a.total,
-        payment: a.payment.reduce((a, b) => a + b.amount, 0),
-        debt: a.status === "credit" ? a.total : 0,
-        status: a.status,
-      })),
+      total: getTotal(debts),
+      debt: Math.max(getTotal(debts) - getPayment(debts), 0),
+      payment: getPayment(debts),
+      reservations: all.map((a) => {
+        const payment = a.payment.reduce((a, b) => a + b.amount, 0);
+        return {
+          id: a.id,
+          date: a.creationDate,
+          quantity: a.hosted?.filter((h) => h.owner)?.length || 1,
+          details: a.type,
+          total: a.total,
+          payment,
+          debt: !["business", "paid"].includes(a.status) ? a.total - payment : 0,
+          status: a.status,
+        };
+      }),
     };
   };
 
@@ -243,7 +244,13 @@ const Card = ({ item }) => {
                 Total: <TextStyle color={light.main2}>{thousandsSystem(total || "0")}</TextStyle>
               </TextStyle>
               <TextStyle color={textColor}>
-                Pagado: <TextStyle color={light.main2}>{thousandsSystem(payment || "0")}</TextStyle>
+                Pagado:{" "}
+                <TextStyle color={light.main2}>
+                  {thousandsSystem(payment || "0")}{" "}
+                  {total - payment < 0
+                    ? `(${thousandsSystem(Math.abs(total - payment))} DE PROPINA)`
+                    : ""}
+                </TextStyle>
               </TextStyle>
               <TextStyle color={textColor}>
                 Deuda: <TextStyle color={light.main2}>{thousandsSystem(debt || "0")}</TextStyle>
@@ -267,7 +274,7 @@ const Card = ({ item }) => {
                           CANTIDAD
                         </TextStyle>
                       </View>
-                      <View style={[styles.table, { borderColor: textColor, width: 85 }]}>
+                      <View style={[styles.table, { borderColor: textColor, width: 90 }]}>
                         <TextStyle color={light.main2} smallParagraph>
                           DETALLE
                         </TextStyle>
