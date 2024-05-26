@@ -38,6 +38,7 @@ const Preview = ({ route, navigation }) => {
   const customers = useSelector((state) => state.customers);
   const inventory = useSelector((state) => state.inventory);
   const helperStatus = useSelector((state) => state.helperStatus);
+  const recipes = useSelector((state) => state.recipes);
 
   const [total, setTotal] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -129,9 +130,10 @@ const Preview = ({ route, navigation }) => {
   };
 
   const inventoryDiscountHandler = async (selection) => {
-    const ingredients = selection.flatMap((s) =>
-      (s.recipe?.ingredients || []).map((i) => ({ ...i, quantity: i.quantity * s.paid }))
-    );
+    const ingredients = selection.flatMap((s) => {
+      const recipe = recipes.find((r) => r.id === s.recipe)?.ingredients || [];
+      return recipe.map((i) => ({ ...i, quantity: i.quantity * s.paid }));
+    });
 
     const inventoriesMap = ingredients.reduce((map, ingredient) => {
       const inv = inventory.find((i) => i.id === ingredient.id);
@@ -155,7 +157,7 @@ const Preview = ({ route, navigation }) => {
     }, new Map());
 
     const inventories = [...inventoriesMap.values()];
-    
+
     dispatch(updateManyInventory({ data: inventories }));
 
     await discountInventory({
@@ -349,12 +351,12 @@ const Preview = ({ route, navigation }) => {
                 ],
               }));
               const newProducts = products.map((p) => {
+                if (p.recipe) return p;
                 //TODO CAMBIAR ESTO HACERLO DESDE LA API Y NO DESDE LA EDICION DEL USUARIO COMO TAL
                 const found = selection.find((s) => s.id === p.id);
                 return found ? { ...p, quantity: p.quantity - found.paid } : p;
               }); //TODO ESTO MEJORAR
               dispatch(changeP(newProducts)); //TODO CHANGE THIS
-
               const data = {
                 id: random(20),
                 ref,

@@ -191,7 +191,7 @@ const Inventory = () => {
             <td style="width: 50px; border: 1px solid #000; padding: 8px">
               <p style="font-size: 18px; font-weight: 600; color: ${
                 stock < item.reorder ? "#F70000" : "#000000"
-              }; display: inline-block;">${stock < 0 ? "-" : ""}${thousandsSystem(Math.abs(stock))}</p>
+              }; display: inline-block;">${thousandsSystem(stock || "0")}</p>
               <p style="font-size: 18px; font-weight: 600; display: inline-block;">
                 /${thousandsSystem(item.reorder)}
               </p>
@@ -201,7 +201,7 @@ const Inventory = () => {
             </td>
             <td style="width: 50px; border: 1px solid #000; padding: 8px">
               <p style="font-size: 18px; font-weight: 600; color: ${value < 0 ? "#F70000" : "#000000"}">
-              ${value < 0 ? "-" : ""}${thousandsSystem(Math.abs(value))}</p>
+              ${thousandsSystem(value || "0")}</p>
             </td>
           </tr>`
       );

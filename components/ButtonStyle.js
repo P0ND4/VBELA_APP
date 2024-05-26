@@ -21,6 +21,7 @@ const ButtonStyle = ({
   children,
   backgroundColor = light.main5,
   onPress,
+  onLongPress,
   right,
   left,
   disable = false,
@@ -29,7 +30,7 @@ const ButtonStyle = ({
   const stylesTaken = [styles.default, { backgroundColor }, style];
 
   return (
-    <TouchableOpacity disabled={disable} style={stylesTaken} onPress={onPress}>
+    <TouchableOpacity disabled={disable} style={stylesTaken} onPress={onPress} onLongPress={onLongPress}>
       {children && children}
       <View style={styles.elementsContainer}>
         {left && left()}

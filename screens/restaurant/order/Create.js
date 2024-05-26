@@ -17,7 +17,7 @@ import { add, edit, remove } from "@features/tables/ordersSlice";
 import { add as addK, removeMany as removeManyK } from "@features/tables/kitchenSlice";
 import helperNotification from "@helpers/helperNotification";
 import Count from "@utils/order/components/Count";
-import FrontPage from "@utils/product/FrontPage";
+import FrontPage from "@utils/product/components/FrontPage";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import ButtonStyle from "@components/ButtonStyle";
 import TextStyle from "@components/TextStyle";
@@ -35,6 +35,7 @@ const Order = ({ route, navigation }) => {
   const menu = useSelector((state) => state.menu);
   const mode = useSelector((state) => state.mode);
   const helperStatus = useSelector((state) => state.helperStatus);
+  const recipes = useSelector((state) => state.recipes);
 
   const initialState = {
     active: false,
@@ -382,17 +383,12 @@ const Order = ({ route, navigation }) => {
                     <TouchableNativeFeedback
                       onLongPress={() => {
                         if (item.id)
-                          return navigation.navigate("CreateProduct", {
-                            editing: true,
+                          return navigation.navigate("CreateOrderProduct", {
+                            onSubmit: () => setSelection(selection.filter((s) => s.id !== item.id)),
                             item,
-                            setSelection,
-                            selection,
                           });
 
-                        navigation.navigate("CreateProduct", {
-                          setSelection,
-                          selection,
-                        });
+                        navigation.navigate("CreateOrderProduct");
                       }}
                       onPress={() => {
                         if (item?.id) {
@@ -419,10 +415,10 @@ const Order = ({ route, navigation }) => {
                               return [...selections, obj];
                             }
                           };
-                          
+
                           setSelection(updateSelections(selection));
                           setNewSelection(updateSelections(newSelection));
-                        } else navigation.navigate("CreateProduct");
+                        } else navigation.navigate("CreateOrderProduct");
                       }}
                     >
                       <View style={[styles.catalogue, { backgroundColor }]}>
@@ -434,7 +430,7 @@ const Order = ({ route, navigation }) => {
                             value={item.value}
                             unit={item.unit}
                             identifier={item.identifier}
-                            recipe={item.recipe}
+                            recipe={recipes.find((r) => r.id === item.recipe)?.name}
                           />
                         )}
                         {!item?.id && index === products.filter((p) => typeof p !== "number").length && (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   View,
   TouchableWithoutFeedback,
@@ -13,7 +13,7 @@ import { useSelector } from "react-redux";
 import theme from "@theme";
 import TextStyle from "@components/TextStyle";
 import { Calendar } from "react-native-calendars";
-import { getFontSize } from "@helpers/libs";
+import { getFontSize, calendarTheme } from "@helpers/libs";
 
 const { light, dark } = theme();
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");
@@ -29,6 +29,11 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
   const [zoneSelected, setZoneSelected] = useState("");
   const [nomenclatureSelected, setNomenclatureSelected] = useState("");
   const [markedDates, setMarkedDates] = useState({});
+
+  const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
+  const textColor = useMemo(() => getTextColor(mode), [mode]);
+  const getBackgroundColor = (mode) => (mode === "light" ? light.main5 : dark.main2);
+  const backgroundColor = useMemo(() => getBackgroundColor(mode), [mode]);
 
   useEffect(() => {
     if (nomenclaturesToChoose.length > 0) {
@@ -113,11 +118,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                 ALOJAR
               </TextStyle>
               <TouchableOpacity onPress={() => cleanData()}>
-                <Ionicons
-                  name="close"
-                  size={getFontSize(28)}
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                />
+                <Ionicons name="close" size={getFontSize(28)} color={textColor} />
               </TouchableOpacity>
             </View>
             <View
@@ -127,12 +128,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                 marginVertical: 20,
               }}
             >
-              <View
-                style={{
-                  marginHorizontal: 2,
-                  backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                }}
-              >
+              <View style={{ marginHorizontal: 2, backgroundColor }}>
                 <Picker
                   mode="dropdown"
                   selectedValue={zoneSelected}
@@ -140,77 +136,60 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                     setZoneSelected(value);
                     setNomenclatureSelected("");
                   }}
-                  dropdownIconColor={mode === "light" ? light.textDark : dark.textWhite}
+                  dropdownIconColor={textColor}
                   style={{
                     width: SCREEN_WIDTH / 2.7,
-                    backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                    color: mode === "light" ? light.textDark : dark.textWhite,
+                    backgroundColor,
+                    color: textColor,
                     fontSize: 20,
                   }}
                 >
                   <Picker.Item
                     label="SELECCIONE LA ZONA"
                     value=""
-                    style={{
-                      backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                      fontSize: getFontSize(10),
-                    }}
-                    color={mode === "light" ? light.textDark : dark.textWhite}
+                    style={{ backgroundColor, fontSize: getFontSize(10) }}
+                    color={textColor}
                   />
                   {zones.map((zone, index) => (
                     <Picker.Item
                       key={zone.id + index}
                       label={zone.name}
                       value={zone.id}
-                      style={{
-                        backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                        fontSize: getFontSize(10),
-                      }}
-                      color={mode === "light" ? light.textDark : dark.textWhite}
+                      style={{ backgroundColor, fontSize: getFontSize(10) }}
+                      color={textColor}
                     />
                   ))}
                 </Picker>
               </View>
               {nomenclaturesToChoose.length > 0 && (
-                <View
-                  style={{
-                    marginHorizontal: 2,
-                    backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                  }}
-                >
+                <View style={{ marginHorizontal: 2, backgroundColor }}>
                   <Picker
                     mode="dropdown"
                     selectedValue={nomenclatureSelected}
                     onValueChange={(value) => {
                       setNomenclatureSelected(value);
                     }}
-                    dropdownIconColor={mode === "light" ? light.textDark : dark.textWhite}
+                    dropdownIconColor={textColor}
                     style={{
                       width: SCREEN_WIDTH / 2.7,
-                      backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                      color: mode === "light" ? light.textDark : dark.textWhite,
+                      backgroundColor,
+                      color: textColor,
                       fontSize: 20,
                     }}
                   >
                     <Picker.Item
                       label="SELECCIONA LA NOMENCLATURA"
                       value=""
-                      style={{
-                        backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                        fontSize: getFontSize(10),
-                      }}
-                      color={mode === "light" ? light.textDark : dark.textWhite}
+                      style={{ backgroundColor, fontSize: getFontSize(10) }}
+                      color={textColor}
                     />
                     {nomenclaturesToChoose.map((nomenclature, index) => (
                       <Picker.Item
                         key={nomenclature.id}
                         label={nomenclature.name || nomenclature.nomenclature}
                         value={nomenclature.id}
-                        style={{
-                          backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                          fontSize: getFontSize(10),
-                        }}
-                        color={mode === "light" ? light.textDark : dark.textWhite}
+                        style={{ backgroundColor, fontSize: getFontSize(10) }}
+                        color={textColor}
                       />
                     ))}
                   </Picker>
@@ -221,32 +200,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
               <Calendar
                 style={{ borderRadius: 8 }}
                 // Specify theme properties to override specific styles for calendar parts. Default = {}
-                theme={{
-                  backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                  calendarBackground: mode === "light" ? light.main5 : dark.main2,
-                  textSectionTitleColor: light.main2, // TITULO DE SEMANA
-                  textSectionTitleDisabledColor: "#d9e1e8", // TITULO DE SEMANA DESACTIVADO
-                  selectedDayBackgroundColor: "#00adf5", // NO SE
-                  selectedDayTextColor: "#ffffff", // NO SE
-                  todayTextColor: light.main2, // COLOR DEL DIA DE HOY
-                  dayTextColor: mode === "light" ? light.textDark : dark.textWhite, // COLOR DE LAS FECHAS
-                  textDisabledColor: `${mode === "light" ? light.textDark : dark.textWhite}66`, // COLOR QUE NO ES DEL MES
-                  dotColor: "#00adf5", // NO SE
-                  selectedDotColor: "#ffffff", // NO SE
-                  arrowColor: mode === "light" ? light.textDark : dark.textWhite, // COLOR DE LAS FLECHAS
-                  disabledArrowColor: `${light.main2}66`, //COLOR DE LAS FECHAS DESHABILITADAS
-                  monthTextColor: mode === "light" ? light.textDark : dark.textWhite, // TEXTO DEL MES
-                  indicatorColor: mode === "light" ? light.textDark : dark.textWhite, // COLOR DE INDICADOR
-                  textDayFontFamily: "monospace", // FONT FAMILY DEL DIA
-                  textMonthFontFamily: "monospace", // FONT FAMILY DEL MES
-                  textDayHeaderFontFamily: "monospace", // FONT FAMILY DEL ENCABEZADO
-                  textDayFontWeight: "300", // FONT WEIGHT DEL LOS DIAS DEL MES
-                  textMonthFontWeight: "bold", // FONT WEIGHT DEL TITULO DEL MES
-                  textDayHeaderFontWeight: "300", // FONT WEIGHT DEL DIA DEL ENCABEZADO
-                  textDayFontSize: 16, // TAMANO DE LA LETRA DEL DIA
-                  textMonthFontSize: 18, // TAMANO DE LA LETRA DEL MES
-                  textDayHeaderFontSize: 16, // TAMANO DEL ENCABEZADO DEL DIA
-                }}
+                theme={calendarTheme(mode)}
                 maxDate="2024-12-31"
                 minDate="2023-01-01"
                 firstDay={1}

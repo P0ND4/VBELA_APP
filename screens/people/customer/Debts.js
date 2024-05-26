@@ -275,15 +275,15 @@ const Debts = () => {
 
   const getOwners = ({ condition }) => {
     const allTheCustomers = customers.flatMap((c) =>
-      c.special ? c.clientList.map((cc) => ({ ...cc, special: true, agency: c.name })) : [{ ...c }]
+      c.special
+        ? c.clientList.map((cc) => ({ ...cc, special: true, agency: c.name, customerID: c.id }))
+        : [{ ...c, customerID: c.id }]
     );
     const found = allTheCustomers.filter(condition);
+
     return {
-      agency: found
-        .filter((f) => f.agency)
-        .map((f) => f.agency)
-        .join(" - "),
-      owner: found.map((f) => f.name).join(" - "),
+      agency: found.filter((f) => f.special).map((f) => ({ name: f.agency, id: f.customerID })),
+      owner: found.map((f) => ({ name: f.name, id: f.customerID })),
     };
   };
 
@@ -293,7 +293,6 @@ const Debts = () => {
       const methods = f.selection.reduce((a, b) => [...a, ...b.method], []);
       const debt = methods.reduce((a, b) => (b.method === "credit" ? a + b.total : a), 0);
       const paid = methods.reduce((a, b) => (b.method !== "credit" ? a + b.total : a), 0);
-
       if (debt !== 0) {
         result.push({
           id: f.id,

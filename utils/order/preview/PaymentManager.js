@@ -28,9 +28,11 @@ const Card = ({ item, onChangeText }) => {
 
   return (
     <View style={styles.row}>
-      <TextStyle color={light.main2}>
+      <TextStyle color={light.main2} style={{ maxWidth: 90 }}>
         {thousandsSystem(item.quantity - item.paid)}
-        <TextStyle color={textColor}>x {item.name}</TextStyle>
+        <TextStyle smallParagraph color={textColor}>
+          x {item.name}
+        </TextStyle>
       </TextStyle>
       <View style={styles.center}>
         <TouchableOpacity
@@ -44,7 +46,7 @@ const Card = ({ item, onChangeText }) => {
         </TouchableOpacity>
         <InputStyle
           stylesContainer={{
-            maxWidth: 130,
+            maxWidth: 120,
             borderBottomWidth: 1,
             borderColor: textColor,
           }}

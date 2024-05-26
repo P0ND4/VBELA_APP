@@ -87,7 +87,7 @@ const Percentage = ({
 
   return (
     <Information
-      onClose={() => setCount(1)}
+      onClose={() => setCount("1")}
       modalVisible={modalVisible}
       setModalVisible={setModalVisible}
       title={title}

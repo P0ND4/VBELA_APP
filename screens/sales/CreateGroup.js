@@ -32,8 +32,6 @@ const CreateGroup = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
   const groups = useSelector((state) => state.groups);
-  const products = useSelector((state) => state.products);
-  const menu = useSelector((state) => state.menu);
   const helperStatus = useSelector((state) => state.helperStatus);
 
   const group = route.params?.item;
@@ -42,9 +40,7 @@ const CreateGroup = ({ route, navigation }) => {
 
   const [loading, setLoading] = useState(false);
   const [category, setCategory] = useState(editing ? group.category : "");
-  const [subcategory, setSubcategory] = useState(
-    editing ? group.subcategory : []
-  );
+  const [subcategory, setSubcategory] = useState(editing ? group.subcategory : []);
   const [text, setText] = useState("");
 
   const dispatch = useDispatch();
@@ -84,13 +80,9 @@ const CreateGroup = ({ route, navigation }) => {
     dispatch(edit({ id: group.id, data }));
     navigation.pop();
     await editGroup({
-      identifier: helperStatus.active
-        ? helperStatus.identifier
-        : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       group: data,
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
+      helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
     });
   };
 
@@ -107,13 +99,9 @@ const CreateGroup = ({ route, navigation }) => {
       dispatch(add(data));
       navigation.pop();
       await addGroup({
-        identifier: helperStatus.active
-          ? helperStatus.identifier
-          : user.identifier,
+        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
         group: data,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
+        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
       });
     }
   };
@@ -135,13 +123,9 @@ const CreateGroup = ({ route, navigation }) => {
             dispatch(remove({ id: group.id }));
             navigation.pop();
             await removeGroup({
-              identifier: helperStatus.active
-                ? helperStatus.identifier
-                : user.identifier,
+              identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
               id: group.id,
-              helpers: helperStatus.active
-                ? [helperStatus.id]
-                : user.helpers.map((h) => h.id),
+              helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
             });
           },
         },
@@ -153,10 +137,7 @@ const CreateGroup = ({ route, navigation }) => {
   return (
     <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           <View
             style={{
               justifyContent: "center",
@@ -168,22 +149,14 @@ const CreateGroup = ({ route, navigation }) => {
               <TextStyle bigTitle center color={light.main2}>
                 VBELA
               </TextStyle>
-              <TextStyle
-                bigParagraph
-                center
-                color={mode === "light" ? null : dark.textWhite}
-              >
+              <TextStyle bigParagraph center color={mode === "light" ? null : dark.textWhite}>
                 Creación de zona
               </TextStyle>
             </View>
             <View style={{ marginVertical: 30 }}>
               <InputStyle
                 value={category}
-                right={
-                  category
-                    ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
-                    : null
-                }
+                right={category ? () => <TextStyle color={light.main2}>Nombre</TextStyle> : null}
                 placeholder="Nombre de categoría"
                 maxLength={20}
                 onChangeText={(text) => {
@@ -198,19 +171,14 @@ const CreateGroup = ({ route, navigation }) => {
               )}
               <View style={{ marginTop: 10 }}>
                 <View style={{ justifyContent: "center" }}>
-                  <TextStyle
-                    smallParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    Preciona "ENTER" o añade una coma despues de cada
-                    subcategoría
+                  <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
+                    Preciona "ENTER" o añade una coma despues de cada subcategoría
                   </TextStyle>
                   <View
                     style={[
                       styles.listContent,
                       {
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
+                        backgroundColor: mode === "light" ? light.main5 : dark.main2,
                       },
                     ]}
                   >
@@ -221,19 +189,14 @@ const CreateGroup = ({ route, navigation }) => {
                             style={[
                               styles.list,
                               {
-                                backgroundColor:
-                                  mode === "light" ? light.main4 : dark.main1,
+                                backgroundColor: mode === "light" ? light.main4 : dark.main1,
                               },
                             ]}
                             key={tag.id}
                           >
                             <TextStyle
                               bigParagraph
-                              color={
-                                mode === "light"
-                                  ? light.textDark
-                                  : dark.textWhite
-                              }
+                              color={mode === "light" ? light.textDark : dark.textWhite}
                             >
                               {tag.subcategory}{" "}
                             </TextStyle>
@@ -254,16 +217,11 @@ const CreateGroup = ({ route, navigation }) => {
                           value={text}
                           onChangeText={(e) => setText(e)}
                           onSubmitEditing={changeTags}
-                          cursorColor={
-                            mode === "light" ? light.textDark : dark.textWhite
-                          }
+                          cursorColor={mode === "light" ? light.textDark : dark.textWhite}
                           style={[
                             styles.input,
                             {
-                              color:
-                                mode === "light"
-                                  ? light.textDark
-                                  : dark.textWhite,
+                              color: mode === "light" ? light.textDark : dark.textWhite,
                             },
                           ]}
                         />
@@ -278,10 +236,7 @@ const CreateGroup = ({ route, navigation }) => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <TextStyle
-                    paragrahp
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
+                  <TextStyle paragrahp color={mode === "light" ? light.textDark : dark.textWhite}>
                     <TextStyle paragrahp color={light.main2}>
                       {100 - subcategory.length}
                     </TextStyle>{" "}
@@ -308,10 +263,7 @@ const CreateGroup = ({ route, navigation }) => {
                 }}
                 backgroundColor={mode === "light" ? light.main5 : dark.main2}
               >
-                <TextStyle
-                  center
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
+                <TextStyle center color={mode === "light" ? light.textDark : dark.textWhite}>
                   Eliminar
                 </TextStyle>
               </ButtonStyle>

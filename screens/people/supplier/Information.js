@@ -14,7 +14,8 @@ import { getFontSize, thousandsSystem, changeDate, print, generatePDF } from "@h
 import { useNavigation } from "@react-navigation/native";
 import { Swipeable } from "react-native-gesture-handler";
 import { remove as REconomy, removeManyByIds } from "@features/function/economySlice";
-import { removeEconomy, removeManyEconomiesByIds } from "@api";
+import { edit as EInventory, change as CInventory } from "@features/inventory/informationSlice";
+import { removeEconomy, editInventory, editUser } from "@api";
 import Logo from "@assets/logo.png";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
@@ -30,6 +31,7 @@ const Card = ({ item }) => {
   const suppliers = useSelector((state) => state.suppliers);
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
+  const inventory = useSelector((state) => state.inventory);
 
   const navigation = useNavigation();
 
@@ -71,6 +73,37 @@ const Card = ({ item }) => {
     );
   };
 
+  const deleteElement = () => {
+    Alert.alert(
+      `¿Estás seguro que quieres eliminar la ${
+        item.type === "entry" ? "entrada" : "salida"
+      } de unidad?.`,
+      `No podrá recuperar esta información una vez borrada, Se elimará también el registro de ${
+        item.type === "entry" ? "entrada" : "salida"
+      } de inventario`,
+      [
+        {
+          text: "No",
+          style: "cancel",
+        },
+        {
+          text: "Si",
+          onPress: async () => {
+            const editable = { ...inventory.find((i) => i.id === item.element) };
+            editable[item.type] = editable[item.type].filter((e) => e.id !== item.id);
+            dispatch(EInventory({ id: item.element, data: editable }));
+            await editInventory({
+              identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+              inventory: editable,
+              helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
+            });
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   const leftSwipe = () => (
     <View style={{ justifyContent: "center" }}>
       <TouchableOpacity
@@ -90,7 +123,7 @@ const Card = ({ item }) => {
     <View style={{ flexDirection: "row", alignItems: "center" }}>
       <TouchableOpacity
         style={[styles.swipe, { marginHorizontal: 2, backgroundColor: "red" }]}
-        onPress={() => deleteEconomy({ id: item.id })}
+        onPress={() => (item.supplier ? deleteElement({ item }) : deleteEconomy({ id: item.id }))}
       >
         <Ionicons
           name="trash"
@@ -98,27 +131,27 @@ const Card = ({ item }) => {
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.swipe, { marginHorizontal: 2, backgroundColor: light.main2 }]}
-        onPress={() => {
-          navigation.navigate("CreateEconomy", {
-            item,
-            editing: true,
-          });
-        }}
-      >
-        <Ionicons
-          name="create"
-          size={getFontSize(21)}
-          color={mode === "light" ? dark.main2 : light.main5}
-        />
-      </TouchableOpacity>
+      {!item.supplier && (
+        <TouchableOpacity
+          style={[styles.swipe, { marginHorizontal: 2, backgroundColor: light.main2 }]}
+          onPress={() => {
+            navigation.navigate("CreateEconomy", {
+              item,
+              editing: true,
+            });
+          }}
+        >
+          <Ionicons
+            name="create"
+            size={getFontSize(21)}
+            color={mode === "light" ? dark.main2 : light.main5}
+          />
+        </TouchableOpacity>
+      )}
     </View>
   );
 
-  const SwipeableValidation = (
-    { condition, children } //TODO COLOCARSELO A TODOS LOS QUE TENGA ESTO
-  ) =>
+  const SwipeableValidation = ({ condition, children }) =>
     condition ? (
       <Swipeable renderLeftActions={leftSwipe} renderRightActions={rightSwipe}>
         {children}
@@ -130,26 +163,15 @@ const Card = ({ item }) => {
   return (
     <>
       <SwipeableValidation condition={!isOpen}>
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: mode === "light" ? light.main5 : dark.main2 },
-          ]}
-        >
+        <View style={[styles.card, { backgroundColor: mode === "light" ? light.main5 : dark.main2 }]}>
           <TouchableOpacity onPress={() => setIsOpen(!isOpen)} style={styles.row}>
-            <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-              {item.name}
-            </TextStyle>
-            <TextStyle color={light.main2}>
-              {changeDate(new Date(item.modificationDate))}
-            </TextStyle>
+            <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>{item.name}</TextStyle>
+            <TextStyle color={light.main2}>{changeDate(new Date(item.modificationDate))}</TextStyle>
           </TouchableOpacity>
           {isOpen && (
             <View style={{ marginTop: 8 }}>
               {supplier ? (
-                <TouchableOpacity
-                  onPress={() => supplier.identification && setIsName(!isName)}
-                >
+                <TouchableOpacity onPress={() => supplier.identification && setIsName(!isName)}>
                   <TextStyle color={light.main2}>
                     {isName
                       ? supplier?.name?.slice(0, 15).toUpperCase() +
@@ -163,8 +185,7 @@ const Card = ({ item }) => {
 
               {item.amount - item.payment > 0 && (
                 <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-                  Total:{" "}
-                  <TextStyle color={light.main2}>{thousandsSystem(item.amount)}</TextStyle>
+                  Total: <TextStyle color={light.main2}>{thousandsSystem(item.amount)}</TextStyle>
                 </TextStyle>
               )}
               {item.amount - item.payment > 0 && (
@@ -176,8 +197,7 @@ const Card = ({ item }) => {
                 </TextStyle>
               )}
               <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-                Pagado:{" "}
-                <TextStyle color={light.main2}>{thousandsSystem(item.payment)}</TextStyle>
+                Pagado: <TextStyle color={light.main2}>{thousandsSystem(item.payment)}</TextStyle>
               </TextStyle>
             </View>
           )}
@@ -190,24 +210,17 @@ const Card = ({ item }) => {
         title="INFORMACIÓN"
         content={() => (
           <View>
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
+            <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
               Más detalle de la deuda
             </TextStyle>
             <View style={{ marginTop: 15 }}>
               <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
                 Creación:{" "}
-                <TextStyle color={light.main2}>
-                  {changeDate(new Date(item.creationDate))}
-                </TextStyle>
+                <TextStyle color={light.main2}>{changeDate(new Date(item.creationDate))}</TextStyle>
               </TextStyle>
               <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
                 Modificación:{" "}
-                <TextStyle color={light.main2}>
-                  {changeDate(new Date(item.modificationDate))}
-                </TextStyle>
+                <TextStyle color={light.main2}>{changeDate(new Date(item.modificationDate))}</TextStyle>
               </TextStyle>
             </View>
           </View>
@@ -223,6 +236,7 @@ const SupplierInformation = ({ route }) => {
   const mode = useSelector((state) => state.mode);
   const economy = useSelector((state) => state.economy);
   const suppliers = useSelector((state) => state.suppliers);
+  const inventory = useSelector((state) => state.inventory);
 
   const [logs, setLogs] = useState(null);
   const [html, setHtml] = useState("");
@@ -232,10 +246,43 @@ const SupplierInformation = ({ route }) => {
 
   const dispatch = useDispatch();
 
+  const debugInventory = ({ id = null }) => {
+    const selection = inventory.filter(
+      (i) => i.entry.some((e) => e.supplier) || i.output.some((e) => e.supplier)
+    );
+    const data = selection.flatMap((b) =>
+      ["entry", "output"].flatMap((type) =>
+        b[type]
+          .filter((s) => s.supplier)
+          .map((e) => ({
+            ...e,
+            type,
+            name: `${b.name} (${type === "entry" ? "Entrada" : "Salida"})`,
+            ref: e.supplier,
+            amount: e.quantity * e.currentValue,
+            payment: e?.method?.reduce((a, b) => a + b.total, 0),
+            modificationDate: e.modificationDate,
+            creationDate: e.creationDate,
+          }))
+      )
+    );
+    return data.filter((e) => e.supplier === id || !id);
+  };
+
   useEffect(() => {
-    if (type === "individual") setLogs([...economy.filter((e) => e.ref === id)].reverse());
-    else setLogs([...economy].reverse());
-  }, [id, economy]);
+    if (type === "individual")
+      setLogs(
+        [...economy.filter((e) => e.ref === id), ...debugInventory({ id })]
+          .sort((a, b) => a.creationDate - b.creationDate)
+          .reverse()
+      );
+    else
+      setLogs(
+        [...economy, ...debugInventory({ id: null })]
+          .sort((a, b) => a.creationDate - b.creationDate)
+          .reverse()
+      );
+  }, [id, economy, inventory]);
 
   useEffect(() => {
     const getHTML = () => {
@@ -308,11 +355,7 @@ const SupplierInformation = ({ route }) => {
               </td>
               <td style="text-align: right; border: 1px solid #444444;">
                 <p style="font-size: 28px; font-weight: 600;">
-                  ${
-                    item.amount - item.payment > 0
-                      ? thousandsSystem(item.amount - item.payment)
-                      : ""
-                  }
+                  ${item.amount - item.payment > 0 ? thousandsSystem(item.amount - item.payment) : ""}
                 </p>
               </td>
             </tr>
@@ -335,7 +378,7 @@ const SupplierInformation = ({ route }) => {
   const removeEverything = () => {
     Alert.alert(
       "¿Estás seguro que quieres eliminar todo el registro?",
-      "No podrá recuperar la información una vez borrada",
+      "No podrá recuperar la información una vez borrada (Se aplicará también para inventario)",
       [
         {
           text: "No",
@@ -344,11 +387,32 @@ const SupplierInformation = ({ route }) => {
         {
           text: "Si",
           onPress: async () => {
-            const ids = logs.map((log) => log.id);
-            dispatch(removeManyByIds({ ids }));
-            await removeManyEconomiesByIds({
+            const inventoryLogs = logs
+              .filter((l) => l.supplier)
+              .map((log) => ({ element: log.element, id: log.id }));
+
+            const updatedInventory = inventory.map((i) => {
+              const found = inventoryLogs.find((inv) => inv.element === i.id);
+              if (!found) return i;
+              const newEntry = i.entry.filter((e) => e.id !== found.id);
+              const newOutput = i.output.filter((o) => o.id !== found.id);
+              return {
+                ...i,
+                entry: newEntry,
+                output: newOutput,
+                modificationDate: new Date().getTime(),
+              };
+            });
+
+            const economyIDS = logs.filter((l) => !l.supplier).map((log) => log.id);
+            dispatch(removeManyByIds({ ids: economyIDS }));
+            dispatch(CInventory(updatedInventory));
+            await editUser({
               identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
-              ids,
+              change: {
+                economy: economy.filter((e) => !economyIDS.some((id) => e.id === id)),
+                inventory: updatedInventory,
+              },
               helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
             });
           },

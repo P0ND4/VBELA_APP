@@ -142,28 +142,29 @@ const CreateRecipe = ({ route, navigation }) => {
 
   const dispatch = useDispatch();
 
-  const editing = route.params?.editing;
   const item = route.params?.item;
-  const sales = route.params?.sales;
+  const type = route.params?.type;
 
-  const [name, setName] = useState(editing ? item.name : "");
-  const [ingredients, setIngredients] = useState(editing ? item.ingredients : []);
+  const [name, setName] = useState(item?.name || "");
+  const [price, setPrice] = useState(item ? thousandsSystem(item?.value) : "");
+  const [ingredients, setIngredients] = useState(item?.ingredients || []);
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const validation = (condition) =>
       inventory.filter((i) => i.visible === "both" || i.visible === condition);
-    if (sales) setList(validation("sales"));
+    if (type === "sales") setList(validation("sales"));
     else setList(validation("menu"));
-  }, [sales]);
+  }, [type]);
 
   useEffect(() => {
-    navigation.setOptions({ title: `Crear ${sales ? "reconteo" : "receta"}` });
+    navigation.setOptions({ title: `Crear ${type === "sales" ? "reconteo" : "receta"}` });
 
-    register("name", { value: editing ? item.name : "", required: true });
+    register("name", { value: item?.name || "", required: true });
+    register("value", { value: item?.value || "", required: true });
     register("ingredients", {
-      value: editing ? item.ingredients : "",
+      value: item?.ingredients || "",
       validate: (array) => array.length > 0 || "Tiene que tener mínimo 1 ingrediente",
     });
   }, []);
@@ -175,7 +176,7 @@ const CreateRecipe = ({ route, navigation }) => {
     if (recipes.find((ingredient) => ingredient.id === id)) onSubmitCreate(data);
     else {
       data.id = id;
-      data.type = sales ? "sales" : "menu";
+      data.type = type === "sales" ? "sales" : "menu";
       data.creationDate = new Date().getTime();
       data.modificationDate = new Date().getTime();
       dispatch(add(data));
@@ -221,7 +222,7 @@ const CreateRecipe = ({ route, navigation }) => {
                 VBELA
               </TextStyle>
               <TextStyle bigParagraph center color={mode === "light" ? null : dark.textWhite}>
-                Crear {sales ? "reconteo" : "receta"}
+                Crear {type === "sales" ? "reconteo" : "receta"}
               </TextStyle>
             </View>
             <View style={{ marginVertical: 30 }}>
@@ -240,11 +241,30 @@ const CreateRecipe = ({ route, navigation }) => {
                 }}
                 right={name ? () => <TextStyle color={light.main2}>Nombre</TextStyle> : null}
                 maxLength={30}
-                placeholder={`Nombre de${sales ? "l reconteo" : " la receta"}`}
+                placeholder={`Nombre de${type === "sales" ? "l reconteo" : " la receta"}`}
               />
               {errors.name?.type && list.length !== 0 && (
                 <TextStyle verySmall color={light.main2}>
                   El nombre es requerido
+                </TextStyle>
+              )}
+              <InputStyle
+                value={price}
+                maxLength={15}
+                editable={list.length !== 0}
+                stylesContainer={{ opacity: list.length !== 0 ? 1 : 0.6 }}
+                keyboardType="numeric"
+                onChangeText={(num) => {
+                  if (num === "") setValue("value", "");
+                  else setValue("value", parseInt(num.replace(/[^0-9]/g, "")));
+                  setPrice(thousandsSystem(num.replace(/[^0-9]/g, "")));
+                }}
+                right={price ? () => <TextStyle color={light.main2}>Venta</TextStyle> : null}
+                placeholder="Precio de venta"
+              />
+              {errors.value?.type && (
+                <TextStyle verySmall color={light.main2}>
+                  El precio de venta es requerido
                 </TextStyle>
               )}
               {list.length !== 0 && (
@@ -302,10 +322,10 @@ const CreateRecipe = ({ route, navigation }) => {
               style={{ opacity: list.length !== 0 ? 1 : 0.6 }}
               onPress={handleSubmit((data) => {
                 if (loading) return;
-                editing ? onSubmitEdit(data) : onSubmitCreate(data);
+                item ? onSubmitEdit(data) : onSubmitCreate(data);
               })}
             >
-              <TextStyle center>{editing ? "Guardar" : "Crear"}</TextStyle>
+              <TextStyle center>{item ? "Guardar" : "Crear"}</TextStyle>
             </ButtonStyle>
           </View>
         </ScrollView>

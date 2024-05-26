@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
-import { View, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Dimensions, Alert } from "react-native";
 import { useSelector } from "react-redux";
 import { thousandsSystem } from "@helpers/libs";
+import PaymentButtons from "@components/PaymentButtons";
 import Information from "@components/Information";
 import TextStyle from "@components/TextStyle";
 import InputStyle from "@components/InputStyle";
@@ -14,18 +15,17 @@ const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 const Count = ({
   modalVisible,
   setModalVisible,
-  title = "",
-  description = "",
+  title,
+  value = 0,
   max = 999,
   min = 0,
   initialCount = "1",
-  placeholder = "",
-  remove,
   onSubmit = () => {},
 }) => {
   const mode = useSelector((state) => state.mode);
 
   const [count, setCount] = useState("1");
+  const [paymentMethod, setPaymentMethod] = useState("");
 
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
@@ -37,11 +37,12 @@ const Count = ({
       onClose={() => setCount("1")}
       modalVisible={modalVisible}
       setModalVisible={setModalVisible}
-      title={title}
+      title={title || ""}
       content={() => (
         <View>
           <TextStyle style={{ marginBottom: 5 }} smallParagraph color={textColor}>
-            {description}
+            Realiza el pago del siguiente elemento del inventario, seleccionando la cantidad de elementos
+            pagada
           </TextStyle>
           <View style={[styles.center, { marginVertical: 15 }]}>
             <TouchableOpacity
@@ -61,7 +62,7 @@ const Count = ({
               }}
               stylesInput={{ textAlign: "center" }}
               value={count}
-              placeholder={placeholder}
+              placeholder="Cantidad"
               keyboardType="numeric"
               maxLength={thousandsSystem(String(max)).length}
               onChangeText={(num) => {
@@ -79,30 +80,36 @@ const Count = ({
               <TextStyle bigSubtitle>+</TextStyle>
             </TouchableOpacity>
           </View>
-          <View style={styles.row}>
-            {remove && (
-              <ButtonStyle
-                backgroundColor={mode === "light" ? dark.main2 : light.main5}
-                style={{ width: "auto", flexGrow: 1, marginRight: 2 }}
-                onPress={() => {
-                  onSubmit(null);
-                  setModalVisible(!modalVisible);
-                }}
-              >
-                <TextStyle center>Eliminar</TextStyle>
-              </ButtonStyle>
-            )}
-            <ButtonStyle
-              backgroundColor={light.main2}
-              style={{ width: "auto", flexGrow: 1, marginLeft: 2 }}
-              onPress={() => {
-                onSubmit(parseInt(count.replace(/[^0-9]/g, "")) || null);
+          <TextStyle color={textColor}>TOTAL: {thousandsSystem(value * +count || 0)}</TextStyle>
+          <PaymentButtons
+            value={paymentMethod}
+            cardStyle={{ borderWidth: 1, borderColor: light.main2, width: SCREEN_WIDTH / 4.1 }}
+            type="others"
+            setValue={(value) => setPaymentMethod(value === paymentMethod ? "" : value)}
+          />
+          <ButtonStyle
+            backgroundColor={light.main2}
+            onPress={() => {
+              if (count) {
+                if (!paymentMethod)
+                  return Alert.alert(
+                    "MÉTODO DE PAGO",
+                    "Seleccione un método de pago para continuar",
+                    null,
+                    {
+                      cancelable: true,
+                    }
+                  );
+
+                onSubmit(parseInt(count?.replace(/[^0-9]/g, "")) || null, paymentMethod);
+                setCount("1");
+                setPaymentMethod("")
                 setModalVisible(!modalVisible);
-              }}
-            >
-              <TextStyle center>Guardar</TextStyle>
-            </ButtonStyle>
-          </View>
+              }
+            }}
+          >
+            <TextStyle center>Guardar</TextStyle>
+          </ButtonStyle>
         </View>
       )}
     />

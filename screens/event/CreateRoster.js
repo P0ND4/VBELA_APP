@@ -1,11 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  View,
-  Alert,
-  Keyboard,
-  KeyboardAvoidingView,
-  ScrollView,
-} from "react-native";
+import { View, Alert, Keyboard, KeyboardAvoidingView, ScrollView } from "react-native";
 import { useForm } from "react-hook-form";
 import { useSelector, useDispatch } from "react-redux";
 import { random } from "@helpers/libs";
@@ -40,12 +34,8 @@ const CreateRoster = ({ route, navigation }) => {
   const editing = route.params?.editing;
 
   const [name, setName] = useState(editing ? data.name : "");
-  const [amount, setAmount] = useState(
-    editing ? thousandsSystem(data.amount) : ""
-  );
-  const [rosterSelected, setRosterSelected] = useState(
-    editing ? data.roster : ""
-  );
+  const [amount, setAmount] = useState(editing ? thousandsSystem(data.amount) : "");
+  const [rosterSelected, setRosterSelected] = useState(editing ? data.roster : "");
   const [loading, setLoading] = useState(false);
 
   const dispatch = useDispatch();
@@ -53,13 +43,13 @@ const CreateRoster = ({ route, navigation }) => {
 
   useEffect(() => {
     register("name", { value: editing ? data.name : "", required: true });
-    register("amount", { value: editing ? data.amount : "", required: true });
+    register("amount", { value: editing ? data.amount : 0, validate: (num) => num > 0 });
     register("roster", { value: editing ? data.roster : "", required: true });
   }, []);
 
   const cleanData = () => {
     setValue("name", "");
-    setValue("amount", "");
+    setValue("amount", 0);
     setValue("roster", "");
     setName("");
     setAmount("");
@@ -77,13 +67,9 @@ const CreateRoster = ({ route, navigation }) => {
     dispatch(edit({ id: data.id, data: d }));
     Alert.alert("ÉXITO", "Se ha editado la información correctamente");
     await editRoster({
-      identifier: helperStatus.active
-        ? helperStatus.identifier
-        : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       roster: d,
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
+      helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
     });
   };
 
@@ -100,13 +86,9 @@ const CreateRoster = ({ route, navigation }) => {
     dispatch(add(data));
     Alert.alert("ÉXITO", "Se ha guardado la información correctamente");
     await addRoster({
-      identifier: helperStatus.active
-        ? helperStatus.identifier
-        : user.identifier,
+      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       roster: data,
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
+      helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
     });
   };
 
@@ -126,18 +108,11 @@ const CreateRoster = ({ route, navigation }) => {
             setLoading(true);
             cleanData();
             dispatch(remove({ id: data.id }));
-            Alert.alert(
-              "ÉXITO",
-              "Se ha eliminado la información correctamente"
-            );
+            Alert.alert("ÉXITO", "Se ha eliminado la información correctamente");
             await removeRoster({
-              identifier: helperStatus.active
-                ? helperStatus.identifier
-                : user.identifier,
+              identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
               id: data.id,
-              helpers: helperStatus.active
-                ? [helperStatus.id]
-                : user.helpers.map((h) => h.id),
+              helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
             });
           },
         },
@@ -149,10 +124,7 @@ const CreateRoster = ({ route, navigation }) => {
   return (
     <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           <View
             style={{
               justifyContent: "center",
@@ -164,11 +136,7 @@ const CreateRoster = ({ route, navigation }) => {
               <TextStyle bigTitle center color={light.main2}>
                 VBELA
               </TextStyle>
-              <TextStyle
-                bigParagraph
-                center
-                color={mode === "light" ? null : dark.textWhite}
-              >
+              <TextStyle bigParagraph center color={mode === "light" ? null : dark.textWhite}>
                 Crear Nómina
               </TextStyle>
             </View>
@@ -176,11 +144,7 @@ const CreateRoster = ({ route, navigation }) => {
               <InputStyle
                 value={name}
                 placeholder="Nombre"
-                right={
-                  name
-                    ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
-                    : null
-                }
+                right={name ? () => <TextStyle color={light.main2}>Nombre</TextStyle> : null}
                 maxLength={20}
                 onChangeText={(text) => {
                   setValue("name", text);
@@ -195,15 +159,11 @@ const CreateRoster = ({ route, navigation }) => {
               <InputStyle
                 value={amount}
                 placeholder="Valor Total"
-                right={
-                  amount
-                    ? () => <TextStyle color={light.main2}>Valor</TextStyle>
-                    : null
-                }
+                right={amount ? () => <TextStyle color={light.main2}>Valor</TextStyle> : null}
                 maxLength={10}
                 keyboardType="numeric"
                 onChangeText={(text) => {
-                  setValue("amount", text.replace(/[^0-9]/g, ""));
+                  setValue("amount", parseInt(text.replace(/[^0-9]/g, "")) || 0);
                   setAmount(thousandsSystem(text.replace(/[^0-9]/g, "")));
                 }}
               />
@@ -226,11 +186,7 @@ const CreateRoster = ({ route, navigation }) => {
                   >
                     <TextStyle
                       color={
-                        rosterSelected
-                          ? mode === "light"
-                            ? light.textDark
-                            : dark.textWhite
-                          : "#888888"
+                        rosterSelected ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"
                       }
                     >
                       {rosterSelected || "SELECCIONE EL CARGO"}
@@ -258,8 +214,7 @@ const CreateRoster = ({ route, navigation }) => {
                       label="SELECCIONE EL CARGO"
                       value=""
                       style={{
-                        backgroundColor:
-                          mode === "light" ? light.main5 : dark.main2,
+                        backgroundColor: mode === "light" ? light.main5 : dark.main2,
                       }}
                       color={mode === "light" ? light.textDark : dark.textWhite}
                     />
@@ -269,12 +224,9 @@ const CreateRoster = ({ route, navigation }) => {
                         label={item.user}
                         value={item.user}
                         style={{
-                          backgroundColor:
-                            mode === "light" ? light.main5 : dark.main2,
+                          backgroundColor: mode === "light" ? light.main5 : dark.main2,
                         }}
-                        color={
-                          mode === "light" ? light.textDark : dark.textWhite
-                        }
+                        color={mode === "light" ? light.textDark : dark.textWhite}
                       />
                     ))}
                   </Picker>
@@ -294,10 +246,7 @@ const CreateRoster = ({ route, navigation }) => {
                 }}
                 backgroundColor={mode === "light" ? light.main5 : dark.main2}
               >
-                <TextStyle
-                  center
-                  color={mode === "light" ? light.textDark : dark.textWhite}
-                >
+                <TextStyle center color={mode === "light" ? light.textDark : dark.textWhite}>
                   Eliminar
                 </TextStyle>
               </ButtonStyle>

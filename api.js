@@ -157,6 +157,9 @@ export const addInventory = async (data) => await connect({ data, url: "/invento
 
 export const editInventory = async (data) => await connect({ data, url: "/inventory/edit" });
 
+export const updateManyInventory = async (data) =>
+  await connect({ data, url: "/inventory/update/many" });
+
 export const discountInventory = async (data) => await connect({ data, url: "/inventory/discount" });
 
 export const removeInventory = async (data) => await connect({ data, url: "/inventory/remove" });

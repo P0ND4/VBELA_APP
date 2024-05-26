@@ -34,15 +34,16 @@ import CreatePlace from "@screens/reservation/place/Create";
 import PlaceInformation from "@screens/reservation/place/Information";
 import StandardReserveInformation from "@screens/reservation/standard/Information";
 import AccommodationReserveInformation from "@screens/reservation/accommodation/Information";
-import CreateOrder from "@screens/sales/CreateOrder";
-import CreateRecipe from "@screens/sales/CreateRecipe";
-import CreateProduct from "@screens/sales/CreateProduct";
-import CreateTable from "@screens/sales/CreateTable";
+import Recipe from "@screens/recipe/Recipe";
+import CreateRecipe from "@screens/recipe/CreateRecipe";
+import CreateSaleProduct from "@screens/salesM/CreateProduct";
+import CreateOrderProduct from "@screens/restaurant/order/CreateProduct";
+import CreateTable from "@screens/restaurant/CreateTable";
 import EditInvoice from "@screens/sales/EditInvoice";
 import Invoice from "@utils/order/screens/Invoice";
 import OrderStatus from "@utils/order/screens/Complete";
 import SalesPreviewOrder from "@screens/salesM/Preview";
-import TableInformation from "@screens/sales/TableInformation";
+import TableInformation from "@screens/restaurant/TableInformation";
 import CreateGroup from "@screens/sales/CreateGroup";
 import EmailAndPhone from "@screens/register/EmailAndPhone";
 import Selection from "@screens/register/Selection";
@@ -564,9 +565,20 @@ const Main = () => {
         <Stack.Screen name="CreateTable" component={CreateTable} options={{ title: "Crear mesa" }} />
         <Stack.Screen name="TableInformation" component={TableInformation} />
         <Stack.Screen name="CreateEconomy" component={CreateEconomy} />
-        <Stack.Screen name="CreateOrder" component={CreateOrder} options={{ title: "Vender" }} />
+
+        <Stack.Screen name="Recipe" component={Recipe} />
         <Stack.Screen name="CreateRecipe" component={CreateRecipe} />
-        <Stack.Screen name="CreateProduct" component={CreateProduct} />
+
+        <Stack.Screen
+          name="CreateSaleProduct"
+          component={CreateSaleProduct}
+          options={{ title: "Crear producto de venta" }}
+        />
+        <Stack.Screen
+          name="CreateOrderProduct"
+          component={CreateOrderProduct}
+          options={{ title: "Crear producto/pedidos" }}
+        />
 
         <Stack.Group>
           <Stack.Screen

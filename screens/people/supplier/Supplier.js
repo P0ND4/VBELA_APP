@@ -31,6 +31,7 @@ const Card = ({ item }) => {
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
   const economy = useSelector((state) => state.economy);
+  const inventory = useSelector((state) => state.inventory);
 
   const navigation = useNavigation();
 
@@ -43,11 +44,30 @@ const Card = ({ item }) => {
 
   useEffect(() => setIsName(true), [item.identification]);
 
+  const debugInventory = () => {
+    const selection = inventory.filter(
+      (i) => i.entry.some((e) => e.status === "credit") || i.output.some((e) => e.status === "credit")
+    );
+    const data = selection.reduce(
+      (a, b) => [
+        ...a,
+        ...b.entry.map((e) => ({ ...e, type: "entry" })),
+        ...b.output.map((e) => ({ ...e, type: "output" })),
+      ],
+      []
+    );
+    const filtered = data.filter((e) => e.status === "credit" && e.supplier === item.id);
+    const paid = filtered?.reduce((a, b) => a + b.method?.reduce((a, b) => a + b.total, 0), 0);
+    const amount = filtered?.reduce((a, b) => a + b.currentValue * b.quantity, 0);
+    return { paid, amount };
+  };
+
   useEffect(() => {
+    const { paid, amount } = debugInventory();
     const debts = economy.filter((e) => e.amount !== e.payment && e.ref === item.id);
-    setAmount(debts.reduce((a, b) => a + b.amount, 0));
-    setPaid(debts.reduce((a, b) => a + b.payment, 0));
-  }, [economy]);
+    setAmount(debts.reduce((a, b) => a + b.amount, 0) + amount);
+    setPaid(debts.reduce((a, b) => a + b.payment, 0) + paid);
+  }, [economy, inventory]);
 
   const removeSupplier = async ({ id, removeEconomy }) => {
     // Aqui eliminamos
@@ -159,9 +179,7 @@ const Card = ({ item }) => {
 
   return (
     <SwipeableValidation condition={!isOpen}>
-      <View
-        style={[styles.card, { backgroundColor: mode === "light" ? light.main5 : dark.main2 }]}
-      >
+      <View style={[styles.card, { backgroundColor: mode === "light" ? light.main5 : dark.main2 }]}>
         <TouchableOpacity onPress={() => setIsOpen(!isOpen)} style={styles.row}>
           <TouchableOpacity onPress={() => item.identification && setIsName(!isName)}>
             <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
@@ -191,11 +209,7 @@ const Card = ({ item }) => {
                   });
                 }}
               >
-                <TextStyle
-                  paragrahp
-                  center
-                  color={mode === "light" ? dark.textWhite : light.textDark}
-                >
+                <TextStyle paragrahp center color={mode === "light" ? dark.textWhite : light.textDark}>
                   Compra / Costos
                 </TextStyle>
               </ButtonStyle>
@@ -209,28 +223,55 @@ const Card = ({ item }) => {
                   });
                 }}
               >
-                <TextStyle
-                  paragrahp
-                  color={mode === "light" ? dark.textWhite : light.textDark}
-                  center
-                >
+                <TextStyle paragrahp color={mode === "light" ? dark.textWhite : light.textDark} center>
                   Gasto / Inversión
                 </TextStyle>
               </ButtonStyle>
             </View>
-            <ButtonStyle
-              backgroundColor={light.main2}
-              onPress={() => {
-                navigation.navigate("SupplierInformation", {
-                  type: "individual",
-                  id: item.id,
-                });
-              }}
-            >
-              <TextStyle center paragrahp>
-                Detalles
-              </TextStyle>
-            </ButtonStyle>
+            <View style={styles.row}>
+              <ButtonStyle
+                backgroundColor={light.main2}
+                style={{ flexGrow: 1, width: "auto" }}
+                onPress={() => {
+                  navigation.navigate("SupplierInformation", {
+                    type: "individual",
+                    id: item.id,
+                  });
+                }}
+              >
+                <TextStyle center paragrahp>
+                  Detalles
+                </TextStyle>
+              </ButtonStyle>
+              <ButtonStyle
+                backgroundColor={light.main2}
+                style={{ flexGrow: 1, width: "auto", marginHorizontal: 4 }}
+                onPress={() => {
+                  navigation.navigate("CreateEntryOutput", {
+                    type: "entry",
+                    supplier: item.id,
+                  });
+                }}
+              >
+                <TextStyle center paragrahp>
+                  Entrada
+                </TextStyle>
+              </ButtonStyle>
+              <ButtonStyle
+                backgroundColor={light.main2}
+                style={{ flexGrow: 1, width: "auto" }}
+                onPress={() => {
+                  navigation.navigate("CreateEntryOutput", {
+                    type: "output",
+                    supplier: item.id,
+                  });
+                }}
+              >
+                <TextStyle center paragrahp>
+                  Salida
+                </TextStyle>
+              </ButtonStyle>
+            </View>
           </View>
         )}
       </View>
@@ -281,10 +322,8 @@ const Supplier = ({ navigation }) => {
             })
           )
             return;
-          if (filters.identification === "yes-identification" && !supplier.identification)
-            return;
-          if (filters.identification === "no-identification" && supplier.identification)
-            return;
+          if (filters.identification === "yes-identification" && !supplier.identification) return;
+          if (filters.identification === "no-identification" && supplier.identification) return;
 
           return supplier;
         }

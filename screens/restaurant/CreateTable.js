@@ -31,9 +31,7 @@ const CreateTable = ({ navigation, route }) => {
 
   const [table, setTable] = useState(editing ? tableEditing.table : "");
   const [name, setName] = useState(editing ? tableEditing.name : "");
-  const [description, setDescription] = useState(
-    editing ? tableEditing.description : ""
-  );
+  const [description, setDescription] = useState(editing ? tableEditing.description : "");
 
   const dispatch = useDispatch();
 
@@ -45,10 +43,7 @@ const CreateTable = ({ navigation, route }) => {
         exists: (table) => {
           const exists = tables.find((t) => t.table === table);
 
-          return (
-            (!editing || !exists ? !exists : tableEditing.table === table) ||
-            "La mesa ya existe"
-          );
+          return (!editing || !exists ? !exists : tableEditing.table === table) || "La mesa ya existe";
         },
       },
     });
@@ -66,9 +61,7 @@ const CreateTable = ({ navigation, route }) => {
     await editTable({
       identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
       table: data,
-      helpers: helperStatus.active
-        ? [helperStatus.id]
-        : user.helpers.map((h) => h.id),
+      helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
     });
   };
 
@@ -85,9 +78,7 @@ const CreateTable = ({ navigation, route }) => {
       await addTable({
         identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
         table: data,
-        helpers: helperStatus.active
-          ? [helperStatus.id]
-          : user.helpers.map((h) => h.id),
+        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
       });
     }
   };
@@ -95,10 +86,7 @@ const CreateTable = ({ navigation, route }) => {
   return (
     <Layout style={{ padding: 30 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           <View
             style={{
               justifyContent: "center",
@@ -110,11 +98,7 @@ const CreateTable = ({ navigation, route }) => {
               <TextStyle bigTitle center color={light.main2}>
                 VBELA
               </TextStyle>
-              <TextStyle
-                bigParagraph
-                center
-                color={mode === "light" ? null : dark.textWhite}
-              >
+              <TextStyle bigParagraph center color={mode === "light" ? null : dark.textWhite}>
                 Creación de mesa
               </TextStyle>
             </View>

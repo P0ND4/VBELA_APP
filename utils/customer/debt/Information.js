@@ -1,7 +1,8 @@
 import { useMemo } from "react";
-import { View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import { useSelector } from "react-redux";
 import { changeDate, thousandsSystem } from "@helpers/libs";
+import { useNavigation } from "@react-navigation/native";
 import Information from "@components/Information";
 import TextStyle from "@components/TextStyle";
 import theme from "@theme";
@@ -14,6 +15,14 @@ const DebtInformation = ({ modalVisible, setModalVisible, item }) => {
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
 
+  const navigation = useNavigation();
+
+  const navigateToInformation = (id) =>
+    navigation.navigate("CustomerInformation", {
+      type: "individual",
+      id,
+    });
+
   return (
     <Information
       modalVisible={modalVisible}
@@ -22,14 +31,24 @@ const DebtInformation = ({ modalVisible, setModalVisible, item }) => {
       title="INFORMACIÓN"
       content={() => (
         <View>
-          {item.agency && (
-            <TextStyle color={textColor}>
-              Agencia: <TextStyle color={light.main2}>{item.agency}</TextStyle>
-            </TextStyle>
+          {item.agency.length > 0 && (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <TextStyle color={textColor}>Agencia: </TextStyle>
+              {item.agency?.map((agency) => (
+                <TouchableOpacity onPress={() => navigateToInformation(agency.id)}>
+                  <TextStyle color={light.main2}>- {agency.name} -</TextStyle>
+                </TouchableOpacity>
+              ))}
+            </View>
           )}
-          <TextStyle color={textColor}>
-            Dueño: <TextStyle color={light.main2}>{item.owner}</TextStyle>
-          </TextStyle>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TextStyle color={textColor}>Dueño: </TextStyle>
+            {item?.owner?.map((owner) => (
+              <TouchableOpacity onPress={() => navigateToInformation(owner.id)}>
+                <TextStyle color={light.main2}>- {owner.name} -</TextStyle>
+              </TouchableOpacity>
+            ))}
+          </View>
           <TextStyle color={textColor}>
             Tipo de deuda: <TextStyle color={light.main2}>{item.type}</TextStyle>
           </TextStyle>

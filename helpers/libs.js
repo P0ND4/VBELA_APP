@@ -4,6 +4,9 @@ import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
+import theme from "@theme";
+
+const { light, dark } = theme();
 
 export const random = (repeat = 10, options = {}) => {
   let possible = "";
@@ -181,6 +184,33 @@ export const getExpoID = async () => {
 
   return token;
 };
+
+export const calendarTheme = (mode) => ({
+  backgroundColor: mode === "light" ? light.main5 : dark.main2,
+  calendarBackground: mode === "light" ? light.main5 : dark.main2,
+  textSectionTitleColor: light.main2, // TITULO DE SEMANA
+  textSectionTitleDisabledColor: "#d9e1e8", // TITULO DE SEMANA DESACTIVADO
+  selectedDayBackgroundColor: "#00adf5", // NO SE
+  selectedDayTextColor: "#ffffff", // NO SE
+  todayTextColor: light.main2, // COLOR DEL DIA DE HOY
+  dayTextColor: mode === "light" ? light.textDark : dark.textWhite, // COLOR DE LAS FECHAS
+  textDisabledColor: `${mode === "light" ? light.textDark : dark.textWhite}66`, // COLOR QUE NO ES DEL MES
+  dotColor: "#00adf5", // NO SE
+  selectedDotColor: "#ffffff", // NO SE
+  arrowColor: mode === "light" ? light.textDark : dark.textWhite, // COLOR DE LAS FLECHAS
+  disabledArrowColor: `${light.main2}66`, //COLOR DE LAS FECHAS DESHABILITADAS
+  monthTextColor: mode === "light" ? light.textDark : dark.textWhite, // TEXTO DEL MES
+  indicatorColor: mode === "light" ? light.textDark : dark.textWhite, // COLOR DE INDICADOR
+  textDayFontFamily: "monospace", // FONT FAMILY DEL DIA
+  textMonthFontFamily: "monospace", // FONT FAMILY DEL MES
+  textDayHeaderFontFamily: "monospace", // FONT FAMILY DEL ENCABEZADO
+  textDayFontWeight: "300", // FONT WEIGHT DEL LOS DIAS DEL MES
+  textMonthFontWeight: "bold", // FONT WEIGHT DEL TITULO DEL MES
+  textDayHeaderFontWeight: "300", // FONT WEIGHT DEL DIA DEL ENCABEZADO
+  textDayFontSize: 16, // TAMANO DE LA LETRA DEL DIA
+  textMonthFontSize: 18, // TAMANO DE LA LETRA DEL MES
+  textDayHeaderFontSize: 16, // TAMANO DEL ENCABEZADO DEL DIA
+});
 
 const fontScale = PixelRatio.getFontScale();
 export const getFontSize = (size) => size / fontScale;

@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { Picker } from "@react-native-picker/picker";
 import { thousandsSystem, random, getFontSize } from "@helpers/libs";
 import { add, edit, remove } from "@features/inventory/informationSlice";
-import { addInventory, editInventory, removeInventory } from "@api";
+import { change as CRecipe } from "@features/sales/recipesSlice";
+import { addInventory, editInventory, editUser } from "@api";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
@@ -27,6 +28,7 @@ const CreateElement = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const helperStatus = useSelector((state) => state.helperStatus);
   const inventory = useSelector((state) => state.inventory);
+  const recipes = useSelector((state) => state.recipes);
 
   const element = route.params?.item;
   const editing = route.params?.editing;
@@ -139,7 +141,7 @@ const CreateElement = ({ route, navigation }) => {
     Keyboard.dismiss();
     Alert.alert(
       `¿Estás seguro que quieres eliminar el elemento?`,
-      "No podrá recuperar esta información una vez borrada",
+      "No podrá recuperar esta información una vez borrada, este elemento también será eliminado de receta/reconteo",
       [
         {
           text: "No",
@@ -148,12 +150,22 @@ const CreateElement = ({ route, navigation }) => {
         {
           text: "Si",
           onPress: async () => {
+            const newRecipes = recipes.map((r) => ({
+              ...r,
+              ingredients: r.ingredients.filter((i) => i.id !== element.id),
+            }));
+
             setLoading(true);
+            dispatch(CRecipe(newRecipes));
             dispatch(remove({ id: element.id }));
             navigation.pop();
-            await removeInventory({
+
+            await editUser({
               identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
-              id: element.id,
+              change: {
+                inventory: inventory.filter((i) => i.id !== element.id),
+                recipes: newRecipes,
+              },
               helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
             });
           },

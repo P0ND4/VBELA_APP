@@ -1,15 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import {
-  View,
-  StyleSheet,
-  Modal,
-  TouchableWithoutFeedback,
-  StatusBar,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
+import { StyleSheet, View, FlatList, TouchableOpacity } from "react-native";
 import { getFontSize } from "@helpers/libs";
+import Information from "./Information";
 import InputStyle from "./InputStyle";
 import TextStyle from "./TextStyle";
 import ButtonStyle from "./ButtonStyle";
@@ -18,163 +11,175 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 
 const { light, dark } = theme();
 
+const Card = ({ item, onChange, isActive }) => {
+  const mode = useSelector((state) => state.mode);
+
+  return (
+    <TouchableOpacity style={styles.row} onPress={() => onChange({ item })}>
+      <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>{item.name}</TextStyle>
+      <Ionicons
+        name={isActive ? "remove-circle" : "add-circle-outline"}
+        color={light.main2}
+        size={getFontSize(20)}
+      />
+    </TouchableOpacity>
+  );
+};
+
+const Preview = ({ item, onChange }) => {
+  const mode = useSelector((state) => state.mode);
+
+  return (
+    <TouchableOpacity
+      onPress={() => onChange({ item })}
+      style={[styles.previewCard, { backgroundColor: mode === "light" ? light.main4 : dark.main1 }]}
+    >
+      <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
+        {item.name}
+      </TextStyle>
+      <Ionicons
+        name="close-circle-outline"
+        style={{ marginLeft: 5 }}
+        color={light.main2}
+        size={getFontSize(20)}
+      />
+    </TouchableOpacity>
+  );
+};
+
 const MultipleSelect = ({
   modalVisible,
   setModalVisible,
+  title = "",
   noItemsText,
   data,
-  onSelectedItemsChange,
-  selected,
+  onSubmit,
+  defaultValue = [],
 }) => {
   const mode = useSelector((state) => state.mode);
+
+  const [selections, setSelections] = useState(null);
+  const [selected, setSelected] = useState([]);
   const [search, setSearch] = useState("");
-  const [information, setInformation] = useState(data);
-  const [selectedItems, setSelectedItems] = useState(selected || []);
+
+  const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
+  const textColor = useMemo(() => getTextColor(mode), [mode]);
+
+  useEffect(() => {
+    if (selected.length !== 0) setSelected(selected.filter((s) => data.some((d) => s.id === d.id)));
+    else setSelected(defaultValue);
+  }, [data, defaultValue]);
 
   useEffect(() => {
     if (search) {
-      setInformation(
-        data.filter((d) => {
-          const word = search
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase();
+      const convertText = (text) =>
+        text
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase();
 
-          if (
-            d.name
-              .normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "")
-              .toLowerCase()
-              .includes(word)
-          )
-            return d;
-        })
-      );
-    } else setInformation(data);
-  }, [search]);
+      const filtered = data.filter((d) => convertText(d.name).includes(convertText(search)));
+      setSelections(filtered);
+    } else setSelections(data);
+  }, [data, search]);
+
+  const onChange = ({ item }) => {
+    const exists = selected.some((s) => s.id === item.id);
+    if (exists) setSelected(selected.filter((s) => s.id !== item.id));
+    else setSelected([...selected, item]);
+  };
 
   return (
-    <Modal
-      animationType="fade"
-      statusBarTranslucent={false}
-      transparent={true}
-      visible={modalVisible}
-      onRequestClose={() => {
-        setModalVisible(!modalVisible);
-      }}
-    >
-      <TouchableWithoutFeedback onPress={() => setModalVisible(!modalVisible)}>
-        <View
-          style={[{ backgroundColor: "#0004" }, StyleSheet.absoluteFillObject]}
-        />
-      </TouchableWithoutFeedback>
-      <View style={styles.centeredView}>
-        <View
-          style={[
-            styles.container,
-            {
-              backgroundColor: mode === "light" ? light.main5 : dark.main2,
-            },
-          ]}
-        >
-          <View style={styles.row}>
+    <Information
+      modalVisible={modalVisible}
+      setModalVisible={setModalVisible}
+      title={title}
+      content={() => (
+        <View>
+          {data?.length > 0 && (
             <InputStyle
-              value={search}
-              maxLength={50}
               onChangeText={(text) => setSearch(text)}
-              placeholder="Buscar"
-              stylesContainer={{
-                width: "90%",
-                borderBottomWidth: 1,
-                borderBottomColor: light.main2,
+              value={search}
+              placeholder="Busca por nombre"
+              stylesContainer={styles.search}
+            />
+          )}
+          {selected.length > 0 && (
+            <View style={{ marginVertical: 5 }}>
+              <TextStyle color={textColor} verySmall>
+                Seleccionado
+              </TextStyle>
+              <FlatList
+                style={{ marginTop: 5 }}
+                data={selected}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => <Preview item={item} onChange={onChange} />}
+              />
+            </View>
+          )}
+          {selections?.length === 0 && (
+            <TextStyle style={{ marginTop: 5 }} color={textColor} smallParagraph>
+              {noItemsText}
+            </TextStyle>
+          )}
+          {data?.length > 0 && (
+            <FlatList
+              data={selections || []}
+              style={{ maxHeight: 400, marginVertical: 5 }}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => {
+                const isActive = selected.some((s) => s.id === item.id);
+                return <Card item={item} onChange={onChange} isActive={isActive} />;
               }}
             />
-            <Ionicons
-              name="search"
-              size={getFontSize(24)}
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            />
-          </View>
-          <ScrollView
-            style={{ marginVertical: 15, maxHeight: 300 }}
-            showsVerticalScrollIndicator={false}
-          >
-            {!information?.length && (
-              <TextStyle center color={light.main2} bigParagraph>
-                {noItemsText}
-              </TextStyle>
-            )}
-            {information?.map((item) => {
-              return (
-                <TouchableOpacity
-                  style={styles.row}
-                  key={item.id}
-                  onPress={() => {
-                    const found = selectedItems.includes(item.id);
-                    const response = found
-                      ? selectedItems.filter((s) => s !== item.id)
-                      : [...selectedItems, item.id];
-                    setSelectedItems(response);
-                  }}
-                >
-                  <TextStyle
-                    bigParagraph
-                    color={mode === "light" ? light.textDark : dark.textWhite}
-                  >
-                    {item.name}
-                  </TextStyle>
-                  <Ionicons
-                    name={
-                      selectedItems.find((s) => s === item.id)
-                        ? "checkbox-outline"
-                        : "square-outline"
-                    }
-                    size={30}
-                    color={light.main2}
-                  />
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-          {selectedItems.length > 0 && (
-            <ButtonStyle
-              backgroundColor={light.main2}
-              onPress={() => setSelectedItems([])}
-            >
-              <TextStyle center>Remover todo</TextStyle>
-            </ButtonStyle>
           )}
-          <ButtonStyle
-            backgroundColor={light.main2}
-            onPress={() => {
-              setModalVisible(!modalVisible);
-              onSelectedItemsChange(selectedItems);
-            }}
-          >
-            <TextStyle center>Guardar</TextStyle>
-          </ButtonStyle>
+          {data?.length > 0 && (
+            <View style={styles.row}>
+              {false && (
+                <ButtonStyle
+                  backgroundColor={mode === "light" ? dark.main1 : light.main4}
+                  style={{ flexGrow: 1, width: "auto", marginRight: 4 }}
+                >
+                  <TextStyle center>Remover</TextStyle>
+                </ButtonStyle>
+              )}
+              <ButtonStyle
+                backgroundColor={light.main2}
+                style={{ flexGrow: 3, width: "auto" }}
+                onPress={() => {
+                  setModalVisible(!modalVisible);
+                  onSubmit(selected);
+                }}
+              >
+                <TextStyle center>Guardar</TextStyle>
+              </ButtonStyle>
+            </View>
+          )}
         </View>
-      </View>
-      <StatusBar backgroundColor="#0004" />
-    </Modal>
+      )}
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  centeredView: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   row: {
+    flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    flexDirection: "row",
   },
-  container: {
-    width: "90%",
-    padding: 20,
+  previewCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 8,
+    marginRight: 2,
+  },
+  search: {
+    borderBottomWidth: 1,
+    borderColor: light.main2,
   },
 });
 

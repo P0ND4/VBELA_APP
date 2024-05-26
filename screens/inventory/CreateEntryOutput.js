@@ -1,14 +1,32 @@
-import { useEffect, useRef, useState } from "react";
-import { View, KeyboardAvoidingView, ScrollView, Keyboard, Alert } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  View,
+  KeyboardAvoidingView,
+  ScrollView,
+  Keyboard,
+  Alert,
+  StyleSheet,
+  Modal,
+  TouchableWithoutFeedback,
+} from "react-native";
 import { useForm } from "react-hook-form";
 import { useSelector, useDispatch } from "react-redux";
 import TextStyle from "@components/TextStyle";
 import InputStyle from "@components/InputStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import { Picker } from "@react-native-picker/picker";
-import { thousandsSystem, convertThousandsSystem, random, getFontSize } from "@helpers/libs";
+import {
+  thousandsSystem,
+  convertThousandsSystem,
+  random,
+  getFontSize,
+  calendarTheme,
+} from "@helpers/libs";
 import { edit } from "@features/inventory/informationSlice";
 import { editInventory } from "@api";
+import { Calendar } from "react-native-calendars";
+import moment from "moment";
+import PaymentButtons from "@components/PaymentButtons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Layout from "@components/Layout";
 import theme from "@theme";
@@ -27,7 +45,9 @@ const CreateEntryOutput = ({ route, navigation }) => {
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
   const inventory = useSelector((state) => state.inventory);
+  const suppliers = useSelector((state) => state.suppliers);
 
+  const supplier = route.params?.supplier;
   const type = route.params.type;
   const item = route.params.item;
   const editing = route.params.editing;
@@ -36,16 +56,29 @@ const CreateEntryOutput = ({ route, navigation }) => {
   const [element, setElement] = useState(editing ? item.element : "");
   const [quantity, setQuantity] = useState(editing ? thousandsSystem(item.quantity) : "");
   const [elementValue, setElementValue] = useState(editing ? thousandsSystem(item.currentValue) : "");
-  const [elementName, setElementName] = useState();
+  const [elementName, setElementName] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState(editing ? item.paymentMethod : "");
 
-  const pickerRef = useRef();
+  const [supplierSelected, setSupplierSelected] = useState(editing ? item.supplier : supplier || null);
+  const [supplierOptions, setSupplierOptions] = useState([]);
+
+  const [date, setDate] = useState(moment().format("YYYY-MM-DD"));
+  const [dateModalVisible, setDateModalVisible] = useState(false);
+
+  const pickerElementRef = useRef();
+  const pickerSupplierRef = useRef();
   const dispatch = useDispatch();
 
+  const getBackgroundColor = (mode) => (mode === "light" ? light.main5 : dark.main2);
+  const backgroundColor = useMemo(() => getBackgroundColor(mode), [mode]);
+  const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
+  const textColor = useMemo(() => getTextColor(mode), [mode]);
+
   useEffect(() => {
-    if (editing) {
-      setElementName(inventory.find((i) => i.id === item.element).name);
-    }
-  }, []);
+    if (editing) setElementName(inventory.find((i) => i.id === item.element).name);
+  }, [editing, inventory, item]);
+
+  useEffect(() => setSupplierOptions(suppliers), [suppliers]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -54,6 +87,12 @@ const CreateEntryOutput = ({ route, navigation }) => {
   }, []);
 
   useEffect(() => {
+    register("supplier", { value: editing ? item.supplier : supplier || null });
+    register("date", {
+      value: editing ? item.date : new Date(moment().format("YYYY-MM-DD")).getTime(),
+      required: true,
+    });
+    register("paymentMethod", { value: "", required: !editing });
     register("element", { value: editing ? item.element : "", required: true });
     register("quantity", {
       value: editing ? item.quantity : "",
@@ -70,8 +109,8 @@ const CreateEntryOutput = ({ route, navigation }) => {
     editable[type] = [...editable[type]].map((e) => {
       if (e.id === item.id) {
         const editable = { ...e };
-        editable.quantity = data.quantity;
-        editable.currentValue = data.value || editable.currentValue;
+        editable.supplier = data.supplier;
+        editable.date = data.date;
         return editable;
       }
       return e;
@@ -94,11 +133,26 @@ const CreateEntryOutput = ({ route, navigation }) => {
     const editable = { ...inventory.find((i) => i.id === data.element) };
     if (editable[type]?.find((i) => i.id === id)) onSubmitCreate(data);
     else {
+      const method = [];
+      if (data.paymentMethod !== "credit") {
+        method.push({
+          id: random(6),
+          method: data.paymentMethod,
+          total: data.value * data.quantity,
+          quantity: data.quantity,
+        });
+      }
+
       const obj = {
         id,
+        supplier: data.supplier,
+        date: data.date,
         quantity: data.quantity,
         creationDate: new Date().getTime(),
+        modificationDate: new Date().getTime(),
         currentValue: data.value || editable.currentValue,
+        status: data.paymentMethod === "credit" ? "credit" : "paid",
+        method,
         element: data.element,
       };
       if (type === "entry") {
@@ -175,32 +229,63 @@ const CreateEntryOutput = ({ route, navigation }) => {
                   Elemento: {elementName}
                 </TextStyle>
               )}
+              <View>
+                <ButtonStyle
+                  backgroundColor={backgroundColor}
+                  onPress={() => pickerSupplierRef.current?.focus()}
+                >
+                  <View style={styles.row}>
+                    <TextStyle color={supplierSelected ? textColor : "#888888"}>
+                      {suppliers.find((s) => s.id === supplierSelected)?.name ||
+                        "SELECCIONE EL PROVEEDOR"}
+                    </TextStyle>
+                    <Ionicons
+                      color={supplierSelected ? textColor : "#888888"}
+                      size={getFontSize(15)}
+                      name="caret-down"
+                    />
+                  </View>
+                </ButtonStyle>
+                <View style={{ display: "none" }}>
+                  <Picker
+                    ref={pickerSupplierRef}
+                    style={{ color: textColor }}
+                    selectedValue={supplierSelected}
+                    onValueChange={(value) => {
+                      setValue("supplier", value);
+                      setSupplierSelected(value);
+                    }}
+                  >
+                    <Picker.Item
+                      label="SELECCIONE EL PROVEEDOR"
+                      value=""
+                      style={{ backgroundColor }}
+                      color={textColor}
+                    />
+                    {supplierOptions.map((s) => (
+                      <Picker.Item
+                        key={s.id}
+                        label={s.name}
+                        value={s.id}
+                        style={{ backgroundColor }}
+                        color={textColor}
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
               {!editing && (
                 <View>
                   <ButtonStyle
-                    backgroundColor={mode === "light" ? light.main5 : dark.main2}
-                    onPress={() => pickerRef.current?.focus()}
+                    backgroundColor={backgroundColor}
+                    onPress={() => pickerElementRef.current?.focus()}
                   >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <TextStyle
-                        color={
-                          element ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"
-                        }
-                      >
-                        {element
-                          ? inventory.find((u) => u.id === element)?.name
-                          : "SELECCIONE EL ELEMENTO"}
+                    <View style={styles.row}>
+                      <TextStyle color={element ? textColor : "#888888"}>
+                        {inventory.find((u) => u.id === element)?.name || "SELECCIONE EL ELEMENTO"}
                       </TextStyle>
                       <Ionicons
-                        color={
-                          element ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"
-                        }
+                        color={element ? textColor : "#888888"}
                         size={getFontSize(15)}
                         name="caret-down"
                       />
@@ -208,10 +293,8 @@ const CreateEntryOutput = ({ route, navigation }) => {
                   </ButtonStyle>
                   <View style={{ display: "none" }}>
                     <Picker
-                      ref={pickerRef}
-                      style={{
-                        color: mode === "light" ? light.textDark : dark.textWhite,
-                      }}
+                      ref={pickerElementRef}
+                      style={{ color: textColor }}
                       selectedValue={element}
                       onValueChange={(value) => {
                         setValue("element", value);
@@ -221,20 +304,16 @@ const CreateEntryOutput = ({ route, navigation }) => {
                       <Picker.Item
                         label="SELECCIONE EL ELEMENTO"
                         value=""
-                        style={{
-                          backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                        }}
-                        color={mode === "light" ? light.textDark : dark.textWhite}
+                        style={{ backgroundColor }}
+                        color={textColor}
                       />
                       {inventory.map((i) => (
                         <Picker.Item
                           key={i.id}
                           label={i.name}
                           value={i.id}
-                          style={{
-                            backgroundColor: mode === "light" ? light.main5 : dark.main2,
-                          }}
-                          color={mode === "light" ? light.textDark : dark.textWhite}
+                          style={{ backgroundColor }}
+                          color={textColor}
                         />
                       ))}
                     </Picker>
@@ -246,18 +325,20 @@ const CreateEntryOutput = ({ route, navigation }) => {
                   Seleccione el elemento
                 </TextStyle>
               )}
-              <InputStyle
-                value={quantity}
-                right={quantity ? () => <TextStyle color={light.main2}>Cantidad</TextStyle> : null}
-                placeholder="Cantidad"
-                keyboardType="numeric"
-                maxLength={9}
-                onChangeText={(num) => {
-                  const converted = convertThousandsSystem(num);
-                  setValue("quantity", +converted);
-                  setQuantity(thousandsSystem(converted));
-                }}
-              />
+              {!editing && (
+                <InputStyle
+                  value={quantity}
+                  right={quantity ? () => <TextStyle color={light.main2}>Cantidad</TextStyle> : null}
+                  placeholder="Cantidad"
+                  keyboardType="numeric"
+                  maxLength={9}
+                  onChangeText={(num) => {
+                    const converted = convertThousandsSystem(num);
+                    setValue("quantity", +converted);
+                    setQuantity(thousandsSystem(converted));
+                  }}
+                />
+              )}
               {errors.quantity?.type && (
                 <TextStyle verySmall color={light.main2}>
                   {errors.quantity.type === "required"
@@ -269,7 +350,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
                 <InputStyle
                   value={elementValue}
                   right={elementValue ? () => <TextStyle color={light.main2}>Valor</TextStyle> : null}
-                  placeholder="Valor por unidad"
+                  placeholder="Precio por unidad"
                   keyboardType="numeric"
                   maxLength={12}
                   onChangeText={(text) => {
@@ -278,6 +359,31 @@ const CreateEntryOutput = ({ route, navigation }) => {
                   }}
                 />
               )}
+              <ButtonStyle
+                backgroundColor={backgroundColor}
+                onPress={() => setDateModalVisible(!dateModalVisible)}
+              >
+                <TextStyle color={textColor}>
+                  Fecha de la {type === "entry" ? "entrada: " : "salida: "}
+                  {date}
+                </TextStyle>
+              </ButtonStyle>
+              {!editing && (
+                <PaymentButtons
+                  type={supplierSelected ? "credit" : "others"}
+                  value={paymentMethod}
+                  setValue={(method) => {
+                    const value = method === paymentMethod ? "" : method;
+                    setPaymentMethod(value);
+                    setValue("paymentMethod", value);
+                  }}
+                />
+              )}
+              {errors.paymentMethod?.type && (
+                <TextStyle verySmall color={light.main2}>
+                  El método de pago es requerido
+                </TextStyle>
+              )}
             </View>
             {editing && (
               <ButtonStyle
@@ -285,9 +391,9 @@ const CreateEntryOutput = ({ route, navigation }) => {
                   if (loading) return;
                   deleteEntryOutput();
                 }}
-                backgroundColor={mode === "light" ? light.main5 : dark.main2}
+                backgroundColor={backgroundColor}
               >
-                <TextStyle center color={mode === "light" ? light.textDark : dark.textWhite}>
+                <TextStyle center color={textColor}>
                   Eliminar
                 </TextStyle>
               </ButtonStyle>
@@ -304,8 +410,62 @@ const CreateEntryOutput = ({ route, navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <Modal
+        animationType="fade"
+        statusBarTranslucent={false}
+        transparent={true}
+        visible={dateModalVisible}
+        onRequestClose={() => setDateModalVisible(!dateModalVisible)}
+      >
+        <TouchableWithoutFeedback onPress={() => setDateModalVisible(!dateModalVisible)}>
+          <View style={[{ backgroundColor: "#0004" }, StyleSheet.absoluteFillObject]} />
+        </TouchableWithoutFeedback>
+        <View style={styles.centeredView}>
+          <View
+            style={[{ backgroundColor: mode === "light" ? light.main4 : dark.main2 }, styles.default]}
+          >
+            <Calendar
+              style={{ borderRadius: 8 }}
+              // Specify theme properties to override specific styles for calendar parts. Default = {}
+              theme={calendarTheme(mode)}
+              maxDate="2024-12-31"
+              minDate="2023-01-01"
+              firstDay={1}
+              displayLoadingIndicator={false} // ESTA COOL
+              enableSwipeMonths={true}
+              onDayPress={(data) => {
+                setDate(data.dateString);
+                setValue("date", new Date(data.dateString).getTime());
+                setDateModalVisible(!dateModalVisible);
+              }}
+              arrowsHitSlop={10}
+              markedDates={{
+                [date]: { selected: true, disableTouchEvent: true, selectedDotColor: light.main2 },
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
     </Layout>
   );
 };
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  default: {
+    width: "80%",
+    borderRadius: 8,
+    padding: 15,
+  },
+});
 
 export default CreateEntryOutput;

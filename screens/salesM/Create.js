@@ -13,7 +13,7 @@ import {
 import { useSelector } from "react-redux";
 import { getFontSize, thousandsSystem } from "@helpers/libs";
 import Count from "@utils/order/components/Count";
-import FrontPage from "@utils/product/FrontPage";
+import FrontPage from "@utils/product/components/FrontPage";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import ButtonStyle from "@components/ButtonStyle";
 import TextStyle from "@components/TextStyle";
@@ -29,6 +29,7 @@ const Order = ({ route, navigation }) => {
   const groups = useSelector((state) => state.groups);
   const products = useSelector((state) => state.products);
   const mode = useSelector((state) => state.mode);
+  const recipes = useSelector((state) => state.recipes);
 
   const initialState = {
     active: false,
@@ -287,19 +288,12 @@ const Order = ({ route, navigation }) => {
                     <TouchableNativeFeedback
                       onLongPress={() => {
                         if (item.id)
-                          return navigation.navigate("CreateProduct", {
-                            sales: true,
-                            editing: true,
+                          return navigation.navigate("CreateSaleProduct", {
+                            onSubmit: () => setSelection(selection.filter((s) => s.id !== item.id)),
                             item,
-                            setSelection,
-                            selection,
                           });
 
-                        navigation.navigate("CreateProduct", {
-                          sales: true,
-                          setSelection,
-                          selection,
-                        });
+                        navigation.navigate("CreateSaleProduct");
                       }}
                       onPress={() => {
                         if (item?.id) {
@@ -329,7 +323,7 @@ const Order = ({ route, navigation }) => {
 
                           setSelection(updateSelections(selection));
                           setNewSelection(updateSelections(newSelection));
-                        } else navigation.navigate("CreateProduct", { sales: true });
+                        } else navigation.navigate("CreateSaleProduct");
                       }}
                     >
                       <View style={[styles.catalogue, { backgroundColor }]}>
@@ -341,7 +335,7 @@ const Order = ({ route, navigation }) => {
                             value={item.value}
                             unit={item.unit}
                             identifier={item.identifier}
-                            recipe={item.recipe}
+                            recipe={recipes.find((r) => r.id === item.recipe)?.name}
                           />
                         )}
                         {!item?.id &&

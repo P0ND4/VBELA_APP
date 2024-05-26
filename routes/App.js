@@ -134,8 +134,7 @@ function App() {
           }}
         />
       )}
-      {((!helperStatus.active && ["both", "sales"].includes(user?.type)) ||
-        (helperStatus.active && helperStatus.accessToSupplier)) && (
+      {(!helperStatus.active || helperStatus.accessToSupplier) && (
         <Drawer.Screen
           name="Providers"
           component={Supplier}
