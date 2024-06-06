@@ -32,16 +32,25 @@ const CreateElement = ({ route, navigation }) => {
 
   const element = route.params?.item;
   const editing = route.params?.editing;
+  const defaultValue = route.params?.defaultValue;
+  const onSend = route.params?.onSend;
 
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState(editing ? element.name : "");
-  const [unit, setUnit] = useState(editing ? element.unit : "");
-  const [visible, setVisible] = useState(editing ? element.visible : "both");
-  const [reorder, setReorder] = useState(editing ? thousandsSystem(element.reorder || 0) : "");
-  const [quantity, setQuantity] = useState(
-    editing ? thousandsSystem(element.entry.find((e) => !e.entry)?.quantity || 0) : ""
+  const [name, setName] = useState(editing ? element.name : defaultValue?.name || "");
+  const [unit, setUnit] = useState(editing ? element.unit : defaultValue?.unit || "");
+  const [visible, setVisible] = useState(editing ? element.visible : defaultValue?.visible || "both");
+  const [reorder, setReorder] = useState(
+    editing ? thousandsSystem(element.reorder || "") : thousandsSystem(defaultValue?.reorder || "")
   );
-  const [elementValue, setElementValue] = useState(editing ? thousandsSystem(element.currentValue) : "");
+  const [reference, setReference] = useState(editing ? element.reference : "");
+  const [brand, setBrand] = useState(editing ? element.brand : "");
+
+  // const [quantity, setQuantity] = useState(
+  //   editing ? thousandsSystem(element.entry.find((e) => !e.entry)?.quantity || 0) : ""
+  // );
+  const [elementValue, setElementValue] = useState(
+    editing ? thousandsSystem(element.currentValue) : thousandsSystem(defaultValue?.value || "")
+  );
 
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
@@ -53,8 +62,12 @@ const CreateElement = ({ route, navigation }) => {
   const pickerVisibleRef = useRef();
 
   useEffect(() => {
+    navigation.setOptions({ title: `${editing ? "Editar" : "Crear"} elemento` });
+  }, [editing]);
+
+  useEffect(() => {
     register("name", {
-      value: editing ? element.name : "",
+      value: editing ? element.name : defaultValue?.name || "",
       required: true,
       validate: {
         exists: (name) => {
@@ -71,11 +84,13 @@ const CreateElement = ({ route, navigation }) => {
         },
       },
     });
-    register("unit", { value: editing ? element.unit : "", required: true });
-    register("visible", { value: editing ? element.visible : "both" });
-    register("reorder", { value: editing ? element.reorder : 0 });
+    register("unit", { value: editing ? element.unit : defaultValue?.unit || "", required: true });
+    register("visible", { value: editing ? element.visible : defaultValue?.visible || "both" });
+    register("reorder", { value: editing ? element.reorder : defaultValue?.reorder || 0 });
+    register("reference", { value: editing ? element.reference : "" });
+    register("brand", { value: editing ? element.brand : "" });
     register("currentValue", {
-      value: editing ? element.currentValue : "",
+      value: editing ? element.currentValue : defaultValue?.value || "",
       required: true,
     });
   }, []);
@@ -83,17 +98,18 @@ const CreateElement = ({ route, navigation }) => {
   const onSubmitEdit = async (data) => {
     setLoading(true);
     Keyboard.dismiss();
+    // const quantityReference = parseInt(quantity?.replace(/[^0-9]/g, "")) || 0;
+    // data.entry = element.entry.map((e) => {
+    //   if (!e.entry) {
+    //     const editable = { ...e };
+    //     editable.quantity = quantityReference;
+    //     editable.currentValue = data.currentValue;
+    //     return editable;
+    //   }
+    //   return e;
+    // });
     data.id = element.id;
-    const quantityReference = parseInt(quantity?.replace(/[^0-9]/g, "")) || 0;
-    data.entry = element.entry.map((e) => {
-      if (!e.entry) {
-        const editable = { ...e };
-        editable.quantity = quantityReference;
-        editable.currentValue = data.currentValue;
-        return editable;
-      }
-      return e;
-    });
+    data.entry = element.entry;
     data.output = element.output;
     data.creationDate = element.creationDate;
     data.modificationDate = new Date().getTime();
@@ -112,18 +128,19 @@ const CreateElement = ({ route, navigation }) => {
     const id = random(20);
     if (inventory.find((i) => i.id === id)) onSubmitCreate(data);
     else {
-      const quantityReference = parseInt(quantity?.replace(/[^0-9]/g, "")) || 0;
+      // const quantityReference = parseInt(quantity?.replace(/[^0-9]/g, "")) || 0;
+      // data.entry = [
+      //   {
+      //     id: random(20),
+      //     element: id,
+      //     quantity: quantityReference,
+      //     currentValue: data.currentValue,
+      //     entry: false,
+      //     creationDate: new Date().getTime(),
+      //   },
+      // ];
       data.id = id;
-      data.entry = [
-        {
-          id: random(20),
-          element: id,
-          quantity: quantityReference,
-          currentValue: data.currentValue,
-          entry: false,
-          creationDate: new Date().getTime(),
-        },
-      ];
+      data.entry = [];
       data.output = [];
       data.creationDate = new Date().getTime();
       data.modificationDate = new Date().getTime();
@@ -213,7 +230,7 @@ const CreateElement = ({ route, navigation }) => {
                 VBELA
               </TextStyle>
               <TextStyle bigParagraph center color={mode === "light" ? null : dark.textWhite}>
-                Crear elemento
+                {editing ? "Editar" : "Crear"} elemento
               </TextStyle>
             </View>
             <View style={{ marginVertical: 30 }}>
@@ -304,7 +321,7 @@ const CreateElement = ({ route, navigation }) => {
                       if (value !== "none") {
                         setValue("reorder", 0);
                         setReorder("");
-                        setQuantity("");
+                        // setQuantity("");
                       }
                     }}
                   >
@@ -320,14 +337,14 @@ const CreateElement = ({ route, navigation }) => {
                   </Picker>
                 </View>
               </View>
-              <InputStyle
+              {/* <InputStyle
                 value={quantity}
                 right={quantity ? () => <TextStyle color={light.main2}>Cantidad</TextStyle> : null}
                 placeholder="Cantidad en inventario"
                 keyboardType="numeric"
                 maxLength={9}
                 onChangeText={(text) => setQuantity(thousandsSystem(text.replace(/[^0-9]/g, "")))}
-              />
+              /> */}
               <InputStyle
                 value={reorder}
                 right={
@@ -359,6 +376,26 @@ const CreateElement = ({ route, navigation }) => {
                   Digite el valor del elemento por unidad
                 </TextStyle>
               )}
+              <InputStyle
+                value={reference}
+                right={reference ? () => <TextStyle color={light.main2}>Referencia</TextStyle> : null}
+                placeholder="Referencia"
+                maxLength={20}
+                onChangeText={(text) => {
+                  setValue("reference", text);
+                  setReference(text);
+                }}
+              />
+              <InputStyle
+                value={brand}
+                right={brand ? () => <TextStyle color={light.main2}>Marca</TextStyle> : null}
+                placeholder="Marca"
+                maxLength={20}
+                onChangeText={(text) => {
+                  setValue("brand", text);
+                  setBrand(text);
+                }}
+              />
             </View>
             {editing && (
               <ButtonStyle
@@ -376,6 +413,7 @@ const CreateElement = ({ route, navigation }) => {
             <ButtonStyle
               onPress={handleSubmit((data) => {
                 if (loading) return;
+                if (onSend) onSend(data);
                 editing ? onSubmitEdit(data) : onSubmitCreate(data);
               })}
               backgroundColor={light.main2}

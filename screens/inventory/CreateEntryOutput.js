@@ -59,6 +59,8 @@ const CreateEntryOutput = ({ route, navigation }) => {
   const [elementName, setElementName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState(editing ? item.paymentMethod : "");
 
+  const [lastValue, setLastValue] = useState(null);
+
   const [supplierSelected, setSupplierSelected] = useState(editing ? item.supplier : supplier || null);
   const [supplierOptions, setSupplierOptions] = useState([]);
 
@@ -77,6 +79,14 @@ const CreateEntryOutput = ({ route, navigation }) => {
   useEffect(() => {
     if (editing) setElementName(inventory.find((i) => i.id === item.element).name);
   }, [editing, inventory, item]);
+
+  useEffect(() => {
+    (() => {
+      if (!element) return setLastValue(null);
+      const editable = inventory.find((i) => i.id === element);
+      setLastValue(editable.currentValue);
+    })();
+  }, [element, inventory]);
 
   useEffect(() => setSupplierOptions(suppliers), [suppliers]);
 
@@ -225,8 +235,19 @@ const CreateEntryOutput = ({ route, navigation }) => {
             </View>
             <View style={{ marginVertical: 10 }}>
               {editing && (
-                <TextStyle color={light.main2} style={{ marginVertical: 10 }}>
-                  Elemento: {elementName}
+                <TextStyle color={textColor}>
+                  Elemento:{" "}
+                  <TextStyle color={light.main2} style={{ marginVertical: 10 }}>
+                    {elementName}
+                  </TextStyle>
+                </TextStyle>
+              )}
+              {lastValue && type === "entry" && (
+                <TextStyle color={textColor}>
+                  Valor anterior:{" "}
+                  <TextStyle color={light.main2} style={{ marginVertical: 10 }}>
+                    {thousandsSystem(lastValue || 0)}
+                  </TextStyle>
                 </TextStyle>
               )}
               <View>

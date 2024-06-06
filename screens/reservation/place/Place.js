@@ -74,8 +74,7 @@ const Room = ({ time, item, days, setModalVisible, setSelected, setDay, date }) 
 
       const findBackground = ({ hosted, checkIn, checkOut }) => {
         if (hosted === 0) return backgroundColor; //SI NO HAY HUESPEDES ✅
-        if (![0, hosted].includes(checkIn) && ![0, hosted].includes(checkOut))
-          return "#f87575"; //ALGUNOS SE FUERON, OTROS NO HA LLEGADO ✅
+        if (![0, hosted].includes(checkIn) && ![0, hosted].includes(checkOut)) return "#f87575"; //ALGUNOS SE FUERON, OTROS NO HA LLEGADO ✅
         if (checkOut === hosted) return "#b6e0f3"; // CUANDO YA SE FUERON ✅
         if (![0, hosted].includes(checkOut)) return "#ff9900"; // CUANDO SE FUERON PERO FALTAN ALGUNOS ✅
         if (checkIn === hosted) return "#00ffbc"; // CUANDO YA LLEGARON ✅
@@ -121,9 +120,7 @@ const Room = ({ time, item, days, setModalVisible, setSelected, setDay, date }) 
               setSelected(reservations[0]);
             } else
               navigation.navigate(
-                item.type === "standard"
-                  ? "CreateStandardReserve"
-                  : "CreateAccommodationReserve",
+                item.type === "standard" ? "CreateStandardReserve" : "CreateAccommodationReserve",
                 {
                   date: { ...date, day },
                   place: item,
@@ -176,7 +173,10 @@ const Room = ({ time, item, days, setModalVisible, setSelected, setDay, date }) 
           horizontal
           showsHorizontalScrollIndicator={false}
           contentOffset={{
-            x: dateRef.getMonth() === date.month ? (dateRef.getDate() - 1) * 43 : 0,
+            x:
+              dateRef.getMonth() === date.month
+                ? (dateRef.getDate() - 1) * Math.floor(SCREEN_WIDTH / 9)
+                : 0,
           }}
         >
           {memoizedDays}
@@ -247,8 +247,7 @@ const Place = ({ route, navigation }) => {
       ...reservationSelected,
       hosted: [...reservationSelected.hosted, data],
     };
-    if (reservationSelected.type === "standard")
-      dispatch(editRS({ id: reserve.id, data: reserve }));
+    if (reservationSelected.type === "standard") dispatch(editRS({ id: reserve.id, data: reserve }));
 
     setDaySelected(null);
     setReservationSelected(null);
@@ -309,10 +308,7 @@ const Place = ({ route, navigation }) => {
         </View>
       )}
       {activeSearch && (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          style={{ maxHeight: SCREEN_HEIGHT / 1.5 }}
-        >
+        <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: SCREEN_HEIGHT / 1.5 }}>
           <GuestCard />
         </ScrollView>
       )}
@@ -340,10 +336,7 @@ const Place = ({ route, navigation }) => {
       )}
       {rooms?.length === 0 && (
         <View
-          style={[
-            StyleSheet.absoluteFillObject,
-            { justifyContent: "center", alignItems: "center" },
-          ]}
+          style={[StyleSheet.absoluteFillObject, { justifyContent: "center", alignItems: "center" }]}
         >
           <View style={{ width: "70%" }}>
             <ButtonStyle
@@ -358,10 +351,7 @@ const Place = ({ route, navigation }) => {
           </View>
         </View>
       )}
-      <ColorInformation
-        modalVisible={activeInformation}
-        setModalVisible={setActiveInformation}
-      />
+      <ColorInformation modalVisible={activeInformation} setModalVisible={setActiveInformation} />
       <AddPerson
         key={reservationSelected?.id}
         modalVisible={modalVisiblePeople}

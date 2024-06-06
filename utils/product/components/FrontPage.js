@@ -40,11 +40,11 @@ const FrontPage = ({
             </TextStyle>
           </View>
         )}
-        {recipe && (
+        {/* {recipe && (
           <TextStyle verySmall color={textColor}>
             {recipe.toUpperCase().slice(0, 12) + (recipe.length > 12 ? "..." : "")}
           </TextStyle>
-        )}
+        )} */}
       </View>
       <View style={[styles.footer, footerStyle]}>
         <TextStyle verySmall>{identifier}</TextStyle>

@@ -6,19 +6,20 @@ import {
   FlatList,
   StyleSheet,
   Dimensions,
+  ScrollView,
   Alert,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { getFontSize, thousandsSystem, random } from "@helpers/libs";
+import { getFontSize, thousandsSystem } from "@helpers/libs";
 import { Swipeable } from "react-native-gesture-handler";
 import { useNavigation } from "@react-navigation/native";
-import { edit as editO, remove as removeO } from "@features/tables/ordersSlice";
-import { edit as editS, remove as removeS } from "@features/sales/salesSlice";
+import { remove as removeO } from "@features/tables/ordersSlice";
+import { remove as removeS } from "@features/sales/salesSlice";
 import { remove as removeRA } from "@features/zones/accommodationReservationsSlice";
 import { remove as removeRS } from "@features/zones/standardReservationsSlice";
-import { editOrder, editSale, removeReservation, removeOrder, removeSale } from "@api";
+import { removeReservation, removeOrder, removeSale } from "@api";
+import EventPayment from "@utils/customer/debt/EventPayment";
 import DebtInformation from "@utils/customer/debt/Information";
-import PaymentManager from "@utils/order/preview/PaymentManager";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -31,8 +32,6 @@ const Card = ({ item }) => {
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
   const mode = useSelector((state) => state.mode);
-  const orders = useSelector((state) => state.orders);
-  const sales = useSelector((state) => state.sales);
 
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
@@ -41,26 +40,7 @@ const Card = ({ item }) => {
   const dispatch = useDispatch();
 
   const [paymentManagerVisible, setPaymentManagerVisible] = useState(false);
-  const [order, setOrder] = useState(null);
-  const [previews, setPreviews] = useState(null);
   const [informationVisible, setInformationVisible] = useState(false);
-
-  useEffect(() => {
-    (() => {
-      if (!order) return;
-      const filtered = order?.selection.filter((s) => s.method.some((m) => m.method === "credit"));
-      const previews = filtered.map((s) => {
-        const quantity = s.method.reduce((a, b) => (b.method === "credit" ? a + b.quantity : a), 0);
-        return { ...s, quantity, paid: 0 };
-      });
-      setPreviews(previews);
-    })();
-  }, [order]);
-
-  useEffect(() => {
-    if (item.details === "sale") setOrder(sales.find((s) => s.id === item.id));
-    if (item.details === "order") setOrder(orders.find((o) => o.id === item.id));
-  }, [item, orders, sales]);
 
   const leftSwipe = () => (
     <View style={{ justifyContent: "center" }}>
@@ -145,40 +125,6 @@ const Card = ({ item }) => {
     </View>
   );
 
-  const saveOrder = async ({ order, change }) => {
-    const quantity = change.reduce((a, b) => a + b.quantity, 0);
-    const paid = change.reduce((a, b) => a + b.paid, 0);
-
-    if (item.details === "sale") dispatch(editS({ id: order.id, data: order }));
-    else dispatch(editO({ id: order.id, data: order }));
-
-    const orderStatus = {
-      ...order,
-      selection: change,
-      total: change.reduce((a, b) => a + b.total, 0),
-    };
-
-    navigation.navigate("OrderStatus", {
-      data: orderStatus,
-      status: quantity === paid ? "paid" : "pending",
-    });
-
-    if (item.details === "sale") {
-      //TODO QUE PUEDA HABER UN GESTOR DE ORDENES DE LOS 2 PARA EVIAR LA CONDICIONAL
-      await editSale({
-        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
-        sale: order,
-        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
-      });
-    } else {
-      await editOrder({
-        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
-        order,
-        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
-      });
-    }
-  };
-
   return (
     <>
       <Swipeable renderLeftActions={leftSwipe} renderRightActions={rightSwipe}>
@@ -210,46 +156,82 @@ const Card = ({ item }) => {
         </TouchableOpacity>
       </Swipeable>
       {["sale", "order"].includes(item.details) && (
-        <PaymentManager
-          key={paymentManagerVisible}
+        <EventPayment
+          item={item}
           modalVisible={paymentManagerVisible}
           setModalVisible={setPaymentManagerVisible}
-          toPay={previews || []}
-          tax={order?.tax}
-          tip={order?.tip}
-          discount={order?.discount}
-          code={order?.invoice}
-          paymentMethodActive={true}
-          onSubmit={async ({ change, paymentMethod }) => {
-            const selection = order?.selection.map((s) => {
-              const found = change.find((c) => c.id === s.id);
-              if (!found) return s;
-              const getTotal = (quantity) => quantity * s.price * (1 - s.discount || 0);
-              const total = getTotal(found?.paid);
+        />
+      )}
+      <DebtInformation
+        modalVisible={informationVisible}
+        setModalVisible={setInformationVisible}
+        item={item}
+      />
+    </>
+  );
+};
 
-              let remaining = found.paid;
-              const method = s.method.reduce((acc, m) => {
-                if (m.method !== "credit") return [...acc, m];
-                const currentQuantity = m.quantity - remaining;
-                if (currentQuantity > 0) {
-                  const total = getTotal(currentQuantity);
-                  acc.push({ ...m, quantity: currentQuantity, total });
-                  remaining = 0;
-                } else remaining -= m.quantity;
-                return acc;
-              }, []);
+const Table = ({ item }) => {
+  const mode = useSelector((state) => state.mode);
 
-              return {
-                ...s,
-                status: found.paid !== found.quantity ? "credit" : "paid",
-                method: [
-                  ...method,
-                  { id: random(6), method: paymentMethod, total, quantity: found?.paid },
-                ],
-              };
-            });
-            await saveOrder({ order: { ...order, selection }, change });
-          }}
+  const [informationVisible, setInformationVisible] = useState(false);
+  const [paymentManagerVisible, setPaymentManagerVisible] = useState(false);
+
+  const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
+  const textColor = useMemo(() => getTextColor(mode), [mode]);
+
+  const navigation = useNavigation();
+
+  const eventPress = () => {
+    if (item.details === "accommodation")
+      navigation.navigate("AccommodationReserveInformation", { ids: [item.id] });
+    if (item.details === "standard") navigation.navigate("StandardReserveInformation", { id: item.id });
+    if (item.details === "sale" || item.details === "order")
+      setPaymentManagerVisible(!paymentManagerVisible);
+  };
+
+  return (
+    <>
+      <View style={{ flexDirection: "row" }}>
+        <TouchableOpacity
+          onPress={() => setInformationVisible(!informationVisible)}
+          style={[styles.table, { borderColor: textColor, width: 120 }]}
+        >
+          {item?.owner?.map((owner) => (
+            <TextStyle color={textColor} smallParagraph>
+              - {owner.name} -
+            </TextStyle>
+          ))}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.table, { borderColor: textColor, width: 90 }]}
+          onPress={() => eventPress()}
+        >
+          <TextStyle color={textColor} smallParagraph>
+            {item.type}
+          </TextStyle>
+        </TouchableOpacity>
+        <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
+          <TextStyle color={textColor} smallParagraph>
+            {thousandsSystem(item.total || "0")}
+          </TextStyle>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.table, { borderColor: textColor, width: 100 }]}
+          onPress={() => eventPress()}
+        >
+          <TextStyle color={textColor} smallParagraph>
+            {thousandsSystem(item.paid || "0")}
+          </TextStyle>
+        </TouchableOpacity>
+      </View>
+      {["sale", "order"].includes(item.details) && (
+        <EventPayment
+          item={item}
+          modalVisible={paymentManagerVisible}
+          setModalVisible={setPaymentManagerVisible}
         />
       )}
       <DebtInformation
@@ -272,6 +254,10 @@ const Debts = () => {
   const sales = useSelector((state) => state.sales);
 
   const [debts, setDebts] = useState(null);
+  const [type, setType] = useState("general");
+
+  const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
+  const textColor = useMemo(() => getTextColor(mode), [mode]);
 
   const getOwners = ({ condition }) => {
     const allTheCustomers = customers.flatMap((c) =>
@@ -409,7 +395,44 @@ const Debts = () => {
           )}
         </View> */}
       </View>
-      <View style={{ marginTop: 20 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 20 }}>
+        <TouchableOpacity
+          style={[
+            styles.swipe,
+            {
+              marginHorizontal: 2,
+              backgroundColor:
+                type === "general" ? (mode === "light" ? light.main5 : dark.main2) : light.main2,
+            },
+          ]}
+          onPress={() => setType("general")}
+        >
+          <Ionicons
+            name="square"
+            size={getFontSize(21)}
+            color={mode === "light" ? dark.main2 : light.main5}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.swipe,
+            {
+              marginHorizontal: 2,
+              backgroundColor: light.main2,
+              backgroundColor:
+                type === "detailed" ? (mode === "light" ? light.main5 : dark.main2) : light.main2,
+            },
+          ]}
+          onPress={() => setType("detailed")}
+        >
+          <Ionicons
+            name="file-tray"
+            size={getFontSize(21)}
+            color={mode === "light" ? dark.main2 : light.main5}
+          />
+        </TouchableOpacity>
+      </View>
+      <View>
         {!debts && (
           <View style={{ marginTop: 20 }}>
             <ActivityIndicator color={light.main2} size="large" />
@@ -427,19 +450,56 @@ const Debts = () => {
             NO HAY REGISTROS
           </TextStyle>
         )}
-        {debts && (
-          <FlatList
-            data={debts}
-            style={{
-              flexGrow: 1,
-              maxHeight: SCREEN_HEIGHT / 1.3,
-            }}
-            showsVerticalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            initialNumToRender={2}
-            renderItem={({ item }) => <Card item={item} />}
-          />
-        )}
+        {debts &&
+          (type === "general" ? (
+            <FlatList
+              data={debts}
+              style={{
+                flexGrow: 1,
+                maxHeight: SCREEN_HEIGHT / 1.3,
+              }}
+              showsVerticalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              initialNumToRender={2}
+              renderItem={({ item }) => <Card item={item} />}
+            />
+          ) : (
+            <ScrollView showsVerticalScrollIndicator={false} style={{ height: SCREEN_HEIGHT / 1.55 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View>
+                  <View style={{ flexDirection: "row" }}>
+                    <View style={[styles.table, { borderColor: textColor, width: 120 }]}>
+                      <TextStyle color={light.main2} smallParagraph>
+                        DUEÑO
+                      </TextStyle>
+                    </View>
+                    <View style={[styles.table, { borderColor: textColor, width: 90 }]}>
+                      <TextStyle color={light.main2} smallParagraph>
+                        TIPO
+                      </TextStyle>
+                    </View>
+                    <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
+                      <TextStyle color={light.main2} smallParagraph>
+                        TOTAL
+                      </TextStyle>
+                    </View>
+                    <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
+                      <TextStyle color={light.main2} smallParagraph>
+                        PAGADO
+                      </TextStyle>
+                    </View>
+                  </View>
+                  <FlatList
+                    data={debts}
+                    renderItem={({ item }) => <Table item={item} />}
+                    keyExtractor={(item) => item.id}
+                    initialNumToRender={4}
+                    scrollEnabled={false}
+                  />
+                </View>
+              </ScrollView>
+            </ScrollView>
+          ))}
       </View>
     </Layout>
   );
@@ -462,6 +522,12 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     paddingHorizontal: 8,
     borderRadius: 2,
+  },
+  table: {
+    width: 120,
+    paddingHorizontal: 5,
+    paddingVertical: 4,
+    borderWidth: 0.2,
   },
 });
 

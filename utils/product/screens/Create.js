@@ -19,6 +19,7 @@ const { light, dark } = theme();
 
 const Create = ({ item, categoryOptions = [], onSubmit, onRemove, type }) => {
   const {
+    watch,
     register,
     setValue,
     formState: { errors },
@@ -50,6 +51,7 @@ const Create = ({ item, categoryOptions = [], onSubmit, onRemove, type }) => {
 
   const [subcategoryDefault, setSubcategoryDefault] = useState([]);
   const [categoryDefault, setCategoryDefault] = useState([]);
+  const [showInventory, setShowInventory] = useState(true);
 
   const getBackgroundColor = (mode) => (mode === "light" ? light.main5 : dark.main2);
   const backgroundColor = useMemo(() => getBackgroundColor(mode), [mode]);
@@ -132,6 +134,34 @@ const Create = ({ item, categoryOptions = [], onSubmit, onRemove, type }) => {
                 identifier={identifier}
                 recipe={recipe?.name || ""}
               />
+              {name && showInventory && (
+                <ButtonStyle
+                  backgroundColor="transparent"
+                  style={{ borderWidth: 2, borderColor: light.main2, width: SCREEN_WIDTH / 3.5 }}
+                  onPress={() => {
+                    const { reorder, value } = watch();
+                    navigation.navigate("CreateElement", {
+                      defaultValue: {
+                        name,
+                        unit,
+                        reorder,
+                        value,
+                        visible: type,
+                      },
+                      onSend: () => {
+                        Alert.alert("CREADO", "Ha sido creado el elemento satisfactoriamente", [], {
+                          cancelable: true,
+                        });
+                        setShowInventory(false);
+                      },
+                    });
+                  }}
+                >
+                  <TextStyle center verySmall color={light.main2}>
+                    Inventario
+                  </TextStyle>
+                </ButtonStyle>
+              )}
             </View>
             <View>
               <View>

@@ -54,6 +54,9 @@ const Card = ({ item, type, onSelected }) => {
   const [activeInformation, setActiveInformation] = useState(false);
   const [data, setData] = useState([]);
 
+  const [activeDuplicate, setActiveDuplicate] = useState(false);
+  const [newName, setNewName] = useState("");
+
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
 
@@ -162,6 +165,16 @@ const Card = ({ item, type, onSelected }) => {
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.swipe, { marginHorizontal: 2, backgroundColor: light.main2 }]}
+        onPress={() => setActiveDuplicate(!activeDuplicate)}
+      >
+        <Ionicons
+          name="copy"
+          size={getFontSize(21)}
+          color={mode === "light" ? dark.main2 : light.main5}
+        />
+      </TouchableOpacity>
     </View>
   );
 
@@ -250,6 +263,40 @@ const Card = ({ item, type, onSelected }) => {
                 <TextStyle color={light.main2}>{changeDate(new Date(item.modificationDate))}</TextStyle>
               </TextStyle>
             </View>
+          </View>
+        )}
+      />
+      <Information
+        modalVisible={activeDuplicate}
+        setModalVisible={setActiveDuplicate}
+        style={{ width: "90%" }}
+        title="DUPLICAR"
+        content={() => (
+          <View>
+            <TextStyle smallParagraph color={textColor}>
+              Escriba el nuevo nombre de la receta a duplicar
+            </TextStyle>
+            <InputStyle
+              stylesContainer={{ borderBottomWidth: 1, borderColor: light.main2 }}
+              placeholder="Nuevo nombre"
+              value={newName}
+              onChangeText={(text) => setNewName(text)}
+            />
+            <ButtonStyle
+              backgroundColor={light.main2}
+              onPress={() => {
+                navigation.navigate("CreateRecipe", {
+                  defaultValue: {
+                    ...item,
+                    name: newName,
+                  },
+                  type,
+                });
+                setNewName("");
+              }}
+            >
+              <TextStyle center>Guardar</TextStyle>
+            </ButtonStyle>
           </View>
         )}
       />

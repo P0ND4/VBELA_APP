@@ -608,11 +608,7 @@ const Main = () => {
           options={{ title: "Configurar mi recibo" }}
         />
         <Stack.Screen name="CreatePerson" component={CreatePerson} />
-        <Stack.Screen
-          name="CreateElement"
-          component={CreateElement}
-          options={{ title: "Crear elemento" }}
-        />
+        <Stack.Screen name="CreateElement" component={CreateElement} />
         <Stack.Screen name="CreateEntryOutput" component={CreateEntryOutput} />
         <Stack.Screen name="EntryOutputInformation" component={EntryOutputInformation} />
         <Stack.Screen
