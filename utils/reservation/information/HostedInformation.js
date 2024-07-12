@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { View, ScrollView, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { useState, useMemo } from "react";
+import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { useSelector } from "react-redux";
 import { thousandsSystem, changeDate } from "@helpers/libs";
 import { useNavigation } from "@react-navigation/native";
@@ -18,12 +18,12 @@ const HostedInformation = ({
   setModalVisible,
   showMore = () => {},
   complement = () => {},
-  updateHosted = () => {},
+  updateHosted,
   settings = {},
   showMoreRight = () => {},
   showMoreLeft = () => {},
   event = () => {},
-  remove = () => {},
+  remove,
 }) => {
   const mode = useSelector((state) => state.mode);
   const orders = useSelector((state) => state.orders);
@@ -51,11 +51,15 @@ const HostedInformation = ({
         onClose={() => setIsOpen(false)}
         style={{ width: "90%" }}
         title="INFORMACIÓN"
-        headerRight={() => (
-          <TouchableOpacity onPress={() => setActiveEdit(!activeEdit)}>
-            <Ionicons name="create-outline" color={textColor} size={30} />
-          </TouchableOpacity>
-        )}
+        headerRight={
+          updateHosted
+            ? () => (
+                <TouchableOpacity onPress={() => setActiveEdit(!activeEdit)}>
+                  <Ionicons name="create-outline" color={textColor} size={30} />
+                </TouchableOpacity>
+              )
+            : () => <></>
+        }
         content={() => (
           <>
             <ScrollView style={{ maxHeight: 360, marginTop: 15 }} showsVerticalScrollIndicator={false}>
@@ -75,7 +79,7 @@ const HostedInformation = ({
                 País: <TextStyle color={light.main2}>{item.country}</TextStyle>
               </TextStyle>
               <TextStyle color={textColor}>
-                Cliente: <TextStyle color={light.main2}>{item?.customer ? "SI" : "NO"}</TextStyle>
+                Cliente: <TextStyle color={light.main2}>{item?.owner ? "SI" : "NO"}</TextStyle>
               </TextStyle>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <TextStyle color={textColor}>CHECK IN: </TextStyle>
@@ -154,9 +158,11 @@ const HostedInformation = ({
                   );
                 })()}
               </View>
-              <ButtonStyle backgroundColor={light.main2} onPress={() => remove()}>
-                <TextStyle center>Eliminar huésped</TextStyle>
-              </ButtonStyle>
+              {remove && (
+                <ButtonStyle backgroundColor={light.main2} onPress={() => remove()}>
+                  <TextStyle center>Eliminar huésped</TextStyle>
+                </ButtonStyle>
+              )}
             </View>
           </>
         )}

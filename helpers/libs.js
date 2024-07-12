@@ -68,10 +68,17 @@ export const addDays = (date, days) => {
   return date;
 };
 
-export const changeDate = (date) => {
-  return `${("0" + date.getDate()).slice(-2)}/${("0" + (date.getMonth() + 1)).slice(
-    -2
-  )}/${date.getFullYear()}`;
+export const changeDate = (date, { time } = {}) => {
+  return `${("0" + date.getDate()).slice(-2)}/${("0" + (date.getMonth() + 1)).slice(-2)}/${String(
+    date.getFullYear()
+  ).slice(-2)} ${
+    time ? `${("0" + date.getHours()).slice(-2)}:${("0" + date.getMinutes()).slice(-2)}` : ""
+  }`;
+};
+
+export const reverseDate = (date) => {
+  const [day, month, year] = date.split("/");
+  return new Date(year, month - 1, day).getTime();
 };
 
 export const thousandsSystem = (number) => {
@@ -98,13 +105,18 @@ export const reduce = (value) => {
 
 export const randomColor = () => "#" + (((1 << 24) * Math.random()) | 0).toString(16).padStart(6, "0");
 
-export const generatePDF = async ({ html, code = random(6, { number: true }) }) => {
+export const generatePDF = async ({
+  html,
+  code = random(6, { number: true }),
+  width = 340,
+  height = 520,
+}) => {
   try {
     const { uri } = await Print.printToFileAsync({
       // VAMOS A SUPUESTAMENTE A IMPRIMIR PARA CONSEGUIR EL PDF
       html, // HTML A UTILIZAR
-      width: 340, // TAMANO DEL PDF (WIDTH)
-      height: 520, // TAMANO DEL PDF (HEIGHT)
+      width, // TAMANO DEL PDF (WIDTH)
+      height, // TAMANO DEL PDF (HEIGHT)
       base64: true, // USAREMOVE BASE64
     });
 
@@ -211,6 +223,23 @@ export const calendarTheme = (mode) => ({
   textMonthFontSize: 18, // TAMANO DE LA LETRA DEL MES
   textDayHeaderFontSize: 16, // TAMANO DEL ENCABEZADO DEL DIA
 });
+
+export const generateBill = (props) => {
+  const { value, description, bills, ref, type = "pay" } = props;
+
+  const id = random(6, { number: true });
+  if (bills.find((b) => b.id === id)) return generateBill(props);
+
+  return {
+    id,
+    ref,
+    value,
+    type,
+    description,
+    creationDate: new Date().getTime(),
+    modificationDate: new Date().getTime(),
+  };
+};
 
 const fontScale = PixelRatio.getFontScale();
 export const getFontSize = (size) => size / fontScale;

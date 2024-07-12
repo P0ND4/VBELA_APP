@@ -42,65 +42,63 @@ const AddPerson = ({
     country: true,
     days: true,
     checkIn: true,
+    city: false,
+    address: false,
     discount: false,
   });
 
   const mode = useSelector((state) => state.mode);
 
-  const [fullName, setFullName] = useState(
-    editing?.active ? editing?.fullName || "" : ""
-  );
+  const [fullName, setFullName] = useState(editing?.fullName || "");
   const [identification, setIdentification] = useState(
     editing?.active ? thousandsSystem(editing?.identification || "") : ""
   );
-  const [phoneNumber, setPhoneNumber] = useState(
-    editing?.active ? editing?.phoneNumber || "" : ""
-  );
-  const [email, setEmail] = useState(
-    editing?.active ? editing?.email || "" : ""
-  );
-  const [country, setCountry] = useState(
-    editing?.active ? editing?.country || "" : ""
-  );
-  const [checkIn, setCheckIn] = useState(
-    editing?.active ? !!editing?.checkIn || false : false
-  );
-  const [days, setDays] = useState(
-    editing?.active ? String(editing?.days || "") : ""
-  );
+  const [phoneNumber, setPhoneNumber] = useState(editing?.phoneNumber || "");
+  const [email, setEmail] = useState(editing?.email || "");
+  const [country, setCountry] = useState(editing?.country || "");
+  const [city, setCity] = useState(editing?.city || "");
+  const [address, setAddress] = useState(editing?.address || "");
+  const [checkIn, setCheckIn] = useState(!!editing?.checkIn || false);
+  const [days, setDays] = useState(editing?.active ? String(editing?.days || "") : "");
   const [discountInput, setDiscountInput] = useState(
     editing?.active ? thousandsSystem(editing?.discount || "") : ""
   );
 
-  useEffect(() => setOptions({...options, ...settings }),[]);
-  
+  useEffect(() => setOptions({ ...options, ...settings }), []);
+
   useEffect(() => {
     register("days", {
-      value: editing?.active ? editing.days || null : null,
+      value: editing?.days || null,
       required: options.days,
     });
-  },[options.days]);
+  }, [options.days]);
 
   useEffect(() => {
     register("fullName", {
-      value: editing?.active ? editing?.fullName || "" : "",
+      value: editing?.fullName || "",
       required: true,
     });
-    register("email", { value: editing?.active ? editing?.email || "" : "" });
+    register("email", { value: editing?.email || "" });
     register("identification", {
-      value: editing?.active ? editing?.identification || "" : "",
+      value: editing?.identification || "",
     });
     register("phoneNumber", {
-      value: editing?.active ? editing?.phoneNumber || "" : "",
+      value: editing?.phoneNumber || "",
     });
     register("country", {
-      value: editing?.active ? editing?.country || "" : "",
+      value: editing?.country || "",
+    });
+    register("city", {
+      value: editing?.city || "",
+    });
+    register("address", {
+      value: editing?.address || "",
     });
     register("checkIn", {
-      value: editing?.active ? editing?.checkIn || null : null,
+      value: editing?.checkIn || null,
     });
     register("discount", {
-      value: editing?.active ? editing?.discount || null : null,
+      value: editing?.discount || null,
     });
   }, []);
 
@@ -118,11 +116,12 @@ const AddPerson = ({
     setValue("identification", "");
     setValue("phoneNumber", "");
     setValue("country", "");
+    setValue("city", "");
+    setValue("address", "");
     setValue("days", null);
     setValue("checkIn", null);
     setValue("discount", null);
-    if (editing && setEditing)
-      setEditing({ key: Math.random(), active: false });
+    if (editing && setEditing) setEditing({ key: Math.random(), active: false });
     setModalVisible(!modalVisible);
   };
 
@@ -166,10 +165,7 @@ const AddPerson = ({
                 />
               </TouchableOpacity>
             </View>
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
+            <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
               {subtitle}
             </TextStyle>
           </View>
@@ -178,11 +174,7 @@ const AddPerson = ({
               <InputStyle
                 value={fullName}
                 placeholder="Nombre Completo"
-                right={
-                  fullName
-                    ? () => <TextStyle color={light.main2}>Nombre</TextStyle>
-                    : null
-                }
+                right={fullName ? () => <TextStyle color={light.main2}>Nombre</TextStyle> : null}
                 maxLength={30}
                 onChangeText={(text) => {
                   setFullName(text);
@@ -198,11 +190,7 @@ const AddPerson = ({
                 <InputStyle
                   value={email}
                   placeholder="Correo electrónico"
-                  right={
-                    email
-                      ? () => <TextStyle color={light.main2}>Correo</TextStyle>
-                      : null
-                  }
+                  right={email ? () => <TextStyle color={light.main2}>Correo</TextStyle> : null}
                   maxLength={40}
                   keyboardType="email-address"
                   onChangeText={(text) => {
@@ -216,16 +204,10 @@ const AddPerson = ({
                   value={identification}
                   placeholder="Cédula"
                   maxLength={15}
-                  right={
-                    identification
-                      ? () => <TextStyle color={light.main2}>Cédula</TextStyle>
-                      : null
-                  }
+                  right={identification ? () => <TextStyle color={light.main2}>Cédula</TextStyle> : null}
                   keyboardType="numeric"
                   onChangeText={(text) => {
-                    setIdentification(
-                      thousandsSystem(text.replace(/[^0-9]/g, ""))
-                    );
+                    setIdentification(thousandsSystem(text.replace(/[^0-9]/g, "")));
                     setValue("identification", text.replace(/[^0-9]/g, ""));
                   }}
                 />
@@ -234,13 +216,7 @@ const AddPerson = ({
                 <InputStyle
                   value={phoneNumber}
                   placeholder="Número de teléfono"
-                  right={
-                    phoneNumber
-                      ? () => (
-                          <TextStyle color={light.main2}>Teléfono</TextStyle>
-                        )
-                      : null
-                  }
+                  right={phoneNumber ? () => <TextStyle color={light.main2}>Teléfono</TextStyle> : null}
                   keyboardType="numeric"
                   maxLength={15}
                   onChangeText={(text) => {
@@ -253,11 +229,7 @@ const AddPerson = ({
                 <InputStyle
                   value={country}
                   placeholder="País"
-                  right={
-                    country
-                      ? () => <TextStyle color={light.main2}>País</TextStyle>
-                      : null
-                  }
+                  right={country ? () => <TextStyle color={light.main2}>País</TextStyle> : null}
                   maxLength={30}
                   onChangeText={(text) => {
                     setCountry(text);
@@ -265,15 +237,35 @@ const AddPerson = ({
                   }}
                 />
               )}
+              {options.city && (
+                <InputStyle
+                  value={city}
+                  placeholder="Ciudad"
+                  right={city ? () => <TextStyle color={light.main2}>Ciudad</TextStyle> : null}
+                  maxLength={30}
+                  onChangeText={(text) => {
+                    setCity(text);
+                    setValue("city", text);
+                  }}
+                />
+              )}
+              {options.address && (
+                <InputStyle
+                  value={address}
+                  placeholder="Dirección"
+                  right={address ? () => <TextStyle color={light.main2}>Dirección</TextStyle> : null}
+                  maxLength={100}
+                  onChangeText={(text) => {
+                    setAddress(text);
+                    setValue("address", text);
+                  }}
+                />
+              )}
               {options.days && (
                 <InputStyle
                   placeholder="Número de días"
                   value={days}
-                  right={
-                    days
-                      ? () => <TextStyle color={light.main2}>Días</TextStyle>
-                      : null
-                  }
+                  right={days ? () => <TextStyle color={light.main2}>Días</TextStyle> : null}
                   keyboardType="numeric"
                   onChangeText={(num) => {
                     setDays(num.replace(/[^0-9]/g, ""));
@@ -294,11 +286,7 @@ const AddPerson = ({
                   placeholder="Descuento"
                   value={discountInput}
                   right={
-                    discountInput
-                      ? () => (
-                          <TextStyle color={light.main2}>Descuento</TextStyle>
-                        )
-                      : null
+                    discountInput ? () => <TextStyle color={light.main2}>Descuento</TextStyle> : null
                   }
                   keyboardType="numeric"
                   onChangeText={(num) => {
@@ -321,10 +309,7 @@ const AddPerson = ({
                     ios_backgroundColor="#3e3e3e"
                     onValueChange={() => {
                       setCheckIn(!checkIn);
-                      setValue(
-                        "checkIn",
-                        !checkIn ? new Date().getTime() : null
-                      );
+                      setValue("checkIn", !checkIn ? new Date().getTime() : null);
                     }}
                     value={checkIn}
                   />
@@ -334,9 +319,7 @@ const AddPerson = ({
           </View>
           <ButtonStyle
             backgroundColor={light.main2}
-            onPress={handleHostedSubmit((data) =>
-              handleSubmit({ data, cleanData })
-            )}
+            onPress={handleHostedSubmit((data) => handleSubmit({ data, cleanData }))}
           >
             <TextStyle center>Guardar</TextStyle>
           </ButtonStyle>

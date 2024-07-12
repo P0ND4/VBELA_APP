@@ -1,7 +1,7 @@
 const { createSlice } = require('@reduxjs/toolkit');
 
 export const accommodationSlice = createSlice({
-  name: 'accommodation',
+  name: 'accommodation-options',
   initialState: [],
   reducers: {
     add: (state, action) => void (state = state.push(action.payload)),

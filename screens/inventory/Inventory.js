@@ -14,6 +14,7 @@ import { useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
 import { thousandsSystem, changeDate, generatePDF, print, getFontSize } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
+import Information from "@components/Information";
 import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -34,6 +35,7 @@ const Inventory = () => {
   const [inventory, setInventory] = useState([]);
   const [activeSearch, setActiveSearch] = useState(false);
   const [search, setSearch] = useState("");
+  const [activeAvanceFilter, setActiveAvanceFilter] = useState(false);
   const [activeFilter, setActiveFilter] = useState(false);
   const [text, setText] = useState("");
 
@@ -53,6 +55,8 @@ const Inventory = () => {
     visible: "",
     aboveReorder: false,
     belowReorder: false,
+    brand: "",
+    reference: "",
     year: "all",
     month: "all",
     day: "all",
@@ -107,9 +111,11 @@ const Inventory = () => {
         [...inventoryInformation].reverse().filter((i) => {
           const removeSymbols = (text) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
           const keyword = removeSymbols(search.toLocaleLowerCase());
-          if (filters.active) {
-            const item = removeSymbols(String(i.name).toLowerCase()).includes(keyword);
 
+          const condition = (text) => removeSymbols(String(text)).toLowerCase().includes(keyword);
+
+          if (filters.active) {
+            const item = condition(i.name) || condition(i.brand) || condition(i.reference);
             if (!item) return;
 
             const stock =
@@ -122,6 +128,8 @@ const Inventory = () => {
               i.output.reduce((a, b) => a + b.currentValue * b.quantity, 0);
 
             if (dateValidation(new Date(i.creationDate))) return;
+            if (filters.brand && filters.brand !== i.brand) return;
+            if (filters.reference && filters.reference !== i.reference) return;
             if (filters.minQuantity && stock < parseInt(filters.minQuantity.replace(/\D/g, ""))) return;
             if (filters.maxQuantity && stock > parseInt(filters.maxQuantity.replace(/\D/g, ""))) return;
             if (filters.minEntry && getTotalEntry() < parseInt(filters.minEntry.replace(/\D/g, "")))
@@ -154,7 +162,7 @@ const Inventory = () => {
             if (filters.belowReorder && stock >= i.reorder) return;
 
             return item;
-          } else return removeSymbols(String(i.name)).toLowerCase().includes(keyword);
+          } else return condition(i.name) || condition(i.brand) || condition(i.reference);
         })
       );
     } else setInventory([...inventoryInformation].reverse());
@@ -331,14 +339,14 @@ const Inventory = () => {
             {thousandsSystem(item.output.reduce((a, b) => a + b.quantity, 0))}
           </TextStyle>
         </TouchableOpacity>
-        <View style={[styles.table, { borderColor: textColor }]}>
-          <TextStyle smallParagraph color={textColor}>
-            <TextStyle smallParagraph color={stock < item.reorder ? "#F70000" : textColor}>
-              {thousandsSystem(stock)}/
-            </TextStyle>
-            <TextStyle smallParagraph color={light.main2}>
-              {thousandsSystem(item.reorder)}
-            </TextStyle>
+        <View
+          style={[styles.table, { borderColor: textColor, flexDirection: "row", alignItems: "center" }]}
+        >
+          <TextStyle verySmall color={stock < item.reorder ? "#F70000" : textColor}>
+            {thousandsSystem(stock)}/
+          </TextStyle>
+          <TextStyle verySmall color={light.main2}>
+            {thousandsSystem(item.reorder)}
           </TextStyle>
         </View>
         <View style={[styles.table, { borderColor: textColor }]}>
@@ -405,6 +413,25 @@ const Inventory = () => {
           )}
         </View>
       </View>
+      {inventory.length > 0 && (
+        <TextStyle color={textColor} smallParagraph>
+          VALOR TOTAL:{" "}
+          {(() => {
+            const total = inventory.reduce((a, b) => {
+              const value =
+                b.entry.reduce((a, b) => a + b.currentValue * b.quantity, 0) -
+                b.output.reduce((a, b) => a + b.currentValue * b.quantity, 0);
+              return a + value;
+            }, 0);
+
+            return (
+              <TextStyle color={total < 0 ? "#F70000" : light.main2} smallParagraph>
+                {thousandsSystem(total || "0")}
+              </TextStyle>
+            );
+          })()}
+        </TextStyle>
+      )}
       {activeSearch && (
         <View
           style={{
@@ -440,25 +467,6 @@ const Inventory = () => {
       {inventory.length === 0 && activeSearch && (
         <TextStyle center color={light.main2} style={{ marginTop: 20 }}>
           NO HAY RESULTADOS
-        </TextStyle>
-      )}
-      {inventory.length > 0 && (
-        <TextStyle color={textColor} smallParagraph>
-          VALOR TOTAL:{" "}
-          {(() => {
-            const total = inventory.reduce((a, b) => {
-              const value =
-                b.entry.reduce((a, b) => a + b.currentValue * b.quantity, 0) -
-                b.output.reduce((a, b) => a + b.currentValue * b.quantity, 0);
-              return a + value;
-            }, 0);
-
-            return (
-              <TextStyle color={total < 0 ? "#F70000" : light.main2} smallParagraph>
-                {thousandsSystem(total || "0")}
-              </TextStyle>
-            );
-          })()}
         </TextStyle>
       )}
       <View
@@ -593,6 +601,7 @@ const Inventory = () => {
                     data={inventory}
                     renderItem={Table}
                     showsVerticalScrollIndicator={false}
+                    initialNumToRender={5}
                     keyExtractor={(item) => item.id}
                     scrollEnabled={false}
                   />
@@ -623,12 +632,136 @@ const Inventory = () => {
           </ButtonStyle>
         </View>
       )}
+      <Information
+        modalVisible={activeFilter}
+        setModalVisible={setActiveFilter}
+        headerRight={() => (
+          <TouchableOpacity
+            onPress={() => {
+              setActiveAvanceFilter(!activeAvanceFilter);
+              setActiveFilter(!activeFilter);
+            }}
+          >
+            <Ionicons name="filter" size={30} color={light.main2} />
+          </TouchableOpacity>
+        )}
+        style={{ width: "90%", backgroundColor: mode === "light" ? light.main4 : dark.main1 }}
+        title="FILTRO"
+        content={() => (
+          <View>
+            <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
+              Para una búsqueda más precisa
+            </TextStyle>
+            <View style={{ marginTop: 10 }}>
+              <View style={{ marginTop: 5 }}>
+                <TextStyle smallParagraph color={textColor}>
+                  Marca
+                </TextStyle>
+                <InputStyle
+                  value={filters.brand}
+                  onChangeText={(text) => setFilters({ ...filters, brand: text })}
+                  placeholder="Marca"
+                  maxLength={20}
+                />
+              </View>
+              <View style={{ marginTop: 5 }}>
+                <TextStyle smallParagraph color={textColor}>
+                  Referencia
+                </TextStyle>
+                <InputStyle
+                  value={filters.reference}
+                  onChangeText={(text) => setFilters({ ...filters, reference: text })}
+                  placeholder="Referencias"
+                  maxLength={20}
+                />
+              </View>
+              <View style={{ marginTop: 5 }}>
+                <ButtonStyle
+                  backgroundColor={backgroundColor}
+                  onPress={() => visibleRef.current?.focus()}
+                >
+                  <View style={styles.row}>
+                    <TextStyle color={filters.visible ? textColor : "#888888"}>
+                      {visibleOptions.find((u) => u.value === filters.visible)?.label}
+                    </TextStyle>
+                    <Ionicons
+                      color={filters.visible ? textColor : "#888888"}
+                      size={getFontSize(15)}
+                      name="caret-down"
+                    />
+                  </View>
+                </ButtonStyle>
+                <View style={{ display: "none" }}>
+                  <Picker
+                    ref={visibleRef}
+                    style={{ opacity: 0 }}
+                    selectedValue={filters.visible}
+                    onValueChange={(value) => setFilters({ ...filters, visible: value })}
+                  >
+                    {visibleOptions.map((u) => (
+                      <Picker.Item
+                        key={u.value}
+                        label={u.label}
+                        value={u.value}
+                        style={{
+                          backgroundColor: backgroundColor,
+                        }}
+                        color={textColor}
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginTop: 20,
+                }}
+              >
+                {filters.active && (
+                  <ButtonStyle
+                    style={{ width: "30%" }}
+                    backgroundColor={backgroundColor}
+                    onPress={() => {
+                      setActiveAvanceFilter(false);
+                      setFilters(initialState);
+                    }}
+                  >
+                    <TextStyle center color={textColor}>
+                      Remover
+                    </TextStyle>
+                  </ButtonStyle>
+                )}
+                <ButtonStyle
+                  onPress={() => {
+                    setActiveAvanceFilter(!activeAvanceFilter);
+                    const compare = { ...filters, active: false };
+
+                    if (JSON.stringify(compare) === JSON.stringify(initialState)) {
+                      setFilters(initialState);
+                      return;
+                    }
+                    setFilters({ ...filters, active: true });
+                  }}
+                  backgroundColor={light.main2}
+                  style={{
+                    width: filters.active ? "65%" : "99%",
+                  }}
+                >
+                  <TextStyle center>Buscar</TextStyle>
+                </ButtonStyle>
+              </View>
+            </View>
+          </View>
+        )}
+      />
       <Modal
         animationType="slide"
         transparent={true}
-        visible={activeFilter}
+        visible={activeAvanceFilter}
         onRequestClose={() => {
-          setActiveFilter(!activeFilter);
+          setActiveAvanceFilter(!activeAvanceFilter);
           setFilters(initialState);
         }}
       >
@@ -642,11 +775,11 @@ const Inventory = () => {
             <View>
               <View style={styles.row}>
                 <TextStyle bigSubtitle color={light.main2} bold>
-                  FILTRA
+                  FILTRO AVANZADO
                 </TextStyle>
                 <TouchableOpacity
                   onPress={() => {
-                    setActiveFilter(false);
+                    setActiveAvanceFilter(false);
                     setFilters(initialState);
                   }}
                 >
@@ -658,7 +791,29 @@ const Inventory = () => {
               </TextStyle>
             </View>
             <View style={{ marginTop: 6 }}>
-              <View style={[styles.row, { marginTop: 15 }]}>
+              <View style={{ marginTop: 5 }}>
+                <TextStyle smallParagraph color={textColor}>
+                  Marca
+                </TextStyle>
+                <InputStyle
+                  value={filters.brand}
+                  onChangeText={(text) => setFilters({ ...filters, brand: text })}
+                  placeholder="Marca"
+                  maxLength={20}
+                />
+              </View>
+              <View style={{ marginTop: 5 }}>
+                <TextStyle smallParagraph color={textColor}>
+                  Referencia
+                </TextStyle>
+                <InputStyle
+                  value={filters.reference}
+                  onChangeText={(text) => setFilters({ ...filters, reference: text })}
+                  placeholder="Referencias"
+                  maxLength={20}
+                />
+              </View>
+              <View style={[styles.row, { marginTop: 5 }]}>
                 <View style={{ width: "48%" }}>
                   <TextStyle smallParagraph color={textColor}>
                     Cantidad MIN
@@ -691,7 +846,7 @@ const Inventory = () => {
                 </View>
               </View>
 
-              <View style={[styles.row, { marginTop: 15 }]}>
+              <View style={[styles.row, { marginTop: 5 }]}>
                 <View style={{ width: "48%" }}>
                   <TextStyle smallParagraph color={textColor}>
                     Entrada MIN
@@ -723,7 +878,7 @@ const Inventory = () => {
                   />
                 </View>
               </View>
-              <View style={[styles.row, { marginTop: 15 }]}>
+              <View style={[styles.row, { marginTop: 5 }]}>
                 <View style={{ width: "48%" }}>
                   <TextStyle smallParagraph color={textColor}>
                     Salida MIN
@@ -756,7 +911,7 @@ const Inventory = () => {
                 </View>
               </View>
 
-              <View style={[styles.row, { marginTop: 15 }]}>
+              <View style={[styles.row, { marginTop: 5 }]}>
                 <View style={{ width: "48%" }}>
                   <TextStyle smallParagraph color={textColor}>
                     Valor MIN
@@ -789,7 +944,7 @@ const Inventory = () => {
                 </View>
               </View>
 
-              <View style={[styles.row, { marginTop: 15 }]}>
+              <View style={[styles.row, { marginTop: 5 }]}>
                 <View style={{ width: "48%" }}>
                   <TextStyle smallParagraph color={textColor}>
                     Punto de reorden MIN
@@ -834,7 +989,7 @@ const Inventory = () => {
                 onChangeMonth={(value) => setFilters({ ...filters, month: value })}
                 onChangeYear={(value) => setFilters({ ...filters, year: value })}
               />
-              <View style={{ marginTop: 15 }}>
+              <View style={{ marginTop: 5 }}>
                 <ButtonStyle backgroundColor={backgroundColor} onPress={() => unitRef.current?.focus()}>
                   <View style={styles.row}>
                     <TextStyle color={filters.unit ? textColor : "#888888"}>
@@ -870,7 +1025,7 @@ const Inventory = () => {
                 </View>
               </View>
 
-              <View style={{ marginTop: 15 }}>
+              <View style={{ marginTop: 5 }}>
                 <ButtonStyle
                   backgroundColor={backgroundColor}
                   onPress={() => visibleRef.current?.focus()}
@@ -909,7 +1064,7 @@ const Inventory = () => {
                 </View>
               </View>
 
-              <View style={[styles.row, { marginTop: 15 }]}>
+              <View style={[styles.row, { marginTop: 5 }]}>
                 <TextStyle verySmall color={light.main2}>
                   Solo los que esten encima del punto de reorden
                 </TextStyle>
@@ -928,7 +1083,7 @@ const Inventory = () => {
                 />
               </View>
 
-              <View style={[styles.row, { marginTop: 15 }]}>
+              <View style={[styles.row, { marginTop: 5 }]}>
                 <TextStyle verySmall color={light.main2}>
                   Solo los que esten por debajo del punto de reorden
                 </TextStyle>
@@ -959,7 +1114,7 @@ const Inventory = () => {
                   style={{ width: "30%" }}
                   backgroundColor={backgroundColor}
                   onPress={() => {
-                    setActiveFilter(false);
+                    setActiveAvanceFilter(false);
                     setFilters(initialState);
                   }}
                 >
@@ -970,7 +1125,7 @@ const Inventory = () => {
               )}
               <ButtonStyle
                 onPress={() => {
-                  setActiveFilter(!activeFilter);
+                  setActiveAvanceFilter(!activeAvanceFilter);
                   const compare = { ...filters, active: false };
 
                   if (JSON.stringify(compare) === JSON.stringify(initialState)) {

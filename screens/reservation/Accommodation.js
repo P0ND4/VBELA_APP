@@ -612,7 +612,7 @@ const Accommodation = ({ navigation }) => {
             style={{ width: "auto", paddingHorizontal: 12 }}
             onPress={() => setRoute(route === "hosted" ? "" : "hosted")}
           >
-            <TextStyle smallParagraph center color={route === "hosted" ? textColor : light.textDark}>
+            <TextStyle verySmall center color={route === "hosted" ? textColor : light.textDark}>
               ALOJADOS
             </TextStyle>
           </ButtonStyle>
@@ -621,11 +621,7 @@ const Accommodation = ({ navigation }) => {
             style={{ width: "auto", paddingHorizontal: 12 }}
             onPress={() => setRoute(route === "reservation" ? "" : "reservation")}
           >
-            <TextStyle
-              smallParagraph
-              center
-              color={route === "reservation" ? textColor : light.textDark}
-            >
+            <TextStyle verySmall center color={route === "reservation" ? textColor : light.textDark}>
               RESERVAS
             </TextStyle>
           </ButtonStyle>
@@ -634,7 +630,7 @@ const Accommodation = ({ navigation }) => {
             style={{ width: "auto", paddingHorizontal: 12 }}
             onPress={() => setRoute(route === "location" ? "" : "location")}
           >
-            <TextStyle smallParagraph center color={route === "location" ? textColor : light.textDark}>
+            <TextStyle verySmall center color={route === "location" ? textColor : light.textDark}>
               UBICACIÓN
             </TextStyle>
           </ButtonStyle>
@@ -643,7 +639,7 @@ const Accommodation = ({ navigation }) => {
             style={{ width: "auto", paddingHorizontal: 12 }}
             onPress={() => setRoute(route === "historical" ? "" : "historical")}
           >
-            <TextStyle smallParagraph center color={route === "historical" ? textColor : light.textDark}>
+            <TextStyle verySmall center color={route === "historical" ? textColor : light.textDark}>
               HISTORIAL
             </TextStyle>
           </ButtonStyle>

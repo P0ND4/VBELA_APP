@@ -293,9 +293,9 @@ const SupplierInformation = ({ route }) => {
     <img
     src="${Image.resolveAssetSource(Logo).uri}" 
     style="width: 22vw; display: block; margin: 0 auto; border-radius: 8px" />
-    <p style="font-size: 30px; text-align: center">vbelapp.com</p>
+    <p style="font-size: 25px; text-align: center">vbelapp.com</p>
     </view>
-    <p style="font-size: 30px; text-align: center; margin: 20px 0; background-color: #444444; padding: 10px 0; color: #FFFFFF">DETALLES - ${
+    <p style="font-size: 25px; text-align: center; margin: 20px 0; background-color: #444444; padding: 10px 0; color: #FFFFFF">DETALLES - ${
       type === "individual" ? "ESPECÍFICO" : "GENERAL"
     }</p>    
         <view>
@@ -307,41 +307,41 @@ const SupplierInformation = ({ route }) => {
             `<table style="width: 100%; margin: 20px 0; border: 1px solid #444444;">
             <tr>
               <td style="text-align: left; border: 1px solid #444444;">
-                <p style="font-size: 28px; font-weight: 600;">${
+                <p style="font-size: 23px; font-weight: 600;">${
                   supplier ? supplier.name.toUpperCase() : "ELIMINADO"
                 }</p>
               </td>
               <td style="text-align: left; border: 1px solid #444444;">
-                <p style="font-size: 28px; font-weight: 600;">${item.name.toUpperCase()}</p>
+                <p style="font-size: 23px; font-weight: 600;">${item.name.toUpperCase()}</p>
               </td>
             </tr>
             <tr/>
             <tr>
               <td style="text-align: left; border: 1px solid #444444;">
-                <p style="font-size: 28px; font-weight: 600;">Creación</p>
+                <p style="font-size: 23px; font-weight: 600;">Creación</p>
               </td>
               <td style="text-align: right; border: 1px solid #444444;">
-                <p style="font-size: 28px; font-weight: 600;">
+                <p style="font-size: 23px; font-weight: 600;">
                   ${changeDate(new Date(item.creationDate))}
                 </p>
               </td>
             </tr>
             <tr>
               <td style="text-align: left; border: 1px solid #444444;">
-                <p style="font-size: 28px; font-weight: 600;">Modificación</p>
+                <p style="font-size: 23px; font-weight: 600;">Modificación</p>
               </td>
               <td style="text-align: right; border: 1px solid #444444;">
-                <p style="font-size: 28px; font-weight: 600;">
+                <p style="font-size: 23px; font-weight: 600;">
                   ${changeDate(new Date(item.modificationDate))}
                 </p>
               </td>
             </tr>
             <tr>
               <td style="text-align: left; border: 1px solid #444444;">
-                <p style="font-size: 28px; font-weight: 600;">Total</p>
+                <p style="font-size: 23px; font-weight: 600;">Total</p>
               </td>
               <td style="text-align: right; border: 1px solid #444444;">
-                <p style="font-size: 28px; font-weight: 600;">
+                <p style="font-size: 23px; font-weight: 600;">
                   ${thousandsSystem(item.amount)}
                 </p>
               </td>
@@ -349,12 +349,12 @@ const SupplierInformation = ({ route }) => {
             <tr/>
             <tr>
               <td style="text-align: left; grid-column: span 2; border: 1px solid #444444;">
-                <p style="font-size: 28px; font-weight: 600;">${
+                <p style="font-size: 23px; font-weight: 600;">${
                   item.amount !== item.payment ? "PENDIENTE" : "PAGADO"
                 }</p>
               </td>
               <td style="text-align: right; border: 1px solid #444444;">
-                <p style="font-size: 28px; font-weight: 600;">
+                <p style="font-size: 23px; font-weight: 600;">
                   ${item.amount - item.payment > 0 ? thousandsSystem(item.amount - item.payment) : ""}
                 </p>
               </td>

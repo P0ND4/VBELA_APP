@@ -10,11 +10,12 @@ import {
 } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import { useSelector, useDispatch } from "react-redux";
-import { getFontSize, thousandsSystem } from "@helpers/libs";
+import { getFontSize, thousandsSystem, changeDate } from "@helpers/libs";
 import { useNavigation } from "@react-navigation/native";
 import { removePerson } from "@api";
 import { removeManyByRef } from "@features/function/economySlice";
 import { remove as RSupplier } from "@features/people/suppliersSlice";
+import Information from "@components/Information";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
@@ -35,6 +36,7 @@ const Card = ({ item }) => {
 
   const navigation = useNavigation();
 
+  const [informationVisible, setInformationVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isName, setIsName] = useState(true);
   const [amount, setAmount] = useState(null);
@@ -168,114 +170,169 @@ const Card = ({ item }) => {
     </View>
   );
 
+  const leftSwipe = () => (
+    <View style={{ justifyContent: "center" }}>
+      <TouchableOpacity
+        style={[styles.swipe, { marginHorizontal: 2, backgroundColor: light.main2 }]}
+        onPress={() => setInformationVisible(!informationVisible)}
+      >
+        <Ionicons
+          name="information-circle-outline"
+          color={mode === "light" ? dark.main2 : light.main5}
+          size={getFontSize(21)}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+
   const SwipeableValidation = (
     { condition, children } //TODO COLOCARSELO A TODOS LOS QUE TENGA ESTO
   ) =>
     condition ? (
-      <Swipeable renderRightActions={rightSwipe}>{children}</Swipeable>
+      <Swipeable renderLeftActions={leftSwipe} renderRightActions={rightSwipe}>
+        {children}
+      </Swipeable>
     ) : (
       <View>{children}</View>
     );
 
   return (
-    <SwipeableValidation condition={!isOpen}>
-      <View style={[styles.card, { backgroundColor: mode === "light" ? light.main5 : dark.main2 }]}>
-        <TouchableOpacity onPress={() => setIsOpen(!isOpen)} style={styles.row}>
-          <TouchableOpacity onPress={() => item.identification && setIsName(!isName)}>
-            <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
-              {isName
-                ? item?.name?.slice(0, 15) + `${item?.name?.length >= 15 ? "..." : ""}`
-                : thousandsSystem(item?.identification)}
-            </TextStyle>
+    <>
+      <SwipeableValidation condition={!isOpen}>
+        <View style={[styles.card, { backgroundColor: mode === "light" ? light.main5 : dark.main2 }]}>
+          <TouchableOpacity onPress={() => setIsOpen(!isOpen)} style={styles.row}>
+            <TouchableOpacity onPress={() => item.identification && setIsName(!isName)}>
+              <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
+                {isName
+                  ? item?.name?.slice(0, 15) + `${item?.name?.length >= 15 ? "..." : ""}`
+                  : thousandsSystem(item?.identification)}
+              </TextStyle>
+            </TouchableOpacity>
+            {amount !== null && paid !== null ? (
+              <TextStyle color={light.main2}>
+                {thousandsSystem(amount)}/{thousandsSystem(paid)}
+              </TextStyle>
+            ) : (
+              <ActivityIndicator size="small" color={light.main2} />
+            )}
           </TouchableOpacity>
-          {amount !== null && paid !== null ? (
-            <TextStyle color={light.main2}>
-              {thousandsSystem(amount)}/{thousandsSystem(paid)}
-            </TextStyle>
-          ) : (
-            <ActivityIndicator size="small" color={light.main2} />
-          )}
-        </TouchableOpacity>
-        {isOpen && (
-          <View style={{ marginTop: 15 }}>
-            <View style={styles.row}>
-              <ButtonStyle
-                backgroundColor={mode === "light" ? dark.main2 : light.main5}
-                style={{ width: SCREEN_WIDTH / 2.4 }}
-                onPress={() => {
-                  navigation.navigate("CreateEconomy", {
-                    type: "purchase",
-                    ref: item.id,
-                  });
-                }}
-              >
-                <TextStyle paragrahp center color={mode === "light" ? dark.textWhite : light.textDark}>
-                  Compra / Costos
-                </TextStyle>
-              </ButtonStyle>
-              <ButtonStyle
-                style={{ width: SCREEN_WIDTH / 2.4 }}
-                backgroundColor={mode === "light" ? dark.main2 : light.main5}
-                onPress={() => {
-                  navigation.navigate("CreateEconomy", {
-                    type: "expense",
-                    ref: item.id,
-                  });
-                }}
-              >
-                <TextStyle paragrahp color={mode === "light" ? dark.textWhite : light.textDark} center>
-                  Gasto / Inversión
-                </TextStyle>
-              </ButtonStyle>
+          {isOpen && (
+            <View style={{ marginTop: 15 }}>
+              <View style={styles.row}>
+                <ButtonStyle
+                  backgroundColor={mode === "light" ? dark.main2 : light.main5}
+                  style={{ width: SCREEN_WIDTH / 2.4 }}
+                  onPress={() => {
+                    navigation.navigate("CreateEconomy", {
+                      type: "purchase",
+                      ref: item.id,
+                    });
+                  }}
+                >
+                  <TextStyle paragrahp center color={mode === "light" ? dark.textWhite : light.textDark}>
+                    Compra / Costos
+                  </TextStyle>
+                </ButtonStyle>
+                <ButtonStyle
+                  style={{ width: SCREEN_WIDTH / 2.4 }}
+                  backgroundColor={mode === "light" ? dark.main2 : light.main5}
+                  onPress={() => {
+                    navigation.navigate("CreateEconomy", {
+                      type: "expense",
+                      ref: item.id,
+                    });
+                  }}
+                >
+                  <TextStyle paragrahp color={mode === "light" ? dark.textWhite : light.textDark} center>
+                    Gasto / Inversión
+                  </TextStyle>
+                </ButtonStyle>
+              </View>
+              <View style={styles.row}>
+                <ButtonStyle
+                  backgroundColor={light.main2}
+                  style={{ flexGrow: 1, width: "auto" }}
+                  onPress={() => {
+                    navigation.navigate("SupplierInformation", {
+                      type: "individual",
+                      id: item.id,
+                    });
+                  }}
+                >
+                  <TextStyle center paragrahp>
+                    Detalles
+                  </TextStyle>
+                </ButtonStyle>
+                <ButtonStyle
+                  backgroundColor={light.main2}
+                  style={{ flexGrow: 1, width: "auto", marginHorizontal: 4 }}
+                  onPress={() => {
+                    navigation.navigate("CreateEntryOutput", {
+                      type: "entry",
+                      supplier: item.id,
+                    });
+                  }}
+                >
+                  <TextStyle center paragrahp>
+                    Entrada
+                  </TextStyle>
+                </ButtonStyle>
+                <ButtonStyle
+                  backgroundColor={light.main2}
+                  style={{ flexGrow: 1, width: "auto" }}
+                  onPress={() => {
+                    navigation.navigate("CreateEntryOutput", {
+                      type: "output",
+                      supplier: item.id,
+                    });
+                  }}
+                >
+                  <TextStyle center paragrahp>
+                    Salida
+                  </TextStyle>
+                </ButtonStyle>
+              </View>
             </View>
-            <View style={styles.row}>
-              <ButtonStyle
-                backgroundColor={light.main2}
-                style={{ flexGrow: 1, width: "auto" }}
-                onPress={() => {
-                  navigation.navigate("SupplierInformation", {
-                    type: "individual",
-                    id: item.id,
-                  });
-                }}
-              >
-                <TextStyle center paragrahp>
-                  Detalles
-                </TextStyle>
-              </ButtonStyle>
-              <ButtonStyle
-                backgroundColor={light.main2}
-                style={{ flexGrow: 1, width: "auto", marginHorizontal: 4 }}
-                onPress={() => {
-                  navigation.navigate("CreateEntryOutput", {
-                    type: "entry",
-                    supplier: item.id,
-                  });
-                }}
-              >
-                <TextStyle center paragrahp>
-                  Entrada
-                </TextStyle>
-              </ButtonStyle>
-              <ButtonStyle
-                backgroundColor={light.main2}
-                style={{ flexGrow: 1, width: "auto" }}
-                onPress={() => {
-                  navigation.navigate("CreateEntryOutput", {
-                    type: "output",
-                    supplier: item.id,
-                  });
-                }}
-              >
-                <TextStyle center paragrahp>
-                  Salida
-                </TextStyle>
-              </ButtonStyle>
+          )}
+        </View>
+      </SwipeableValidation>
+      <Information
+        modalVisible={informationVisible}
+        setModalVisible={setInformationVisible}
+        style={{ width: "90%" }}
+        title="INFORMACIÓN"
+        content={() => (
+          <View>
+            <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
+              Más información del proveedor
+            </TextStyle>
+            <View style={{ marginTop: 10 }}>
+              <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
+                Nombre: <TextStyle color={light.main2}>{item.name}</TextStyle>
+              </TextStyle>
+              <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
+                Identificación:{" "}
+                <TextStyle color={light.main2}>{thousandsSystem(item.identification)}</TextStyle>
+              </TextStyle>
+              <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
+                Dirección: <TextStyle color={light.main2}>{item.address}</TextStyle>
+              </TextStyle>
+              <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
+                Número de teléfono: <TextStyle color={light.main2}>{item.phoneNumber}</TextStyle>
+              </TextStyle>
+              <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
+                Creación:{" "}
+                <TextStyle color={light.main2}>{changeDate(new Date(item.creationDate))}</TextStyle>
+              </TextStyle>
+              <TextStyle color={mode === "light" ? light.textDark : dark.textWhite}>
+                Modificación:{" "}
+                <TextStyle color={light.main2}>{changeDate(new Date(item.modificationDate))}</TextStyle>
+              </TextStyle>
             </View>
           </View>
         )}
-      </View>
-    </SwipeableValidation>
+      />
+    </>
   );
 };
 
@@ -337,9 +394,15 @@ const Supplier = ({ navigation }) => {
   return (
     <Layout>
       <View style={styles.row}>
-        <TextStyle subtitle color={mode === "light" ? light.textDark : dark.textWhite}>
-          General
-        </TextStyle>
+        <ButtonStyle
+          style={{ width: SCREEN_WIDTH / 2.5, marginVertical: 0 }}
+          onPress={() => navigation.navigate("CreatePerson", { type: "supplier" })}
+          backgroundColor={light.main2}
+        >
+          <TextStyle center smallParagraph>
+            CREAR PROVEEDOR
+          </TextStyle>
+        </ButtonStyle>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           {suppliers.length !== 0 && (
             <TouchableOpacity
@@ -357,12 +420,6 @@ const Supplier = ({ navigation }) => {
             onPress={() => navigation.navigate("SupplierInformation", { type: "general" })}
           >
             <Ionicons name="document-text" size={getFontSize(28)} color={light.main2} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{ marginHorizontal: 4 }}
-            onPress={() => navigation.navigate("CreatePerson", { type: "supplier" })}
-          >
-            <Ionicons name="add-circle" size={getFontSize(28)} color={light.main2} />
           </TouchableOpacity>
         </View>
       </View>
@@ -465,7 +522,7 @@ const styles = StyleSheet.create({
     marginVertical: 3,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 2,
   },
   swipe: {
     marginHorizontal: 2,

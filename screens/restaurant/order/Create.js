@@ -11,10 +11,11 @@ import {
   Alert,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { getFontSize, thousandsSystem, random } from "@helpers/libs";
-import { orderHandler, removeOrder } from "@api";
+import { getFontSize, thousandsSystem, random, generateBill } from "@helpers/libs";
+import { orderHandler, editUser } from "@api";
 import { add, edit, remove } from "@features/tables/ordersSlice";
 import { add as addK, removeMany as removeManyK } from "@features/tables/kitchenSlice";
+import { add as addB } from "@features/people/billsSlice";
 import helperNotification from "@helpers/helperNotification";
 import Count from "@utils/order/components/Count";
 import FrontPage from "@utils/product/components/FrontPage";
@@ -36,6 +37,9 @@ const Order = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const helperStatus = useSelector((state) => state.helperStatus);
   const recipes = useSelector((state) => state.recipes);
+  const customers = useSelector((state) => state.customers);
+  const bills = useSelector((state) => state.bills);
+  const orders = useSelector((state) => state.orders);
 
   const initialState = {
     active: false,
@@ -198,7 +202,19 @@ const Order = ({ route, navigation }) => {
     } else Alert.alert("El carrito está vacío", "No hay productos nuevos para enviarlo a cocina");
   };
 
-  const removeO = async () => {
+  const removeO = () => {
+    const send = async ({ change }) => {
+      dispatch(removeManyK({ ref: order?.id }));
+      dispatch(remove({ id: order?.id }));
+      navigation.pop();
+
+      await editUser({
+        identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+        change,
+        helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
+      });
+    };
+
     Alert.alert("Eliminar", "¿Desea eliminar la orden?", [
       {
         text: "No",
@@ -207,15 +223,47 @@ const Order = ({ route, navigation }) => {
       {
         text: "Si",
         onPress: async () => {
-          dispatch(removeManyK({ ref: order?.id }));
-          dispatch(remove({ id: order?.id }));
-          navigation.pop();
+          let change = { orders: orders.filter((o) => o.id !== order?.id) };
 
-          await removeOrder({
-            identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
-            id: order?.id,
-            helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
-          });
+          // ZONA DE REEMBOLSO SI ES UN CLIENTE
+          const customerFound = customers.find(
+            ({ id, clientList }) => id === ref || clientList?.some((c) => c.id === ref)
+          );
+
+          // LO QUE HA PAGADO EL CLIENTE
+          const value = order?.selection.reduce((a, { method }) => {
+            const filtered = method.filter((m) => m.method !== "credit");
+            return a + filtered.reduce((a, b) => a + b.total, 0);
+          }, 0);
+
+          // SI EXISTE EL CLIENTE COLOCA LA FACTURA DE REEMBOLSO
+          if (customerFound && value > 0) {
+            Alert.alert(
+              "¿ESTÁ SEGURO?",
+              "Se le emitirá un reembolso al cliente por no haber culminado el servicio",
+              [
+                { text: "No estoy seguro", style: "cancel" },
+                {
+                  text: "Estoy seguro",
+                  onPress: async () => {
+                    const bill = generateBill({
+                      value,
+                      ref: customerFound.id,
+                      type: "refund",
+                      description: `Al cliente se le emitió un reembolso en el restaurante por no haber culminado la compra, se le reembolsó un monto de: ${thousandsSystem(
+                        value
+                      )}`,
+                      bills,
+                    });
+
+                    dispatch(addB(bill));
+                    await send({ change: { ...change, bills: [...bills, bill] } });
+                  },
+                },
+              ],
+              { cancelable: true }
+            );
+          } else await send({ change });
         },
       },
     ]);

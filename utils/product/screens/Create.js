@@ -175,7 +175,7 @@ const Create = ({ item, categoryOptions = [], onSubmit, onRemove, type }) => {
                     setValue("name", text);
                     setName(text);
                   }}
-                  maxLength={16}
+                  maxLength={32}
                 />
                 {errors.name?.type && (
                   <TextStyle verySmall color={light.main2}>

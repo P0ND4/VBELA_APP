@@ -193,3 +193,9 @@ export const addRecipe = async (data) => await connect({ data, url: "/recipe/add
 export const editRecipe = async (data) => await connect({ data, url: "/recipe/edit" });
 
 export const removeRecipe = async (data) => await connect({ data, url: "/recipe/remove" });
+
+export const addBill = async (data) => await connect({ data, url: "/bill/add" });
+
+export const editBill = async (data) => await connect({ data, url: "/bill/edit" });
+
+export const removeBill = async (data) => await connect({ data, url: "/bill/remove" });

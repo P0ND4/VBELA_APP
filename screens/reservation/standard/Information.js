@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { View, TouchableOpacity, StyleSheet, FlatList, ScrollView, Alert, Image } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { getFontSize, thousandsSystem, changeDate } from "@helpers/libs";
+import { getFontSize, thousandsSystem, changeDate, generateBill } from "@helpers/libs";
 import { remove, edit } from "@features/zones/standardReservationsSlice";
+import { add as addB } from "@features/people/billsSlice";
 import { editReservation, removeReservation } from "@api";
 import Logo from "@assets/logo.png";
 import helperNotification from "@helpers/helperNotification";
@@ -22,6 +23,8 @@ const Table = ({ item, reserve, event, deleteReservation }) => {
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
   const mode = useSelector((state) => state.mode);
+  const bills = useSelector((state) => state.bills);
+  const customers = useSelector((state) => state.customers);
 
   const [showInformationModal, setShowInformationModal] = useState(false);
 
@@ -44,10 +47,36 @@ const Table = ({ item, reserve, event, deleteReservation }) => {
           onPress: async () => {
             const hostedUpdated = reserve?.hosted.filter((h) => h.id !== item.id);
             if (!hostedUpdated.length) return deleteReservation();
+
+            let change = {};
+
+            // SI EXISTE UN CLIENTE REGISTRADO Y ESTA PAGADO QUE LO REEMBOLSE
+            const customerFound = customers.find(
+              ({ id, clientList }) => id === item.owner || clientList?.some((c) => c.id === item.owner)
+            );
+            const value = reserve.payment.reduce((a, b) => a + b.amount, 0);
+
+            // REEMBOLSAR EL DINERO AL CLIENTE
+            if (customerFound && value > 0) {
+              const bill = generateBill({
+                value,
+                ref: customerFound.id,
+                type: "refund",
+                description: `Se le ha emitido un reembolso a un cliente porque el huésped que estaba en el alojamiento estandar ha sido eliminado por un monto de: ${thousandsSystem(
+                  value
+                )}
+                `,
+                bills,
+              });
+              dispatch(addB(bill));
+              change = { bills: [bill] };
+            }
+
             const reserveUpdated = { ...reserve, hosted: hostedUpdated };
             dispatch(edit({ id: reserve.id, data: reserveUpdated }));
             await editReservation({
               identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+              ...change,
               reservation: {
                 data: reserveUpdated,
                 type: "standard",
@@ -135,6 +164,8 @@ const Information = ({ route, navigation }) => {
   const standardReservations = useSelector((state) => state.standardReservations);
   const helperStatus = useSelector((state) => state.helperStatus);
   const nomenclatures = useSelector((state) => state.nomenclatures);
+  const bills = useSelector((state) => state.bills);
+  const customers = useSelector((state) => state.customers);
 
   const [reserve, setReserve] = useState(null);
   const [reservePayment, setReservePayment] = useState(null);
@@ -364,11 +395,37 @@ const Information = ({ route, navigation }) => {
     );
   };
 
+  const createBills = ({ hosted, type = "pay", description, value }) => {
+    if (value === 0) return [];
+
+    const IDS = hosted.reduce((acc, b) => {
+      const { id } = customers.find(
+        ({ id, clientList }) => id === b?.owner || clientList?.some((c) => c.id === b?.owner)
+      );
+      if (acc.includes(id)) return acc;
+      return [...acc, id];
+    }, []);
+
+    return IDS.reduce((a, ref) => [...a, generateBill({ value, ref, type, description, bills })], []);
+  };
+
   const deleteReservation = async () => {
+    const value = reserve.payment.reduce((a, b) => a + b.amount, 0);
+    const billsToCreate = createBills({
+      hosted: reserve.hosted,
+      type: "refund",
+      description: `Se le ha emitido un reembolso a un cliente porque el alojamiento estandar ha sido cancelado (eliminado) por un monto de: ${thousandsSystem(
+        value
+      )}`,
+      value,
+    });
+
+    dispatch(addB(billsToCreate));
     dispatch(remove({ id: reserve?.id }));
     navigation.pop();
     await removeReservation({
       identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+      bills: billsToCreate,
       reservation: {
         identifier: reserve?.id,
         type: "standard",
@@ -394,19 +451,31 @@ const Information = ({ route, navigation }) => {
     onClose,
   }) => {
     const reserveUpdated = { ...reserve };
+    let change = {};
 
     if (total - payment > amount) reserveUpdated.status = "pending";
     if (total - payment === amount || tip) reserveUpdated.status = "paid";
     if (paymentByBusiness) reserveUpdated.status = "business";
 
-    if (!paymentByBusiness)
+    if (!paymentByBusiness) {
+      const billsToCreate = createBills({
+        hosted: reserve.hosted,
+        description: `El cliente ha pagado un alojamiento estandar por un monto de: ${thousandsSystem(
+          amount
+        )}`,
+        value: amount,
+      });
+      dispatch(addB(billsToCreate));
+      change = { bills: billsToCreate };
       reserveUpdated.payment = [...reserve.payment, { method: paymentMethod, amount }];
+    }
 
     setShowPaymentManagement(false);
     onClose();
     dispatch(edit({ id: reserve.id, data: reserveUpdated }));
     await editReservation({
       identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+      ...change,
       reservation: {
         data: reserveUpdated,
         type: "standard",
@@ -427,10 +496,21 @@ const Information = ({ route, navigation }) => {
         {
           text: "Estoy seguro",
           onPress: async () => {
+            const value = reserve.payment.reduce((a, b) => a + b.amount, 0);
+            const billsToCreate = createBills({
+              hosted: reserve.hosted,
+              type: "refund",
+              description: `Se le ha emitido un reembolso a un cliente porque ha cancelado el pago en un alojamiento estandar por un monto de: ${thousandsSystem(
+                value
+              )}`,
+              value,
+            });
             const reserveUpdated = { ...reserve, payment: [], status: null };
             dispatch(edit({ id: reserve.id, data: reserveUpdated }));
+            dispatch(addB(billsToCreate));
             await editReservation({
               identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+              bills: billsToCreate,
               reservation: {
                 data: reserveUpdated,
                 type: "standard",

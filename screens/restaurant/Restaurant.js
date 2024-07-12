@@ -137,9 +137,11 @@ const Tables = ({ navigation }) => {
         </TextStyle>
       </View>
       <View>
-        <TextStyle bigParagraph style={{ marginVertical: 30 }} color={textColor}>
-          Mesas
-        </TextStyle>
+        <View style={[styles.row, { marginVertical: 30 }]}>
+          <TextStyle bigParagraph color={textColor}>
+            Mesas
+          </TextStyle>
+        </View>
         {found !== null ? (
           <FlatList
             data={found}

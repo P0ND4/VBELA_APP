@@ -12,15 +12,16 @@ import { change as changeCustomers } from "@features/people/customersSlice";
 import { change as changeSuppliers } from "@features/people/suppliersSlice";
 import { change as changeInventory } from "@features/inventory/informationSlice";
 import { change as changeProducts } from "@features/sales/productsSlice";
-import { change as changeSlice } from "@features/sales/salesSlice";
-import { change as changeAccommodations } from "@features/zones/accommodationsSlice";
+import { change as changeSales } from "@features/sales/salesSlice";
+import { change as changeAccommodationOptions } from "@features/zones/accommodationOptionsSlice";
 import { change as changeGroups } from "@features/sales/groupsSlice";
 import { change as changeRecipes } from "@features/sales/recipesSlice";
+import { change as changeBills } from "@features/people/billsSlice";
 
 export default changeGeneralInformation = (dispatch, data) => {
   dispatch(changeZones(data.zones));
-  dispatch(changeAccommodationReservations(data.reservations.accommodation));
-  dispatch(changeStandardReservations(data.reservations.standard));
+  dispatch(changeAccommodationReservations(data.accommodation));
+  dispatch(changeStandardReservations(data.standard));
   dispatch(changeNomenclatures(data.nomenclatures));
   dispatch(changeTables(data.tables));
   dispatch(changeOrders(data.orders));
@@ -28,12 +29,13 @@ export default changeGeneralInformation = (dispatch, data) => {
   dispatch(changeMenu(data.menu));
   dispatch(changeKitchen(data.kitchen));
   dispatch(changeRoster(data.roster));
-  dispatch(changeCustomers(data.people.customers));
-  dispatch(changeSuppliers(data.people.suppliers));
+  dispatch(changeCustomers(data.customers));
+  dispatch(changeSuppliers(data.suppliers));
   dispatch(changeInventory(data.inventory));
   dispatch(changeProducts(data.products));
-  dispatch(changeSlice(data.sales));
-  dispatch(changeAccommodations(data.accommodations));
+  dispatch(changeSales(data.sales));
+  dispatch(changeAccommodationOptions(data.accommodationOptions));
   dispatch(changeGroups(data.groups));
   dispatch(changeRecipes(data.recipes));
+  dispatch(changeBills(data.bills));
 };

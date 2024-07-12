@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { View, TouchableOpacity, StyleSheet, FlatList, ScrollView, Alert, Image } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { thousandsSystem, changeDate } from "@helpers/libs";
+import { thousandsSystem, changeDate, generateBill } from "@helpers/libs";
+import { add as addB } from "@features/people/billsSlice";
 import { edit, remove } from "@features/zones/accommodationReservationsSlice";
 import { useNavigation } from "@react-navigation/native";
 import { removeReservation, editReservation } from "@api";
@@ -39,6 +40,8 @@ const Table = ({
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
   const mode = useSelector((state) => state.mode);
+  const bills = useSelector((state) => state.bills);
+  const customers = useSelector((state) => state.customers);
 
   const [showInformationModal, setShowInformationModal] = useState(false);
   const [reservePayment, setReservePayment] = useState(null);
@@ -64,9 +67,35 @@ const Table = ({
           text: "Estoy seguro",
           onPress: async () => {
             if (!reserves.filter((r) => r.id !== item.id).length) navigation.pop();
+
+            let change = {};
+
+            // SI EXISTE UN CLIENTE REGISTRADO Y ESTA PAGADO QUE LO REEMBOLSE
+            const customerFound = customers.find(
+              ({ id, clientList }) => id === item.owner || clientList?.some((c) => c.id === item.owner)
+            );
+            const value = item?.payment.reduce((a, b) => a + b.amount, 0);
+
+            // REEMBOLSAR EL DINERO AL CLIENTE
+            if (customerFound && value > 0) {
+              const bill = generateBill({
+                value,
+                ref: customerFound.id,
+                type: "refund",
+                description: `Se le ha emitido un reembolso a un cliente porque el huésped que estaba en el alojamiento de acomodación ha sido eliminado por un monto de: ${thousandsSystem(
+                  value
+                )}
+                `,
+                bills,
+              });
+              dispatch(addB(bill));
+              change = { bills: [bill] };
+            }
+
             dispatch(remove({ ids: [item.id] }));
             await removeReservation({
               identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+              ...change,
               reservation: {
                 identifier: [item.id],
                 type: "accommodation",
@@ -250,6 +279,8 @@ const Information = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
   const nomenclatures = useSelector((state) => state.nomenclatures);
+  const customers = useSelector((state) => state.customers);
+  const bills = useSelector((state) => state.bills);
 
   const [reserves, setReserves] = useState(null);
   const [place, setPlace] = useState(null);
@@ -491,6 +522,8 @@ const Information = ({ route, navigation }) => {
   };
 
   const handlePayment = async ({ elements, paymentMethod, paymentByBusiness, onClose }) => {
+    const billsToCreate = [];
+
     const reservesUpdated = reservesToPay.map((r) => {
       const reserve = reserves.find((re) => re.id === r.id);
       const found = elements.find((e) => e.id === r.id);
@@ -502,7 +535,27 @@ const Information = ({ route, navigation }) => {
         if (r.amount - r.payment === found.amount || tip) status = "paid";
         if (paymentByBusiness) status = "business";
 
+        // EJECUTAMOS EL EVENTO DE PAGO
         if (!paymentByBusiness) {
+          // VEMOS SI EXISTE UN CLIENTE ASOCIADO PARA CREAR LA FACTURA
+          if (reserve?.owner) {
+            const customerFound = customers.find(
+              ({ id, clientList }) =>
+                id === reserve?.owner || clientList?.some((c) => c.id === reserve?.owner)
+            );
+
+            const bill = generateBill({
+              value: found.amount,
+              ref: customerFound.id,
+              description: `El cliente ha pagado un alojamiento de accommodación por un monto de: ${thousandsSystem(
+                found.amount
+              )}`,
+              bills,
+            });
+
+            billsToCreate.push(bill);
+          }
+
           return {
             ...reserve,
             status,
@@ -514,9 +567,11 @@ const Information = ({ route, navigation }) => {
 
     setShowPaymentManagement(false);
     onClose();
+    dispatch(addB(billsToCreate));
     dispatch(edit({ data: reservesUpdated }));
     await editReservation({
       identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+      bills: billsToCreate,
       reservation: {
         data: reservesUpdated,
         type: "accommodation",
@@ -569,11 +624,33 @@ const Information = ({ route, navigation }) => {
   };
 
   const removePayment = ({ hosted = [] }) => {
+    const billsToCreate = hosted.reduce((acc, reserve) => {
+      const customerFound = customers.find(
+        ({ id, clientList }) => id === reserve?.owner || clientList?.some((c) => c.id === reserve?.owner)
+      );
+
+      const value = reserve.payment.reduce((a, b) => a + b.amount, 0);
+      if (!customerFound || value === 0) return acc;
+
+      return [
+        ...acc,
+        generateBill({
+          value,
+          ref: customerFound.id,
+          type: "refund",
+          description: `Se le ha emitido un reembolso a un cliente porque ha cancelado el pago en un alojamiento de acomodación por un monto de: ${thousandsSystem(
+            value
+          )}`,
+          bills,
+        }),
+      ];
+    }, []);
+
     Alert.alert(
       "ALERTA",
       `¿Está seguro que desea eliminar el pago de ${hosted.length > 1 ? "las" : "la"} ${
         hosted.length > 1 ? "reservaciones" : "reservación"
-      }?`,
+      }? ${billsToCreate.length > 0 ? "Se le hará el reembolso a los clientes registrados" : ""}`,
       [
         {
           text: "No estoy seguro",
@@ -584,8 +661,10 @@ const Information = ({ route, navigation }) => {
           onPress: async () => {
             const reservesUpdated = hosted.map((h) => ({ ...h, payment: [], status: null }));
             dispatch(edit({ data: reservesUpdated }));
+            dispatch(addB(billsToCreate));
             await editReservation({
               identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+              bills: billsToCreate,
               reservation: {
                 data: reservesUpdated,
                 type: "accommodation",
@@ -735,10 +814,33 @@ const Information = ({ route, navigation }) => {
       <ButtonStyle
         style={{ marginTop: 15 }}
         backgroundColor={light.main2}
-        onPress={() =>
+        onPress={() => {
+          const billsToCreate = reserves.reduce((acc, reserve) => {
+            const customerFound = customers.find(
+              ({ id, clientList }) =>
+                id === reserve?.owner || clientList?.some((c) => c.id === reserve?.owner)
+            );
+
+            const value = reserve.payment.reduce((a, b) => a + b.amount, 0);
+            if (!customerFound || value === 0) return acc;
+
+            return [
+              ...acc,
+              generateBill({
+                value,
+                ref: customerFound.id,
+                type: "refund",
+                description: `Se le ha emitido un reembolso a un cliente porque el alojamiento de acomodación ha sido cancelado (eliminado) por un monto de: ${thousandsSystem(
+                  value
+                )}`,
+                bills,
+              }),
+            ];
+          }, []);
+
           Alert.alert(
             "¿Estás seguro?",
-            "Se eliminarán todos los datos de esta reserva",
+            `Se eliminarán todos los datos de esta reserva${billsToCreate.length > 0 ? ", y se le hará el reembolso a los clientes registrados" : ""}`,
             [
               {
                 text: "No estoy seguro",
@@ -748,9 +850,11 @@ const Information = ({ route, navigation }) => {
                 text: "Estoy seguro",
                 onPress: async () => {
                   dispatch(remove({ ids: reserves.map((r) => r.id) }));
+                  dispatch(addB(billsToCreate));
                   navigation.pop();
                   await removeReservation({
                     identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+                    bills: billsToCreate,
                     reservation: {
                       identifier: reserves.map((r) => r.id),
                       type: "accommodation",
@@ -768,8 +872,8 @@ const Information = ({ route, navigation }) => {
               },
             ],
             { cancelable: true }
-          )
-        }
+          );
+        }}
       >
         <TextStyle center>Eliminar reservación</TextStyle>
       </ButtonStyle>

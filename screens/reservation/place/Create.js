@@ -25,7 +25,7 @@ import {
   add as addA,
   edit as editA,
   remove as removeA,
-} from "@features/zones/accommodationsSlice";
+} from "@features/zones/accommodationOptionsSlice";
 import {
   addNomenclature,
   editNomenclature,
@@ -76,7 +76,7 @@ const CreatePlace = ({ route, navigation }) => {
   );
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
-  const accommodationState = useSelector((state) => state.accommodation);
+  const accommodationState = useSelector((state) => state.accommodationOptions);
 
   const scrollViewAccommodationRef = useRef();
   const pickerRef = useRef();

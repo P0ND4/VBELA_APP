@@ -9,10 +9,11 @@ import {
   Dimensions,
   Alert,
 } from "react-native";
-import { thousandsSystem, random, getFontSize, print } from "@helpers/libs";
+import { thousandsSystem, random, getFontSize, print, generateBill } from "@helpers/libs";
 import { updateMany as updateManyInventory } from "@features/inventory/informationSlice";
 import { add as addS } from "@features/sales/salesSlice";
 import { change as changeP } from "@features/sales/productsSlice";
+import { add as addB } from "@features/people/billsSlice";
 import { editUser, discountInventory } from "@api";
 import Card from "@utils/order/preview/Card";
 import PaymentButtons from "@components/PaymentButtons";
@@ -39,6 +40,7 @@ const Preview = ({ route, navigation }) => {
   const inventory = useSelector((state) => state.inventory);
   const helperStatus = useSelector((state) => state.helperStatus);
   const recipes = useSelector((state) => state.recipes);
+  const bills = useSelector((state) => state.bills);
 
   const [total, setTotal] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -376,15 +378,44 @@ const Preview = ({ route, navigation }) => {
               dispatch(addS(data));
               const recipe = selection.filter((c) => c.recipe);
               if (recipe.length) inventoryDiscountHandler(recipe);
+
+              // ESTO ES LO QUE VAMOS A CAMBIAR EN LA BD
+              let change = {
+                sales: [...sales, data],
+                products: newProducts,
+              };
+
+              // ZONA DE PAGO SI ES UN CLIENTE
+              const customerFound = customers.find(
+                ({ id, clientList }) => id === ref || clientList?.some((c) => c.id === ref)
+              );
+
+              // SI EXISTE EL CLIENTE COLOCA LA FACTURA DE PAGO
+              if (customerFound && paymentMethod !== "credit") {
+                const value = selection.reduce((a, { method }) => {
+                  const filtered = method.filter((m) => m.method !== "credit");
+                  return a + filtered.reduce((a, b) => a + b.total, 0);
+                }, 0);
+
+                const bill = generateBill({
+                  value,
+                  ref: customerFound.id,
+                  description: `El cliente ha pagado los servicios/productos por un monto de: ${thousandsSystem(
+                    value
+                  )}`,
+                  bills,
+                });
+
+                dispatch(addB(bill));
+                change = { ...change, bills: [...bills, bill] };
+              }
+
               navigation.replace("OrderStatus", { data, status: "paid" });
 
               //TODO CAMBIAR ESTO
               await editUser({
                 identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
-                change: {
-                  sales: [...sales, data],
-                  products: newProducts,
-                },
+                change,
                 helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
               });
               //TODO CAMBIAR ESTO

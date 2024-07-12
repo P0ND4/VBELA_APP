@@ -22,16 +22,17 @@ import settingsSlice from "@features/settings/settingsSlice";
 import informationInventorySlice from "@features/inventory/informationSlice";
 import salesSlice from "@features/sales/salesSlice";
 import productsSlice from "@features/sales/productsSlice";
-import accommodationSlice from "@features/zones/accommodationsSlice";
+import accommodationOptionsSlice from "@features/zones/accommodationOptionsSlice";
 import groupsSlice from "@features/sales/groupsSlice";
 import recipesSlice from "@features/sales/recipesSlice";
 
 import standardReservationsSlice from "@features/zones/standardReservationsSlice";
-import accommodationReservationsSlice from "@features/zones/accommodationReservationsSlice"; 
+import accommodationReservationsSlice from "@features/zones/accommodationReservationsSlice";
 
 // PEOPLE //
 import customerSlice from "@features/people/customersSlice";
 import supplierSlice from "@features/people/suppliersSlice";
+import billsSlice from "@features/people/billsSlice";
 
 const reducers = combineReducers({
   mode: modeSlice, // Mode light and dark
@@ -58,12 +59,13 @@ const reducers = combineReducers({
   // SALES //
   products: productsSlice, // PRODUCTOS O SERVICIOS DE VENTAS
   sales: salesSlice, // VENTAS REALIZADAS DE SERVICIOS O VENTAS
-  accommodation: accommodationSlice, // GRUPOS DE ACOMODACION DE RESERVACIONES
+  accommodationOptions: accommodationOptionsSlice, // GRUPOS DE ACOMODACION DE RESERVACIONES
   groups: groupsSlice, // GRUPOS DE DE VENTAS
   recipes: recipesSlice, // LAS RECETAS DE MESA
   // PEOPLE //
   customers: customerSlice,
-  suppliers: supplierSlice
+  suppliers: supplierSlice,
+  bills: billsSlice,
 });
 
 const persistConfig = {

@@ -1,13 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  FlatList,
-  Alert,
-  Image
-} from "react-native";
+import { View, TouchableOpacity, StyleSheet, Dimensions, FlatList, Alert, Image } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
@@ -39,25 +31,17 @@ const EntryOutputInformation = ({ route, navigation }) => {
 
   useEffect(() => {
     navigation.setOptions({
-      title: `${inventoryRef.name}: ${
-        type === "entry" ? "Entrada" : "Salida"
-      } De Unidad`,
+      title: `${inventoryRef.name}: ${type === "entry" ? "Entrada" : "Salida"} De Unidad`,
     });
   }, []);
 
   useEffect(() => {
     if (type === "entry") {
       setData(
-        [
-          ...inventory
-            .find((i) => i.id === inventoryRef.id)
-            .entry.filter((e) => e.entry),
-        ].reverse()
+        [...inventory.find((i) => i.id === inventoryRef.id).entry.filter((e) => e.entry)].reverse()
       );
     } else {
-      setData(
-        [...inventory.find((i) => i.id === inventoryRef.id).output].reverse()
-      );
+      setData([...inventory.find((i) => i.id === inventoryRef.id).output].reverse());
     }
   }, [inventory]);
 
@@ -69,9 +53,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
           a +
           `<tr>
               <td style="width: 50px; border: 1px solid #000; padding: 8px">
-                <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(
-                  item?.quantity || 0
-                )}</p>
+                <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(item?.quantity || 0)}</p>
               </td>
               <td style="width: 50px; border: 1px solid #000; padding: 8px">
                 <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(
@@ -93,9 +75,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
           a +
           `<tr>
               <td style="width: 50px; border: 1px solid #000; padding: 8px">
-                <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(
-                  item?.quantity || 0
-                )}</p>
+                <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(item?.quantity || 0)}</p>
               </td>
               <td style="width: 50px; border: 1px solid #000; padding: 8px">
                 <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(
@@ -110,9 +90,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
               <td style="width: 50px; border: 1px solid #000; padding: 8px">
                 <p style="font-size: 18px; font-weight: 600;">
                   ${item?.currentValue - item?.lastValue > 0 ? "+" : "-"}
-                  ${thousandsSystem(
-                    Math.abs(item?.currentValue - item?.lastValue)
-                  )}
+                  ${thousandsSystem(Math.abs(item?.currentValue - item?.lastValue))}
                 </p>
               </td>
             </tr>`
@@ -149,11 +127,11 @@ const EntryOutputInformation = ({ route, navigation }) => {
     <img
       src="${Image.resolveAssetSource(Logo).uri}"
       style="width: 22vw; display: block; margin: 0 auto; border-radius: 8px" />
-    <p style="font-size: 30px; text-align: center">vbelapp.com</p>
+    <p style="font-size: 25px; text-align: center">vbelapp.com</p>
   </view>
-  <p style="font-size: 30px; text-align: center; margin: 20px 0; background-color: #444444; padding: 10px 0; color: #FFFFFF">INVENTARIO</p>  
+  <p style="font-size: 25px; text-align: center; margin: 20px 0; background-color: #444444; padding: 10px 0; color: #FFFFFF">INVENTARIO</p>  
 
-  <p style="text-align: center; color: #444444; font-size: 30px; font-weight: 800; margin-bottom: 30px;">
+  <p style="text-align: center; color: #444444; font-size: 25px; font-weight: 800; margin-bottom: 30px;">
     ${inventoryRef.name.toUpperCase()} - SALIDA
   </p>
   <view style="width: 100%; margin: 20px auto;">
@@ -170,11 +148,9 @@ const EntryOutputInformation = ({ route, navigation }) => {
     </table>
     
   </view>
-  <p style="text-align: center; font-size: 30px; font-weight: 600; margin-top: 30px;">${changeDate(
+  <p style="text-align: center; font-size: 25px; font-weight: 600; margin-top: 30px;">${changeDate(
     new Date()
-  )} ${("0" + new Date().getHours()).slice(-2)}:${(
-    "0" + new Date().getMinutes()
-  ).slice(-2)}</p>
+  )} ${("0" + new Date().getHours()).slice(-2)}:${("0" + new Date().getMinutes()).slice(-2)}</p>
 </view>
 </body>
 
@@ -204,10 +180,14 @@ const EntryOutputInformation = ({ route, navigation }) => {
 
 <body>
 <view style="padding: 20px; width: 500px; display: block; margin: 20px auto; background-color: #FFFFFF;">
-  <h2 style="text-align: center; color: #444444; font-size: 50px; font-weight: 800;">
-    INVENTARIO
-  </h2>
-  <p style="text-align: center; color: #444444; font-size: 30px; font-weight: 800; margin-bottom: 30px;">
+  <view>
+    <img
+      src="${Image.resolveAssetSource(Logo).uri}"
+      style="width: 22vw; display: block; margin: 0 auto; border-radius: 8px" />
+    <p style="font-size: 25px; text-align: center">vbelapp.com</p>
+  </view>
+  <p style="font-size: 25px; text-align: center; margin: 20px 0; background-color: #444444; padding: 10px 0; color: #FFFFFF">INVENTARIO</p>  
+  <p style="text-align: center; color: #444444; font-size: 25px; font-weight: 800; margin-bottom: 30px;">
     ${inventoryRef.name.toUpperCase()} - ENTRADA
   </p>
   <view style="width: 100%; margin: 20px auto;">
@@ -230,11 +210,9 @@ const EntryOutputInformation = ({ route, navigation }) => {
     </table>
     
   </view>
-  <p style="text-align: center; font-size: 30px; font-weight: 600; margin-top: 30px;">${changeDate(
+  <p style="text-align: center; font-size: 25px; font-weight: 600; margin-top: 30px;">${changeDate(
     new Date()
-  )} ${("0" + new Date().getHours()).slice(-2)}:${(
-    "0" + new Date().getMinutes()
-  ).slice(-2)}</p>
+  )} ${("0" + new Date().getHours()).slice(-2)}:${("0" + new Date().getMinutes()).slice(-2)}</p>
 </view>
 </body>
 </html>
@@ -242,9 +220,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
 
   const removeEntryOutput = () => {
     Alert.alert(
-      `¿Estás seguro que quieres eliminar todas las ${
-        type === "entry" ? "entradas" : "salidas"
-      }?`,
+      `¿Estás seguro que quieres eliminar todas las ${type === "entry" ? "entradas" : "salidas"}?`,
       `Se eliminaran toda la información de ${
         type === "entry" ? "entrada" : "salida"
       } en el elemento ${inventoryRef.name.toUpperCase()}`,
@@ -263,13 +239,9 @@ const EntryOutputInformation = ({ route, navigation }) => {
             dispatch(edit({ id: inventoryRef.id, data: editable }));
             navigation.pop();
             await editInventory({
-              identifier: helperStatus.active
-                ? helperStatus.identifier
-                : user.identifier,
+              identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
               inventory: editable,
-              helpers: helperStatus.active
-                ? [helperStatus.id]
-                : helpers.map((h) => h.id),
+              helpers: helperStatus.active ? [helperStatus.id] : helpers.map((h) => h.id),
             });
           },
         },
@@ -299,10 +271,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
             },
           ]}
         >
-          <TextStyle
-            smallParagraph
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
+          <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
             {thousandsSystem(item.quantity)}
           </TextStyle>
         </View>
@@ -315,10 +284,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
             },
           ]}
         >
-          <TextStyle
-            smallParagraph
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
+          <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
             {thousandsSystem(item.lastValue)}
           </TextStyle>
         </View>
@@ -331,10 +297,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
             },
           ]}
         >
-          <TextStyle
-            smallParagraph
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
+          <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
             {thousandsSystem(item.currentValue)}
           </TextStyle>
         </View>
@@ -349,9 +312,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
         >
           <TextStyle
             smallParagraph
-            color={
-              item.currentValue - item.lastValue > 0 ? "#F70000" : light.main2
-            }
+            color={item.currentValue - item.lastValue > 0 ? "#F70000" : light.main2}
           >
             {item.currentValue - item.lastValue > 0 ? "+" : "-"}
             {thousandsSystem(Math.abs(item.currentValue - item.lastValue))}
@@ -441,10 +402,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
             },
           ]}
         >
-          <TextStyle
-            smallParagraph
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
+          <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
             {thousandsSystem(item.quantity)}
           </TextStyle>
         </View>
@@ -457,10 +415,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
             },
           ]}
         >
-          <TextStyle
-            smallParagraph
-            color={mode === "light" ? light.textDark : dark.textWhite}
-          >
+          <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
             {thousandsSystem(item.currentValue)}
           </TextStyle>
         </View>
@@ -504,10 +459,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
   return (
     <Layout>
       <View style={[styles.row, { marginBottom: 20 }]}>
-        <TextStyle
-          subtitle
-          color={mode === "light" ? light.textDark : dark.textWhite}
-        >
+        <TextStyle subtitle color={mode === "light" ? light.textDark : dark.textWhite}>
           {type === "entry" ? "Entrada" : "Salida"}
         </TextStyle>
         <View style={styles.events}>
