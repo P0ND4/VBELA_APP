@@ -1,27 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  View,
-  TouchableOpacity,
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Dimensions,
-  ScrollView,
-  Alert,
-} from "react-native";
-import { useDispatch, useSelector } from "react-redux";
-import { getFontSize, thousandsSystem, changeDate, reverseDate } from "@helpers/libs";
+import { View, TouchableOpacity, FlatList, StyleSheet, Dimensions } from "react-native";
+import { useSelector } from "react-redux";
+import { thousandsSystem, changeDate, reverseDate } from "@helpers/libs";
 import { useNavigation } from "@react-navigation/native";
-import EventPayment from "@utils/customer/debt/EventPayment";
-import DebtInformation from "@utils/customer/debt/Information";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
 
 const { light, dark } = theme();
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("screen");
+const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 
 const Card = ({ item }) => {
   const mode = useSelector((state) => state.mode);
