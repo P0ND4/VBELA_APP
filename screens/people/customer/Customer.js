@@ -216,11 +216,11 @@ const Customer = ({ navigation }) => {
       <View style={[styles.row, { marginVertical: 15 }]}>
         <ButtonStyle
           style={{ width: SCREEN_WIDTH / 2.5, marginVertical: 0 }}
-          onPress={() => navigation.navigate("CustomerDebts")}
+          onPress={() => navigation.navigate("Charge")}
           backgroundColor={light.main2}
         >
           <TextStyle center smallParagraph>
-            DEUDAS
+            FACTURACIÓN
           </TextStyle>
         </ButtonStyle>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>

@@ -74,6 +74,8 @@ const Order = ({ route, navigation }) => {
   const order = route.params?.order || null;
   const ref = route.params?.ref;
   const title = route.params?.title;
+  const delivery = route.params?.delivery || null;
+
   const searchRef = useRef();
 
   const dispatch = useDispatch();
@@ -82,6 +84,13 @@ const Order = ({ route, navigation }) => {
   const textColor = useMemo(() => getTextColor(mode), [mode]);
   const getBackgroundColor = (mode) => (mode === "light" ? light.main5 : dark.main2);
   const backgroundColor = useMemo(() => getBackgroundColor(mode), [mode]);
+
+  useEffect(() => {
+    (() => {
+      if (ref !== "delivery") return;
+      navigation.setOptions({ title: "Domicilio" });
+    })();
+  }, [ref]);
 
   useEffect(() => {
     if (order) setSelection(order?.selection);
@@ -156,6 +165,7 @@ const Order = ({ route, navigation }) => {
       const data = {
         id: order?.id || orderID,
         ref: order?.ref || ref,
+        delivery,
         invoice: order?.invoice || "SIN CODIGO",
         selection,
         tip: order?.tip || null,
@@ -176,7 +186,7 @@ const Order = ({ route, navigation }) => {
         ref: order?.id || orderID,
         selection: cook,
         title,
-        observation: null,
+        observation: delivery,
         status: "processing",
         creationDate: new Date(),
         modificationDate: new Date(),
@@ -277,9 +287,9 @@ const Order = ({ route, navigation }) => {
             <View style={{ flexGrow: 1 }}>
               <View style={styles.row}>
                 <TextStyle smallSubtitle color={textColor}>
-                  {title.name}: {""}
+                  {title?.name}: {""}
                   <TextStyle smallSubtitle color={light.main2}>
-                    {title.value}
+                    {title?.value}
                   </TextStyle>
                 </TextStyle>
                 <ButtonStyle
@@ -519,6 +529,7 @@ const Order = ({ route, navigation }) => {
                       selection,
                       changeSelection,
                       sendToKitchen,
+                      delivery
                     });
                 }}
               >

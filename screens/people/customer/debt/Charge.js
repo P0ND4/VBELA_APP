@@ -22,6 +22,7 @@ const Table = ({ item }) => {
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
   const bills = useSelector((state) => state.bills);
+  const customers = useSelector((state) => state.customers);
   const standardReservations = useSelector((state) => state.standardReservations);
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
   const sales = useSelector((state) => state.sales);
@@ -36,6 +37,35 @@ const Table = ({ item }) => {
 
   const dispatch = useDispatch();
   const navigation = useNavigation();
+
+  // INFORMACIÓN PURIFICADA PARA EL PAGO
+  const purifyInformation = () => {
+    const customer = customers.find((c) => c.id === item.id);
+    const IDS = customer.special ? customer.clientList.map((c) => c.id) : [customer.id];
+
+    const a = accommodationReservations?.filter((a) => IDS.includes(a.owner));
+    const s = standardReservations?.filter((s) => s.hosted?.some((h) => IDS.includes(h.owner)));
+    const o = orders.filter((o) => IDS.includes(o.ref));
+    const f = sales.filter((o) => IDS.includes(o.ref));
+
+    // FUNCIÓN PARA REDUCCIÓN DE CODIGO EN LA PURIFICACIÓN DE LA INFORMACIÓN
+    const tradeDebugged = (trade) => {
+      const SHosted = s.reduce((a, b) => [...a, ...b.hosted], []);
+      const exists = [...a, ...SHosted].find((ac) => ac.owner === trade.ref);
+      if (!exists || exists.checkOut) return trade;
+    };
+
+    return {
+      standard: s?.filter((standard) => {
+        const hosted = standard.hosted.filter((h) => IDS.includes(h.owner));
+        const checkOut = hosted.filter((h) => h.checkOut);
+        return hosted.length === checkOut.length;
+      }),
+      accommodation: a?.filter((accommodation) => accommodation.checkOut),
+      orders: o?.filter(tradeDebugged),
+      sales: f?.filter(tradeDebugged),
+    };
+  };
 
   // ESTA FUNCION ES QUIEN ENVIA LA INFORMACION AL SERVIDOR
   const sendInformation = async ({ bill, standard, accommodation, orders, sales }) => {
@@ -53,7 +83,7 @@ const Table = ({ item }) => {
       change: {
         orders,
         sales,
-        standard, 
+        standard,
         accommodation,
         bills: [...bills, bill],
       },
@@ -74,9 +104,10 @@ const Table = ({ item }) => {
   };
 
   // COLOCAR TODAS LAS VENTAS DEL CLIENTE COMO PAGAS
-  const commercePaymentHandler = (trade) => {
-    const found = trade.ref === item.id || item?.clientList?.some((c) => c.id === trade.ref);
-    if (!found) return trade;
+  const tradePaymentHandler = (trade) => {
+    const { orders, sales } = purifyInformation();
+  
+    if (!orders.some((o) => o.id === trade.id) && !sales.some((s) => s.id === trade.id)) return trade;
 
     const selection = trade.selection.map(({ method, price, discount }) => {
       const credit = method.filter((c) => c.method === "credit");
@@ -100,21 +131,20 @@ const Table = ({ item }) => {
 
   // EVENTO PARA PAGARLO TODO Y ACTUALIZARLO AUTOMATICAMENTE
   const everything = async () => {
+    const { standard, accommodation } = purifyInformation();
+
     const standardChanged = standardReservations.map((s) => {
-      const condition = (h) => h.owner === item.id || item?.clientList?.some((c) => c.id === h.owner);
-      const found = s.hosted.some(condition);
-      if (found) return reservationPaymentHandler(s);
+      if (standard.some((st) => st.id === s.id)) return reservationPaymentHandler(s);
       return s;
     });
 
     const accommodationChanged = accommodationReservations.map((a) => {
-      const found = a.owner === item.id || item?.clientList?.some((c) => c.id === a.owner);
-      if (found) return reservationPaymentHandler(a);
+      if (accommodation.some((ac) => ac.id === a.id)) return reservationPaymentHandler(a);
       return a;
     });
 
-    const orderChanged = orders.map(commercePaymentHandler);
-    const saleChanged = sales.map(commercePaymentHandler);
+    const orderChanged = orders.map(tradePaymentHandler);
+    const saleChanged = sales.map(tradePaymentHandler);
 
     const bill = generateBill({
       value: item.value,
@@ -135,8 +165,10 @@ const Table = ({ item }) => {
 
   // EXTRAEMOS LA DEUDA QUE TIENE EL COMERCIO
   const commerceDebtsHandler = (trades, { type }) => {
-    const condition = ({ ref, selection }) =>
-      (ref === item.id || item?.clientList?.some((c) => c.id === ref)) &&
+    const { orders, sales } = purifyInformation();
+
+    const condition = ({ id, selection }) =>
+      (orders.some((o) => o.id === id) || sales.some((s) => s.id === id)) &&
       selection?.some((s) => s.status === "credit");
 
     return trades.filter(condition).map(({ id, selection }) => {
@@ -202,28 +234,23 @@ const Table = ({ item }) => {
     });
 
   const pay = async (value) => {
+    const { standard, accommodation } = purifyInformation();
     // DE AQUI --------------------------------------------------------
     const orderDebt = commerceDebtsHandler(orders, { type: "orders" });
     const saleDebt = commerceDebtsHandler(sales, { type: "sales" });
 
-    const filterReservations = (reservations, condition) =>
-      reservations.filter(({ total, payment, ...rest }) => {
+    const filterReservations = (reservations) =>
+      reservations.filter(({ id, total, payment }) => {
         const amount = total - (payment?.reduce((sum, { amount }) => sum + amount, 0) || 0);
-        return condition(rest) && amount > 0;
+        return (
+          (standard.some((o) => o.id === id) || accommodation.some((s) => s.id === id)) && amount > 0
+        );
       });
 
-    const standardDebt = reservationDebtsHandler(
-      filterReservations(standardReservations, ({ hosted }) =>
-        hosted.some((h) => h.owner === item.id || item?.clientList?.some((c) => c.id === h.owner))
-      ),
-      "standard"
-    );
+    const standardDebt = reservationDebtsHandler(filterReservations(standardReservations), "standard");
 
     const accommodationDebt = reservationDebtsHandler(
-      filterReservations(
-        accommodationReservations,
-        ({ owner }) => owner === item.id || item?.clientList?.some((c) => c.id === owner)
-      ),
+      filterReservations(accommodationReservations),
       "accommodation"
     );
 
@@ -284,7 +311,7 @@ const Table = ({ item }) => {
     <>
       <TouchableNativeFeedback
         onPress={() => eventHandler()}
-        onLongPress={() => navigation.navigate("Detail", { id: item.id })}
+        onLongPress={() => navigation.navigate("CustomerInvoice", { id: item.id })}
       >
         <View style={{ flexDirection: "row" }}>
           <View style={[styles.table, { borderColor: textColor, width: 70 }]}>
@@ -383,94 +410,116 @@ const Charge = () => {
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
   const sales = useSelector((state) => state.sales);
   const orders = useSelector((state) => state.orders);
-  const bills = useSelector((state) => state.bills);
 
   const [debts, setDebts] = useState(null);
 
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
 
-  const getTrades = (trades, item) =>
-    trades.filter((s) => s.ref === item.id || item.clientList?.some((c) => s.ref === c.id));
+  const getTradePrice = (trades) => {
+    const selections = trades.reduce((a, b) => [...a, ...b.selection], []);
+    const methods = selections.reduce((a, b) => [...a, ...b.method], []);
+    const credits = methods.filter((m) => m.method === "credit");
+    return credits.reduce((a, b) => a + b.total, 0);
+  };
 
-  const getAccommodation = (accommodations, item) => {
-    const condition = (a) => {
-      const itemIds = item.special ? item.clientList.map((i) => i.id) : [item.id];
-      return itemIds.some((id) => id === a.owner || a.hosted?.some((h) => h.owner === id));
-    };
-
-    return accommodations.filter((a) => a.status !== "business" && condition(a));
+  const getAccommodationPrice = (accommodations) => {
+    const total = accommodations.reduce((a, b) => a + b.total, 0);
+    const paid = accommodations.reduce((a, b) => a + b.payment.reduce((a, b) => a + b.amount, 0), 0);
+    return Math.max(total - paid, 0);
   };
 
   useEffect(() => {
     const debts = customers.map((item) => {
-      const data = [sales, orders, accommodationReservations, standardReservations];
-      const [salesDebt, ordersDebt, accommodationDebt, standardDebt] = data.map((data, index) => {
-        const getData = index < 2 ? getTrades : getAccommodation;
-        return getData(data, item).reduce((a, b) => a + b.total, 0);
+      const IDS = item.special ? item.clientList.map((c) => c.id) : [item.id];
+
+      const a = accommodationReservations?.filter((a) => IDS.includes(a.owner));
+      const s = standardReservations?.filter((s) => s.hosted?.some((h) => IDS.includes(h.owner)));
+      const o = orders.filter((o) => IDS.includes(o.ref));
+      const f = sales.filter((o) => IDS.includes(o.ref));
+
+      const old = [...a, ...s, ...o, ...f].reduce(
+        (old, { creationDate }) => (creationDate < old ? creationDate : old),
+        Date.now()
+      );
+
+      const SDebugged = s?.filter((standard) => {
+        const hosted = standard.hosted.filter((h) => IDS.includes(h.owner));
+        const checkOut = hosted.filter((h) => h.checkOut);
+        return hosted.length === checkOut.length;
+      });
+      const ADebugged = a?.filter((accommodation) => accommodation.checkOut);
+
+      const OFDebugged = [...o, ...f].filter((trade) => {
+        const SHosted = s.reduce((a, b) => [...a, ...b.hosted], []);
+        const exists = [...a, ...SHosted].find((ac) => ac.owner === trade.ref);
+        if (!exists || exists.checkOut) return trade;
       });
 
-      const { creationDate } = data
-        .reduce((acc, b) => [...acc, ...b], [])
-        .reduce((oldest, { creationDate }) => (creationDate < oldest ? creationDate : oldest));
-
-      const getValue = (bills) => bills?.reduce((a, b) => a + b.value, 0);
-      const paid = getValue(bills.filter((b) => b.ref === item.id && b.type === "pay"));
-      const refound = getValue(bills.filter((b) => b.ref === item.id && b.type === "refund"));
+      const accommodationCalculation = getAccommodationPrice([...ADebugged, ...SDebugged]);
+      const tradeCalculation = getTradePrice(OFDebugged);
 
       return {
         id: item.id,
-        clientList: item?.clientList || null,
         name: item.name,
-        value: accommodationDebt + standardDebt + salesDebt + ordersDebt - paid + refound,
-        expired: Math.floor((Date.now() - creationDate) / (1000 * 60 * 60 * 24)) + 1,
+        value: accommodationCalculation + tradeCalculation,
+        expired: Math.floor((Date.now() - old) / (1000 * 60 * 60 * 24)) + 1,
       };
     });
     setDebts(debts.filter((d) => d.value > 0));
-  }, [sales, orders, accommodationReservations, standardReservations, bills]);
+  }, [sales, orders, accommodationReservations, standardReservations, customers]);
 
   return (
     <Layout>
-      <View>
-        <TextStyle subtitle color={mode === "light" ? light.textDark : dark.textWhite}>
-          Facturación
+      {debts?.length === 0 && (
+        <TextStyle style={{ marginTop: 20 }} color={light.main2} center smallParagraph>
+          NO HAY DEUDAS PARA FACTURAR
         </TextStyle>
-        <TextStyle smallParagraph color={textColor}>
-          Valor total:{" "}
-          <TextStyle smallParagraph color={light.main2}>
-            {thousandsSystem(debts?.reduce((a, b) => a + b.value, 0) || "0")}
+      )}
+      {debts?.length > 0 && (
+        <View>
+          <TextStyle subtitle color={mode === "light" ? light.textDark : dark.textWhite}>
+            Facturación
           </TextStyle>
-        </TextStyle>
-      </View>
-      <View style={{ marginTop: 20 }}>
-        <View style={{ flexDirection: "row" }}>
-          <View style={[styles.table, { borderColor: textColor, width: 70 }]}>
-            <TextStyle color={light.main2} verySmall>
-              N° Factura
+          <TextStyle smallParagraph color={textColor}>
+            Valor total:{" "}
+            <TextStyle smallParagraph color={light.main2}>
+              {thousandsSystem(debts?.reduce((a, b) => a + b.value, 0) || "0")}
             </TextStyle>
-          </View>
-          <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
-            <TextStyle color={light.main2} verySmall>
-              Cliente
-            </TextStyle>
-          </View>
-          <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
-            <TextStyle color={light.main2} verySmall>
-              Valor
-            </TextStyle>
-          </View>
-          <View style={[styles.table, { borderColor: textColor, flexGrow: 1 }]}>
-            <TextStyle color={light.main2} verySmall>
-              Días vencidos
-            </TextStyle>
-          </View>
+          </TextStyle>
         </View>
-        <FlatList
-          data={debts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <Table item={item} />}
-        />
-      </View>
+      )}
+      {debts?.length > 0 && (
+        <View style={{ marginTop: 20 }}>
+          <View style={{ flexDirection: "row" }}>
+            <View style={[styles.table, { borderColor: textColor, width: 70 }]}>
+              <TextStyle color={light.main2} verySmall>
+                N° Factura
+              </TextStyle>
+            </View>
+            <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
+              <TextStyle color={light.main2} verySmall>
+                Cliente
+              </TextStyle>
+            </View>
+            <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
+              <TextStyle color={light.main2} verySmall>
+                Valor
+              </TextStyle>
+            </View>
+            <View style={[styles.table, { borderColor: textColor, flexGrow: 1 }]}>
+              <TextStyle color={light.main2} verySmall>
+                Días vencidos
+              </TextStyle>
+            </View>
+          </View>
+          <FlatList
+            data={debts}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <Table item={item} />}
+          />
+        </View>
+      )}
     </Layout>
   );
 };

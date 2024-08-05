@@ -9,6 +9,7 @@ import AddPerson from "@components/AddPerson";
 
 const AddReservation = ({ personSelected, modalVisible, setModalVisible }) => {
   const nomenclatures = useSelector((state) => state.nomenclatures);
+  const standardReservations = useSelector((state) => state.standardReservations);
 
   const [changeKey, setChangeKey] = useState(Math.random());
   const [daySelected, setDaySelected] = useState(null);
@@ -63,6 +64,7 @@ const AddReservation = ({ personSelected, modalVisible, setModalVisible }) => {
       ...reservationREF,
       hosted: [...reservationREF.hosted, data],
     };
+
     dispatch(editRS({ id: reserveUpdated.id, data: reserveUpdated }));
     await editReservation({
       identifier: helperStatus.active ? helperStatus.identifier : user.identifier,

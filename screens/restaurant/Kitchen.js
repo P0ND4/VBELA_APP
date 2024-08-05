@@ -157,6 +157,11 @@ const Card = ({ item, accept, decline }) => {
             {item.selection?.map((item) => (
               <Previews item={item} />
             ))}
+            {item.observation && (
+              <TextStyle smallParagraph color={light.main2}>
+                {item.observation}
+              </TextStyle>
+            )}
           </View>
         )}
       </View>

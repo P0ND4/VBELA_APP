@@ -70,6 +70,7 @@ const Preview = ({ route, navigation }) => {
   const selection = route.params.selection;
   const changeSelection = route.params.changeSelection;
   const sendToKitchen = route.params.sendToKitchen;
+  const delivery = route.params?.delivery;
 
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
@@ -186,6 +187,7 @@ const Preview = ({ route, navigation }) => {
       id: order ? order.id : random(20),
       ref,
       invoice: code,
+      delivery,
       selection,
       ...events,
       total: selection.reduce((a, b) => a + b.total, 0),

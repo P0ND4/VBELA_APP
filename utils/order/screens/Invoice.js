@@ -279,7 +279,7 @@ const Invoice = ({ route, navigation }) => {
       </View>
       <View style={{ flexDirection: "row" }}>
         <Button
-          onPress={async () => generatePDF({ html, code: "SIN CODIGO" })}
+          onPress={async () => generatePDF({ html, code: data?.invoice })}
           icon="document-text-outline"
           name="PDF"
         />

@@ -4,19 +4,16 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  Image,
   FlatList,
   TouchableOpacity,
   Dimensions,
   ScrollView,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { getFontSize, thousandsSystem, changeDate, print, generatePDF } from "@helpers/libs";
+import { thousandsSystem, changeDate } from "@helpers/libs";
 import { useNavigation } from "@react-navigation/native";
-import Logo from "@assets/logo.png";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import Information from "components/Information";
 import ButtonStyle from "@components/ButtonStyle";
 import theme from "@theme";
@@ -45,7 +42,7 @@ const Table = ({ item }) => {
         </TextStyle>
       </View>
       <TouchableOpacity
-        style={[styles.table, { borderColor: textColor, width: 90 }]}
+        style={[styles.table, { borderColor: textColor, width: 100 }]}
         onPress={() => {
           if (item.details === "accommodation")
             navigation.navigate("AccommodationReserveInformation", { ids: [item.id] });
@@ -95,8 +92,6 @@ const Table = ({ item }) => {
 
 const Card = ({ item }) => {
   const mode = useSelector((state) => state.mode);
-  const user = useSelector((state) => state.user);
-  const helperStatus = useSelector((state) => state.helperStatus);
   const standardReservations = useSelector((state) => state.standardReservations);
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
   const orders = useSelector((state) => state.orders);
@@ -119,110 +114,67 @@ const Card = ({ item }) => {
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
 
-  const getSalesPrice = ({ sales, type }) => {
-    const found = sales.filter((s) => s.ref === item.id || item.clientList?.some((c) => s.ref === c.id));
-
-    const selections = found.reduce((a, b) => [...a, ...b.selection], []);
+  const getTradePrice = (trades) => {
+    const selections = trades.reduce((a, b) => [...a, ...b.selection], []);
     const methods = selections.reduce((a, b) => [...a, ...b.method], []);
-
+    const credits = methods.filter((m) => m.method === "credit");
+    const debt = credits.reduce((a, b) => a + b.total, 0);
     const total = selections.reduce((a, b) => a + b.total, 0);
-    const debt = methods.reduce((a, b) => (b.method === "credit" ? a + b.total : a), 0);
-    const payment = methods.reduce((a, b) => (b.method !== "credit" ? a + b.total : a), 0);
-
-    return {
-      total,
-      debt,
-      payment,
-      orders: found.map((f) => {
-        const quantity = f.selection.reduce((a, b) => a + b.quantity, 0);
-        const paid = f.selection.reduce((a, b) => a + b.paid, 0);
-        const methods = f.selection.reduce((a, b) => [...a, ...b.method], []);
-
-        return {
-          id: f.id,
-          date: f.creationDate,
-          quantity,
-          details: type,
-          total: f.total,
-          payment: methods.reduce((a, b) => (b.method !== "credit" ? a + b.total : a), 0),
-          debt: methods.reduce((a, b) => (b.method === "credit" ? a + b.total : a), 0),
-          status: methods.some((m) => m.method === "credit")
-            ? "credit"
-            : quantity === paid
-            ? "paid"
-            : "pending",
-        };
-      }),
-    };
+    return { total, paid: total - debt, debt };
   };
 
-  const getAccommodationPrice = ({ accommodations }) => {
-    const condition = (a) => {
-      const itemIds = item.special ? item.clientList.map((i) => i.id) : [item.id];
-      return itemIds.some((id) => id === a.owner || a.hosted?.some((h) => h.owner === id));
-    };
-
-    const getTotal = (r) => r.reduce((a, b) => a + b?.total, 0);
-    const getPayment = (r) => r.reduce((a, b) => a + b?.payment.reduce((a, b) => a + b.amount, 0), 0);
-
-    const debts = accommodations.filter((a) => a.status !== "business" && condition(a));
-    const all = accommodations.filter((a) => condition(a));
-
-    return {
-      total: getTotal(debts),
-      debt: Math.max(getTotal(debts) - getPayment(debts), 0),
-      payment: getPayment(debts),
-      reservations: all.map((a) => {
-        const payment = a.payment.reduce((a, b) => a + b.amount, 0);
-        return {
-          id: a.id,
-          date: a.creationDate,
-          quantity: a.hosted?.filter((h) => h.owner)?.length || 1,
-          details: a.type,
-          total: a.total,
-          payment,
-          debt: !["business", "paid"].includes(a.status) ? a.total - payment : 0,
-          status: a.status,
-        };
-      }),
-    };
+  const getAccommodationPrice = (accommodations) => {
+    const total = accommodations.reduce((a, b) => a + b.total, 0);
+    const paid = accommodations.reduce((a, b) => a + b.payment.reduce((a, b) => a + b.amount, 0), 0);
+    return { total, paid, debt: Math.max(total - paid, 0) };
   };
+
+  const filterTrades = (trades) =>
+    trades.map((tr) => {
+      const quantity = tr.selection.reduce((a, b) => a + b.quantity, 0);
+      const paid = tr.selection.reduce((a, b) => a + b.paid, 0);
+      const methods = tr.selection.reduce((a, b) => [...a, ...b.method], []);
+      const isCredit = methods.some((m) => m.method === "credit");
+      const status = isCredit ? "credit" : quantity === paid ? "paid" : "pending";
+
+      return {
+        id: tr.id,
+        date: tr.creationDate,
+        quantity,
+        total: tr.total,
+        payment: getTradePrice([tr]).paid,
+        debt: getTradePrice([tr]).debt,
+        status,
+      };
+    });
+
+  const filterReservations = (accommodations) =>
+    accommodations.map((ac) => ({
+      id: ac.id,
+      date: ac.creationDate,
+      quantity: ac.hosted?.filter((h) => h.owner)?.length || 1,
+      details: ac.type,
+      total: ac.total,
+      payment: getAccommodationPrice([ac]).paid,
+      debt: Math.max(ac.total - getAccommodationPrice([ac]).paid, 0),
+      status: ac.status,
+    }));
 
   useEffect(() => {
-    const accommodation = getAccommodationPrice({ accommodations: accommodationReservations });
-    const standard = getAccommodationPrice({ accommodations: standardReservations });
-    const order = getSalesPrice({ sales: orders, type: "order" });
-    const sale = getSalesPrice({ sales, type: "sale" });
-    setDebt(accommodation.debt + standard.debt + order.debt + sale.debt);
-    setTotal(accommodation.total + standard.total + order.total + sale.total);
-    setPayment(accommodation.payment + standard.payment + order.payment + sale.payment);
+    const IDS = item.special ? item.clientList.map((i) => i.id) : [item.id];
 
-    const details = [
-      ...accommodation.reservations,
-      ...standard.reservations,
-      ...order.orders,
-      ...sale.orders,
-    ];
+    const a = accommodationReservations?.filter((a) => IDS.includes(a.owner));
+    const s = standardReservations?.filter((s) => s.hosted?.some((h) => IDS.includes(h.owner)));
+    const o = orders.filter((o) => IDS.includes(o.ref));
+    const f = sales.filter((o) => IDS.includes(o.ref));
+
+    setDebt(getTradePrice([...o, ...f]).debt + getAccommodationPrice([...a, ...s]).debt);
+    setTotal(getTradePrice([...o, ...f]).total + getAccommodationPrice([...a, ...s]).total);
+    setPayment(getTradePrice([...o, ...f]).paid + getAccommodationPrice([...a, ...s]).paid);
+
+    const details = [...filterReservations([...a, ...s]), ...filterTrades([...o, ...f])];
     setDetails(details.sort((d) => d.date));
   }, [accommodationReservations, standardReservations]);
-
-  const deleteInformation = ({ id }) => {
-    Alert.alert(
-      `¿Estás seguro que quieres eliminar los datos económicos?`,
-      "No podrá recuperar esta información una vez borrada",
-      [
-        {
-          text: "No",
-          style: "cancel",
-        },
-        {
-          text: "Si",
-          onPress: async () => {},
-        },
-      ],
-      { cancelable: true }
-    );
-  };
 
   return (
     <>
@@ -240,22 +192,36 @@ const Card = ({ item }) => {
           </TouchableOpacity>
           {isOpen && (
             <View style={{ marginTop: 8 }}>
-              <TextStyle color={textColor}>
-                Total: <TextStyle color={light.main2}>{thousandsSystem(total || "0")}</TextStyle>
-              </TextStyle>
-              <TextStyle color={textColor}>
-                Pagado:{" "}
-                <TextStyle color={light.main2}>
-                  {thousandsSystem(payment || "0")}{" "}
-                  {total - payment < 0
-                    ? `(${thousandsSystem(Math.abs(total - payment))} DE PROPINA)`
-                    : ""}
-                </TextStyle>
-              </TextStyle>
-              <TextStyle color={textColor}>
-                Deuda: <TextStyle color={light.main2}>{thousandsSystem(debt || "0")}</TextStyle>
-              </TextStyle>
-
+              <View
+                style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}
+              >
+                <View>
+                  <TextStyle color={textColor}>
+                    Total: <TextStyle color={light.main2}>{thousandsSystem(total || "0")}</TextStyle>
+                  </TextStyle>
+                  <TextStyle color={textColor}>
+                    Pagado:{" "}
+                    <TextStyle color={light.main2}>
+                      {thousandsSystem(payment || "0")}{" "}
+                      {total - payment < 0
+                        ? `(${thousandsSystem(Math.abs(total - payment))} DE PROPINA)`
+                        : ""}
+                    </TextStyle>
+                  </TextStyle>
+                  <TextStyle color={textColor}>
+                    Deuda: <TextStyle color={light.main2}>{thousandsSystem(debt || "0")}</TextStyle>
+                  </TextStyle>
+                </View>
+                <ButtonStyle
+                  backgroundColor={light.main2}
+                  style={{ width: "auto" }}
+                  onPress={() =>
+                    navigation.navigate("CustomerInvoice", { id: item.id, everything: true })
+                  }
+                >
+                  <TextStyle smallParagraph>Ver factura</TextStyle>
+                </ButtonStyle>
+              </View>
               {showDetails && (
                 <ScrollView
                   horizontal
@@ -274,7 +240,7 @@ const Card = ({ item }) => {
                           CANTIDAD
                         </TextStyle>
                       </View>
-                      <View style={[styles.table, { borderColor: textColor, width: 90 }]}>
+                      <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
                         <TextStyle color={light.main2} smallParagraph>
                           DETALLE
                         </TextStyle>
