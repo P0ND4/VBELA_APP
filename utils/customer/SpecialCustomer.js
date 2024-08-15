@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
-import { getFontSize, thousandsSystem } from "@helpers/libs";
+import { thousandsSystem } from "@helpers/libs";
 import { useNavigation } from "@react-navigation/native";
 import AddReservation from "./AddReservation";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -24,22 +24,25 @@ const SpecialCustomer = ({ item, salesHandler }) => {
     condition ? light.main2 : mode === "light" ? dark.main2 : light.main4;
 
   const [isName, setIsName] = useState(true);
-  const [reservationFound, setReservationFound] = useState(null);
+  const [hostedFound, setHostedFound] = useState(null);
   const [personSelected, setPersonSelected] = useState(null);
   const [modalVisibleChooseDate, setModalVisibleChooseDate] = useState(false);
 
   const navigation = useNavigation();
 
   useEffect(() => {
-    const allReservations = [...standardReservations, ...accommodationReservations];
-    const found = allReservations.find(
-      (r) => r?.owner === item.id || r?.hosted?.find((h) => h.owner === item.id)
+    const hosted = standardReservations.reduce(
+      (a, b) => [...a, ...b.hosted.map((h) => ({ ...h, id: b.id }))],
+      []
     );
-    setReservationFound(found);
+    const allHosted = [...hosted, ...accommodationReservations];
+    setHostedFound(allHosted.find((r) => r?.owner === item.id));
   }, [standardReservations, accommodationReservations]);
 
-  const reservationHandler = ({ reservation, item }) => {
-    if (reservation) {
+  const reservationHandler = ({ hosted, item }) => {
+    if (hosted) {
+      const allReservations = [...standardReservations, ...accommodationReservations];
+      const reservation = allReservations.find((ac) => ac.id === hosted.id);
       if (reservation.type === "accommodation")
         return navigation.navigate("AccommodationReserveInformation", {
           ids: [reservation.id],
@@ -50,7 +53,7 @@ const SpecialCustomer = ({ item, salesHandler }) => {
     setModalVisibleChooseDate(!modalVisibleChooseDate);
   };
 
-  if (reservationFound === null) return <View />;
+  if (hostedFound === null) return <View />;
 
   return (
     <>
@@ -63,24 +66,29 @@ const SpecialCustomer = ({ item, salesHandler }) => {
           </TextStyle>
         </TouchableOpacity>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {(() => {
-            const exists =
-              orders.some((o) => o.ref === item.id && o.status === "pending") ||
-              sales.some((o) => o.ref === item.id && o.status === "pending");
-            return (
-              <TouchableOpacity
-                style={[styles.swipe, { backgroundColor: backgroundColor(!exists) }]}
-                onPress={() => salesHandler({ item })}
-              >
-                <Ionicons name="restaurant-outline" size={getFontSize(20)} color={textColor(!exists)} />
-              </TouchableOpacity>
-            );
-          })()}
+          {!hostedFound?.checkOut &&
+            (() => {
+              const exists =
+                orders.some((o) => o.ref === item.id && o.status === "pending") ||
+                sales.some((o) => o.ref === item.id && o.status === "pending");
+              return (
+                <TouchableOpacity
+                  style={[styles.swipe, { backgroundColor: backgroundColor(!exists) }]}
+                  onPress={() => salesHandler({ item })}
+                >
+                  <Ionicons
+                    name="restaurant-outline"
+                    size={26}
+                    color={textColor(!exists)}
+                  />
+                </TouchableOpacity>
+              );
+            })()}
           <TouchableOpacity
-            style={[styles.swipe, { backgroundColor: backgroundColor(!reservationFound) }]}
-            onPress={() => reservationHandler({ reservation: reservationFound, item })}
+            style={[styles.swipe, { backgroundColor: backgroundColor(!hostedFound) }]}
+            onPress={() => reservationHandler({ hosted: hostedFound, item })}
           >
-            <Ionicons name="bed-outline" size={getFontSize(20)} color={textColor(!reservationFound)} />
+            <Ionicons name="bed-outline" size={26} color={textColor(!hostedFound)} />
           </TouchableOpacity>
         </View>
       </View>

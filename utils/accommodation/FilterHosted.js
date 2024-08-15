@@ -8,7 +8,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useSelector } from "react-redux";
-import { getFontSize, thousandsSystem } from "@helpers/libs";
+import { thousandsSystem } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import FullFilterDate from "@components/FullFilterDate";
@@ -64,7 +64,7 @@ const FilterHosted = ({
                 FILTRA
               </TextStyle>
               <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
-                <Ionicons name="close" size={getFontSize(24)} color={textColor} />
+                <Ionicons name="close" size={30} color={textColor} />
               </TouchableOpacity>
             </View>
             <TextStyle smallParagraph color={textColor}>

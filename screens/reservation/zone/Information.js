@@ -5,7 +5,7 @@ import { remove } from "@features/zones/informationSlice";
 import { removeMany as removeManyN } from "@features/zones/nomenclaturesSlice";
 import { removeManyByManyRefs as removeManyByManyRefsRS } from "@features/zones/standardReservationsSlice";
 import { removeManyByManyRefs as removeManyByManyRefsRA } from "@features/zones/accommodationReservationsSlice";
-import { changeDate, thousandsSystem, getFontSize } from "@helpers/libs";
+import { changeDate, thousandsSystem } from "@helpers/libs";
 import { removeZone } from "@api";
 import helperNotification from "@helpers/helperNotification";
 import Layout from "@components/Layout";
@@ -103,7 +103,7 @@ const PlaceInformation = ({ route, navigation }) => {
         >
           <Ionicons
             name="create-outline"
-            size={getFontSize(31)}
+            size={36}
             color={light.main2}
           />
         </TouchableOpacity>

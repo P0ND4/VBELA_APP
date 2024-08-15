@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Alert, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { thousandsSystem, changeDate, getFontSize } from "@helpers/libs";
+import { thousandsSystem, changeDate } from "@helpers/libs";
 import { FlatList, Swipeable } from "react-native-gesture-handler";
 import { remove } from "@features/sales/recipesSlice";
 import { useNavigation } from "@react-navigation/native";
@@ -127,7 +127,7 @@ const Card = ({ item, type, onSelected }) => {
         <Ionicons
           name="information-circle-outline"
           color={mode === "light" ? dark.main2 : light.main5}
-          size={getFontSize(21)}
+          size={26}
         />
       </TouchableOpacity>
     </View>
@@ -141,7 +141,7 @@ const Card = ({ item, type, onSelected }) => {
       >
         <Ionicons
           name="trash"
-          size={getFontSize(21)}
+          size={26}
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>
@@ -151,7 +151,7 @@ const Card = ({ item, type, onSelected }) => {
       >
         <Ionicons
           name="create"
-          size={getFontSize(21)}
+          size={26}
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>
@@ -161,7 +161,7 @@ const Card = ({ item, type, onSelected }) => {
       >
         <Ionicons
           name="send-outline"
-          size={getFontSize(21)}
+          size={26}
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>
@@ -171,7 +171,7 @@ const Card = ({ item, type, onSelected }) => {
       >
         <Ionicons
           name="copy"
-          size={getFontSize(21)}
+          size={26}
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>
@@ -347,7 +347,7 @@ const Recipe = ({ route, navigation }) => {
             </TextStyle>
           </TextStyle>
           <TouchableOpacity onPress={() => navigation.navigate("CreateRecipe", { type })}>
-            <Ionicons name="add-circle" color={light.main2} size={getFontSize(26)} />
+            <Ionicons name="add-circle" color={light.main2} size={30} />
           </TouchableOpacity>
         </View>
       )}

@@ -12,7 +12,7 @@ import TextStyle from "@components/TextStyle";
 import PaymentButtons from "@components/PaymentButtons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
-import { thousandsSystem, getFontSize } from "@helpers/libs";
+import { thousandsSystem } from "@helpers/libs";
 import { add, edit, remove } from "@features/function/rosterSlice";
 
 const { light, dark } = theme();
@@ -193,7 +193,7 @@ const CreateRoster = ({ route, navigation }) => {
                     </TextStyle>
                     <Ionicons
                       color={rosterSelected ? "#FFFFFF" : "#AAAAAA"}
-                      size={getFontSize(15)}
+                      size={20}
                       name="caret-down"
                     />
                   </View>

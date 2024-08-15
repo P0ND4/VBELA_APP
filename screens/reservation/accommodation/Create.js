@@ -12,7 +12,7 @@ import Header from "@utils/reservation/create/Header";
 import FinalInformation from "@utils/reservation/create/FinalInformation";
 import helperNotification from "@helpers/helperNotification";
 import { Hosted, AddHosted } from "@utils/reservation/create/HostedEvent";
-import { addDays, changeDate, random, thousandsSystem, getFontSize } from "@helpers/libs";
+import { addDays, changeDate, random, thousandsSystem } from "@helpers/libs";
 import theme from "@theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
@@ -189,7 +189,7 @@ const CreateReserve = ({ route, navigation }) => {
                 <Ionicons
                   name="person-add"
                   color={light.textDark}
-                  size={getFontSize(16)}
+                  size={20}
                   style={{ marginLeft: 10 }}
                 />
               </ButtonStyle>

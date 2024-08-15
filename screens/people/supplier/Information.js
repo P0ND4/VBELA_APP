@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { getFontSize, thousandsSystem, changeDate, print, generatePDF } from "@helpers/libs";
+import { thousandsSystem, changeDate, print, generatePDF } from "@helpers/libs";
 import { useNavigation } from "@react-navigation/native";
 import { Swipeable } from "react-native-gesture-handler";
 import { remove as REconomy, removeManyByIds } from "@features/function/economySlice";
@@ -113,7 +113,7 @@ const Card = ({ item }) => {
         <Ionicons
           name="information-circle-outline"
           color={mode === "light" ? dark.main2 : light.main5}
-          size={getFontSize(21)}
+          size={26}
         />
       </TouchableOpacity>
     </View>
@@ -127,7 +127,7 @@ const Card = ({ item }) => {
       >
         <Ionicons
           name="trash"
-          size={getFontSize(21)}
+          size={26}
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>
@@ -143,7 +143,7 @@ const Card = ({ item }) => {
         >
           <Ionicons
             name="create"
-            size={getFontSize(21)}
+            size={26}
             color={mode === "light" ? dark.main2 : light.main5}
           />
         </TouchableOpacity>
@@ -433,7 +433,7 @@ const SupplierInformation = ({ route }) => {
             <TouchableOpacity onPress={() => removeEverything()}>
               <Ionicons
                 name="trash"
-                size={getFontSize(28)}
+                size={32}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -443,7 +443,7 @@ const SupplierInformation = ({ route }) => {
             <TouchableOpacity onPress={() => print({ html })}>
               <Ionicons
                 name="print"
-                size={getFontSize(28)}
+                size={32}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -453,7 +453,7 @@ const SupplierInformation = ({ route }) => {
             <TouchableOpacity onPress={() => generatePDF({ html })}>
               <Ionicons
                 name="document-attach"
-                size={getFontSize(28)}
+                size={32}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -463,7 +463,7 @@ const SupplierInformation = ({ route }) => {
             <TouchableOpacity>
               <Ionicons
                 name="filter"
-                size={getFontSize(28)}
+                size={32}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />

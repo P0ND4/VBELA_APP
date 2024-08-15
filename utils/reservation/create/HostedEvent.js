@@ -1,6 +1,6 @@
 import { View, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import { useSelector } from "react-redux";
-import { getFontSize, random } from "@helpers/libs";
+import { random } from "@helpers/libs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import TextStyle from "@components/TextStyle";
 import AddPerson from "@components/AddPerson";
@@ -76,7 +76,7 @@ export const Hosted = ({ item, personStaying, removeEvent, editingEvent }) => {
         <TouchableOpacity onPress={() => editingEvent()}>
           <Ionicons
             name="create-outline"
-            size={getFontSize(19)}
+            size={25}
             style={{ marginHorizontal: 4 }}
             color={mode === "light" ? light.textDark : dark.textWhite}
           />
@@ -103,7 +103,7 @@ export const Hosted = ({ item, personStaying, removeEvent, editingEvent }) => {
           >
             <Ionicons
               name="trash"
-              size={getFontSize(19)}
+              size={25}
               style={{ marginHorizontal: 4 }}
               color={mode === "light" ? light.textDark : dark.textWhite}
             />

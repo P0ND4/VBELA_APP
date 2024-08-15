@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
-import { getFontSize, thousandsSystem } from "@helpers/libs";
+import { thousandsSystem } from "@helpers/libs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
@@ -160,7 +160,7 @@ const AddPerson = ({
               <TouchableOpacity onPress={() => cleanData()}>
                 <Ionicons
                   name="close"
-                  size={getFontSize(28)}
+                  size={33}
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 />
               </TouchableOpacity>

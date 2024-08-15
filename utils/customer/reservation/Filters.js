@@ -45,7 +45,7 @@ const Filters = () => {
               >
                 <Ionicons
                   name="close"
-                  size={getFontSize(24)}
+                  size={30}
                   color={mode === "light" ? light.textDark : dark.textWhite}
                 />
               </TouchableOpacity>

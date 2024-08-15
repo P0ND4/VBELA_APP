@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { remove } from "@features/zones/nomenclaturesSlice";
 import { removeMany as removeManyRS } from "@features/zones/standardReservationsSlice";
 import { removeMany as removeManyRA } from "@features/zones/accommodationReservationsSlice";
-import { changeDate, thousandsSystem, getFontSize } from "@helpers/libs";
+import { changeDate, thousandsSystem } from "@helpers/libs";
 import { removeNomenclature } from "@api";
 import helperNotification from "@helpers/helperNotification";
 import Layout from "@components/Layout";
@@ -91,7 +91,7 @@ const PlaceInformation = ({ route, navigation }) => {
             });
           }}
         >
-          <Ionicons name="create-outline" size={getFontSize(31)} color={light.main2} />
+          <Ionicons name="create-outline" size={36} color={light.main2} />
         </TouchableOpacity>
       </View>
       <TextStyle smallSubtitle color={light.main2}>

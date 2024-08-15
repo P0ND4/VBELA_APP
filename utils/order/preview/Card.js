@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { StyleSheet, View, TouchableOpacity, Alert } from "react-native";
 import { useSelector } from "react-redux";
-import { thousandsSystem, getFontSize } from "@helpers/libs";
+import { thousandsSystem } from "@helpers/libs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import TextStyle from "@components/TextStyle";
 import theme from "@theme";
@@ -25,7 +25,7 @@ const Card = ({ item, countHandler, observationHandler, percentageHandler, chang
   const Option = ({ icon, value, color = textColor, assistant, assistantColor, onPress }) => {
     return (
       <TouchableOpacity style={{ alignItems: "center" }} onPress={onPress}>
-        <Ionicons name={icon} size={getFontSize(23)} color={color} />
+        <Ionicons name={icon} size={28} color={color} />
         <TextStyle smallParagraph color={color}>
           {value}
         </TextStyle>

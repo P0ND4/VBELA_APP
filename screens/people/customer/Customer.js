@@ -8,7 +8,7 @@ import {
   FlatList,
 } from "react-native";
 import { useSelector } from "react-redux";
-import { getFontSize, thousandsSystem } from "@helpers/libs";
+import { thousandsSystem } from "@helpers/libs";
 import Card from "@utils/customer/Card";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -178,14 +178,14 @@ const Customer = ({ navigation }) => {
                 setTimeout(() => searchRef.current?.focus());
               }}
             >
-              <Ionicons name="search" size={getFontSize(28)} color={light.main2} />
+              <Ionicons name="search" size={35} color={light.main2} />
             </TouchableOpacity>
           )}
           <TouchableOpacity
             style={{ marginHorizontal: 4 }}
             onPress={() => navigation.navigate("CustomerInformation", { type: "general" })}
           >
-            <Ionicons name="document-text" size={getFontSize(28)} color={light.main2} />
+            <Ionicons name="document-text" size={35} color={light.main2} />
           </TouchableOpacity>
         </View>
       </View>
@@ -198,7 +198,7 @@ const Customer = ({ navigation }) => {
               setFilters(initialState);
             }}
           >
-            <Ionicons name="close" size={getFontSize(24)} color={textColor} />
+            <Ionicons name="close" size={30} color={textColor} />
           </TouchableOpacity>
           <InputStyle
             innerRef={searchRef}
@@ -209,7 +209,7 @@ const Customer = ({ navigation }) => {
             stylesInput={styles.search}
           />
           <TouchableOpacity onPress={() => setActiveFilter(!activeFilter)}>
-            <Ionicons name="filter" size={getFontSize(24)} color={light.main2} />
+            <Ionicons name="filter" size={30} color={light.main2} />
           </TouchableOpacity>
         </View>
       )}
@@ -228,13 +228,13 @@ const Customer = ({ navigation }) => {
             style={styles.iconButton}
             onPress={() => navigation.navigate("CustomerReservations")}
           >
-            <Ionicons name="bed" size={getFontSize(20)} />
+            <Ionicons name="bed" size={25} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => navigation.navigate("CustomerSales")}
           >
-            <Ionicons name="restaurant" size={getFontSize(20)} />
+            <Ionicons name="restaurant" size={25} />
           </TouchableOpacity>
         </View>
       </View>

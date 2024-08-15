@@ -209,9 +209,9 @@ const Table = ({ item, tableOptions, activePayment, openPaymentToPay }) => {
           </View>
         )}
         {tableOptions.customer && (
-          <View style={[styles.table, { borderColor: textColor, width: 70 }]}>
+          <View style={[styles.table, { borderColor: textColor, width: 120 }]}>
             <TextStyle smallParagraph color={textColor}>
-              {item.owner ? "SI" : "NO"}
+              {item?.customer || "NO AFILIADO"}
             </TextStyle>
           </View>
         )}
@@ -516,9 +516,9 @@ const GuestTable = ({ hosted, options = {} }) => {
           </View>
         )}
         {tableOptions.customer && (
-          <View style={[styles.table, { borderColor: textColor, width: 70 }]}>
+          <View style={[styles.table, { borderColor: textColor, width: 120 }]}>
             <TextStyle color={light.main2} smallParagraph>
-              CLIENTE
+              CLIENTE/AGENCIA
             </TextStyle>
           </View>
         )}

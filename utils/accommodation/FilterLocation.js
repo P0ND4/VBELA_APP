@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { View, Modal, TouchableWithoutFeedback, TouchableOpacity, StyleSheet } from "react-native";
 import { useSelector } from "react-redux";
-import { getFontSize, thousandsSystem } from "@helpers/libs";
+import { thousandsSystem } from "@helpers/libs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import FullFilterDate from "@components/FullFilterDate";
 import TextStyle from "@components/TextStyle";
@@ -35,7 +35,7 @@ const FilterLocation = ({ modalVisible, setModalVisible, setFilters, filters, in
                 FILTRA
               </TextStyle>
               <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
-                <Ionicons name="close" size={getFontSize(24)} color={textColor} />
+                <Ionicons name="close" size={30} color={textColor} />
               </TouchableOpacity>
             </View>
             <TextStyle smallParagraph color={textColor}>

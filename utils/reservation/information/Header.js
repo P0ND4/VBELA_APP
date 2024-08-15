@@ -1,6 +1,6 @@
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { useSelector } from "react-redux";
-import { print, generatePDF, getFontSize } from "@helpers/libs";
+import { print, generatePDF } from "@helpers/libs";
 import TextStyle from "@components/TextStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
@@ -23,7 +23,7 @@ const Header = ({ rightIcon = () => {}, nomenclature, html }) => {
           <TouchableOpacity onPress={() => print({ html })}>
             <Ionicons
               name="print"
-              size={getFontSize(28)}
+              size={35}
               color={light.main2}
               style={{ marginHorizontal: 5 }}
             />
@@ -31,7 +31,7 @@ const Header = ({ rightIcon = () => {}, nomenclature, html }) => {
           <TouchableOpacity onPress={() => generatePDF({ html })}>
             <Ionicons
               name="document-attach"
-              size={getFontSize(28)}
+              size={35}
               color={light.main2}
               style={{ marginHorizontal: 5 }}
             />

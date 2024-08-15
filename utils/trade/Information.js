@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { View, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { useSelector } from "react-redux";
-import { thousandsSystem, getFontSize } from "@helpers/libs";
+import { thousandsSystem } from "@helpers/libs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Information from "@components/Information";
 import TextStyle from "@components/TextStyle";
@@ -27,7 +27,7 @@ const Observation = ({ item }) => {
           x {item.name}
         </TextStyle>
         <TouchableOpacity onPress={() => isOpen(!open)}>
-          <Ionicons color={light.main2} name={open ? "eye-off" : "eye"} size={getFontSize(18)} />
+          <Ionicons color={light.main2} name={open ? "eye-off" : "eye"} size={34} />
         </TouchableOpacity>
       </View>
       {open && (
@@ -116,7 +116,7 @@ const CommerceInformation = ({ item, modalVisible, setModalVisible }) => {
                   <Ionicons
                     color={light.main2}
                     name={openInformationCard ? "eye-off" : "eye"}
-                    size={getFontSize(18)}
+                    size={34}
                   />
                 </TouchableOpacity>
               </View>

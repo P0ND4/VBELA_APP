@@ -5,7 +5,7 @@ import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Logo from "@assets/logo.png";
-import { thousandsSystem, print, generatePDF, changeDate, getFontSize } from "@helpers/libs";
+import { thousandsSystem, print, generatePDF, changeDate } from "@helpers/libs";
 import { editInventory } from "@api";
 import { edit } from "@features/inventory/informationSlice";
 import theme from "@theme";
@@ -467,7 +467,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
             <TouchableOpacity onPress={() => removeEntryOutput()}>
               <Ionicons
                 name="trash"
-                size={getFontSize(28)}
+                size={32}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -483,7 +483,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
             >
               <Ionicons
                 name="print"
-                size={getFontSize(28)}
+                size={32}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -500,7 +500,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
             >
               <Ionicons
                 name="document-attach"
-                size={getFontSize(28)}
+                size={32}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -510,7 +510,7 @@ const EntryOutputInformation = ({ route, navigation }) => {
             <TouchableOpacity>
               <Ionicons
                 name="filter"
-                size={getFontSize(28)}
+                size={32}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />

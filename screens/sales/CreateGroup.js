@@ -11,7 +11,7 @@ import {
 import { useForm } from "react-hook-form";
 import { useSelector, useDispatch } from "react-redux";
 import { add, edit, remove } from "@features/sales/groupsSlice";
-import { random, getFontSize } from "@helpers/libs";
+import { random } from "@helpers/libs";
 import { addGroup, editGroup, removeGroup } from "@api";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import ButtonStyle from "@components/ButtonStyle";
@@ -311,13 +311,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   icon: {
-    fontSize: getFontSize(20),
+    fontSize: 25,
     color: light.main2,
     marginLeft: 8,
   },
   input: {
     flex: 1,
-    fontSize: getFontSize(16),
+    fontSize: 21,
     padding: 5,
   },
 });

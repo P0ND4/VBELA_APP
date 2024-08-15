@@ -56,8 +56,6 @@ import Wifi from "@screens/setting/Wifi";
 import SupplierDebts from "@screens/people/supplier/Debts";
 import SupplierInformation from "@screens/people/supplier/Information";
 import Charge from "@screens/people/customer/debt/Charge";
-import Logs from "@screens/people/customer/debt/Logs";
-import Details from "@screens/people/customer/debt/Details";
 import CustomerInvoice from "@screens/people/customer/debt/Invoice";
 import CustomerInformation from "@screens/people/customer/Information";
 import CustomerReservations from "@screens/people/customer/Reservations";
@@ -625,8 +623,6 @@ const Main = () => {
           <Stack.Group>
             <Stack.Screen name="Charge" component={Charge} options={{ title: "Facturación" }} />
             <Stack.Screen name="CustomerInvoice" component={CustomerInvoice} />
-            <Stack.Screen name="Logs" component={Logs} options={{ title: "Reportes de pago" }} />
-            <Stack.Screen name="Detail" component={Details} />
           </Stack.Group>
           <Stack.Screen
             name="CustomerInformation"

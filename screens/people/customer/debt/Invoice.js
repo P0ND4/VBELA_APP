@@ -1,7 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
-import { View, StyleSheet, Image, ScrollView } from "react-native";
-import { useSelector } from "react-redux";
+import { View, StyleSheet, Image, ScrollView, Alert } from "react-native";
+import { useSelector, useDispatch } from "react-redux";
 import { thousandsSystem, changeDate, generatePDF, print } from "@helpers/libs";
+import { remove } from "@features/people/invoicesSlice";
+import { removeInvoice } from "@api";
+import CreateInvoice from "@utils/customer/debt/CreateInvoice";
 import FloatingButton from "@components/FloatingButton";
 import Logo from "@assets/logo.png";
 import TextStyle from "@components/TextStyle";
@@ -57,6 +60,8 @@ const Table = ({ trade, details = "-", people = "-", days = "-", value = "-" }) 
 };
 
 const Invoice = ({ navigation, route }) => {
+  const user = useSelector((state) => state.user);
+  const helperStatus = useSelector((state) => state.helperStatus);
   const mode = useSelector((state) => state.mode);
   const nomenclatures = useSelector((state) => state.nomenclatures);
   const zones = useSelector((state) => state.zones);
@@ -68,12 +73,18 @@ const Invoice = ({ navigation, route }) => {
 
   const [customer, setCustomer] = useState(null);
   const [invoices, setInvoices] = useState([]);
+  const [paymentIDS, setPaymentIDS] = useState(route.params?.paymentIDS || null);
   const [creationDate, setCreationDate] = useState(new Date());
+  const [modalVisible, setModalVisible] = useState(false);
+  const [buttons, setButtons] = useState([]);
 
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
 
+  const dispatch = useDispatch();
+
   const id = route.params?.id;
+  const invoice = route.params?.invoice;
   const everything = route.params?.everything;
 
   useEffect(() => {
@@ -105,10 +116,13 @@ const Invoice = ({ navigation, route }) => {
 
       const IDS = customer.special ? customer.clientList.map((c) => c.id) : [customer.id];
 
-      const a = accommodationReservations?.filter((a) => IDS.includes(a.owner));
-      const s = standardReservations?.filter((s) => s.hosted?.some((h) => IDS.includes(h.owner)));
-      const o = orders.filter((o) => IDS.includes(o.ref));
-      const f = sales.filter((o) => IDS.includes(o.ref));
+      const filterEvent = (id, condition) => (paymentIDS ? paymentIDS.includes(id) : condition);
+      const compareHosted = (hosted) => hosted?.some((h) => IDS.includes(h.owner));
+
+      const a = accommodationReservations?.filter((a) => filterEvent(a.id, IDS.includes(a.owner)));
+      const s = standardReservations?.filter((s) => filterEvent(s.id, compareHosted(s.hosted)));
+      const o = orders.filter((o) => filterEvent(o.id, IDS.includes(o.ref)));
+      const f = sales.filter((o) => filterEvent(o.id, IDS.includes(o.ref)));
 
       const SDebugged = s?.filter((standard) => {
         const hosted = standard.hosted.filter((h) => IDS.includes(h.owner));
@@ -158,152 +172,199 @@ const Invoice = ({ navigation, route }) => {
       const invoices = sort([...accommodation, ...trade]);
 
       const condition = (old, { creationDate }) => (creationDate < old ? creationDate : old);
-      setCreationDate(invoices?.reduce(condition)?.creationDate || new Date());
+      setCreationDate(invoices?.reduce(condition, new Date())?.creationDate || new Date());
       setInvoices(invoices);
     })();
-  }, [customer, orders, sales, standardReservations, accommodationReservations, everything]);
+  }, [customer, orders, sales, standardReservations, accommodationReservations, everything, paymentIDS]);
 
-  const getHTML = () => {
-    const text = invoices.reduce(
-      (a, item) =>
-        a +
-        `<tr>
-          <td style="width: 200px; border: 1px solid #000; padding: 8px">
-            <p style="font-size: 18px; font-weight: 600;">${item.details}</p>
-          </td>
-          <td style="width: 50px; border: 1px solid #000; padding: 8px">
-            <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(item.people)}</p>
-          </td>
-          <td style="width: 50px; border: 1px solid #000; padding: 8px">
-            <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(item.days)}</p>
-          </td>
-          <td style="width: 100px; border: 1px solid #000; padding: 8px">
-            <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(item.value)}</p>
-          </td>
-        </tr>
-        ${item.trades?.reduce(
-          (a, trade) =>
-            a +
-            `<tr>
-              <td style="width: 200px; border: 1px solid #000; background: #EEEEEE; padding: 8px;" colspan="3">
-                <p style="font-size: 18px; font-weight: 600;">${`Venta (${trade.selection
-                  .reduce((a, b) => [...a, b.name], [])
-                  .join(" + ")})`}</p>
-              </td>
-              <td style="width: 100px; border: 1px solid #000; background: #EEEEEE; padding: 8px;">
-                <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(
-                  getTradePrice([trade])
-                )}</p>
-              </td>
-            </tr>`,
-          ""
-        )}
-        `,
-      ""
-    );
+  useEffect(() => {
+    (() => {
+      const text = invoices.reduce(
+        (a, item) =>
+          a +
+          `<tr>
+            <td style="width: 200px; border: 1px solid #000; padding: 8px">
+              <p style="font-size: 18px; font-weight: 600;">${item.details}</p>
+            </td>
+            <td style="width: 50px; border: 1px solid #000; padding: 8px">
+              <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(item.people)}</p>
+            </td>
+            <td style="width: 50px; border: 1px solid #000; padding: 8px">
+              <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(item.days)}</p>
+            </td>
+            <td style="width: 100px; border: 1px solid #000; padding: 8px">
+              <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(item.value)}</p>
+            </td>
+          </tr>
+          ${
+            item?.trades?.reduce(
+              (a, trade) =>
+                a +
+                `<tr>
+                <td style="width: 200px; border: 1px solid #000; background: #EEEEEE; padding: 8px;" colspan="3">
+                  <p style="font-size: 18px; font-weight: 600;">${`Venta (${trade.selection
+                    .reduce((a, b) => [...a, b.name], [])
+                    .join(" + ")})`}</p>
+                </td>
+                <td style="width: 100px; border: 1px solid #000; background: #EEEEEE; padding: 8px;">
+                  <p style="font-size: 18px; font-weight: 600;">${thousandsSystem(
+                    getTradePrice([trade])
+                  )}</p>
+                </td>
+              </tr>`,
+              ""
+            ) || ""
+          }
+          `,
+        ""
+      );
 
-    return `
-    <html lang="en">
-  
-  <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <style type="text/css">
-      * {
-        padding: 0;
-        margin: 0;
-        box-sizing: 'border-box';
-        font-family: sans-serif;
-        color: #000
-      }
-  
-      @page { margin: 20px; } 
-    </style>
-  </head>
-  
-  <body>
-    <view style="padding: 20px 0 0 0; display: block; margin: 20px 0 0 0;">
-      <view>
-        <img
-        src="${Image.resolveAssetSource(Logo).uri}"
-        style="width: 22vw; display: block; margin: 0 auto; border-radius: 8px" />
-        <p style="font-size: 30px; text-align: center">vbelapp.com</p>
+      const html = `
+      <html lang="en">
+    
+    <head>
+      <meta charset="UTF-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Document</title>
+      <style type="text/css">
+        * {
+          padding: 0;
+          margin: 0;
+          box-sizing: 'border-box';
+          font-family: sans-serif;
+          color: #000
+        }
+    
+        @page { margin: 20px; } 
+      </style>
+    </head>
+    
+    <body>
+      <view style="padding: 20px 0 0 0; display: block; margin: 20px 0 0 0;">
+        <view>
+          <img
+          src="${Image.resolveAssetSource(Logo).uri}"
+          style="width: 22vw; display: block; margin: 0 auto; border-radius: 8px" />
+          <p style="font-size: 30px; text-align: center">vbelapp.com</p>
+        </view>
+        <p style="font-size: 30px; text-align: center; margin: 20px 0; background-color: #000; padding: 10px 0; color: #FFFFFF">FACTURA GENERAL</p>
       </view>
-      <p style="font-size: 30px; text-align: center; margin: 20px 0; background-color: #000; padding: 10px 0; color: #FFFFFF">FACTURA GENERAL</p>
-    </view>
-    <view>
-      <table style="width: 100vw">
-        <tr>
-          <td style="text-align: left;">
-            <p style="font-size: 30px; font-weight: 600;">FACTURA</p>
-          </td>
-          <td style="text-align: right;">
-            <p style="font-size: 30px; font-weight: 600;">#${customer?.id.slice(0, 7)}</>
-          </td>
-        </tr>
-      </table>
-      
-      <p style="font-size: 24px; font-weight: 600;">Fecha de creación: ${changeDate(
-        new Date(creationDate),
-        { time: true }
-      )}</p>
-
-
-      <view style="display: block; margin: 25px 0">
+      <view>
         <table style="width: 100vw">
           <tr>
             <td style="text-align: left;">
-              <p style="font-size: 24px; font-weight: 600;">${customer?.name}</p>
+              <p style="font-size: 30px; font-weight: 600;">FACTURA</p>
             </td>
             <td style="text-align: right;">
-              <p style="font-size: 24px; font-weight: 600;">(${thousandsSystem(
-                invoices.length
-              )}) Eventos generados</>
+              <p style="font-size: 30px; font-weight: 600;">#${invoice}</>
             </td>
           </tr>
         </table>
-        <p style="font-size: 24px; text-align: right; font-weight: 600;">(${thousandsSystem(
-          customer?.clientList?.length || 1
-        )}) clientes</p>
-
-        <table style="width: 100vw; margin: 15px 0;">
-          <tr>
-            <td style="width: 200px; border: 1px solid #000; padding: 8px">
-              <p style="font-size: 18px; font-weight: bold;">Detalle</p>
-            </td>
-            <td style="width: 50px; border: 1px solid #000; padding: 8px">
-              <p style="font-size: 18px; font-weight: bold;">Personas</p>
-            </td>
-            <td style="width: 50px; border: 1px solid #000; padding: 8px">
-              <p style="font-size: 18px; font-weight: bold;">Días</p>
-            </td>
-            <td style="width: 100px; border: 1px solid #000; padding: 8px">
-              <p style="font-size: 18px; font-weight: bold;">Valor</p>
-            </td>
-          </tr>
-          ${text.replace(/,/g, "")}
-        </table>
-
-        <p style="font-size: 24px; text-align: right; font-weight: 600;">Total: ${thousandsSystem(
-          invoices.reduce((a, b) => a + b.value, 0)
+        
+        <p style="font-size: 24px; font-weight: 600;">Fecha de creación: ${changeDate(
+          new Date(creationDate),
+          { time: true }
         )}</p>
-      </view>
-
-      
-
-      <p style="font-size: 24px; font-weight: 600; text-align: center">Factura generada el: ${changeDate(
-        new Date(),
-        { time: true }
-      )}</p>
-      <p style="font-size: 16px; font-weight: 600; text-align: center; margin-top: 20px">FACTURA GENERADA POR VBELA POR FAVOR RECUERDE VISITAR vbelapp.com</p>
-    </view>
-  </body>
   
-  </html>
-    `;
-  };
+  
+        <view style="display: block; margin: 25px 0">
+          <table style="width: 100vw">
+            <tr>
+              <td style="text-align: left;">
+                <p style="font-size: 24px; font-weight: 600;">${customer?.name}</p>
+              </td>
+              <td style="text-align: right;">
+                <p style="font-size: 24px; font-weight: 600;">(${thousandsSystem(
+                  invoices.length
+                )}) Eventos generados</>
+              </td>
+            </tr>
+          </table>
+          <p style="font-size: 24px; text-align: right; font-weight: 600;">(${thousandsSystem(
+            customer?.clientList?.length || 1
+          )}) clientes</p>
+  
+          <table style="width: 100vw; margin: 15px 0;">
+            <tr>
+              <td style="width: 200px; border: 1px solid #000; padding: 8px">
+                <p style="font-size: 18px; font-weight: bold;">Detalle</p>
+              </td>
+              <td style="width: 50px; border: 1px solid #000; padding: 8px">
+                <p style="font-size: 18px; font-weight: bold;">Personas</p>
+              </td>
+              <td style="width: 50px; border: 1px solid #000; padding: 8px">
+                <p style="font-size: 18px; font-weight: bold;">Días</p>
+              </td>
+              <td style="width: 100px; border: 1px solid #000; padding: 8px">
+                <p style="font-size: 18px; font-weight: bold;">Valor</p>
+              </td>
+            </tr>
+            ${text.replace(/,/g, "")}
+          </table>
+  
+          <p style="font-size: 24px; text-align: right; font-weight: 600;">Total: ${thousandsSystem(
+            invoices.reduce((a, b) => a + b.value, 0)
+          )}</p>
+        </view>
+  
+        
+  
+        <p style="font-size: 24px; font-weight: 600; text-align: center">Factura generada el: ${changeDate(
+          new Date(),
+          { time: true }
+        )}</p>
+        <p style="font-size: 16px; font-weight: 600; text-align: center; margin-top: 20px">FACTURA GENERADA POR VBELA POR FAVOR RECUERDE VISITAR vbelapp.com</p>
+      </view>
+    </body>
+    
+    </html>
+      `;
+
+      const basic = [
+        {
+          name: "document",
+          onPress: async () => generatePDF({ html, code: invoice, width: 425, height: 570 }),
+        },
+        { name: "print", onPress: () => print({ html }) },
+      ];
+
+      if (!paymentIDS) return setButtons(basic);
+      setButtons([
+        ...basic,
+        { name: "create", onPress: () => setModalVisible(!modalVisible) },
+        {
+          name: "trash",
+          backgroundColor: "red",
+          color: light.main5,
+          onPress: () =>
+            Alert.alert(
+              "Ey",
+              "¿Estás seguro que desea eliminar la factura?",
+              [
+                {
+                  text: "No estoy seguro",
+                  style: "cancel",
+                },
+                {
+                  text: "Estoy seguro",
+                  onPress: async () => {
+                    navigation.pop();
+                    dispatch(remove({ id: invoice }));
+                    await removeInvoice({
+                      identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+                      id: invoice,
+                      helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
+                    });
+                  },
+                },
+              ],
+              { cancelable: true }
+            ),
+        },
+      ]);
+    })();
+  }, [paymentIDS, invoices, customer]);
 
   return (
     <>
@@ -329,7 +390,7 @@ const Invoice = ({ navigation, route }) => {
                   </TextStyle>
                 </TextStyle>
               </View>
-              <TextStyle color={textColor}>#{customer?.id.slice(0, 7)}</TextStyle>
+              <TextStyle color={textColor}>#{invoice}</TextStyle>
             </View>
             <View style={{ marginVertical: 25 }}>
               <View style={styles.row}>
@@ -414,16 +475,13 @@ const Invoice = ({ navigation, route }) => {
           </View>
         </ScrollView>
       </Layout>
-      <FloatingButton
-        style={{ top: 20, right: 45 }}
-        buttons={[
-          {
-            name: "document",
-            onPress: async () =>
-              generatePDF({ html: getHTML(), code: customer?.id.slice(0, 7), width: 425, height: 570 }),
-          },
-          { name: "print", onPress: () => print({ html: getHTML() }) },
-        ]}
+      <FloatingButton style={{ top: 20, right: 45 }} buttons={buttons} />
+      <CreateInvoice
+        key={modalVisible}
+        modalVisible={modalVisible}
+        setModalVisible={setModalVisible}
+        editing={{ id: invoice, ref: id, paymentIDS }}
+        onSubmit={({ paymentIDS }) => setPaymentIDS(paymentIDS)}
       />
     </>
   );

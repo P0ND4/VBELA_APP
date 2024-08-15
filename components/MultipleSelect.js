@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { StyleSheet, View, FlatList, TouchableOpacity } from "react-native";
-import { getFontSize } from "@helpers/libs";
 import Information from "./Information";
 import InputStyle from "./InputStyle";
 import TextStyle from "./TextStyle";
@@ -20,7 +19,7 @@ const Card = ({ item, onChange, isActive }) => {
       <Ionicons
         name={isActive ? "remove-circle" : "add-circle-outline"}
         color={light.main2}
-        size={getFontSize(20)}
+        size={25}
       />
     </TouchableOpacity>
   );
@@ -41,7 +40,7 @@ const Preview = ({ item, onChange }) => {
         name="close-circle-outline"
         style={{ marginLeft: 5 }}
         color={light.main2}
-        size={getFontSize(20)}
+        size={25}
       />
     </TouchableOpacity>
   );

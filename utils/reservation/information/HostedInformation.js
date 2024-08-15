@@ -79,7 +79,7 @@ const HostedInformation = ({
                 País: <TextStyle color={light.main2}>{item.country}</TextStyle>
               </TextStyle>
               <TextStyle color={textColor}>
-                Cliente: <TextStyle color={light.main2}>{item?.owner ? "SI" : "NO"}</TextStyle>
+                Cliente/Agencia: <TextStyle color={light.main2}>{item?.customer || "NO AFILIADO"}</TextStyle>
               </TextStyle>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <TextStyle color={textColor}>CHECK IN: </TextStyle>
@@ -117,46 +117,48 @@ const HostedInformation = ({
                 </View>
               )}
               <View style={styles.row}>
-                {(() => {
-                  const order = sales.find(
-                    (o) => o.ref === (item.owner || item.id) && o.status === "pending"
-                  );
-                  return (
-                    <ButtonStyle
-                      backgroundColor={!order ? light.main2 : backgroundColor}
-                      style={{ width: "49%" }}
-                      onPress={() => {
-                        navigation.navigate("Sales", {
-                          ref: item.owner || item.id,
-                          title: { name: "Habitación", value: item.fullName },
-                          order,
-                        });
-                      }}
-                    >
-                      <TextStyle center>P&S</TextStyle>
-                    </ButtonStyle>
-                  );
-                })()}
-                {(() => {
-                  const order = orders.find(
-                    (o) => o.ref === (item.owner || item.id) && o.status === "pending"
-                  );
-                  return (
-                    <ButtonStyle
-                      onPress={() => {
-                        navigation.navigate("RestaurantCreateOrder", {
-                          ref: item.owner || item.id,
-                          title: { name: "Habitación", value: item.fullName },
-                          order,
-                        });
-                      }}
-                      style={{ width: "49%" }}
-                      backgroundColor={!order ? light.main2 : backgroundColor}
-                    >
-                      <TextStyle center>Menú</TextStyle>
-                    </ButtonStyle>
-                  );
-                })()}
+                {!item.checkOut &&
+                  (() => {
+                    const order = sales.find(
+                      (o) => o.ref === (item.owner || item.id) && o.status === "pending"
+                    );
+                    return (
+                      <ButtonStyle
+                        backgroundColor={!order ? light.main2 : backgroundColor}
+                        style={{ width: "49%" }}
+                        onPress={() => {
+                          navigation.navigate("Sales", {
+                            ref: item.owner || item.id,
+                            title: { name: "Habitación", value: item.fullName },
+                            order,
+                          });
+                        }}
+                      >
+                        <TextStyle center>P&S</TextStyle>
+                      </ButtonStyle>
+                    );
+                  })()}
+                {!item.checkOut &&
+                  (() => {
+                    const order = orders.find(
+                      (o) => o.ref === (item.owner || item.id) && o.status === "pending"
+                    );
+                    return (
+                      <ButtonStyle
+                        onPress={() => {
+                          navigation.navigate("RestaurantCreateOrder", {
+                            ref: item.owner || item.id,
+                            title: { name: "Habitación", value: item.fullName },
+                            order,
+                          });
+                        }}
+                        style={{ width: "49%" }}
+                        backgroundColor={!order ? light.main2 : backgroundColor}
+                      >
+                        <TextStyle center>Menú</TextStyle>
+                      </ButtonStyle>
+                    );
+                  })()}
               </View>
               {remove && (
                 <ButtonStyle backgroundColor={light.main2} onPress={() => remove()}>

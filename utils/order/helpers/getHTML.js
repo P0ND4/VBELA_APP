@@ -2,9 +2,9 @@ import { Image } from "react-native";
 import { thousandsSystem, changeDate } from "@helpers/libs";
 import Logo from "@assets/logo.png";
 
-export default ({ previews, total, event, invoice, code, equivalence }) => {
+export default ({ previews, total, event, invoiceInformation, code, equivalence }) => {
   const date = new Date();
-  const invoiceInfo = [invoice?.name, invoice?.address, invoice?.number, invoice?.complement].filter(
+  const invoiceInfo = [invoiceInformation?.name, invoiceInformation?.address, invoiceInformation?.number, invoiceInformation?.complement].filter(
     Boolean
   );
 
@@ -69,7 +69,7 @@ export default ({ previews, total, event, invoice, code, equivalence }) => {
         ${invoiceInfo.join(" - ").trim()}
       </p>
         <p style="text-align: center; color: #444444; font-size: 40px; font-weight: 800; margin-top: 20px">
-          ${invoice?.name || "SIN NOMBRE"}
+          ${invoiceInformation?.name || "SIN NOMBRE"}
         </p>
         <p style="text-align: center; color: #444444; font-size: 30px; font-weight: 800; margin-bottom: 20px">
           TICKET N°: ${code}
@@ -142,7 +142,7 @@ export default ({ previews, total, event, invoice, code, equivalence }) => {
       </view>
       <hr/>
       <p style="text-align: center; font-size: 25px; font-weight: 600; margin-top: 15px; width: 95vw;">ESTA ES UNA FACTURA HECHA POR ${
-        invoice?.name || "SIN NOMBRE"
+        invoiceInformation?.name || "SIN NOMBRE"
       } RECUERDE VISITAR vbelapp.com</p>
     </view>
   </body>

@@ -1,6 +1,5 @@
 import { Image, TouchableOpacity, StyleSheet } from "react-native";
 import { useSelector } from "react-redux";
-import { getFontSize } from "@helpers/libs";
 import CountriesImages from "@assets/countries";
 import TextStyle from "@components/TextStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -36,7 +35,7 @@ const FlagButton = ({ onPress, arrow, selection }) => {
       <Ionicons
         name={arrow ? "caret-up" : "caret-down"}
         color={mode === "light" ? `${light.textDark}66` : `${dark.textWhite}66`}
-        size={getFontSize(12)}
+        size={17}
       />
     </TouchableOpacity>
   );

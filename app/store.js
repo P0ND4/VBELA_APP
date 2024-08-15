@@ -13,7 +13,7 @@ import ordersSlice from "@features/tables/ordersSlice";
 import economySlice from "@features/function/economySlice";
 import menuSlice from "@features/tables/menuSlice";
 import sectionSlice from "@features/tables/sectionSlice";
-import invoiceSlice from "@features/tables/invoiceSlice";
+import invoiceInformationSlice from "@features/tables/invoiceInformationSlice";
 import kitchenSlice from "@features/tables/kitchenSlice";
 import rosterSlice from "@features/function/rosterSlice";
 import synchronizationSlice from "@features/user/synchronizationSlice";
@@ -32,7 +32,7 @@ import accommodationReservationsSlice from "@features/zones/accommodationReserva
 // PEOPLE //
 import customerSlice from "@features/people/customersSlice";
 import supplierSlice from "@features/people/suppliersSlice";
-import billsSlice from "@features/people/billsSlice";
+import invoicesSlice from "@features/people/invoicesSlice";
 
 const reducers = combineReducers({
   mode: modeSlice, // Mode light and dark
@@ -49,7 +49,7 @@ const reducers = combineReducers({
   economy: economySlice,
   menu: menuSlice,
   section: sectionSlice,
-  invoice: invoiceSlice,
+  invoiceInformation: invoiceInformationSlice,
   kitchen: kitchenSlice,
   roster: rosterSlice,
   synchronization: synchronizationSlice,
@@ -65,7 +65,7 @@ const reducers = combineReducers({
   // PEOPLE //
   customers: customerSlice,
   suppliers: supplierSlice,
-  bills: billsSlice,
+  invoices: invoicesSlice
 });
 
 const persistConfig = {

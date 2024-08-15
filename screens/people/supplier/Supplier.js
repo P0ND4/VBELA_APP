@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import { useSelector, useDispatch } from "react-redux";
-import { getFontSize, thousandsSystem, changeDate } from "@helpers/libs";
+import { thousandsSystem, changeDate } from "@helpers/libs";
 import { useNavigation } from "@react-navigation/native";
 import { removePerson } from "@api";
 import { removeManyByRef } from "@features/function/economySlice";
@@ -142,7 +142,7 @@ const Card = ({ item }) => {
       >
         <Ionicons
           name="trash"
-          size={getFontSize(21)}
+          size={26}
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>
@@ -163,7 +163,7 @@ const Card = ({ item }) => {
       >
         <Ionicons
           name="create"
-          size={getFontSize(22)}
+          size={27}
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>
@@ -179,7 +179,7 @@ const Card = ({ item }) => {
         <Ionicons
           name="information-circle-outline"
           color={mode === "light" ? dark.main2 : light.main5}
-          size={getFontSize(21)}
+          size={26}
         />
       </TouchableOpacity>
     </View>
@@ -412,14 +412,14 @@ const Supplier = ({ navigation }) => {
                 setTimeout(() => searchRef.current?.focus());
               }}
             >
-              <Ionicons name="search" size={getFontSize(28)} color={light.main2} />
+              <Ionicons name="search" size={32} color={light.main2} />
             </TouchableOpacity>
           )}
           <TouchableOpacity
             style={{ marginHorizontal: 4 }}
             onPress={() => navigation.navigate("SupplierInformation", { type: "general" })}
           >
-            <Ionicons name="document-text" size={getFontSize(28)} color={light.main2} />
+            <Ionicons name="document-text" size={32} color={light.main2} />
           </TouchableOpacity>
         </View>
       </View>
@@ -442,7 +442,7 @@ const Supplier = ({ navigation }) => {
           >
             <Ionicons
               name="close"
-              size={getFontSize(24)}
+              size={30}
               color={mode === "light" ? light.textDark : dark.textWhite}
             />
           </TouchableOpacity>
@@ -459,7 +459,7 @@ const Supplier = ({ navigation }) => {
             }}
           />
           <TouchableOpacity onPress={() => setActiveFilter(!activeFilter)}>
-            <Ionicons name="filter" size={getFontSize(24)} color={light.main2} />
+            <Ionicons name="filter" size={30} color={light.main2} />
           </TouchableOpacity>
         </View>
       )}

@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { random, getFontSize } from "@helpers/libs";
+import { random } from "@helpers/libs";
 import { useNavigation } from "@react-navigation/native";
 import { edit as editRS } from "@features/zones/standardReservationsSlice";
 import { editReservation } from "@api";
@@ -268,7 +268,7 @@ const Place = ({ route, navigation }) => {
         {activeSearch && (
           <View style={styles.searchContainer}>
             <TouchableOpacity onPress={() => setActiveSearch(!activeSearch)}>
-              <Ionicons name="close" size={getFontSize(24)} color={textColor} />
+              <Ionicons name="close" size={30} color={textColor} />
             </TouchableOpacity>
             <InputStyle
               innerRef={searchRef}
@@ -301,7 +301,7 @@ const Place = ({ route, navigation }) => {
             <Ionicons
               name="help-circle-outline"
               style={{ marginLeft: 5 }}
-              size={getFontSize(23)}
+              size={28}
               color={light.main2}
             />
           </TouchableOpacity>

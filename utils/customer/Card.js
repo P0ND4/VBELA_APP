@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { ScrollView, Swipeable } from "react-native-gesture-handler";
 import { useSelector, useDispatch } from "react-redux";
-import { getFontSize, thousandsSystem, changeDate, random } from "@helpers/libs";
+import { thousandsSystem, changeDate, random } from "@helpers/libs";
 import { useNavigation } from "@react-navigation/native";
 import { editUser, editPerson } from "@api";
 import { remove as removeCustomer, edit as editCustomer } from "@features/people/customersSlice";
@@ -298,17 +298,7 @@ const Card = ({ item }) => {
         <Ionicons
           name="information-circle-outline"
           color={mode === "light" ? dark.main2 : light.main5}
-          size={getFontSize(21)}
-        />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.swipe, { marginHorizontal: 2, backgroundColor: light.main2 }]}
-        onPress={() => navigation.navigate("Logs", { id: item.id })}
-      >
-        <Ionicons
-          name="receipt-outline"
-          color={mode === "light" ? dark.main2 : light.main5}
-          size={getFontSize(21)}
+          size={25}
         />
       </TouchableOpacity>
     </View>
@@ -322,7 +312,7 @@ const Card = ({ item }) => {
       >
         <Ionicons
           name="trash"
-          size={getFontSize(21)}
+          size={25}
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>
@@ -338,7 +328,7 @@ const Card = ({ item }) => {
       >
         <Ionicons
           name="create"
-          size={getFontSize(22)}
+          size={25}
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>
@@ -382,7 +372,8 @@ const Card = ({ item }) => {
       setHosted(
         item.clientList.reduce((a, b) => {
           const reservation = checkReservation({ id: b.id });
-          return reservation.active ? [...a, reservation.result] : a;
+          if (!reservation.active) return a;
+          return [...a, b.name];
         }, [])
       );
     }, [standardReservations, accommodationReservations, item]);
@@ -396,14 +387,14 @@ const Card = ({ item }) => {
           </TextStyle>
           {hosted?.length > 0 && (
             <TouchableOpacity onPress={() => setVisible(!visible)}>
-              <Ionicons name={visible ? "eye-off" : "eye"} color={light.main2} size={getFontSize(20)} />
+              <Ionicons name={visible ? "eye-off" : "eye"} color={light.main2} size={26} />
             </TouchableOpacity>
           )}
         </View>
         {visible &&
-          hosted.map((item) => (
+          hosted.map((name) => (
             <TextStyle color={light.main2} style={{ marginLeft: 10 }}>
-              - {item.fullName}
+              - {name}
             </TextStyle>
           ))}
       </View>
@@ -455,7 +446,7 @@ const Card = ({ item }) => {
                   <Ionicons
                     name="person-add"
                     color={light.textDark}
-                    size={getFontSize(16)}
+                    size={22}
                     style={{ marginLeft: 10 }}
                   />
                 </ButtonStyle>

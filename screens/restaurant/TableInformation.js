@@ -5,7 +5,7 @@ import {
   Alert
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { thousandsSystem, getFontSize } from "@helpers/libs";
+import { thousandsSystem } from "@helpers/libs";
 import { remove } from "@features/tables/informationSlice";
 import { removeTable } from "@api";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -80,7 +80,7 @@ const TableInformation = ({ route, navigation }) => {
             navigation.navigate("CreateTable", { item: table, editing: true })
           }
         >
-          <Ionicons name="create-outline" size={getFontSize(31)} color={light.main2} />
+          <Ionicons name="create-outline" size={36} color={light.main2} />
         </TouchableOpacity>
       </View>
       {table?.description && (

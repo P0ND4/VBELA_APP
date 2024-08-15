@@ -1,19 +1,19 @@
 import { useState, useEffect, useMemo } from "react";
 import { View, StyleSheet, FlatList, TouchableNativeFeedback, Alert } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { add } from "@features/people/billsSlice";
 import { change as changeStandard } from "@features/zones/standardReservationsSlice";
 import { change as changeAccommodation } from "@features/zones/accommodationReservationsSlice";
 import { change as changeOrders } from "@features/tables/ordersSlice";
 import { change as changeSales } from "@features/sales/salesSlice";
 import { useNavigation } from "@react-navigation/native";
-import { thousandsSystem, random, generateBill } from "@helpers/libs";
+import { thousandsSystem, random } from "@helpers/libs";
 import { editUser } from "@api";
 import Information from "@components/Information";
 import InputStyle from "@components/InputStyle";
 import ButtonStyle from "@components/ButtonStyle";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
+import CreateInvoice from "@utils/customer/debt/CreateInvoice";
 import theme from "@theme";
 
 const { light, dark } = theme();
@@ -21,7 +21,6 @@ const { light, dark } = theme();
 const Table = ({ item }) => {
   const user = useSelector((state) => state.user);
   const helperStatus = useSelector((state) => state.helperStatus);
-  const bills = useSelector((state) => state.bills);
   const customers = useSelector((state) => state.customers);
   const standardReservations = useSelector((state) => state.standardReservations);
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
@@ -40,13 +39,13 @@ const Table = ({ item }) => {
 
   // INFORMACIÓN PURIFICADA PARA EL PAGO
   const purifyInformation = () => {
-    const customer = customers.find((c) => c.id === item.id);
+    const customer = customers.find((c) => c.id === item.ref);
     const IDS = customer.special ? customer.clientList.map((c) => c.id) : [customer.id];
 
-    const a = accommodationReservations?.filter((a) => IDS.includes(a.owner));
-    const s = standardReservations?.filter((s) => s.hosted?.some((h) => IDS.includes(h.owner)));
-    const o = orders.filter((o) => IDS.includes(o.ref));
-    const f = sales.filter((o) => IDS.includes(o.ref));
+    const a = accommodationReservations?.filter((a) => item?.paymentIDS.includes(a.id));
+    const s = standardReservations?.filter((s) => item?.paymentIDS.includes(s.id));
+    const o = orders.filter((o) => item?.paymentIDS.includes(o.id));
+    const f = sales.filter((o) => item?.paymentIDS.includes(o.id));
 
     // FUNCIÓN PARA REDUCCIÓN DE CODIGO EN LA PURIFICACIÓN DE LA INFORMACIÓN
     const tradeDebugged = (trade) => {
@@ -68,14 +67,12 @@ const Table = ({ item }) => {
   };
 
   // ESTA FUNCION ES QUIEN ENVIA LA INFORMACION AL SERVIDOR
-  const sendInformation = async ({ bill, standard, accommodation, orders, sales }) => {
-    dispatch(add(bill));
+  const sendInformation = async ({ standard, accommodation, orders, sales }) => {
     dispatch(changeStandard(standard));
     dispatch(changeAccommodation(accommodation));
     dispatch(changeOrders(orders));
     dispatch(changeSales(sales));
 
-    Alert.alert("PAGADO", `El número de referencia del pago es: ${bill.id}`, [], { cancelable: true });
     setModalVisible(false);
 
     await editUser({
@@ -85,7 +82,6 @@ const Table = ({ item }) => {
         sales,
         standard,
         accommodation,
-        bills: [...bills, bill],
       },
       helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
     });
@@ -106,21 +102,21 @@ const Table = ({ item }) => {
   // COLOCAR TODAS LAS VENTAS DEL CLIENTE COMO PAGAS
   const tradePaymentHandler = (trade) => {
     const { orders, sales } = purifyInformation();
-  
+
     if (!orders.some((o) => o.id === trade.id) && !sales.some((s) => s.id === trade.id)) return trade;
 
-    const selection = trade.selection.map(({ method, price, discount }) => {
-      const credit = method.filter((c) => c.method === "credit");
+    const selection = trade.selection.map((tr) => {
+      const credit = tr.method.filter((c) => c.method === "credit");
       const quantity = credit.reduce((a, b) => a + b.quantity, 0);
-      const total = quantity * price * (1 - discount || 0);
+      const total = quantity * tr.price * (1 - tr.discount || 0);
 
-      const creditRemoved = method.reduce((acc, c) => {
+      const creditRemoved = tr.method.reduce((acc, c) => {
         if (c.method !== "credit") return [...acc, c];
         return acc;
       }, []);
 
       return {
-        ...trade,
+        ...tr,
         status: "paid",
         method: [...creditRemoved, { id: random(6), method: "others", total, quantity }],
       };
@@ -146,16 +142,8 @@ const Table = ({ item }) => {
     const orderChanged = orders.map(tradePaymentHandler);
     const saleChanged = sales.map(tradePaymentHandler);
 
-    const bill = generateBill({
-      value: item.value,
-      ref: item.id,
-      description: `El cliente ha pagado la deuda con un monto de ${thousandsSystem(item.value)}`,
-      bills,
-    });
-
     // ENVIAMOS TODA LA INFORMACION AL SERVIDOR
     await sendInformation({
-      bill,
       standard: standardChanged,
       accommodation: accommodationChanged,
       orders: orderChanged,
@@ -269,16 +257,8 @@ const Table = ({ item }) => {
     const orderChanged = paymentOfEcommerceDebts(orders, toPay);
     const saleChanged = paymentOfEcommerceDebts(sales, toPay);
 
-    const bill = generateBill({
-      value,
-      ref: item.id,
-      description: `El cliente ha hecho un abono a la deuda de ${thousandsSystem(value)}`,
-      bills,
-    });
-
     // ENVIAMOS TODA LA INFORMACION AL SERVIDOR
     await sendInformation({
-      bill,
       standard: standardChanged,
       accommodation: accommodationChanged,
       orders: orderChanged,
@@ -289,7 +269,7 @@ const Table = ({ item }) => {
   const eventHandler = () =>
     Alert.alert(
       "Forma de pago",
-      `N° Factura: ${item.id.slice(0, 7)} ¿Qué forma de pago desea realizar?`,
+      `N° Factura: ${item.id} ¿Qué forma de pago desea realizar?`,
       [
         {
           style: "cancel",
@@ -311,12 +291,18 @@ const Table = ({ item }) => {
     <>
       <TouchableNativeFeedback
         onPress={() => eventHandler()}
-        onLongPress={() => navigation.navigate("CustomerInvoice", { id: item.id })}
+        onLongPress={() =>
+          navigation.navigate("CustomerInvoice", {
+            id: item.ref,
+            invoice: item.id,
+            paymentIDS: item.paymentIDS,
+          })
+        }
       >
         <View style={{ flexDirection: "row" }}>
           <View style={[styles.table, { borderColor: textColor, width: 70 }]}>
             <TextStyle color={textColor} verySmall>
-              {item.id.slice(0, 7)}
+              {item.id}
             </TextStyle>
           </View>
           <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
@@ -410,8 +396,10 @@ const Charge = () => {
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
   const sales = useSelector((state) => state.sales);
   const orders = useSelector((state) => state.orders);
+  const invoices = useSelector((state) => state.invoices);
 
   const [debts, setDebts] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
@@ -430,13 +418,14 @@ const Charge = () => {
   };
 
   useEffect(() => {
-    const debts = customers.map((item) => {
-      const IDS = item.special ? item.clientList.map((c) => c.id) : [item.id];
+    const debts = invoices.map(({ id, ref, paymentIDS }) => {
+      const customer = customers.find((c) => c.id === ref);
+      const IDS = customer.special ? customer.clientList.map((c) => c.id) : [customer.id];
 
-      const a = accommodationReservations?.filter((a) => IDS.includes(a.owner));
-      const s = standardReservations?.filter((s) => s.hosted?.some((h) => IDS.includes(h.owner)));
-      const o = orders.filter((o) => IDS.includes(o.ref));
-      const f = sales.filter((o) => IDS.includes(o.ref));
+      const a = accommodationReservations?.filter((a) => paymentIDS.includes(a.id));
+      const s = standardReservations?.filter((s) => paymentIDS.includes(s.id));
+      const o = orders.filter((o) => paymentIDS.includes(o.id));
+      const f = sales.filter((o) => paymentIDS.includes(o.id));
 
       const old = [...a, ...s, ...o, ...f].reduce(
         (old, { creationDate }) => (creationDate < old ? creationDate : old),
@@ -460,67 +449,81 @@ const Charge = () => {
       const tradeCalculation = getTradePrice(OFDebugged);
 
       return {
-        id: item.id,
-        name: item.name,
+        id,
+        ref: customer.id,
+        paymentIDS,
+        name: customer.name,
         value: accommodationCalculation + tradeCalculation,
         expired: Math.floor((Date.now() - old) / (1000 * 60 * 60 * 24)) + 1,
       };
     });
     setDebts(debts.filter((d) => d.value > 0));
-  }, [sales, orders, accommodationReservations, standardReservations, customers]);
+  }, [sales, orders, accommodationReservations, standardReservations, invoices]);
 
   return (
-    <Layout>
-      {debts?.length === 0 && (
-        <TextStyle style={{ marginTop: 20 }} color={light.main2} center smallParagraph>
-          NO HAY DEUDAS PARA FACTURAR
-        </TextStyle>
-      )}
-      {debts?.length > 0 && (
-        <View>
-          <TextStyle subtitle color={mode === "light" ? light.textDark : dark.textWhite}>
-            Facturación
-          </TextStyle>
-          <TextStyle smallParagraph color={textColor}>
-            Valor total:{" "}
-            <TextStyle smallParagraph color={light.main2}>
-              {thousandsSystem(debts?.reduce((a, b) => a + b.value, 0) || "0")}
+    <>
+      <Layout>
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <View>
+            <TextStyle subtitle color={mode === "light" ? light.textDark : dark.textWhite}>
+              Facturación
             </TextStyle>
-          </TextStyle>
-        </View>
-      )}
-      {debts?.length > 0 && (
-        <View style={{ marginTop: 20 }}>
-          <View style={{ flexDirection: "row" }}>
-            <View style={[styles.table, { borderColor: textColor, width: 70 }]}>
-              <TextStyle color={light.main2} verySmall>
-                N° Factura
+            <TextStyle smallParagraph color={textColor}>
+              Valor total:{" "}
+              <TextStyle smallParagraph color={light.main2}>
+                {thousandsSystem(debts?.reduce((a, b) => a + b.value, 0) || "0")}
               </TextStyle>
-            </View>
-            <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
-              <TextStyle color={light.main2} verySmall>
-                Cliente
-              </TextStyle>
-            </View>
-            <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
-              <TextStyle color={light.main2} verySmall>
-                Valor
-              </TextStyle>
-            </View>
-            <View style={[styles.table, { borderColor: textColor, flexGrow: 1 }]}>
-              <TextStyle color={light.main2} verySmall>
-                Días vencidos
-              </TextStyle>
-            </View>
+            </TextStyle>
           </View>
-          <FlatList
-            data={debts}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <Table item={item} />}
-          />
+          <ButtonStyle
+            backgroundColor={light.main2}
+            style={{ width: "auto" }}
+            onPress={() => setModalVisible(!modalVisible)}
+          >
+            <TextStyle center smallParagraph>
+              Crear factura
+            </TextStyle>
+          </ButtonStyle>
         </View>
-      )}
-    </Layout>
+        {debts?.length === 0 && (
+          <TextStyle style={{ marginTop: 20 }} color={light.main2} center smallParagraph>
+            NO HAY DEUDAS PARA FACTURAR
+          </TextStyle>
+        )}
+        {debts?.length > 0 && (
+          <View style={{ marginTop: 20 }}>
+            <View style={{ flexDirection: "row" }}>
+              <View style={[styles.table, { borderColor: textColor, width: 70 }]}>
+                <TextStyle color={light.main2} verySmall>
+                  N° Factura
+                </TextStyle>
+              </View>
+              <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
+                <TextStyle color={light.main2} verySmall>
+                  Cliente
+                </TextStyle>
+              </View>
+              <View style={[styles.table, { borderColor: textColor, width: 100 }]}>
+                <TextStyle color={light.main2} verySmall>
+                  Valor
+                </TextStyle>
+              </View>
+              <View style={[styles.table, { borderColor: textColor, flexGrow: 1 }]}>
+                <TextStyle color={light.main2} verySmall>
+                  Días vencidos
+                </TextStyle>
+              </View>
+            </View>
+            <FlatList
+              data={debts}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <Table item={item} />}
+            />
+          </View>
+        )}
+      </Layout>
+      <CreateInvoice modalVisible={modalVisible} setModalVisible={setModalVisible} />
+    </>
   );
 };
 

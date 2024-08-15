@@ -1,7 +1,7 @@
 import { useMemo, useRef } from "react";
 import { View, TouchableOpacity, Alert } from "react-native";
 import { useSelector } from "react-redux";
-import { getFontSize, months } from "@helpers/libs";
+import { months } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -53,13 +53,13 @@ const Header = ({ zoneID, month, setMonth, year, setYear, searchEvent }) => {
               //searchEvent()
             }}
           >
-            <Ionicons name="search" size={getFontSize(31)} color={light.main2} />
+            <Ionicons name="search" size={36} color={light.main2} />
           </TouchableOpacity> */}
           <TouchableOpacity onPress={() => navigation.navigate("ZoneInformation", { zoneID })}>
-            <Ionicons name="information-circle-outline" size={getFontSize(31)} color={light.main2} />
+            <Ionicons name="information-circle-outline" size={36} color={light.main2} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate("CreatePlace", { zoneID })}>
-            <Ionicons name="add-circle" size={getFontSize(32)} color={light.main2} />
+            <Ionicons name="add-circle" size={38} color={light.main2} />
           </TouchableOpacity>
         </View>
       </View>

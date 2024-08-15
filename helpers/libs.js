@@ -224,22 +224,18 @@ export const calendarTheme = (mode) => ({
   textDayHeaderFontSize: 16, // TAMANO DEL ENCABEZADO DEL DIA
 });
 
-export const generateBill = (props) => {
-  const { value, description, bills, ref, type = "pay" } = props;
+export const formatTimeDHM = (start, end) => {
+  const milliseconds = end - start;
+  const seconds = Math.floor(milliseconds / 1000);
 
-  const id = random(6, { number: true });
-  if (bills.find((b) => b.id === id)) return generateBill(props);
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
 
-  return {
-    id,
-    ref,
-    value,
-    type,
-    description,
-    creationDate: new Date().getTime(),
-    modificationDate: new Date().getTime(),
-  };
+  let formatted = "";
+  if (days > 0) formatted += `${days}d `;
+  if (hours > 0) formatted += `${hours}h `;
+  formatted += `${minutes}m`;
+
+  return formatted;
 };
-
-const fontScale = PixelRatio.getFontScale();
-export const getFontSize = (size) => size / fontScale;

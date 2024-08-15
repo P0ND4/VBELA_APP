@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { getFontSize, thousandsSystem, changeDate, random } from "@helpers/libs";
+import { thousandsSystem, changeDate, random } from "@helpers/libs";
 import { edit as EEconomy, remove as REconomy } from "@features/function/economySlice";
 import { edit as EInventory } from "@features/inventory/informationSlice";
 import { Swipeable } from "react-native-gesture-handler";
@@ -120,7 +120,7 @@ const ElementCard = ({ item }) => {
         <Ionicons
           name="information-circle-outline"
           color={mode === "light" ? dark.main2 : light.main5}
-          size={getFontSize(21)}
+          size={26}
         />
       </TouchableOpacity>
     </View>
@@ -134,7 +134,7 @@ const ElementCard = ({ item }) => {
       >
         <Ionicons
           name="trash"
-          size={getFontSize(21)}
+          size={26}
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>
@@ -271,7 +271,7 @@ const EconomyCard = ({ item }) => {
         <Ionicons
           name="information-circle-outline"
           color={mode === "light" ? dark.main2 : light.main5}
-          size={getFontSize(21)}
+          size={26}
         />
       </TouchableOpacity>
     </View>
@@ -285,7 +285,7 @@ const EconomyCard = ({ item }) => {
       >
         <Ionicons
           name="trash"
-          size={getFontSize(21)}
+          size={26}
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>
@@ -300,7 +300,7 @@ const EconomyCard = ({ item }) => {
       >
         <Ionicons
           name="create"
-          size={getFontSize(21)}
+          size={26}
           color={mode === "light" ? dark.main2 : light.main5}
         />
       </TouchableOpacity>

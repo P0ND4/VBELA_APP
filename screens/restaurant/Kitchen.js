@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -10,12 +10,13 @@ import {
   Alert,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { thousandsSystem, getFontSize } from "@helpers/libs";
+import { thousandsSystem, formatTimeDHM } from "@helpers/libs";
 import { Swipeable } from "react-native-gesture-handler";
-import { editKitchen } from "@api";
-import { edit } from "@features/tables/kitchenSlice";
+import { edit, clean } from "@features/tables/kitchenSlice";
+import { editKitchen, editUser } from "@api";
 import helperNotification from "@helpers/helperNotification";
 import Information from "@components/Information";
+import ButtonStyle from "@components/ButtonStyle";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
@@ -27,41 +28,24 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("screen");
 const Card = ({ item, accept, decline }) => {
   const mode = useSelector((state) => state.mode);
 
-  const [time, setTime] = useState("00:00:00");
+  const [time, setTime] = useState("");
   const [isOpen, setOpen] = useState(false);
-  const [pauseInterval, setPauseInterval] = useState(false);
-
-  const timer = useRef();
 
   const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
   const textColor = useMemo(() => getTextColor(mode), [mode]);
 
   useEffect(() => {
-    if (pauseInterval) clearInterval(timer.current);
-    else {
-      const getTime = () => {
-        const startDate = new Date(item.modificationDate);
-        const endDate = new Date();
+    const getTimeDifference = () => {
+      const startDate = new Date(item.modificationDate);
+      const endDate = new Date();
+      setTime(formatTimeDHM(startDate, endDate));
+    };
+    getTimeDifference();
+    const intervalControl = setInterval(getTimeDifference, 60000);
+    return () => clearInterval(intervalControl);
+  }, [item]);
 
-        const differenceMilliseconds = endDate.getTime() - startDate.getTime();
-        const seconds = Math.floor(differenceMilliseconds / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-
-        const remainingSeconds = seconds % 60;
-        const remainingMinutes = minutes % 60;
-
-        const process = (value) => ("0" + value).slice(-2);
-
-        setTime(`${process(hours)}:${process(remainingMinutes)}:${process(remainingSeconds)}`);
-      };
-      getTime();
-      timer.current = setInterval(() => getTime(), 1000);
-    }
-    return () => clearInterval(timer.current);
-  }, [item, pauseInterval]);
-
-  const Button = ({ icon, size = getFontSize(21), style = {}, onPress = () => {} }) => {
+  const Button = ({ icon, size = 26, style = {}, onPress = () => {} }) => {
     return (
       <TouchableOpacity style={[styles.swipeIcon, style]} onPress={() => onPress({ item })}>
         <Ionicons name={icon} size={size} color={mode === "light" ? dark.main2 : light.main5} />
@@ -111,7 +95,7 @@ const Card = ({ item, accept, decline }) => {
             <TouchableOpacity onPress={() => setObservation(!observation)}>
               <Ionicons
                 name={observation ? "eye-off" : "eye"}
-                size={getFontSize(20)}
+                size={25}
                 color={light.main2}
               />
             </TouchableOpacity>
@@ -127,30 +111,13 @@ const Card = ({ item, accept, decline }) => {
   };
 
   return (
-    <SwipeableValidation condition={!isOpen && (decline || accept) && pauseInterval}>
+    <SwipeableValidation condition={!isOpen && (decline || accept)}>
       <View style={[styles.card, { backgroundColor: mode === "light" ? light.main5 : dark.main2 }]}>
-        <TouchableOpacity
-          onPress={() => {
-            setOpen(!isOpen);
-            setPauseInterval(false);
-          }}
-          style={styles.row}
-        >
+        <TouchableOpacity onPress={() => setOpen(!isOpen)} style={styles.row}>
           <TextStyle color={textColor}>
             {item.title.name} <TextStyle color={light.main2}>{item.title.value}</TextStyle>
           </TextStyle>
-          <TouchableOpacity
-            style={{ flexDirection: "row", alignItems: "center" }}
-            onPress={() => !isOpen && (decline || accept) && setPauseInterval(!pauseInterval)}
-          >
-            <Ionicons
-              name={pauseInterval ? "lock-open" : "lock-closed"}
-              size={getFontSize(15)}
-              color={light.main2}
-              style={{ marginRight: 4 }}
-            />
-            <TextStyle color={light.main2}>{pauseInterval ? "PAUSADO" : time}</TextStyle>
-          </TouchableOpacity>
+          <TextStyle color={light.main2}>{time}</TextStyle>
         </TouchableOpacity>
         {isOpen && (
           <View style={{ marginTop: 5 }}>
@@ -158,7 +125,7 @@ const Card = ({ item, accept, decline }) => {
               <Previews item={item} />
             ))}
             {item.observation && (
-              <TextStyle smallParagraph color={light.main2}>
+              <TextStyle style={{ marginTop: 5 }} smallParagraph color={light.main2}>
                 {item.observation}
               </TextStyle>
             )}
@@ -166,6 +133,95 @@ const Card = ({ item, accept, decline }) => {
         )}
       </View>
     </SwipeableValidation>
+  );
+};
+
+const Section = ({ title, order, information, accept, decline }) => {
+  const mode = useSelector((state) => state.mode);
+
+  const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
+  const textColor = useMemo(() => getTextColor(mode), [mode]);
+
+  const [modalVisible, setModalVisible] = useState(false);
+
+  return (
+    <View style={{ marginBottom: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <TextStyle smallSubtitle color={textColor}>
+          {title}
+        </TextStyle>
+        <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
+          <Ionicons
+            name="help-circle-outline"
+            size={25}
+            color={light.main2}
+            style={{ marginLeft: 5, marginRight: 10 }}
+          />
+        </TouchableOpacity>
+        <View style={{ height: 1, flexGrow: 1, backgroundColor: light.main2 }} />
+      </View>
+      {order === null && (
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <ActivityIndicator color={light.main2} size="large" style={{ marginRight: 5 }} />
+          <TextStyle>Cargando</TextStyle>
+        </View>
+      )}
+      {order?.length === 0 && (
+        <TextStyle smallParagraph color={light.main2}>
+          NO HAY ORDENES
+        </TextStyle>
+      )}
+      <FlatList
+        data={order || []}
+        scrollEnabled={false}
+        keyExtractor={(item) => item.id}
+        initialNumToRender={4}
+        renderItem={({ item }) => <Card item={item} accept={accept} decline={decline} />}
+      />
+      <Information
+        modalVisible={modalVisible}
+        setModalVisible={setModalVisible}
+        title={title.toUpperCase()}
+        content={() => (
+          <TextStyle smallParagraph color={textColor}>
+            {information}
+          </TextStyle>
+        )}
+      />
+    </View>
+  );
+};
+
+const FilterButton = ({ title, value, onPress }) => {
+  const mode = useSelector((state) => state.mode);
+
+  const getTextColor = (mode) => (mode === "light" ? light.textDark : dark.textWhite);
+  const textColor = useMemo(() => getTextColor(mode), [mode]);
+
+  return (
+    <ButtonStyle
+      backgroundColor={mode === "light" ? light.main5 : dark.main2}
+      style={[styles.row, { width: "auto", marginHorizontal: 2, paddingHorizontal: 12 }]}
+      onPress={onPress}
+    >
+      <TextStyle smallParagraph color={textColor}>
+        {title}
+      </TextStyle>
+      <View style={{ marginLeft: 8 }}>
+        <Ionicons
+          name="caret-up"
+          color={textColor}
+          size={6}
+          style={{ opacity: value === true ? 1 : 0.3 }}
+        />
+        <Ionicons
+          name="caret-down"
+          color={textColor}
+          size={6}
+          style={{ opacity: value === false ? 1 : 0.3 }}
+        />
+      </View>
+    </ButtonStyle>
   );
 };
 
@@ -179,6 +235,11 @@ const Kitchen = () => {
   const [pending, setPending] = useState(null);
   const [prepared, setPrepared] = useState(null);
   const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({
+    plate: null,
+    table: null,
+    time: null,
+  });
 
   const dispatch = useDispatch();
 
@@ -186,62 +247,39 @@ const Kitchen = () => {
   const textColor = useMemo(() => getTextColor(mode), [mode]);
 
   useEffect(() => {
-    const filter = (status) => kitchen.filter((k) => k.status === status).reverse();
-    setProcessing(filter("processing"));
-    setPending(filter("pending"));
-    setPrepared(filter("prepared"));
-    setError(filter("error"));
-  }, [kitchen]);
+    const found = (status) => {
+      const filtered = kitchen.filter((k) => k.status === status).reverse();
+      return filtered.sort((a, b) => {
+        if (filters.time === true) return new Date(a.creationDate) - new Date(b.creationDate);
+        if (filters.time === false) return new Date(b.creationDate) - new Date(a.creationDate);
+        if (filters.table === true) return a.title.value - b.title.value;
+        if (filters.table === false) return b.title.value - a.title.value;
+        if (filters.plate === true)
+          return (
+            a.selection.reduce((a, b) => a + b.quantity, 0) -
+            b.selection.reduce((a, b) => a + b.quantity, 0)
+          );
+        if (filters.plate === false)
+          return (
+            b.selection.reduce((a, b) => a + b.quantity, 0) -
+            a.selection.reduce((a, b) => a + b.quantity, 0)
+          );
+      });
+    };
 
-  const Section = ({ title, order, information, accept, decline }) => {
-    const [modalVisible, setModalVisible] = useState(false);
+    setProcessing(found("processing"));
+    setPending(found("pending"));
+    setPrepared(found("prepared"));
+    setError(found("error"));
+  }, [kitchen, filters]);
 
-    return (
-      <View style={{ marginBottom: 10 }}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TextStyle smallSubtitle color={textColor}>
-            {title}
-          </TextStyle>
-          <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
-            <Ionicons
-              name="help-circle-outline"
-              size={25}
-              color={light.main2}
-              style={{ marginLeft: 5, marginRight: 10 }}
-            />
-          </TouchableOpacity>
-          <View style={{ height: 1, flexGrow: 1, backgroundColor: light.main2 }} />
-        </View>
-        {order === null && (
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <ActivityIndicator color={light.main2} size="large" style={{ marginRight: 5 }} />
-            <TextStyle>Cargando</TextStyle>
-          </View>
-        )}
-        {order?.length === 0 && (
-          <TextStyle smallParagraph color={light.main2}>
-            NO HAY ORDENES
-          </TextStyle>
-        )}
-        <FlatList
-          data={order || []}
-          scrollEnabled={false}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <Card item={item} accept={accept} decline={decline} />}
-        />
-        <Information
-          modalVisible={modalVisible}
-          setModalVisible={setModalVisible}
-          title={title.toUpperCase()}
-          content={() => (
-            <TextStyle smallParagraph color={textColor}>
-              {information}
-            </TextStyle>
-          )}
-        />
-      </View>
-    );
-  };
+  const filterEvent = (value) =>
+    setFilters({
+      ...Object.keys(filters)
+        .filter((f) => f !== value)
+        .reduce((a, b) => ({ ...a, [b]: null }), {}),
+      [value]: filters[value] === null ? false : filters[value] === false ? true : null,
+    });
 
   const changeStatus = ({ item, change }) => {
     Alert.alert(
@@ -289,20 +327,57 @@ const Kitchen = () => {
     );
   };
 
+  const deleteKitchen = () =>
+    Alert.alert(
+      `¿Está seguro?`,
+      "¿Desea eliminar toda la información de cocina? No podrá recuperar esta información una vez borrada",
+      [
+        {
+          text: "No",
+          style: "cancel",
+        },
+        {
+          text: "Si",
+          onPress: async () => {
+            dispatch(clean());
+            await editUser({
+              identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
+              change: { kitchen: [] },
+              helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
+            });
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+
   return (
     <Layout>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <TextStyle smallSubtitle color={textColor} style={{ marginRight: 10 }}>
           COCINA
         </TextStyle>
-        <Ionicons name="bonfire-outline" color={light.main2} size={getFontSize(25)} />
+        <Ionicons name="bonfire-outline" color={light.main2} size={30} />
       </View>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        style={{ maxHeight: SCREEN_HEIGHT / 1.3, marginTop: 15 }}
-      >
+      <View style={[styles.row, { marginVertical: 10 }]}>
+        <ButtonStyle
+          backgroundColor={light.main2}
+          style={{ width: "auto", marginHorizontal: 2, paddingHorizontal: 12 }}
+          onPress={() => deleteKitchen()}
+        >
+          <TextStyle center smallParagraph>
+            Eliminar todo
+          </TextStyle>
+        </ButtonStyle>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <FilterButton value={filters.plate} onPress={() => filterEvent("plate")} title="Plato" />
+          <FilterButton value={filters.table} onPress={() => filterEvent("table")} title="Mesa" />
+          <FilterButton value={filters.time} onPress={() => filterEvent("time")} title="Tiempo" />
+        </View>
+      </View>
+      <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: SCREEN_HEIGHT / 1.3 }}>
         <Section
-          title="Procesando"
+          title="Solicitado"
           information="Son aquellas órdenes que están en espera para ser procesado en cocina"
           order={processing}
           accept={{
@@ -315,7 +390,7 @@ const Kitchen = () => {
           }}
         />
         <Section
-          title="Pendiente"
+          title="Procesando"
           information="Son aquellas órdenes que han sido procesadas por cocina y se está preparando para su despacho"
           order={pending}
           accept={{
@@ -328,8 +403,8 @@ const Kitchen = () => {
           }}
         />
         <Section
-          title="Preparado"
-          information="Son aquellas órdenes que se han preparado y están esperando a su despacho final"
+          title="Disponible"
+          information="Son aquellas órdenes que se han preparado y están esperando a su despacho final por el mesero"
           order={prepared}
           accept={{
             icon: "checkmark-circle-outline",
@@ -341,7 +416,7 @@ const Kitchen = () => {
           }}
         />
         <Section
-          title="No procesado"
+          title="Fallido"
           information="No se pudo procesar la orden por un problema en cocina, el cocinero describió el problema en la orden"
           order={error}
           accept={{

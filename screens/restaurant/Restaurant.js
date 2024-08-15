@@ -10,7 +10,6 @@ import {
 import { useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
-import { getFontSize } from "@helpers/libs";
 import InputStyle from "@components/InputStyle";
 import Information from "@components/Information";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -62,12 +61,12 @@ const Table = ({ item }) => {
         }}
       >
         <View style={[styles.row, { justifyContent: "center" }]}>
-          <TextStyle color={!order ? dark.textWhite : textColor} style={{ fontSize: SCREEN_WIDTH / 19 }}>
+          <TextStyle color={!order ? dark.textWhite : textColor}>
             Menu
           </TextStyle>
           <Ionicons
             name="book-outline"
-            size={getFontSize(17)}
+            size={19}
             style={{ marginLeft: 10 }}
             color={!order ? dark.textWhite : textColor}
           />
@@ -75,7 +74,7 @@ const Table = ({ item }) => {
       </ButtonStyle>
       <Ionicons
         name={order ? "receipt-outline" : "checkbox"}
-        size={getFontSize(31)}
+        size={36}
         color={!order ? light.main2 : backgroundColor}
       />
     </View>
@@ -145,7 +144,7 @@ const Tables = ({ navigation }) => {
             </View>
             {tables?.length > 0 && (
               <TouchableOpacity onPress={() => navigation.navigate("CreateTable")}>
-                <Ionicons name="add-circle" size={getFontSize(32)} color={light.main2} />
+                <Ionicons name="add-circle" size={37} color={light.main2} />
               </TouchableOpacity>
             )}
           </View>

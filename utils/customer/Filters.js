@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useSelector } from "react-redux";
 import { Picker } from "@react-native-picker/picker";
-import { getFontSize, thousandsSystem } from "@helpers/libs";
+import { thousandsSystem } from "@helpers/libs";
 import TextStyle from "@components/TextStyle";
 import FullFilterDate from "@components/FullFilterDate";
 import ButtonStyle from "@components/ButtonStyle";
@@ -53,7 +53,7 @@ const Filters = ({ setActive, active, setFilters, filters, initialState }) => {
                   setFilters(initialState);
                 }}
               >
-                <Ionicons name="close" size={getFontSize(24)} color={textColor} />
+                <Ionicons name="close" size={30} color={textColor} />
               </TouchableOpacity>
             </View>
             <TextStyle smallParagraph color={textColor}>

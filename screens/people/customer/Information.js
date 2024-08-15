@@ -216,7 +216,11 @@ const Card = ({ item }) => {
                   backgroundColor={light.main2}
                   style={{ width: "auto" }}
                   onPress={() =>
-                    navigation.navigate("CustomerInvoice", { id: item.id, everything: true })
+                    navigation.navigate("CustomerInvoice", {
+                      id: item.id,
+                      invoice: item.id.slice(0, 7),
+                      everything: true,
+                    })
                   }
                 >
                   <TextStyle smallParagraph>Ver factura</TextStyle>
@@ -373,7 +377,7 @@ const CustomerInformation = ({ route }) => {
             >
               <Ionicons
                 name="print"
-                size={getFontSize(28)}
+                size={32}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -391,7 +395,7 @@ const CustomerInformation = ({ route }) => {
             >
               <Ionicons
                 name="document-attach"
-                size={getFontSize(28)}
+                size={32}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -408,7 +412,7 @@ const CustomerInformation = ({ route }) => {
             >
               <Ionicons
                 name="filter"
-                size={getFontSize(28)}
+                size={32}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />

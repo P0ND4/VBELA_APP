@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
 import { View, Animated, StyleSheet, TouchableWithoutFeedback } from "react-native";
 import { useSelector } from "react-redux";
-import { getFontSize } from "@helpers/libs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
 
@@ -66,12 +65,16 @@ const FloatingButton = ({ style = {}, buttons = [], position = "bottom" }) => {
                 styles.button,
                 styles.secondary,
                 translateY,
-                { opacity, backgroundColor: mode === "light" ? dark.main2 : light.main5 },
+                {
+                  opacity,
+                  backgroundColor:
+                    item?.backgroundColor || (mode === "light" ? dark.main2 : light.main5),
+                },
               ]}
             >
               <Ionicons
                 name={item.name}
-                size={item.size || getFontSize(15)}
+                size={item.size || 20}
                 color={item.color || mode === "light" ? dark.textWhite : light.textColor}
               />
             </Animated.View>
@@ -80,7 +83,7 @@ const FloatingButton = ({ style = {}, buttons = [], position = "bottom" }) => {
       })}
       <TouchableWithoutFeedback onPress={() => toogleMenu()}>
         <Animated.View style={[styles.button, styles.menu, rotate]}>
-          <Ionicons name="add" size={getFontSize(15)} color="#FFFFFF" />
+          <Ionicons name="add" size={20} color="#FFFFFF" />
         </Animated.View>
       </TouchableWithoutFeedback>
     </View>

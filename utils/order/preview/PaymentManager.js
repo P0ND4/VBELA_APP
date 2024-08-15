@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { View, StyleSheet, FlatList, TouchableOpacity, Dimensions, Alert } from "react-native";
 import { useSelector } from "react-redux";
-import { thousandsSystem, print, getFontSize } from "@helpers/libs";
+import { thousandsSystem, print } from "@helpers/libs";
 import PaymentButtons from "@components/PaymentButtons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import getHTML from "@utils/order/helpers/getHTML";
@@ -164,7 +164,7 @@ const PaymentManager = ({
             <Ionicons
               name="reader-outline"
               color={light.textDark}
-              size={getFontSize(16)}
+              size={22}
               style={{ marginRight: 10 }}
             />
             <TextStyle>PRE - Factura</TextStyle>

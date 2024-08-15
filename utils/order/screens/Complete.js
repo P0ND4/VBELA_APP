@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { View } from "react-native";
 import { useSelector } from "react-redux";
-import { thousandsSystem, getFontSize } from "@helpers/libs";
+import { thousandsSystem } from "@helpers/libs";
 import Layout from "@components/Layout";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
@@ -25,7 +25,7 @@ const Complete = ({ route, navigation }) => {
       <View style={{ alignItems: "center" }}>
         <Ionicons
           name={status === "paid" ? "checkmark-circle-outline" : "time-outline"}
-          size={getFontSize(145)}
+          size={180}
           color={light.main2}
         />
         {status !== "kitchen" && (
@@ -56,7 +56,7 @@ const Complete = ({ route, navigation }) => {
               <Ionicons
                 name="reader-outline"
                 color={light.textDark}
-                size={getFontSize(23)}
+                size={30}
                 style={{ marginRight: 10 }}
               />
               <TextStyle bigParagraph>Factura</TextStyle>

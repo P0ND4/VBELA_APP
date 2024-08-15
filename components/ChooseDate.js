@@ -13,7 +13,7 @@ import { useSelector } from "react-redux";
 import theme from "@theme";
 import TextStyle from "@components/TextStyle";
 import { Calendar } from "react-native-calendars";
-import { getFontSize, calendarTheme } from "@helpers/libs";
+import { calendarTheme } from "@helpers/libs";
 
 const { light, dark } = theme();
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");
@@ -118,7 +118,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                 ALOJAR
               </TextStyle>
               <TouchableOpacity onPress={() => cleanData()}>
-                <Ionicons name="close" size={getFontSize(28)} color={textColor} />
+                <Ionicons name="close" size={33} color={textColor} />
               </TouchableOpacity>
             </View>
             <View
@@ -147,7 +147,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                   <Picker.Item
                     label="SELECCIONE LA ZONA"
                     value=""
-                    style={{ backgroundColor, fontSize: getFontSize(10) }}
+                    style={{ backgroundColor, fontSize: 15 }}
                     color={textColor}
                   />
                   {zones.map((zone, index) => (
@@ -155,7 +155,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                       key={zone.id + index}
                       label={zone.name}
                       value={zone.id}
-                      style={{ backgroundColor, fontSize: getFontSize(10) }}
+                      style={{ backgroundColor, fontSize: 15 }}
                       color={textColor}
                     />
                   ))}
@@ -180,7 +180,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                     <Picker.Item
                       label="SELECCIONA LA NOMENCLATURA"
                       value=""
-                      style={{ backgroundColor, fontSize: getFontSize(10) }}
+                      style={{ backgroundColor, fontSize: 15 }}
                       color={textColor}
                     />
                     {nomenclaturesToChoose.map((nomenclature, index) => (
@@ -188,7 +188,7 @@ const ShooseData = ({ modalVisible, setModalVisible, onDayPress }) => {
                         key={nomenclature.id}
                         label={nomenclature.name || nomenclature.nomenclature}
                         value={nomenclature.id}
-                        style={{ backgroundColor, fontSize: getFontSize(10) }}
+                        style={{ backgroundColor, fontSize: 15 }}
                         color={textColor}
                       />
                     ))}

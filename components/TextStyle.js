@@ -1,12 +1,11 @@
 import { Text, StyleSheet } from "react-native";
-import { getFontSize } from "@helpers/libs";
 import theme from "@theme";
 
 const { light } = theme();
 
 const styles = StyleSheet.create({
   default: {
-    fontSize: getFontSize(15),
+    fontSize: 18,
     color: light.textDark,
   }
 });
@@ -33,16 +32,16 @@ const TextStyle = ({
 }) => {
   const stylesTaken = [
     styles.default,
-    bigTitle && { fontSize: getFontSize(32) },
-    title && { fontSize: getFontSize(28) },
-    smallTitle && { fontSize: getFontSize(26) },
-    bigSubtitle && { fontSize: getFontSize(23) },
-    subtitle && { fontSize: getFontSize(21) },
-    smallSubtitle && { fontSize: getFontSize(19) },
-    bigParagraph && { fontSize: getFontSize(16) },
-    paragrahp && { fontSize: getFontSize(14) },
-    smallParagraph && { fontSize: getFontSize(12) },
-    verySmall && { fontSize: getFontSize(10) },
+    bigTitle && { fontSize: 40 },
+    title && { fontSize: 35 },
+    smallTitle && { fontSize: 32 },
+    bigSubtitle && { fontSize: 28 },
+    subtitle && { fontSize: 26 },
+    smallSubtitle && { fontSize: 23 },
+    bigParagraph && { fontSize: 20 },
+    paragrahp && { fontSize: 18 },
+    smallParagraph && { fontSize: 14 },
+    verySmall && { fontSize: 13 },
     color && { color },
     center && { textAlign: "center" },
     justify && { textAlign: "justify" },

@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { View, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import { useSelector } from "react-redux";
-import { getFontSize } from "@helpers/libs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import TextStyle from "@components/TextStyle";
 import theme from "@theme";
@@ -46,7 +45,7 @@ const PaymentButtons = ({
       >
         <Ionicons
           name="cash"
-          size={getFontSize(28)}
+          size={33}
           color={value !== "cash" ? light.main2 : light.textDark}
           style={{ marginLeft: 5 }}
         />
@@ -70,7 +69,7 @@ const PaymentButtons = ({
       >
         <Ionicons
           name="card"
-          size={getFontSize(28)}
+          size={33}
           color={value !== "card" ? light.main2 : light.textDark}
           style={{ marginLeft: 5 }}
         />
@@ -100,7 +99,7 @@ const PaymentButtons = ({
       >
         <Ionicons
           name={type === "others" ? "browsers" : "timer"}
-          size={getFontSize(28)}
+          size={33}
           color={value === "others" || value === "credit" ? light.textDark : light.main2}
           style={{ marginLeft: 5 }}
         />

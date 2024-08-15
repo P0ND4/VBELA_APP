@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { View, StyleSheet, ScrollView, Dimensions, TouchableOpacity } from "react-native";
 import { useSelector } from "react-redux";
-import { getFontSize } from "@helpers/libs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import GuestTable from "@components/GuestTable";
 import FilterHosted from "@utils/accommodation/FilterHosted";
@@ -19,6 +18,7 @@ const Reservations = () => {
   const nomenclatures = useSelector((state) => state.nomenclatures);
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
   const standardReservations = useSelector((state) => state.standardReservations);
+  const customers = useSelector((state) => state.customers);
   const mode = useSelector((state) => state.mode);
 
   const [hosted, setHosted] = useState([]);
@@ -62,18 +62,22 @@ const Reservations = () => {
 
   useEffect(() => {
     const condition = (r) =>
-      type === "scheduled"
+      r.owner && type === "scheduled"
         ? !r.checkIn
         : type === "check-in"
         ? !r.checkOut && r.checkIn
         : r.checkOut && r.checkIn;
 
     const accommodation = accommodationReservations.filter(condition).map((a) => {
+      const cus = customers.find(({ special, clientList, id }) =>
+        special ? clientList.some(({ id }) => id === a.owner) : id === a.owner
+      );
       const nom = nomenclatures.find((n) => n.id === a.ref);
       const zon = zones.find((z) => z.id === nom.ref);
       return {
         ...a,
         room: nom.name || nom.nomenclature,
+        customer: cus?.name || null,
         group: zon.name,
         groupID: zon.id,
         nomenclatureID: nom.id,
@@ -81,6 +85,9 @@ const Reservations = () => {
     });
     const standard = standardReservations.flatMap((s) =>
       s.hosted.filter(condition).map((h) => {
+        const cus = customers.find(({ special, clientList, id }) =>
+          special ? clientList.some(({ id }) => id === h.owner) : id === h.owner
+        );
         const nom = nomenclatures.find((n) => n.id === h.ref);
         const zon = zones.find((z) => z.id === nom.ref);
         return {
@@ -88,6 +95,7 @@ const Reservations = () => {
           start: s.start,
           days: s.days,
           reservationID: s.id,
+          customer: cus?.name || null,
           room: nom.name || nom.nomenclature,
           group: zon.name,
           groupID: zon.id,
@@ -155,7 +163,7 @@ const Reservations = () => {
           stylesInput={styles.search}
         />
         <TouchableOpacity onPress={() => setActiveFilter(!activeFilter)}>
-          <Ionicons name="filter" size={getFontSize(24)} color={light.main2} />
+          <Ionicons name="filter" size={30} color={light.main2} />
         </TouchableOpacity>
       </View>
       <View style={[styles.row, { marginVertical: 15 }]}>

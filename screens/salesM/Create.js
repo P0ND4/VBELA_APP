@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { useSelector } from "react-redux";
-import { getFontSize, thousandsSystem } from "@helpers/libs";
+import { thousandsSystem } from "@helpers/libs";
 import Count from "@utils/order/components/Count";
 import FrontPage from "@utils/product/components/FrontPage";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -158,7 +158,7 @@ const Order = ({ route, navigation }) => {
                     setTimeout(() => searchRef.current.focus());
                   }}
                 >
-                  <Ionicons name="search" size={getFontSize(21)} color={textColor} />
+                  <Ionicons name="search" size={30} color={textColor} />
                 </TouchableOpacity>
               )}
               {activeSearch && (
@@ -170,7 +170,7 @@ const Order = ({ route, navigation }) => {
                       setFilters(initialState);
                     }}
                   >
-                    <Ionicons name="close" size={getFontSize(24)} color={textColor} />
+                    <Ionicons name="close" size={30} color={textColor} />
                   </TouchableOpacity>
                   <InputStyle
                     innerRef={searchRef}
@@ -181,7 +181,7 @@ const Order = ({ route, navigation }) => {
                     stylesInput={styles.searchInput}
                   />
                   <TouchableOpacity onPress={() => setActiveFilter(!activeFilter)}>
-                    <Ionicons name="filter" size={getFontSize(24)} color={light.main2} />
+                    <Ionicons name="filter" size={30} color={light.main2} />
                   </TouchableOpacity>
                 </View>
               )}
@@ -234,7 +234,7 @@ const Order = ({ route, navigation }) => {
                   }}
                 />
                 <TouchableOpacity onPress={() => navigation.navigate("CreateGroup", { type: "sales" })}>
-                  <Ionicons name="add-circle" color={light.main2} size={getFontSize(24)} />
+                  <Ionicons name="add-circle" color={light.main2} size={35} />
                 </TouchableOpacity>
               </View>
 
@@ -342,7 +342,7 @@ const Order = ({ route, navigation }) => {
                           index === productsAndServices.filter((p) => typeof p !== "number").length && (
                             <Ionicons
                               name="add"
-                              size={getFontSize(45)}
+                              size={50}
                               color={mode === "light" ? "#BBBBBB" : dark.main1}
                             />
                           )}

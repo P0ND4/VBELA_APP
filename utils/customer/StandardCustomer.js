@@ -17,7 +17,7 @@ const StandardCustomer = ({ item, salesHandler }) => {
   const standardReservations = useSelector((state) => state.standardReservations);
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
 
-  const [reservationFound, setReservationFound] = useState(null);
+  const [hostedFound, setHostedFound] = useState(null);
   const [active, setActive] = useState(true);
   const [personSelected, setPersonSelected] = useState(null);
   const [modalVisibleChooseDate, setModalVisibleChooseDate] = useState(false);
@@ -31,19 +31,20 @@ const StandardCustomer = ({ item, salesHandler }) => {
   const navigation = useNavigation();
 
   useEffect(() => {
-    const allReservations = [...standardReservations, ...accommodationReservations];
-    const found = allReservations.find(
-      (r) => r?.owner === item.id || r?.hosted?.find((h) => h.owner === item.id)
+    const hosted = standardReservations.reduce(
+      (a, b) => [...a, ...b.hosted.map((h) => ({ ...h, id: b.id, status: b.status }))],
+      []
     );
-    const active =
-      found?.status === "paid" &&
-      (found.checkOut || found.hosted?.find((h) => h.owner === item.id).checkOut);
-    setReservationFound(found);
-    setActive(active);
+    const allHosted = [...hosted, ...accommodationReservations];
+    const found = allHosted.find((r) => r?.owner === item.id);
+    setHostedFound(found);
+    setActive(found?.status === "paid" && found?.checkOut);
   }, [standardReservations, accommodationReservations]);
 
-  const reservationHandler = ({ reservation, item }) => {
-    if (reservation) {
+  const reservationHandler = ({ hosted, item }) => {
+    if (hosted) {
+      const allReservations = [...standardReservations, ...accommodationReservations];
+      const reservation = allReservations.find((ac) => ac.id === hosted.id);
       if (reservation.type === "accommodation")
         return navigation.navigate("AccommodationReserveInformation", {
           ids: [reservation.id],
@@ -54,7 +55,7 @@ const StandardCustomer = ({ item, salesHandler }) => {
     setModalVisibleChooseDate(!modalVisibleChooseDate);
   };
 
-  if (reservationFound === null) return <View />;
+  if (hostedFound === null) return <View />;
 
   if (active)
     return (
@@ -66,30 +67,31 @@ const StandardCustomer = ({ item, salesHandler }) => {
   return (
     <>
       <View style={styles.row}>
-        {(() => {
-          const exists =
-            orders.some((o) => o.ref === item.id && o.status === "pending") ||
-            sales.some((o) => o.ref === item.id && o.status === "pending");
+        {!hostedFound?.checkOut &&
+          (() => {
+            const exists =
+              orders.some((o) => o.ref === item.id && o.status === "pending") ||
+              sales.some((o) => o.ref === item.id && o.status === "pending");
 
-          return (
-            <ButtonStyle
-              backgroundColor={backgroundColor(!exists)}
-              style={{ width: SCREEN_WIDTH / 2.4 }}
-              onPress={() => salesHandler({ item })}
-            >
-              <TextStyle paragrahp center color={textColor(!exists)}>
-                Ventas
-              </TextStyle>
-            </ButtonStyle>
-          );
-        })()}
+            return (
+              <ButtonStyle
+                backgroundColor={backgroundColor(!exists)}
+                style={{ width: "auto", flexGrow: 1, marginRight: 4 }}
+                onPress={() => salesHandler({ item })}
+              >
+                <TextStyle paragrahp center color={textColor(!exists)}>
+                  Ventas
+                </TextStyle>
+              </ButtonStyle>
+            );
+          })()}
         <ButtonStyle
-          style={{ width: SCREEN_WIDTH / 2.4 }}
-          backgroundColor={backgroundColor(!reservationFound)}
-          onPress={() => reservationHandler({ reservation: reservationFound, item })}
+          style={{ width: "auto", flexGrow: 1 }}
+          backgroundColor={backgroundColor(!hostedFound)}
+          onPress={() => reservationHandler({ hosted: hostedFound, item })}
         >
-          <TextStyle paragrahp color={textColor(!reservationFound)} center>
-            {reservationFound ? "Ya alojado" : "Alojamiento"}
+          <TextStyle paragrahp color={textColor(!hostedFound)} center>
+            {hostedFound ? "Ya alojado" : "Alojamiento"}
           </TextStyle>
         </ButtonStyle>
       </View>

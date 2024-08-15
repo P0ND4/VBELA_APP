@@ -18,7 +18,6 @@ import { add, edit } from "@features/zones/nomenclaturesSlice";
 import {
   random,
   thousandsSystem,
-  getFontSize,
   changeDate,
 } from "@helpers/libs";
 import {
@@ -467,7 +466,7 @@ const CreatePlace = ({ route, navigation }) => {
                               : dark.textWhite
                             : "#888888"
                         }
-                        size={getFontSize(15)}
+                        size={20}
                         name="caret-down"
                       />
                     </View>
@@ -554,7 +553,7 @@ const CreatePlace = ({ route, navigation }) => {
                     <Ionicons
                       name="bed-outline"
                       color={light.textDark}
-                      size={getFontSize(16)}
+                      size={20}
                       style={{ marginLeft: 10 }}
                     />
                   </ButtonStyle>
@@ -720,7 +719,7 @@ const CreatePlace = ({ route, navigation }) => {
                     >
                       <Ionicons
                         name="arrow-forward"
-                        size={getFontSize(28)}
+                        size={32}
                         color={
                           mode === "light" ? light.textDark : dark.textWhite
                         }
@@ -909,7 +908,7 @@ const CreatePlace = ({ route, navigation }) => {
                     >
                       <Ionicons
                         name="close"
-                        size={getFontSize(28)}
+                        size={32}
                         color={
                           mode === "light" ? light.textDark : dark.textWhite
                         }
@@ -984,7 +983,7 @@ const CreatePlace = ({ route, navigation }) => {
                               <Ionicons
                                 name="information-circle"
                                 color={light.main2}
-                                size={getFontSize(23)}
+                                size={27}
                                 style={{ marginRight: 5 }}
                               />
                             </TouchableOpacity>
@@ -1010,7 +1009,7 @@ const CreatePlace = ({ route, navigation }) => {
                               <Ionicons
                                 name="close"
                                 color={light.main2}
-                                size={getFontSize(23)}
+                                size={29}
                                 style={{ marginHorizontal: 5 }}
                               />
                             </TouchableOpacity>
@@ -1038,7 +1037,7 @@ const CreatePlace = ({ route, navigation }) => {
                               <Ionicons
                                 name="create-outline"
                                 color={light.main2}
-                                size={getFontSize(23)}
+                                size={29}
                                 style={{ marginHorizontal: 5 }}
                               />
                             </TouchableOpacity>
@@ -1061,7 +1060,7 @@ const CreatePlace = ({ route, navigation }) => {
                     <Ionicons
                       name="add-circle-outline"
                       color={light.textDark}
-                      size={getFontSize(16)}
+                      size={21}
                       style={{ marginLeft: 10 }}
                     />
                   </ButtonStyle>
@@ -1102,7 +1101,7 @@ const CreatePlace = ({ route, navigation }) => {
                     >
                       <Ionicons
                         name="arrow-back"
-                        size={getFontSize(28)}
+                        size={32}
                         color={
                           mode === "light" ? light.textDark : dark.textWhite
                         }
@@ -1209,7 +1208,7 @@ const CreatePlace = ({ route, navigation }) => {
                             <Ionicons
                               name="close-circle"
                               color={light.main2}
-                              size={getFontSize(32)}
+                              size={36}
                             />
                           </TouchableOpacity>
                         </View>
@@ -1270,7 +1269,7 @@ const CreatePlace = ({ route, navigation }) => {
                       <Ionicons
                         name="add-circle"
                         color={light.main2}
-                        size={getFontSize(32)}
+                        size={36}
                       />
                     </TouchableOpacity>
                   </View>

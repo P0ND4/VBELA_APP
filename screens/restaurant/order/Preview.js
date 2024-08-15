@@ -9,10 +9,9 @@ import {
   Dimensions,
   Alert,
 } from "react-native";
-import { thousandsSystem, getFontSize, random, print, generateBill } from "@helpers/libs";
+import { thousandsSystem, random, print } from "@helpers/libs";
 import { updateMany as updateManyInventory } from "@features/inventory/informationSlice";
 import { add as addO, edit as editO } from "@features/tables/ordersSlice";
-import { add as addB } from "@features/people/billsSlice";
 import { change as changeM } from "@features/tables/menuSlice";
 import { editUser, discountInventory } from "@api";
 import PaymentManager from "@utils/order/preview/PaymentManager";
@@ -41,7 +40,6 @@ const Preview = ({ route, navigation }) => {
   const inventory = useSelector((state) => state.inventory);
   const helperStatus = useSelector((state) => state.helperStatus);
   const recipes = useSelector((state) => state.recipes);
-  const bills = useSelector((state) => state.bills);
 
   const [total, setTotal] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -64,6 +62,8 @@ const Preview = ({ route, navigation }) => {
   const [previews, setPreviews] = useState(null);
 
   const [methodType, setMethodType] = useState("others");
+
+  const [loading, setLoading] = useState(false);
 
   const ref = route.params?.ref;
   const order = route.params?.order;
@@ -174,6 +174,8 @@ const Preview = ({ route, navigation }) => {
   };
 
   const saveOrder = async ({ selection, change }) => {
+    if (loading) return;
+    setLoading(true);
     const quantity = selection.reduce((a, b) => a + b.quantity, 0);
     const paid = selection.reduce((a, b) => a + b.paid, 0);
 
@@ -218,34 +220,6 @@ const Preview = ({ route, navigation }) => {
     if (recipe.length) inventoryDiscountHandler(recipe);
     dispatch(changeM(newMenu)); //TODO CHANGE THIS
 
-    // ESTO ES LO QUE VAMOS A CAMBIAR EN LA BD
-    let toChange = {
-      orders: order ? orders.map((o) => (o.id === order.id ? data : o)) : [...orders, data],
-      menu: newMenu,
-    };
-
-    // ZONA DE PAGO SI ES UN CLIENTE
-    const customerFound = customers.find(
-      ({ id, clientList }) => id === ref || clientList?.some((c) => c.id === ref)
-    );
-
-    // SI EXISTE EL CLIENTE COLOCA LA FACTURA DE PAGO
-    if (customerFound && paymentMethod !== "credit") {
-      const value = change.reduce((a, { total }) => a + total, 0);
-
-      const bill = generateBill({
-        value,
-        ref: customerFound.id,
-        description: `El cliente ha pagado los servicios dados por el restaurante por un monto de: ${thousandsSystem(
-          value
-        )}`,
-        bills,
-      });
-
-      dispatch(addB(bill));
-      toChange = { ...toChange, bills: [...bills, bill] };
-    }
-
     // DEFINIMOS EL ESTATUS DE LA ORDEN
     const orderStatus = {
       ...events,
@@ -263,7 +237,10 @@ const Preview = ({ route, navigation }) => {
     //TODO CAMBIAR ESTO
     await editUser({
       identifier: helperStatus.active ? helperStatus.identifier : user.identifier,
-      change: toChange,
+      change: {
+        orders: order ? orders.map((o) => (o.id === order.id ? data : o)) : [...orders, data],
+        menu: newMenu,
+      },
       helpers: helperStatus.active ? [helperStatus.id] : user.helpers.map((h) => h.id),
     });
     //TODO CAMBIAR ESTO
@@ -278,6 +255,7 @@ const Preview = ({ route, navigation }) => {
             style={{ maxHeight: SCREEN_HEIGHT / 2 }}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
+            initialNumToRender={4}
             renderItem={({ item }) => (
               <Card
                 item={item}
@@ -297,7 +275,7 @@ const Preview = ({ route, navigation }) => {
               <TouchableOpacity onPress={() => setDiscount(null)}>
                 <Ionicons
                   name="close-circle"
-                  size={getFontSize(20)}
+                  size={25}
                   style={{ marginRight: 4 }}
                   color={light.main2}
                 />
@@ -333,7 +311,7 @@ const Preview = ({ route, navigation }) => {
               <TouchableOpacity onPress={() => setTip(null)}>
                 <Ionicons
                   name="close-circle"
-                  size={getFontSize(20)}
+                  size={25}
                   style={{ marginRight: 4 }}
                   color={light.main2}
                 />
@@ -362,7 +340,7 @@ const Preview = ({ route, navigation }) => {
               <TouchableOpacity onPress={() => setTax(null)}>
                 <Ionicons
                   name="close-circle"
-                  size={getFontSize(20)}
+                  size={25}
                   style={{ marginRight: 4 }}
                   color={light.main2}
                 />
@@ -398,7 +376,7 @@ const Preview = ({ route, navigation }) => {
           <Ionicons
             name="reader-outline"
             color={light.textDark}
-            size={getFontSize(16)}
+            size={21}
             style={{ marginRight: 10 }}
           />
           <TextStyle>PRE - Factura</TextStyle>
@@ -432,12 +410,12 @@ const Preview = ({ route, navigation }) => {
             }
             style={[styles.outline, { padding: 4, borderRadius: 4 }]}
           >
-            <Ionicons name="trash" color={light.main2} size={getFontSize(20)} />
+            <Ionicons name="trash" color={light.main2} size={25} />
           </TouchableOpacity>
           <ButtonStyle
             style={[styles.outline, styles.button]}
             backgroundColor="transparent"
-            onPress={() => sendToKitchen({ cook: previews })}
+            onPress={() => sendToKitchen({ cook: previews, callBack: () => navigation.pop() })}
           >
             <TextStyle verySmall center color={light.main2}>
               Enviar a cocina

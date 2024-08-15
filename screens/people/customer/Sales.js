@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { View, ScrollView, StyleSheet, TouchableOpacity, Dimensions, FlatList } from "react-native";
 import { useSelector } from "react-redux";
-import { getFontSize, thousandsSystem, changeDate } from "@helpers/libs";
+import { thousandsSystem, changeDate } from "@helpers/libs";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import InputStyle from "@components/InputStyle";

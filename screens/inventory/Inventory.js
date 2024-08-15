@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
-import { thousandsSystem, changeDate, generatePDF, print, getFontSize } from "@helpers/libs";
+import { thousandsSystem, changeDate, generatePDF, print } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
 import Information from "@components/Information";
 import ButtonStyle from "@components/ButtonStyle";
@@ -379,17 +379,17 @@ const Inventory = () => {
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           {(inventory.length > 0 || activeSearch) && (
             <TouchableOpacity onPress={() => navigation.navigate("InventoryInformation")}>
-              <Ionicons name="information-circle" size={getFontSize(32)} color={light.main2} />
+              <Ionicons name="information-circle" size={34} color={light.main2} />
             </TouchableOpacity>
           )}
           {(inventory.length > 0 || activeSearch) && (
             <TouchableOpacity onPress={() => generatePDF({ html, code: "INVENTARIO VBELA" })}>
-              <Ionicons name="document" size={getFontSize(32)} color={light.main2} />
+              <Ionicons name="document" size={34} color={light.main2} />
             </TouchableOpacity>
           )}
           {(inventory.length > 0 || activeSearch) && (
             <TouchableOpacity onPress={() => print({ html })}>
-              <Ionicons name="print" size={getFontSize(32)} color={light.main2} />
+              <Ionicons name="print" size={34} color={light.main2} />
             </TouchableOpacity>
           )}
           {(inventory.length > 0 || activeSearch) && (
@@ -400,7 +400,7 @@ const Inventory = () => {
                 if (state) setTimeout(() => searchRef.current.focus());
               }}
             >
-              <Ionicons name="search" size={getFontSize(32)} color={light.main2} />
+              <Ionicons name="search" size={34} color={light.main2} />
             </TouchableOpacity>
           )}
           {(inventory.length > 0 || activeSearch) && (
@@ -408,7 +408,7 @@ const Inventory = () => {
               onPress={() => navigation.navigate("CreateElement")}
               style={{ marginHorizontal: 2 }}
             >
-              <Ionicons name="add-circle" size={getFontSize(32)} color={light.main2} />
+              <Ionicons name="add-circle" size={34} color={light.main2} />
             </TouchableOpacity>
           )}
         </View>
@@ -686,7 +686,7 @@ const Inventory = () => {
                     </TextStyle>
                     <Ionicons
                       color={filters.visible ? textColor : "#888888"}
-                      size={getFontSize(15)}
+                      size={20}
                       name="caret-down"
                     />
                   </View>
@@ -997,7 +997,7 @@ const Inventory = () => {
                     </TextStyle>
                     <Ionicons
                       color={filters.unit ? textColor : "#888888"}
-                      size={getFontSize(15)}
+                      size={20}
                       name="caret-down"
                     />
                   </View>
@@ -1036,7 +1036,7 @@ const Inventory = () => {
                     </TextStyle>
                     <Ionicons
                       color={filters.visible ? textColor : "#888888"}
-                      size={getFontSize(15)}
+                      size={20}
                       name="caret-down"
                     />
                   </View>

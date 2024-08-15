@@ -11,7 +11,6 @@ import { useSelector, useDispatch } from "react-redux";
 import { change as changeUser } from "@features/user/informationSlice";
 import { change as changeMode } from "@features/settings/modeSlice";
 import { editUser } from "@api";
-import { getFontSize } from "@helpers/libs";
 
 import Layout from "@components/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -82,7 +81,7 @@ const Setting = ({ navigation }) => {
           left={() => (
             <Ionicons
               name={mode === "light" ? "moon" : "sunny"}
-              size={getFontSize(28)}
+              size={32}
               color={light.main2}
             />
           )}
@@ -105,7 +104,7 @@ const Setting = ({ navigation }) => {
           left={() => (
             <Ionicons
               name="person"
-              size={getFontSize(28)}
+              size={32}
               color={light.main2}
             />
           )}
@@ -126,7 +125,7 @@ const Setting = ({ navigation }) => {
         />
         {/*<Card
           onPress={() => navigation.navigate("Wifi")}
-          left={() => <Ionicons name="wifi" size={getFontSize(28)} color={light.main2} />}
+          left={() => <Ionicons name="wifi" size={32} color={light.main2} />}
           right={() => (
             <View style={styles.rowcenter}>
               <TextStyle
@@ -138,7 +137,7 @@ const Setting = ({ navigation }) => {
               </TextStyle>
               <Ionicons
                 name="chevron-forward-outline"
-                size={getFontSize(23)}
+                size={32}
                 color={light.main2}
               />
             </View>
@@ -146,7 +145,7 @@ const Setting = ({ navigation }) => {
           />*/}
         {/*<Card
           onPress={() => navigation.navigate("ClientSupplier")}
-          left={() => <Ionicons name="people" size={getFontSize(28)} color={light.main2} />}
+          left={() => <Ionicons name="people" size={32} color={light.main2} />}
           right={() => (
             <View style={styles.rowcenter}>
               <TextStyle
@@ -158,7 +157,7 @@ const Setting = ({ navigation }) => {
               </TextStyle>
               <Ionicons
                 name="chevron-forward-outline"
-                size={getFontSize(23)}
+                size={32}
                 color={light.main2}
               />
             </View>
@@ -166,7 +165,7 @@ const Setting = ({ navigation }) => {
           />*/}
         {/*<Card
           onPress={() => {}}
-          left={() => <Ionicons name="shield" size={getFontSize(28)} color={light.main2} />}
+          left={() => <Ionicons name="shield" size={32} color={light.main2} />}
           right={() => (
             <View style={styles.rowcenter}>
               <TextStyle
@@ -178,7 +177,7 @@ const Setting = ({ navigation }) => {
               </TextStyle>
               <Ionicons
                 name="chevron-forward-outline"
-                size={getFontSize(23)}
+                size={32}
                 color={light.main2}
               />
             </View>
@@ -186,7 +185,7 @@ const Setting = ({ navigation }) => {
         />*/}
         {/*<Card
           onPress={() => {}}
-          left={() => <Ionicons name="globe" size={getFontSize(28)} color={light.main2} />}
+          left={() => <Ionicons name="globe" size={32} color={light.main2} />}
           right={() => (
             <TextStyle
               paragrahp
@@ -200,7 +199,7 @@ const Setting = ({ navigation }) => {
         {/*<Card
           onPress={() => {}}
           left={() => (
-            <Ionicons name="color-palette" size={getFontSize(28)} color={light.main2} />
+            <Ionicons name="color-palette" size={32} color={light.main2} />
           )}
           right={() => (
             <TextStyle
@@ -221,7 +220,7 @@ const Setting = ({ navigation }) => {
           left={() => (
             <Ionicons
               name="logo-whatsapp"
-              size={getFontSize(28)}
+              size={32}
               color={light.main2}
             />
           )}
@@ -248,7 +247,7 @@ const Setting = ({ navigation }) => {
           left={() => (
             <Ionicons
               name="document"
-              size={getFontSize(28)}
+              size={32}
               color={light.main2}
             />
           )}
@@ -268,7 +267,7 @@ const Setting = ({ navigation }) => {
             )
           }
           left={() => (
-            <Ionicons name="book" size={getFontSize(28)} color={light.main2} />
+            <Ionicons name="book" size={32} color={light.main2} />
           )}
           right={() => (
             <TextStyle
@@ -282,7 +281,7 @@ const Setting = ({ navigation }) => {
         {/*<Card
           onPress={async () => {}}
           left={() => (
-            <Ionicons name="chatbubbles" size={getFontSize(28)} color={light.main2} />
+            <Ionicons name="chatbubbles" size={32} color={light.main2} />
           )}
           right={() => (
             <TextStyle
@@ -295,7 +294,7 @@ const Setting = ({ navigation }) => {
         />*/}
         {/*<Card
           onPress={async () => {}}
-          left={() => <Ionicons name="heart" size={getFontSize(28)} color={light.main2} />}
+          left={() => <Ionicons name="heart" size={32} color={light.main2} />}
           right={() => (
             <TextStyle
               paragrahp
@@ -308,7 +307,7 @@ const Setting = ({ navigation }) => {
         {/*<Card
           onPress={async () => {}}
           left={() => (
-            <Ionicons name="alert-circle" size={getFontSize(28)} color={light.main2} />
+            <Ionicons name="alert-circle" size={32} color={light.main2} />
           )}
           right={() => (
             <TextStyle

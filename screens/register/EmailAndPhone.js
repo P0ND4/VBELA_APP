@@ -8,7 +8,6 @@ import {
   Keyboard,
 } from "react-native";
 import { verifyPhoneNumber, verifyEmail } from "@api";
-import { getFontSize } from '@helpers/libs';
 import TextStyle from "@components/TextStyle";
 import InputStyle from "@components/InputStyle";
 import Layout from "@components/Layout";
@@ -130,7 +129,7 @@ const EmailAndPhone = ({ route, navigation }) => {
           <Ionicons
             name={icon}
             color={mode === "light" ? light.textDark : dark.textWhite}
-            size={getFontSize(16)}
+            size={20}
             style={{ marginLeft: 10 }}
           />
         )}
@@ -263,7 +262,7 @@ const EmailAndPhone = ({ route, navigation }) => {
             <Ionicons
               name="mail"
               color={light.textDark}
-              size={getFontSize(16)}
+              size={20}
               style={{ marginLeft: 10 }}
             />
           )}

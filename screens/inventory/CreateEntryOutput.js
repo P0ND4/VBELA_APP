@@ -19,7 +19,6 @@ import {
   thousandsSystem,
   convertThousandsSystem,
   random,
-  getFontSize,
   calendarTheme,
 } from "@helpers/libs";
 import { edit } from "@features/inventory/informationSlice";
@@ -262,7 +261,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
                     </TextStyle>
                     <Ionicons
                       color={supplierSelected ? textColor : "#888888"}
-                      size={getFontSize(15)}
+                      size={20}
                       name="caret-down"
                     />
                   </View>
@@ -307,7 +306,7 @@ const CreateEntryOutput = ({ route, navigation }) => {
                       </TextStyle>
                       <Ionicons
                         color={element ? textColor : "#888888"}
-                        size={getFontSize(15)}
+                        size={20}
                         name="caret-down"
                       />
                     </View>

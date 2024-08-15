@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { View, StyleSheet, Dimensions, ScrollView, KeyboardAvoidingView, Alert } from "react-native";
 import { useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
-import { thousandsSystem, convertThousandsSystem, getFontSize } from "@helpers/libs";
+import { thousandsSystem, convertThousandsSystem } from "@helpers/libs";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import MultipleSelect from "@components/MultipleSelect";
@@ -219,7 +219,7 @@ const Create = ({ item, categoryOptions = [], onSubmit, onRemove, type }) => {
                         </TextStyle>
                         <Ionicons
                           color={unit ? textColor : "#888888"}
-                          size={getFontSize(15)}
+                          size={20}
                           name="caret-down"
                         />
                       </View>
@@ -401,7 +401,7 @@ const Create = ({ item, categoryOptions = [], onSubmit, onRemove, type }) => {
                       </TextStyle>
                       <Ionicons
                         color={category.length ? textColor : "#888888"}
-                        size={getFontSize(15)}
+                        size={20}
                         name="caret-down"
                       />
                     </View>
@@ -421,7 +421,7 @@ const Create = ({ item, categoryOptions = [], onSubmit, onRemove, type }) => {
                       </TextStyle>
                       <Ionicons
                         color={subcategory.length ? textColor : "#888888"}
-                        size={getFontSize(15)}
+                        size={20}
                         name="caret-down"
                       />
                     </View>

@@ -10,13 +10,13 @@ import { change as changeKitchen } from "@features/tables/kitchenSlice";
 import { change as changeRoster } from "@features/function/rosterSlice";
 import { change as changeCustomers } from "@features/people/customersSlice";
 import { change as changeSuppliers } from "@features/people/suppliersSlice";
+import { change as changeInvoices } from "@features/people/invoicesSlice";
 import { change as changeInventory } from "@features/inventory/informationSlice";
 import { change as changeProducts } from "@features/sales/productsSlice";
 import { change as changeSales } from "@features/sales/salesSlice";
 import { change as changeAccommodationOptions } from "@features/zones/accommodationOptionsSlice";
 import { change as changeGroups } from "@features/sales/groupsSlice";
 import { change as changeRecipes } from "@features/sales/recipesSlice";
-import { change as changeBills } from "@features/people/billsSlice";
 
 export default changeGeneralInformation = (dispatch, data) => {
   dispatch(changeZones(data.zones));
@@ -37,5 +37,5 @@ export default changeGeneralInformation = (dispatch, data) => {
   dispatch(changeAccommodationOptions(data.accommodationOptions));
   dispatch(changeGroups(data.groups));
   dispatch(changeRecipes(data.recipes));
-  dispatch(changeBills(data.bills));
+  dispatch(changeInvoices(data.invoices))
 };

@@ -1,13 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  View,
-  StyleSheet,
-  Image,
-  Dimensions,
-  Animated,
-  TouchableOpacity,
-} from "react-native";
+import { View, StyleSheet, Image, Dimensions, Animated, TouchableOpacity } from "react-native";
 import { change as changeMode } from "@features/settings/modeSlice";
 import { change as changeUser } from "@features/user/informationSlice";
 import { change as changeHelper } from "@features/helpers/informationSlice";
@@ -15,7 +8,7 @@ import { change as changeSettings } from "@features/settings/settingsSlice";
 import { change as changeLanguage } from "@features/settings/languageSlice";
 import { active } from "@features/user/sessionSlice";
 import { addUser } from "@api";
-import { getExpoID, getFontSize } from "@helpers/libs";
+import { getExpoID } from "@helpers/libs";
 import axios from "axios";
 import TextStyle from "@components/TextStyle";
 import Layout from "@components/Layout";
@@ -48,19 +41,14 @@ const SignIn = ({ navigation }) => {
   const [percentage, setPercentage] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState(null);
-  const [facebookRequest, facebookResponse, facebookPromptAsync] =
-    Facebook.useAuthRequest({
-      clientId: process.env.CLIENT_ID || process.env.EXPO_PUBLIC_CLIENT_ID,
-    });
+  const [facebookRequest, facebookResponse, facebookPromptAsync] = Facebook.useAuthRequest({
+    clientId: process.env.CLIENT_ID || process.env.EXPO_PUBLIC_CLIENT_ID,
+  });
 
-  const [googleRequest, googleResponse, googlePromptAsync] =
-    Google.useAuthRequest({
-      iosClientId:
-        process.env.IOS_CLIENT_ID || process.env.EXPO_PUBLIC_IOS_CLIENT_ID,
-      androidClientId:
-        process.env.ANDROID_CLIENT_ID ||
-        process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID,
-    });
+  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+    iosClientId: process.env.IOS_CLIENT_ID || process.env.EXPO_PUBLIC_IOS_CLIENT_ID,
+    androidClientId: process.env.ANDROID_CLIENT_ID || process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID,
+  });
 
   const dispatch = useDispatch();
 
@@ -73,11 +61,7 @@ const SignIn = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    if (
-      facebookResponse &&
-      facebookResponse.type === "success" &&
-      facebookResponse.authentication
-    ) {
+    if (facebookResponse && facebookResponse.type === "success" && facebookResponse.authentication) {
       (async () => {
         setModalVisible(true);
         setPercentage(25);
@@ -91,22 +75,15 @@ const SignIn = ({ navigation }) => {
   }, [facebookResponse]);
 
   useEffect(() => {
-    if (
-      googleResponse &&
-      googleResponse.type === "success" &&
-      googleResponse.authentication
-    ) {
+    if (googleResponse && googleResponse.type === "success" && googleResponse.authentication) {
       (async () => {
         setModalVisible(true);
         setPercentage(25);
-        const response = await axios.get(
-          "https://www.googleapis.com/userinfo/v2/me",
-          {
-            headers: {
-              Authorization: `Bearer ${googleResponse.authentication.accessToken}`,
-            },
-          }
-        );
+        const response = await axios.get("https://www.googleapis.com/userinfo/v2/me", {
+          headers: {
+            Authorization: `Bearer ${googleResponse.authentication.accessToken}`,
+          },
+        });
 
         sendInformation(response);
       })();
@@ -196,11 +173,7 @@ const SignIn = ({ navigation }) => {
     return (
       <View style={{ position: "relative", bottom: 40, flexDirection: "row" }}>
         {DATA.map((_, i) => {
-          const inputRange = [
-            (i - 1) * SCREEN_WIDTH,
-            i * SCREEN_WIDTH,
-            (i + 1) * SCREEN_WIDTH,
-          ];
+          const inputRange = [(i - 1) * SCREEN_WIDTH, i * SCREEN_WIDTH, (i + 1) * SCREEN_WIDTH];
 
           const scale = scrollX.interpolate({
             inputRange,
@@ -261,10 +234,7 @@ const SignIn = ({ navigation }) => {
 
   const Square = ({ scrollX }) => {
     const YOLO = Animated.modulo(
-      Animated.divide(
-        Animated.modulo(scrollX, SCREEN_WIDTH),
-        new Animated.Value(SCREEN_WIDTH)
-      ),
+      Animated.divide(Animated.modulo(scrollX, SCREEN_WIDTH), new Animated.Value(SCREEN_WIDTH)),
       1
     );
 
@@ -317,17 +287,14 @@ const SignIn = ({ navigation }) => {
         key={(item) => item.key}
         horizontal
         scrollEventThrottle={32}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+          useNativeDriver: false,
+        })}
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         renderItem={({ item }) => {
           return (
-            <View
-              style={{ width: SCREEN_WIDTH, alignItems: "center", padding: 20 }}
-            >
+            <View style={{ width: SCREEN_WIDTH, alignItems: "center", padding: 20 }}>
               <View style={{ flex: 1, justifyContent: "center" }}>
                 <Image
                   source={item.image}
@@ -339,11 +306,7 @@ const SignIn = ({ navigation }) => {
                 />
               </View>
               <View style={{ flex: 0.22 }}>
-                <TextStyle
-                  color={light.main2}
-                  subtitle
-                  style={{ marginBottom: 10, fontWeight: 800 }}
-                >
+                <TextStyle color={light.main2} subtitle style={{ marginBottom: 10, fontWeight: 800 }}>
                   {item.title}
                 </TextStyle>
                 <TextStyle
@@ -373,16 +336,9 @@ const SignIn = ({ navigation }) => {
               onPress={() => googleHandlePessAsync()}
               backgroundColor={mode === "dark" ? dark.main2 : light.main5}
             >
-              <Ionicons
-                name="logo-google"
-                size={getFontSize(31)}
-                style={styles.icons}
-              />
+              <Ionicons name="logo-google" size={34} />
             </ButtonStyle>
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
+            <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
               Google
             </TextStyle>
           </View>
@@ -393,61 +349,33 @@ const SignIn = ({ navigation }) => {
               onPress={() => facebookHandlePressAsync()}
               backgroundColor={mode === "dark" ? dark.main2 : light.main5}
             >
-              <Ionicons
-                name="logo-facebook"
-                color="#FFFFFF"
-                size={getFontSize(31)}
-                style={styles.icons}
-              />
+              <Ionicons name="logo-facebook" color="#FFFFFF" size={34} />
             </ButtonStyle>
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
+            <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
               Facebook
             </TextStyle>
           </View>
           <View style={{ alignItems: "center" }}>
             <ButtonStyle
               style={[styles.button, { backgroundColor: "#22D847" }]}
-              onPress={() =>
-                navigation.navigate("EmailAndPhone", { type: "phone" })
-              }
+              onPress={() => navigation.navigate("EmailAndPhone", { type: "phone" })}
               backgroundColor={mode === "dark" ? dark.main2 : light.main5}
             >
-              <Ionicons
-                name="call"
-                size={getFontSize(31)}
-                color="#FFFFFF"
-                style={styles.icons}
-              />
+              <Ionicons name="call" size={34} color="#FFFFFF" />
             </ButtonStyle>
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
+            <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
               Teléfono
             </TextStyle>
           </View>
           <View style={{ alignItems: "center" }}>
             <ButtonStyle
               style={[styles.button, { backgroundColor: "#EB493A" }]}
-              onPress={() =>
-                navigation.navigate("EmailAndPhone", { type: "email" })
-              }
+              onPress={() => navigation.navigate("EmailAndPhone", { type: "email" })}
               backgroundColor={mode === "dark" ? dark.main2 : light.main5}
             >
-              <Ionicons
-                name="mail"
-                color="#FFFFFF"
-                size={getFontSize(31)}
-                style={styles.icons}
-              />
+              <Ionicons name="mail" color="#FFFFFF" size={34} />
             </ButtonStyle>
-            <TextStyle
-              smallParagraph
-              color={mode === "light" ? light.textDark : dark.textWhite}
-            >
+            <TextStyle smallParagraph color={mode === "light" ? light.textDark : dark.textWhite}>
               Correo
             </TextStyle>
           </View>
@@ -462,8 +390,8 @@ const SignIn = ({ navigation }) => {
 const styles = StyleSheet.create({
   button: {
     width: "auto",
-    width: getFontSize(49),
-    height: getFontSize(49),
+    width: 54,
+    height: 54,
     paddingVertical: 0,
     paddingHorizontal: 0,
     alignItems: "center",

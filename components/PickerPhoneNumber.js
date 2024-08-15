@@ -9,7 +9,6 @@ import {
   StyleSheet,
 } from "react-native";
 import { useSelector } from "react-redux";
-import { getFontSize } from "@helpers/libs";
 import TextStyle from "@components/TextStyle";
 import InputStyle from "@components/InputStyle";
 import CountriesImages from "@assets/countries";
@@ -121,7 +120,7 @@ const PickerPhoneNumber = ({ modalVisible, setModalVisible, onChange }) => {
               color={
                 mode === "light" ? `${light.textDark}66` : `${dark.textWhite}66`
               }
-              size={getFontSize(24)}
+              size={30}
             />
           </TouchableOpacity>
         </View>
@@ -133,7 +132,7 @@ const PickerPhoneNumber = ({ modalVisible, setModalVisible, onChange }) => {
               color={
                 mode === "light" ? `${light.textDark}66` : `${dark.textWhite}66`
               }
-              size={getFontSize(24)}
+              size={30}
             />
           )}
           placeholder="Buscar"

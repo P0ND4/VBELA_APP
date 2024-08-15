@@ -11,7 +11,7 @@ import {
   TextInput,
 } from "react-native";
 import { useForm } from "react-hook-form";
-import { thousandsSystem, convertThousandsSystem, random, getFontSize } from "@helpers/libs";
+import { thousandsSystem, convertThousandsSystem, random } from "@helpers/libs";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
 import Layout from "@components/Layout";
@@ -284,7 +284,7 @@ const CreateRecipe = ({ route, navigation }) => {
                           onChangeText={(text) => setSearch(text)}
                         />
                       </View>
-                      <Ionicons name="search" color={light.textDark} size={getFontSize(14)} />
+                      <Ionicons name="search" color={light.textDark} size={20} />
                     </View>
                   </View>
                   <ScrollView style={{ maxHeight: 250 }} showsVerticalScrollIndicator={false}>

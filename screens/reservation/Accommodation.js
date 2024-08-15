@@ -10,7 +10,7 @@ import {
   Switch,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { changeDate, getFontSize, random } from "@helpers/libs";
+import { changeDate, random } from "@helpers/libs";
 import { useNavigation } from "@react-navigation/native";
 import { edit as editRS } from "@features/zones/standardReservationsSlice";
 import { editReservation } from "@api";
@@ -40,7 +40,7 @@ const Search = ({ search, setSearch, setModalVisible, style = {} }) => {
         stylesInput={styles.search}
       />
       <TouchableOpacity onPress={() => setModalVisible(true)}>
-        <Ionicons name="filter" size={getFontSize(24)} color={light.main2} />
+        <Ionicons name="filter" size={30} color={light.main2} />
       </TouchableOpacity>
     </View>
   );
@@ -59,6 +59,7 @@ const Hosted = ({ route }) => {
   const nomenclatures = useSelector((state) => state.nomenclatures);
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
   const standardReservations = useSelector((state) => state.standardReservations);
+  const customers = useSelector((state) => state.customers);
 
   const [search, setSearch] = useState("");
   const [hosted, setHosted] = useState([]);
@@ -105,9 +106,13 @@ const Hosted = ({ route }) => {
     const accommodation = accommodationReservations.filter(condition).map((a) => {
       const nom = nomenclatures.find((n) => n.id === a.ref);
       const zon = zones.find((z) => z.id === nom.ref);
+      const cus = customers.find(({ special, clientList, id }) =>
+        special ? clientList.some(({ id }) => id === a?.owner) : id === a?.owner
+      );
       return {
         ...a,
         room: nom.name || nom.nomenclature,
+        customer: cus?.name || null,
         group: zon.name,
         groupID: zon.id,
         nomenclatureID: nom.id,
@@ -117,11 +122,15 @@ const Hosted = ({ route }) => {
       s.hosted.filter(condition).map((h) => {
         const nom = nomenclatures.find((n) => n.id === h.ref);
         const zon = zones.find((z) => z.id === nom.ref);
+        const cus = customers.find(({ special, clientList, id }) =>
+          special ? clientList.some(({ id }) => id === h?.owner) : id === h?.owner
+        );
         return {
           ...h,
           start: s.start,
           days: s.days,
           reservationID: s.id,
+          customer: cus?.name || null,
           room: nom.name || nom.nomenclature,
           group: zon.name,
           groupID: zon.id,
@@ -223,6 +232,7 @@ const Location = () => {
   const nomenclatures = useSelector((state) => state.nomenclatures);
   const standardReservations = useSelector((state) => state.standardReservations);
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
+  const customers = useSelector((state) => state.customers);
 
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState([]);
@@ -257,15 +267,30 @@ const Location = () => {
         union = standardReservations
           .filter((r) => r.ref === n.id)
           .flatMap((s) =>
-            s.hosted.map((h) => ({
-              ...h,
-              start: s.start,
-              days: s.days,
-              reservationID: s.id,
-              type: s.type,
-            }))
+            s.hosted.map((h) => {
+              const cus = customers.find(({ special, clientList, id }) =>
+                special ? clientList.some(({ id }) => id === h?.owner) : id === h?.owner
+              );
+              return {
+                ...h,
+                start: s.start,
+                days: s.days,
+                customer: cus?.name || null,
+                reservationID: s.id,
+                type: s.type,
+              };
+            })
           );
-      else union = accommodationReservations.filter((r) => r.ref === n.id);
+      else
+        union = accommodationReservations
+          .filter((r) => r.ref === n.id)
+          .map((a) => ({
+            ...a,
+            customer:
+              customers.find(({ special, clientList, id }) =>
+                special ? clientList.some(({ id }) => id === a?.owner) : id === a?.owner
+              )?.name || null,
+          }));
       const hosted = union
         .filter((r) => everybody || (!r.checkOut && r.checkIn))
         .sort((a, b) => {
@@ -434,10 +459,10 @@ const Zone = () => {
             <TouchableOpacity
               onPress={() => navigation.navigate("ZoneInformation", { zoneID: item.id })}
             >
-              <Ionicons size={getFontSize(24)} color={light.main2} name="information-circle-outline" />
+              <Ionicons size={30} color={light.main2} name="information-circle-outline" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate("CreateZone", { item, editing: true })}>
-              <Ionicons size={getFontSize(24)} color={light.main2} name="create-outline" />
+              <Ionicons size={30} color={light.main2} name="create-outline" />
             </TouchableOpacity>
           </View>
         </View>
@@ -595,11 +620,11 @@ const Accommodation = ({ navigation }) => {
           </ButtonStyle>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <TouchableOpacity onPress={() => navigation.navigate("CreateZone")}>
-              <Ionicons name="add-circle" color={light.main2} size={getFontSize(26)} />
+              <Ionicons name="add-circle" color={light.main2} size={35} />
             </TouchableOpacity>
             {route && (
               <TouchableOpacity onPress={() => setRoute("")} style={{ marginLeft: 5 }}>
-                <Ionicons name="arrow-back" color={textColor} size={getFontSize(26)} />
+                <Ionicons name="arrow-back" color={textColor} size={35} />
               </TouchableOpacity>
             )}
           </View>

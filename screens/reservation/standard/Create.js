@@ -20,7 +20,6 @@ import {
   changeDate,
   random,
   thousandsSystem,
-  getFontSize,
 } from "@helpers/libs";
 import theme from "@theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -297,7 +296,7 @@ const CreateReserve = ({ route, navigation }) => {
                   <Ionicons
                     name="person-add"
                     color={light.textDark}
-                    size={getFontSize(16)}
+                    size={21}
                     style={{ marginLeft: 10 }}
                   />
                 </ButtonStyle>

@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { Picker } from "@react-native-picker/picker";
 import TextStyle from "@components/TextStyle";
 import ButtonStyle from "@components/ButtonStyle";
-import { months, getFontSize } from "@helpers/libs";
+import { months } from "@helpers/libs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import theme from "@theme";
 
@@ -95,7 +95,7 @@ const FullFilterDate = ({
               </TextStyle>
               <Ionicons
                 color={day !== "all" ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"}
-                size={getFontSize(10)}
+                size={15}
                 name="caret-down"
               />
             </View>
@@ -160,7 +160,7 @@ const FullFilterDate = ({
                 color={
                   month !== "all" ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"
                 }
-                size={getFontSize(10)}
+                size={15}
                 name="caret-down"
               />
             </View>
@@ -220,7 +220,7 @@ const FullFilterDate = ({
               </TextStyle>
               <Ionicons
                 color={year !== "all" ? (mode === "light" ? light.textDark : dark.textWhite) : "#888888"}
-                size={getFontSize(10)}
+                size={15}
                 name="caret-down"
               />
             </View>

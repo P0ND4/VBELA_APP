@@ -7,7 +7,7 @@ import ButtonStyle from "@components/ButtonStyle";
 import InputStyle from "@components/InputStyle";
 import theme from "@theme";
 import TextStyle from "@components/TextStyle";
-import { change } from "@features/tables/invoiceSlice";
+import { change } from "@features/tables/invoiceInformationSlice";
 
 const { light } = theme();
 
@@ -19,7 +19,7 @@ const EditInvoice = ({ navigation }) => {
     handleSubmit,
   } = useForm();
 
-  const invoice = useSelector(state => state.invoice);
+  const invoiceInformation = useSelector((state) => state.invoiceInformation);
 
   const [name, setName] = useState("");
   const [number, setNumber] = useState("");
@@ -34,18 +34,16 @@ const EditInvoice = ({ navigation }) => {
   };
 
   useEffect(() => {
-    register("name", { value: invoice?.name ? invoice.name : "", required: true });
-    register("number", { value: invoice?.number ? invoice.number : "" });
-    register("address", { value: invoice?.address ? invoice.address : "" });
-    register("complement", { value: invoice?.complement ? invoice.complement : "" });
+    register("name", { value: invoiceInformation?.name || "", required: true });
+    register("number", { value: invoiceInformation?.number || "" });
+    register("address", { value: invoiceInformation?.address || "" });
+    register("complement", { value: invoiceInformation?.complement || "" });
 
-    setName(invoice?.name ? invoice.name : "");
-    setNumber(invoice?.number ? invoice.number : "");
-    setAddress(invoice?.address ? invoice.address : "");
-    setComplement(invoice?.complement ? invoice.complement : "");
+    setName(invoiceInformation?.name || "");
+    setNumber(invoiceInformation?.number || "");
+    setAddress(invoiceInformation?.address || "");
+    setComplement(invoiceInformation?.complement || "");
   }, []);
-
-  
 
   return (
     <Layout style={{ justifyContent: "space-between" }}>
@@ -56,11 +54,13 @@ const EditInvoice = ({ navigation }) => {
           maxLength={20}
           onChangeText={(text) => {
             setName(text);
-            setValue('name', text);
+            setValue("name", text);
           }}
         />
         {errors.name?.type && (
-          <TextStyle smallParagraph color={light.main2}>El nombre es requerido</TextStyle>
+          <TextStyle smallParagraph color={light.main2}>
+            El nombre es requerido
+          </TextStyle>
         )}
         <InputStyle
           placeholder="Teléfono (opcional)"
@@ -69,7 +69,7 @@ const EditInvoice = ({ navigation }) => {
           keyboardType="phone-pad"
           onChangeText={(num) => {
             setNumber(num);
-            setValue('number', num);
+            setValue("number", num);
           }}
         />
         <InputStyle
@@ -78,7 +78,7 @@ const EditInvoice = ({ navigation }) => {
           value={address}
           onChangeText={(text) => {
             setAddress(text);
-            setValue('address', text);
+            setValue("address", text);
           }}
         />
         <InputStyle
@@ -87,7 +87,7 @@ const EditInvoice = ({ navigation }) => {
           value={complement}
           onChangeText={(text) => {
             setComplement(text);
-            setValue('complement', text);
+            setValue("complement", text);
           }}
         />
       </View>

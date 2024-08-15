@@ -3,7 +3,7 @@ import { View, KeyboardAvoidingView, ScrollView, Keyboard, Alert, StyleSheet } f
 import { useSelector, useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
 import { Picker } from "@react-native-picker/picker";
-import { thousandsSystem, random, getFontSize } from "@helpers/libs";
+import { thousandsSystem, random } from "@helpers/libs";
 import { add, edit, remove } from "@features/inventory/informationSlice";
 import { change as CRecipe } from "@features/sales/recipesSlice";
 import { addInventory, editInventory, editUser } from "@api";
@@ -260,7 +260,7 @@ const CreateElement = ({ route, navigation }) => {
                     </TextStyle>
                     <Ionicons
                       color={unit ? textColor : "#888888"}
-                      size={getFontSize(15)}
+                      size={20}
                       name="caret-down"
                     />
                   </View>
@@ -304,7 +304,7 @@ const CreateElement = ({ route, navigation }) => {
                     </TextStyle>
                     <Ionicons
                       color={visible !== "both" ? textColor : "#888888"}
-                      size={getFontSize(15)}
+                      size={20}
                       name="caret-down"
                     />
                   </View>

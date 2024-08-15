@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { getFontSize, changeDate, thousandsSystem } from "@helpers/libs";
+import { changeDate, thousandsSystem } from "@helpers/libs";
 import { remove as removeS } from "@features/sales/salesSlice";
 import { remove as removeO } from "@features/tables/ordersSlice";
 import { removeOrder, removeSale } from "@api";
@@ -49,7 +49,7 @@ const History = ({ route }) => {
             <Ionicons
               color={light.main2}
               name={open ? "eye-off" : "eye"}
-              size={getFontSize(18)}
+              size={23}
             />
           </TouchableOpacity>
         </View>
@@ -214,14 +214,14 @@ const History = ({ route }) => {
               <Ionicons
                 name="information-circle-outline"
                 color={light.main2}
-                size={getFontSize(22)}
+                size={27}
               />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => deleteSale({ item })}>
               <Ionicons
                 name="trash"
                 color={light.main2}
-                size={getFontSize(18)}
+                size={23}
               />
             </TouchableOpacity>
           </View>
@@ -275,7 +275,7 @@ const History = ({ route }) => {
                 >
                   <Ionicons
                     name="close"
-                    size={getFontSize(28)}
+                    size={33}
                     color={mode === "light" ? light.textDark : dark.textWhite}
                   />
                 </TouchableOpacity>
@@ -313,7 +313,7 @@ const History = ({ route }) => {
                         <Ionicons
                           color={light.main2}
                           name={openInformationCard ? "eye-off" : "eye"}
-                          size={getFontSize(18)}
+                          size={23}
                         />
                       </TouchableOpacity>
                     </View>
@@ -418,7 +418,7 @@ const History = ({ route }) => {
             >
               <Ionicons
                 name="print"
-                size={getFontSize(28)}
+                size={33}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -435,7 +435,7 @@ const History = ({ route }) => {
             >
               <Ionicons
                 name="document-attach"
-                size={getFontSize(28)}
+                size={33}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />
@@ -445,7 +445,7 @@ const History = ({ route }) => {
             <TouchableOpacity>
               <Ionicons
                 name="filter"
-                size={getFontSize(28)}
+                size={33}
                 color={light.main2}
                 style={{ marginHorizontal: 5 }}
               />

@@ -1,7 +1,7 @@
 const { createSlice } = require("@reduxjs/toolkit");
 
 export const invoiceSlice = createSlice({
-  name: "invoice",
+  name: "invoice-information",
   initialState: {},
   reducers: {
     change: (state, action) => (state = action.payload),

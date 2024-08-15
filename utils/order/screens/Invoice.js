@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useMemo } from "react";
 import { View, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Image, Alert } from "react-native";
 import { useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
-import { thousandsSystem, changeDate, generatePDF, print, getFontSize } from "@helpers/libs";
+import { thousandsSystem, changeDate, generatePDF, print } from "@helpers/libs";
 import { orderInvoice } from "@api";
 import Information from "@components/Information";
 import TextStyle from "@components/TextStyle";
@@ -29,7 +29,7 @@ const Email = ({ modalVisible, setModalVisible, html, code }) => {
     handleSubmit,
   } = useForm();
 
-  const invoice = useSelector((state) => state.invoice);
+  const invoiceInformation = useSelector((state) => state.invoiceInformation);
   const mode = useSelector((state) => state.mode);
 
   const [email, setEmail] = useState("");
@@ -52,7 +52,7 @@ const Email = ({ modalVisible, setModalVisible, html, code }) => {
     await orderInvoice({
       email,
       html,
-      title: `FACTURA ${invoice?.name || ""}`,
+      title: `FACTURA ${invoiceInformation?.name || ""}`,
       id: code,
     });
     Alert.alert("ENVIADO", "¡Email en camino!");
@@ -118,7 +118,7 @@ const Email = ({ modalVisible, setModalVisible, html, code }) => {
 
 const Invoice = ({ route, navigation }) => {
   const mode = useSelector((state) => state.mode);
-  const invoice = useSelector((state) => state.invoice);
+  const invoiceInformation = useSelector((state) => state.invoiceInformation);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [invoiceInfo, setInvoiceInfo] = useState([]);
@@ -132,7 +132,7 @@ const Invoice = ({ route, navigation }) => {
       total: data.total,
       event: { discount: data.discount, tip: data.tip, tax: data.tax },
       code: data.invoice,
-      invoice,
+      invoiceInformation,
     })
   ).current;
   const viewShotRef = useRef();
@@ -145,9 +145,9 @@ const Invoice = ({ route, navigation }) => {
 
   useEffect(() => {
     setInvoiceInfo(
-      [invoice?.name, invoice?.address, invoice?.number, invoice?.complement].filter(Boolean)
+      [invoiceInformation?.name, invoiceInformation?.address, invoiceInformation?.number, invoiceInformation?.complement].filter(Boolean)
     );
-  }, [invoice]);
+  }, [invoiceInformation]);
 
   const Event = ({ name, value }) => {
     return (
@@ -163,7 +163,7 @@ const Invoice = ({ route, navigation }) => {
   const Button = ({ onPress, icon, name }) => {
     return (
       <TouchableOpacity style={[styles.button, { backgroundColor }]} onPress={onPress}>
-        <Ionicons name={icon} color={light.main2} size={getFontSize(24)} style={{ marginBottom: 5 }} />
+        <Ionicons name={icon} color={light.main2} size={30} style={{ marginBottom: 5 }} />
         <TextStyle color={textColor} smallParagraph>
           {name}
         </TextStyle>
@@ -181,7 +181,7 @@ const Invoice = ({ route, navigation }) => {
           <Ionicons
             name="create-outline"
             color={textColor}
-            size={getFontSize(24)}
+            size={30}
             style={{ marginRight: 10 }}
           />
           <TextStyle color={textColor} smallParagraph>
@@ -191,7 +191,7 @@ const Invoice = ({ route, navigation }) => {
       </View>
       <View>
         <TouchableOpacity style={{ marginTop: 20, marginLeft: 20 }} onPress={() => navigation.pop()}>
-          <Ionicons name="close-outline" color={textColor} size={getFontSize(32)} />
+          <Ionicons name="close-outline" color={textColor} size={30} />
         </TouchableOpacity>
         <ScrollView style={{ flexGrow: 1, maxHeight: SCREEN_HEIGHT / 1.45 }}>
           <ViewShot ref={viewShotRef} options={{ result: "tmpfile", format: "png", quality: 1.0 }}>
@@ -211,7 +211,7 @@ const Invoice = ({ route, navigation }) => {
                 </TextStyle>
                 <View style={{ alignItems: "center", marginVertical: 14 }}>
                   <TextStyle color={textColor} smallSubtitle>
-                    {invoice?.name || "Sin nombre"}
+                    {invoiceInformation?.name || "Sin nombre"}
                   </TextStyle>
                   <TextStyle color={textColor}>TICKET N°: {data.invoice}</TextStyle>
                 </View>
@@ -270,7 +270,7 @@ const Invoice = ({ route, navigation }) => {
                   </TextStyle>
                 </View>
                 <TextStyle center color={textColor} smallParagraph style={{ marginTop: 15 }}>
-                  GRACIAS POR COMPRAR EN {invoice?.name || "Sin nombre"} RECUERDE VISITAR vbelapp.com
+                  GRACIAS POR COMPRAR EN {invoiceInformation?.name || "Sin nombre"} RECUERDE VISITAR vbelapp.com
                 </TextStyle>
               </View>
             </View>
