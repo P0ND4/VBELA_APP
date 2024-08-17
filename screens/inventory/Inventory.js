@@ -29,6 +29,7 @@ const { light, dark } = theme();
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("screen");
 
 const Inventory = () => {
+  const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
   const inventoryInformation = useSelector((state) => state.inventory);
 
@@ -225,6 +226,14 @@ const Inventory = () => {
     0
   );
 
+  const totalQuantity = inventory.reduce(
+    (a, item) =>
+      a +
+      item.entry.reduce((a, b) => a + b.quantity, 0) -
+      item.output.reduce((a, b) => a + b.quantity, 0),
+    0
+  );
+
   const html = `
 <html lang="en">
 
@@ -239,7 +248,7 @@ const Inventory = () => {
     margin: 0;
     box-sizing: 'border-box';
     font-family: sans-serif;
-    color: #444444
+    color: #000000
   }
 
   @page { margin: 20px; } 
@@ -247,49 +256,86 @@ const Inventory = () => {
 </head>
 
 <body>
-<view style="padding: 20px; width: 500px; display: block; margin: 20px auto; background-color: #FFFFFF;">
+  <table style="padding: 20px 0 0 0; margin: 20px 0; width: 100vw;">
+    <tr>
+      <td style="text-align: left;">
+        <p style="font-size: 40px; font-weight: 600;">REPORTE DE INVENTARIO</p>
+        <p style="font-size: 40px; font-weight: 600;">VBELA</p>
+      </td>
+      <td style="text-align: right;">
+        <img
+          src="${Image.resolveAssetSource(Logo).uri}"
+          style="width: 100px; border-radius: 8px" />
+      </td>
+    </tr>
+  </table>
   <view>
-    <img
-      src="${Image.resolveAssetSource(Logo).uri}"
-      style="width: 22vw; display: block; margin: 0 auto; border-radius: 8px" />
-    <p style="font-size: 30px; text-align: center">vbelapp.com</p>
-  </view>
-  <p style="font-size: 30px; text-align: center; margin: 20px 0; background-color: #444444; padding: 10px 0; color: #FFFFFF">INVENTARIO</p>    
+  <table style="width: 100vw;">
+    <tr>
+      <td style="text-align: left;">
+        <p style="font-size: 24px; font-weight: 600;">Número de productos: ${thousandsSystem(
+          inventory.length
+        )}</p>
+      </td>
+      <td style="text-align: right;">
+        <p style="font-size: 24px; font-weight: 600;">${user.identifier}</p>
+      </td>
+    </tr>
+  </table>
 
-  <view style="width: 100%; margin: 20px auto;">
-    <table style="width: 100%">
-      <tr>
-          <td style="width: 50px; border: 1px solid #000; padding: 8px">
-            <p style="font-size: 18px; font-weight: 600;">NOMBRE</p>
-          </td>
-          <td style="width: 50px; border: 1px solid #000; padding: 8px">
-            <p style="font-size: 18px; font-weight: 600;">ENTRADA</p>
-          </td>
-          <td style="width: 50px; border: 1px solid #000; padding: 8px">
-            <p style="font-size: 18px; font-weight: 600;">SALIDA</p>
-          </td>
-          <td style="width: 50px; border: 1px solid #000; padding: 8px">
-            <p style="font-size: 18px; font-weight: 600; display: inline-block;">STOCK</p>
-          </td>
-          <td style="width: 50px; border: 1px solid #000; padding: 8px">
-            <p style="font-size: 18px; font-weight: 600;">UND</p>
-          </td>
-          <td style="width: 50px; border: 1px solid #000; padding: 8px">
-            <p style="font-size: 18px; font-weight: 600;">VALOR</p>
-          </td>
-        </tr>
-      ${text.replace(/,/g, "")}
-    </table>
-        
-    <p style="text-align: center; font-size: 30px; font-weight: 600; margin-top: 20px;">Valor total: ${thousandsSystem(
-      totalValue
-    )}</p>
+    <p style="font-size: 24px; font-weight: 600;">Fecha de generación: ${changeDate(new Date(), {
+      time: true,
+    })}</p>
     
+    <table style="width: 100vw; margin-top: 25px;">
+      <tr>
+        <td style="padding: 15px 0; border: 1px solid "#000000"; border-radius: 8px">
+          <view style="text-align: center;">
+            <p style="font-size: 24px; font-weight: 600;">Valor total del inventario</p>
+            <p style="font-size: 24px; font-weight: 800; color: ${
+              totalValue < 0 ? "#F70000" : "#000000"
+            }">${thousandsSystem(totalValue)}</p>
+          </view>
+        </td>
+        <td style="padding: 15px 0; border: 1px solid "#000000"; border-radius: 8px">
+          <view style="text-align: center;">
+            <p style="font-size: 24px; font-weight: 600;">Cantidad total del inventario</p>
+            <p style="font-size: 24px; font-weight: 800; color: ${
+              totalQuantity < 0 ? "#F70000" : "#000000"
+            }">${thousandsSystem(totalQuantity)}</p>
+          </view>
+        </td>
+      </tr>
+    </table>
+
+    <view style="display: block; margin: 25px 0">
+      <p style="font-size: 24px; font-weight: 600; margin-bottom: 10px">Resumen de inventario</p>
+      <table style="width: 100vw">
+        <tr>
+            <td style="width: 50px; border: 1px solid #000; padding: 8px">
+              <p style="font-size: 18px; font-weight: 600;">NOMBRE</p>
+            </td>
+            <td style="width: 50px; border: 1px solid #000; padding: 8px">
+              <p style="font-size: 18px; font-weight: 600;">ENTRADA</p>
+            </td>
+            <td style="width: 50px; border: 1px solid #000; padding: 8px">
+              <p style="font-size: 18px; font-weight: 600;">SALIDA</p>
+            </td>
+            <td style="width: 50px; border: 1px solid #000; padding: 8px">
+              <p style="font-size: 18px; font-weight: 600; display: inline-block;">STOCK</p>
+            </td>
+            <td style="width: 50px; border: 1px solid #000; padding: 8px">
+              <p style="font-size: 18px; font-weight: 600;">UND</p>
+            </td>
+            <td style="width: 50px; border: 1px solid #000; padding: 8px">
+              <p style="font-size: 18px; font-weight: 600;">VALOR</p>
+            </td>
+          </tr>
+        ${text.replace(/,/g, "")}
+      </table>
+    </view>
+    <p style="font-size: 24px; font-weight: 600;">No se le olvide visitar vbelapp.com</p>
   </view>
-  <p style="text-align: center; font-size: 30px; font-weight: 600;">${changeDate(new Date())} ${(
-    "0" + new Date().getHours()
-  ).slice(-2)}:${("0" + new Date().getMinutes()).slice(-2)}</p>
-</view>
 </body>
 
 </html>
@@ -383,12 +429,14 @@ const Inventory = () => {
             </TouchableOpacity>
           )}
           {(inventory.length > 0 || activeSearch) && (
-            <TouchableOpacity onPress={() => generatePDF({ html, code: "INVENTARIO VBELA" })}>
+            <TouchableOpacity
+              onPress={() => generatePDF({ html, code: "INVENTARIO VBELA", width: 657, height: 850 })}
+            >
               <Ionicons name="document" size={34} color={light.main2} />
             </TouchableOpacity>
           )}
           {(inventory.length > 0 || activeSearch) && (
-            <TouchableOpacity onPress={() => print({ html })}>
+            <TouchableOpacity onPress={() => print({ html, width: 657, height: 850 })}>
               <Ionicons name="print" size={34} color={light.main2} />
             </TouchableOpacity>
           )}
@@ -995,11 +1043,7 @@ const Inventory = () => {
                     <TextStyle color={filters.unit ? textColor : "#888888"}>
                       {unitOptions.find((u) => u.value === filters.unit)?.label}
                     </TextStyle>
-                    <Ionicons
-                      color={filters.unit ? textColor : "#888888"}
-                      size={20}
-                      name="caret-down"
-                    />
+                    <Ionicons color={filters.unit ? textColor : "#888888"} size={20} name="caret-down" />
                   </View>
                 </ButtonStyle>
 

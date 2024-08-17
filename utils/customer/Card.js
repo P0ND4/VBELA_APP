@@ -6,6 +6,7 @@ import { thousandsSystem, changeDate, random } from "@helpers/libs";
 import { useNavigation } from "@react-navigation/native";
 import { editUser, editPerson } from "@api";
 import { remove as removeCustomer, edit as editCustomer } from "@features/people/customersSlice";
+import { change as changeInvoices } from "@features/people/invoicesSlice";
 import { change as changeAccommodation } from "@features/zones/accommodationReservationsSlice";
 import { change as changeStandard } from "@features/zones/standardReservationsSlice";
 import { change as changeOrders } from "@features/tables/ordersSlice";
@@ -30,6 +31,7 @@ const Card = ({ item }) => {
   const accommodationReservations = useSelector((state) => state.accommodationReservations);
   const standardReservations = useSelector((state) => state.standardReservations);
   const customers = useSelector((state) => state.customers);
+  const invoices = useSelector((state) => state.invoices);
 
   const navigation = useNavigation();
 
@@ -138,6 +140,7 @@ const Card = ({ item }) => {
     const ORFound = getTrades(orders);
     const ACFound = getAccommodation(accommodationReservations);
     const STFound = getAccommodation(standardReservations);
+    const INFound = invoices.filter((i) => i.ref === item.id);
 
     const send = async ({ sale, reservation } = {}) => {
       let change = {};
@@ -151,6 +154,12 @@ const Card = ({ item }) => {
         dispatch(changeStandard(changed));
         change.standard = changed;
       };
+
+      if ((sale || reservation) && INFound.length) {
+        const INChanged = invoices.filter((i) => i.ref !== item.id);
+        dispatch(changeInvoices(INChanged));
+        change.invoices = INChanged;
+      }
 
       if (sale && ORFound.length) {
         const ORChanged = orders.filter((o) => !ORFound.some((or) => o.id === or.id));
@@ -217,71 +226,88 @@ const Card = ({ item }) => {
         {
           text: "Estoy seguro",
           onPress: () => {
-            if ([SAFound, ORFound, ACFound, STFound].every((arr) => !arr.length)) return send();
+            if ([SAFound, ORFound, ACFound, STFound, INFound].every((arr) => !arr.length)) return send();
 
-            if (SAFound.length || ORFound.length)
+            const questions = () => {
+              if (SAFound.length || ORFound.length)
+                return Alert.alert(
+                  "BIEN :)",
+                  "¿Desea eliminar las ventas asociada al cliente?",
+                  [
+                    {
+                      text: "No",
+                      onPress: () => send(),
+                    },
+                    { text: "Si", onPress: () => send({ sale: true }) },
+                  ],
+                  { cancelable: true }
+                );
+
+              if (STFound.length || ACFound.length)
+                return Alert.alert(
+                  "BIEN :)",
+                  "¿Desea eliminar las reservaciones asociada al cliente?",
+                  [
+                    {
+                      text: "No",
+                      onPress: () => send(),
+                    },
+                    { text: "Si", onPress: () => send({ reservation: true }) },
+                  ],
+                  { cancelable: true }
+                );
+
               return Alert.alert(
                 "BIEN :)",
-                "¿Desea eliminar las ventas asociada al cliente?",
+                "¿Desea eliminar la información asociada al cliente (Reservaciones, Ventas), o solo un dato?",
+                [
+                  {
+                    text: "No eliminar la información",
+                    onPress: () => send(),
+                  },
+                  {
+                    text: "Eliminar un solo dato",
+                    onPress: () => {
+                      Alert.alert(
+                        "OK :)",
+                        "¿Cuál de las dos informaciones desea eliminar?",
+                        [
+                          {
+                            text: "Reservaciones",
+                            onPress: () => send({ reservation: true }),
+                          },
+                          {
+                            text: "Ventas",
+                            onPress: () => send({ trade: true }),
+                          },
+                        ],
+                        { cancelable: true }
+                      );
+                    },
+                  },
+                  {
+                    text: "Eliminar toda la información asociada",
+                    onPress: () => send({ reservation: true, trade: true }),
+                  },
+                ],
+                { cancelable: true }
+              );
+            };
+
+            if (INFound.length)
+              return Alert.alert(
+                "BIEN :)",
+                "¿Desea eliminar las facturas asociada al cliente?",
                 [
                   {
                     text: "No",
                     onPress: () => send(),
                   },
-                  { text: "Si", onPress: () => send({ sale: true }) },
+                  { text: "Si", onPress: () => questions() },
                 ],
                 { cancelable: true }
               );
-
-            if (STFound.length || ACFound.length)
-              return Alert.alert(
-                "BIEN :)",
-                "¿Desea eliminar las reservaciones asociada al cliente?",
-                [
-                  {
-                    text: "No",
-                    onPress: () => send(),
-                  },
-                  { text: "Si", onPress: () => send({ reservation: true }) },
-                ],
-                { cancelable: true }
-              );
-
-            return Alert.alert(
-              "BIEN :)",
-              "¿Desea eliminar la información asociada al cliente (Reservaciones, Ventas), o solo un dato?",
-              [
-                {
-                  text: "No eliminar la información",
-                  onPress: () => send(),
-                },
-                {
-                  text: "Eliminar un solo dato",
-                  onPress: () => {
-                    Alert.alert(
-                      "OK :)",
-                      "¿Cuál de las dos informaciones desea eliminar?",
-                      [
-                        {
-                          text: "Reservaciones",
-                          onPress: () => send({ reservation: true }),
-                        },
-                        {
-                          text: "Ventas",
-                          onPress: () => send({ trade: true }),
-                        },
-                      ],
-                      { cancelable: true }
-                    );
-                  },
-                },
-                {
-                  text: "Eliminar toda la información asociada",
-                  onPress: () => send({ reservation: true, trade: true }),
-                },
-              ],
-              { cancelable: true }
-            );
+            else questions();
           },
         },
       ],
@@ -310,11 +336,7 @@ const Card = ({ item }) => {
         style={[styles.swipe, { backgroundColor: "red" }]}
         onPress={() => deleteCustomer()}
       >
-        <Ionicons
-          name="trash"
-          size={25}
-          color={mode === "light" ? dark.main2 : light.main5}
-        />
+        <Ionicons name="trash" size={25} color={mode === "light" ? dark.main2 : light.main5} />
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.swipe, { backgroundColor: light.main2 }]}
@@ -326,11 +348,7 @@ const Card = ({ item }) => {
           });
         }}
       >
-        <Ionicons
-          name="create"
-          size={25}
-          color={mode === "light" ? dark.main2 : light.main5}
-        />
+        <Ionicons name="create" size={25} color={mode === "light" ? dark.main2 : light.main5} />
       </TouchableOpacity>
     </View>
   );

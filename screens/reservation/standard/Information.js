@@ -159,7 +159,7 @@ const Information = ({ route, navigation }) => {
     const found = standardReservations.find((s) => s.id === id);
     const reserve = {
       ...found,
-      hosted: found.hosted?.map((h) => ({
+      hosted: found?.hosted?.map((h) => ({
         ...h,
         customer:
           customers.find(({ special, clientList, id }) =>
@@ -178,7 +178,7 @@ const Information = ({ route, navigation }) => {
 
   useEffect(() => {
     setHTMLTable("");
-    const table = reserve?.hosted.reduce((a, item) => {
+    const table = reserve?.hosted?.reduce((a, item) => {
       return (
         a +
         `<tr>
@@ -244,7 +244,7 @@ const Information = ({ route, navigation }) => {
         </td>
         <td style="text-align: right;">
           <p style="font-size: 28px; font-weight: 600;">
-           ${thousandsSystem(reserve?.hosted.length || "0")}
+           ${thousandsSystem(reserve?.hosted?.length || "0")}
           </p>
         </td>
       </tr>
