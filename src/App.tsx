@@ -1,0 +1,37 @@
+import "./config/calendar/locales";
+
+import React from "react";
+import { registerRootComponent } from "expo";
+import { PersistGate } from "redux-persist/integration/react";
+import { LogBox } from "react-native";
+import { Provider } from "react-redux";
+import { store, persistor } from "./application/store";
+import { NavigationContainer } from "@react-navigation/native";
+import { useAppSelector } from "application/store/hook";
+import appTheme from "config/theme/app.theme";
+import Main from "./presentation/navigations/Main";
+
+const Navigation: React.FC = () => {
+  const darkMode = useAppSelector((state) => state.darkMode);
+  const color = useAppSelector((state) => state.color);
+
+  return (
+    <NavigationContainer theme={appTheme({ color, darkMode })}>
+      <Main />
+    </NavigationContainer>
+  );
+};
+
+const App: React.FC = () => {
+  LogBox.ignoreAllLogs();
+
+  return (
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <Navigation />
+      </PersistGate>
+    </Provider>
+  );
+};
+
+registerRootComponent(App);

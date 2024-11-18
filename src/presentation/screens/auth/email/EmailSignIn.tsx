@@ -1,0 +1,83 @@
+import React, { useState } from "react";
+import { Keyboard, View, ActivityIndicator } from "react-native";
+import { AuthNavigationProp } from "domain/entities/navigation";
+import { useTheme } from "@react-navigation/native";
+import StyledText from "presentation/components/text/StyledText";
+import StyledInput from "presentation/components/input/StyledInput";
+import Layout from "presentation/components/layout/Layout";
+import Ionicons from "@expo/vector-icons/Ionicons";
+
+import * as WebBrowser from "expo-web-browser";
+import StyledButton from "presentation/components/button/StyledButton";
+
+const EMAIL_EXPRESSION = /^([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$/;
+const TERMS_OF_SERVICE_URL = "https://sites.google.com/view/terminos-y-condiciones-vbela/inicio";
+const PRIVACY_POLICY_URL = "https://sites.google.com/view/politica-de-privacidad-vbela/principal";
+
+const termsOfService = async () => await WebBrowser.openBrowserAsync(TERMS_OF_SERVICE_URL);
+const privacyPolicy = async () => await WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL);
+
+const EmailSignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
+  const { colors } = useTheme();
+
+  const [email, setEmail] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+
+  return (
+    <Layout>
+      <View>
+        <StyledText style={{ marginBottom: 8 }} bigSubtitle color={colors.primary}>
+          ¡HOLA!
+        </StyledText>
+        <StyledText smallParagraph>
+          Te ayudaremos a iniciar sesión con tu correo electrónico en 2 pasos
+        </StyledText>
+      </View>
+      <StyledInput
+        stylesContainer={{ marginVertical: 10 }}
+        keyboardType="email-address"
+        maxLength={64}
+        value={email}
+        onChangeText={(email) => setEmail(email)}
+        placeholder="Correo electrónico"
+      />
+      <StyledText style={{ marginBottom: 20 }} verySmall>
+        Al iniciar sesión con una cuenta, acepta los{" "}
+        <StyledText onPress={() => termsOfService()} verySmall color={colors.primary}>
+          Términos de servicio
+        </StyledText>{" "}
+        y la{" "}
+        <StyledText onPress={() => privacyPolicy()} verySmall color={colors.primary}>
+          Política de privacidad
+        </StyledText>{" "}
+        de VBELA.
+      </StyledText>
+      <StyledButton
+        backgroundColor={colors.primary}
+        onPress={async () => {
+          Keyboard.dismiss();
+          if (EMAIL_EXPRESSION.test(email) && !loading) {
+            setLoading(true);
+            // const res = await verifyEmail({ email: value });
+            navigation.navigate("EmailVerification", { value: email });
+            setTimeout(() => setLoading(false), 3000);
+            // if (res.error) return Alert.alert("Error", "Hubo un fallo al enviar la verificación"); //TODO COLOCAR ALERT
+            // navigation.navigate("Verification", { value, type: "email" });
+          }
+        }}
+        style={{
+          flexDirection: "row",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+        disable={!EMAIL_EXPRESSION.test(email) || loading}
+      >
+        {loading && <ActivityIndicator size="small" color="#FFFFFF" />}
+        {!loading && <StyledText color="#FFFFFF">Verificar</StyledText>}
+        {!loading && <Ionicons name="mail" color="#FFFFFF" size={20} style={{ marginLeft: 10 }} />}
+      </StyledButton>
+    </Layout>
+  );
+};
+
+export default EmailSignIn;

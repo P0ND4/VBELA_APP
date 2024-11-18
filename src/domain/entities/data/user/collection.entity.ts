@@ -1,0 +1,46 @@
+import type { Collaborator, Payroll } from "../collaborators";
+import type { Customer, Invoice } from "../customers";
+import type { Stock } from "../inventories";
+import type { PSCategoryHierarchy, SaleProtocol } from "../stores";
+import type { Nomenclature, Reservation, Room, Zone } from "../reservations";
+import type { Kitchen, MCategoryHierarchy, Recipe, Table } from "../restaurants";
+import type { Expense, Purchase, Supplier } from "../suppliers";
+import type { Location, Element, Order } from "../common";
+import type { PaymentMethods, InvoiceInformation } from "../settings";
+
+type SimpleData = string | null;
+
+export interface Collection {
+  identifier: string;
+  type: SimpleData;
+  expoID: SimpleData;
+  darkMode: boolean;
+  invoiceInformation: InvoiceInformation;
+  coin: string;
+  color: number;
+  collaborators: Collaborator[];
+  payroll: Payroll[];
+  customers: Customer[];
+  invoices: Invoice[];
+  stocks: Stock[];
+  stores: Location[];
+  restaurants: Location[];
+  productsAndServicesCategoryHierarchy: PSCategoryHierarchy[];
+  productsAndServices: Element[];
+  salesProtocol: SaleProtocol[];
+  sales: Order[];
+  nomenclatures: Nomenclature[];
+  reservations: Reservation[];
+  rooms: Room[];
+  zones: Zone[];
+  menuCategoryHierarchy: MCategoryHierarchy[];
+  kitchen: Kitchen[];
+  menu: Element[];
+  orders: Order[];
+  recipes: Recipe[];
+  tables: Table[];
+  expenses: Expense[];
+  purchases: Purchase[];
+  suppliers: Supplier[];
+  paymentMethods: PaymentMethods[];
+}

@@ -1,0 +1,92 @@
+import React, { useEffect } from "react";
+import { useAppDispatch } from "application/store/hook";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.store.entity";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { useTheme } from "@react-navigation/native";
+import { Element } from "domain/entities/data/common/element.entity";
+import { add, edit, remove } from "application/slice/stores/products.and.services.slice";
+import ElementTab from "presentation/screens/common/sales/element/ElementTab";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { random } from "shared/utils";
+
+type ProductTabProps = {
+  navigation: StackNavigationProp<RootStore>;
+  route: StoreRouteProp<"ProductTab">;
+};
+
+const ProductTab: React.FC<ProductTabProps> = ({ navigation, route }) => {
+  const { colors } = useTheme();
+
+  const defaultValue = route.params?.defaultValue;
+  const storeID = route.params.storeID;
+
+  const dispatch = useAppDispatch();
+
+  const save = (data: Element) => {
+    dispatch(add(data));
+    navigation.pop();
+  };
+
+  const update = (data: Element) => {
+    dispatch(edit(data));
+    navigation.pop();
+  };
+
+  useEffect(() => {
+    if (defaultValue) {
+      navigation.setOptions({
+        headerRight: () => (
+          <View style={styles.iconContainer}>
+            <TouchableOpacity
+              style={styles.icon}
+              onPress={() => alert("Para la tercera actualización")}
+            >
+              <Ionicons name="share-social-outline" color={colors.text} size={25} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.icon}
+              onPress={() => {
+                save({
+                  ...defaultValue,
+                  id: random(10),
+                  name: `${defaultValue.name.slice(0, 26)} (1)`,
+                });
+              }}
+            >
+              <Ionicons name="duplicate-outline" color={colors.text} size={25} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.icon}
+              onPress={() => {
+                dispatch(remove({ id: defaultValue.id }));
+                navigation.pop();
+              }}
+            >
+              <Ionicons name="trash-outline" color={colors.text} size={25} />
+            </TouchableOpacity>
+          </View>
+        ),
+      });
+    }
+  }, [defaultValue]);
+
+  useEffect(() => {
+    navigation.setOptions({ title: "Crear producto" });
+  }, []);
+
+  return (
+    <ElementTab
+      onSubmit={defaultValue ? update : save}
+      defaultValue={defaultValue}
+      locationID={storeID}
+    />
+  );
+};
+
+const styles = StyleSheet.create({
+  iconContainer: { flexDirection: "row", alignItems: "center", paddingRight: 15 },
+  icon: { marginHorizontal: 6 },
+});
+
+export default ProductTab;

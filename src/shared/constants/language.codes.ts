@@ -1,0 +1,18 @@
+export const languageCodes = [
+  { code: "ar", name: "العربية" },
+  { code: "bn", name: "বাংলা" },
+  { code: "de", name: "Deutsch" },
+  { code: "en", name: "English" },
+  { code: "es", name: "Español" },
+  { code: "fr", name: "Français" },
+  { code: "he", name: "עִבְרִית" },
+  { code: "hi", name: "हिन्दी" },
+  { code: "it", name: "Italiano" },
+  { code: "ja", name: "日本語" },
+  { code: "ko", name: "한국어" },
+  { code: "pt", name: "Português" },
+  { code: "ru", name: "Русский" },
+  { code: "sw", name: "Kiswahili" },
+  { code: "tr", name: "Türkçe" },
+  { code: "zh", name: "中文 (简体)" },
+];
