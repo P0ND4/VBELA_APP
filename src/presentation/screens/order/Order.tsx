@@ -7,8 +7,9 @@ import { AppNavigationProp } from "domain/entities/navigation";
 import { thousandsSystem } from "shared/utils";
 import { useAppSelector } from "application/store/hook";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import OrdersScreen from "../common/orders/OrdersScreen";
 import StyledText from "presentation/components/text/StyledText";
+import ProductOrder from "./product/ProductOrder";
+import MenuOrder from "./menu/MenuOrder";
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -18,23 +19,23 @@ const Order: React.FC<AppNavigationProp> = ({ navigation }) => {
 
   const { colors } = useTheme();
 
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <View style={{ flexDirection: "row", alignItems: "center", paddingRight: 20 }}>
-          <TouchableOpacity onPress={() => alert("Para la segunda actualización")}>
-            <Ionicons name="reader-outline" color={colors.primary} size={30} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{ marginHorizontal: 4 }}
-            onPress={() => alert("Para la segunda actualización")}
-          >
-            <Ionicons name="list-outline" color={colors.primary} size={30} />
-          </TouchableOpacity>
-        </View>
-      ),
-    });
-  }, []);
+  // useEffect(() => {
+  //   navigation.setOptions({
+  //     headerRight: () => (
+  //       <View style={{ flexDirection: "row", alignItems: "center", paddingRight: 20 }}>
+  //         <TouchableOpacity onPress={() => alert("Para la segunda actualización")}>
+  //           <Ionicons name="reader-outline" color={colors.primary} size={30} />
+  //         </TouchableOpacity>
+  //         <TouchableOpacity
+  //           style={{ marginHorizontal: 4 }}
+  //           onPress={() => alert("Para la segunda actualización")}
+  //         >
+  //           <Ionicons name="list-outline" color={colors.primary} size={30} />
+  //         </TouchableOpacity>
+  //       </View>
+  //     ),
+  //   });
+  // }, []);
 
   const BadgeIcon: React.FC<{ count: number }> = ({ count }) => (
     <View style={[styles.order, { backgroundColor: colors.primary }]}>
@@ -49,15 +50,13 @@ const Order: React.FC<AppNavigationProp> = ({ navigation }) => {
       <Tab.Screen
         name="PEDIDOS"
         options={{ tabBarBadge: () => sales.length > 0 && <BadgeIcon count={sales.length} /> }}
-      >
-        {(props: any) => <OrdersScreen />}
-      </Tab.Screen>
+        component={ProductOrder}
+      />
       <Tab.Screen
         name="MENÚ"
         options={{ tabBarBadge: () => orders.length > 0 && <BadgeIcon count={orders.length} /> }}
-      >
-        {(props: any) => <OrdersScreen />}
-      </Tab.Screen>
+        component={MenuOrder}
+      />
     </Tab.Navigator>
   );
 };

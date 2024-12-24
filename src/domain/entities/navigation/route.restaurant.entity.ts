@@ -5,11 +5,24 @@ import { Element } from "../data/common/element.entity";
 import { Order, PaymentMethod } from "../data/common/order.entity";
 import { Table } from "../data/restaurants";
 
+interface ScreenOrder {
+  restaurantID: string;
+  tableID?: string;
+}
+
+interface Create extends ScreenOrder {
+  defaultValue?: Order;
+}
+
+interface Multiple extends ScreenOrder {
+  paymentMethod: PaymentMethod;
+}
+
 type Provider = {
-  CreateOrder: { restaurantID: string };
-  PreviewOrder: { restaurantID: string };
-  OrderPayment: undefined;
-  MultiplePayment: { paymentMethod: PaymentMethod };
+  CreateOrder: Create;
+  PreviewOrder: Create;
+  OrderPayment: ScreenOrder;
+  MultiplePayment: Multiple;
 };
 
 type NoProvider = {

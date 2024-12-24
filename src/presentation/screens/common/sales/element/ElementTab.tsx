@@ -1,32 +1,86 @@
 import React from "react";
-import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
+import {
+  createMaterialTopTabNavigator,
+  MaterialTopTabScreenProps,
+} from "@react-navigation/material-top-tabs";
 import { Element } from "domain/entities/data/common/element.entity";
+import { random } from "shared/utils";
+import { useForm } from "react-hook-form";
+import { Visible } from "domain/enums/data/inventory/visible.enums";
 import StockElement from "./ElementStock";
 import CreateElement from "./ElementForm";
+import { UnitValue } from "shared/constants/unit";
 
 const Tab = createMaterialTopTabNavigator();
 
+type TabScreenProps = MaterialTopTabScreenProps<any, any>;
+
 type ElementTabProps = {
+  inventories: string[];
+  visible: Visible.Store | Visible.Restaurant;
   onSubmit: (data: Element) => void;
   defaultValue?: Element;
   locationID: string;
 };
 
-const ElementTab: React.FC<ElementTabProps> = ({ onSubmit, defaultValue, locationID }) => {
+const ElementTab: React.FC<ElementTabProps> = ({
+  onSubmit,
+  visible,
+  inventories,
+  defaultValue,
+  locationID,
+}) => {
+  const initialValues: Element = {
+    id: defaultValue?.id || random(10),
+    locationID: defaultValue?.locationID || locationID,
+    name: defaultValue?.name || "",
+    price: defaultValue?.price || 0,
+    cost: defaultValue?.cost || 0,
+    promotion: defaultValue?.promotion || 0,
+    category: defaultValue?.category || [],
+    subcategory: defaultValue?.subcategory || [],
+    description: defaultValue?.description || "",
+    code: defaultValue?.code || "",
+    unit: (defaultValue?.unit || "") as UnitValue,
+    highlight: defaultValue?.highlight || false,
+    activeStock: defaultValue?.activeStock || false,
+    stock: defaultValue?.stock || 0,
+    minStock: defaultValue?.minStock || 0,
+    stockIDS: defaultValue?.stockIDS || [],
+    packageIDS: defaultValue?.packageIDS || [],
+    creationDate: defaultValue?.creationDate || new Date().toISOString(),
+    modificationDate: new Date().toISOString(),
+  };
+
+  const { control, handleSubmit, watch, formState } = useForm<Element>({
+    defaultValues: initialValues,
+  });
+
   return (
     <Tab.Navigator>
       <Tab.Screen name="REGISTRO">
-        {(props: any) => (
+        {(props: TabScreenProps) => (
           <CreateElement
             {...props}
             onSubmit={onSubmit}
-            defaultValue={defaultValue}
-            locationID={locationID}
+            control={control}
+            handleSubmit={handleSubmit}
+            watch={watch}
+            formState={formState}
           />
         )}
       </Tab.Screen>
-      {/* <Tab.Screen name="STOCK" component={StockElement} /> */}
-      {/* <Tab.Screen name="RECETA" component={() => <View />} /> */}
+      <Tab.Screen name="STOCK">
+        {(props: TabScreenProps) => (
+          <StockElement
+            {...props}
+            visible={visible}
+            inventories={inventories}
+            control={control}
+            watch={watch}
+          />
+        )}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 };

@@ -1,23 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { View, StyleSheet, TouchableOpacity, FlatList } from "react-native";
 import { AppNavigationProp, RootApp } from "domain/entities/navigation";
 import { useNavigation, useTheme } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { useAppSelector } from "application/store/hook";
+import type { Customer as CustomerType } from "domain/entities/data/customers";
+import { thousandsSystem } from "shared/utils";
 import Layout from "presentation/components/layout/Layout";
 import StyledInput from "presentation/components/input/StyledInput";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Filter from "./components/Filter";
 import Footer from "./components/Footer";
-import { StackNavigationProp } from "@react-navigation/stack";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
-type CardProps = {
-  name: string;
-  isAgency?: boolean;
-};
-
-const Card: React.FC<CardProps> = ({ name, isAgency }) => {
+const Card: React.FC<{ customer: CustomerType }> = ({ customer }) => {
   const { colors } = useTheme();
 
   const navigation = useNavigation<NavigationProps>();
@@ -25,15 +23,20 @@ const Card: React.FC<CardProps> = ({ name, isAgency }) => {
   return (
     <TouchableOpacity
       style={[styles.card, { borderColor: colors.border }]}
-      onPress={() => navigation.navigate("CustomerRoutes", { screen: "CustomerInformation" })}
+      onPress={() =>
+        navigation.navigate("CustomerRoutes", {
+          screen: "CustomerInformation",
+          params: { customer },
+        })
+      }
     >
       <View style={styles.row}>
-        <StyledText>{name}</StyledText>
+        <StyledText>{customer.name}</StyledText>
         <Ionicons name="chevron-forward" size={20} color={colors.border} />
       </View>
-      {isAgency && (
+      {customer.agency && (
         <StyledText verySmall color={colors.primary}>
-          AGENCIA
+          AGENCIA: <StyledText verySmall>{thousandsSystem(customer.people)} REGISTRADO</StyledText>
         </StyledText>
       )}
     </TouchableOpacity>
@@ -42,6 +45,8 @@ const Card: React.FC<CardProps> = ({ name, isAgency }) => {
 
 const Customer: React.FC<AppNavigationProp> = ({ navigation }) => {
   const { colors } = useTheme();
+
+  const customers = useAppSelector((state) => state.customers);
 
   const [positive, setPositive] = useState<boolean>(false);
   const [negative, setNegative] = useState<boolean>(false);
@@ -68,23 +73,42 @@ const Customer: React.FC<AppNavigationProp> = ({ navigation }) => {
 
   return (
     <Layout style={{ padding: 0, justifyContent: "space-between" }}>
-      <View>
-        <StyledInput
-          placeholder="Busca por nombre, email o teléfono"
-          stylesContainer={{ marginVertical: 0, borderRadius: 0 }}
-          stylesInput={{ paddingVertical: 15 }}
-          left={() => <Ionicons name="search" size={25} color={colors.text} />}
-        />
-        <View style={styles.filterContainer}>
-          <Filter onPress={() => setPositive(!positive)} value={positive} name="SALDO NEGATIVO" />
-          <Filter onPress={() => setNegative(!negative)} value={negative} name="SALDO POSITIVO" />
-        </View>
-        <View style={{ marginVertical: 5 }}>
-          <Card name="Melvin Colmenares" />
-          <Card name="Marketing" isAgency />
-        </View>
-      </View>
-      <Footer positive={positive} negative={negative} />
+      {!customers.length ? (
+        <StyledText color={colors.primary} style={{ margin: 20 }}>
+          NO HAY CLIENTES REGISTRADOS
+        </StyledText>
+      ) : (
+        <>
+          <View>
+            <StyledInput
+              placeholder="Busca por nombre, email o teléfono"
+              stylesContainer={{ marginVertical: 0, borderRadius: 0 }}
+              stylesInput={{ paddingVertical: 15 }}
+              left={() => <Ionicons name="search" size={25} color={colors.text} />}
+            />
+            <View style={styles.filterContainer}>
+              <Filter
+                onPress={() => setPositive(!positive)}
+                value={positive}
+                name="SALDO NEGATIVO"
+              />
+              <Filter
+                onPress={() => setNegative(!negative)}
+                value={negative}
+                name="SALDO POSITIVO"
+              />
+            </View>
+            <View style={{ marginVertical: 5 }}>
+              <FlatList
+                data={customers}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => <Card customer={item} />}
+              />
+            </View>
+          </View>
+          <Footer positive={positive} negative={negative} />
+        </>
+      )}
     </Layout>
   );
 };

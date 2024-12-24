@@ -1,9 +1,10 @@
 {
   "cli": {
-    "version": ">= 3.5.1"
+    "version": ">= 3.5.1",
+    "appVersionSource": "remote"
   },
   "build": {
-    "apk": {
+    "development": {
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease",
@@ -16,7 +17,7 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://vbelapp.com",
-        "EXPO_PUBLIC_VERSION": "4.0.0-beta.1"
+        "EXPO_PUBLIC_VERSION": "4.0.0-beta.2"
       }
     }
   },

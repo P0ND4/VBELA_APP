@@ -20,6 +20,7 @@ type TextProps = {
   right?: boolean;
   children?: React.ReactNode;
   bold?: boolean;
+  lineThrough?: boolean;
   onPress?: () => void;
   enableDarkMode?: boolean;
 };
@@ -42,6 +43,7 @@ const StyledText: React.FC<TextProps> = ({
   right,
   children,
   bold,
+  lineThrough,
   onPress,
   enableDarkMode = true,
 }) => {
@@ -64,6 +66,7 @@ const StyledText: React.FC<TextProps> = ({
     justify && { textAlign: "justify" },
     right && { textAlign: "right" },
     bold && { fontWeight: "bold" },
+    lineThrough && { textDecorationLine: "line-through" },
     style,
   ];
 

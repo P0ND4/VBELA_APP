@@ -6,7 +6,7 @@ import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.stor
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { Element } from "domain/entities/data/common/element.entity";
 import { add } from "application/slice/stores/products.and.services.slice";
-import SalesBoxScreen from "presentation/screens/common/sales/trade/salesBoxScreen/SalesBoxScreen";
+import SalesBoxScreen from "presentation/screens/common/sales/trade/SalesBoxScreen";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 type CreateOrderProps = {
@@ -22,6 +22,7 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
   const [elements, setElements] = useState<Element[]>([]);
 
   const storeID = route.params.storeID;
+  const defaultValue = route.params?.defaultValue;
 
   const dispatch = useAppDispatch();
 
@@ -47,6 +48,7 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
 
   return (
     <SalesBoxScreen
+      defaultValue={defaultValue}
       locationID={storeID}
       elements={elements}
       addElement={(data) => dispatch(add(data))}
@@ -57,7 +59,9 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
         });
       }}
       sendButton={() => navigation.navigate("PreviewOrder", { storeID })}
-      buttonsEvent={{ delivery: () => alert("Para la segunda actualización") }}
+      buttonsEvent={{ 
+        // delivery: () => alert("Para la segunda actualización") 
+      }}
     />
   );
 };

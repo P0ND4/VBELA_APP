@@ -40,7 +40,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = (props) => {
             style={styles.row}
             onPress={() => navigation.navigate("SettingRoutes", { screen: "Account" })}
           >
-            <StyledText bigParagraph>{user.identifier.slice(0, 18)}</StyledText>
+            <StyledText bigParagraph>{user?.identifier.slice(0, 18)}</StyledText>
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
           </TouchableOpacity>
           <StyledText verySmall>Sincronizado</StyledText>
@@ -48,7 +48,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = (props) => {
             <StyledButton
               style={styles.planButton}
               backgroundColor={colors.primary}
-              onPress={() => alert("Para la cuarta actualización")}
+              onPress={() => {}}
             >
               <StyledText verySmall color="#FFFFFF">
                 PLAN GRATUITO
@@ -61,7 +61,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = (props) => {
       </DrawerContentScrollView>
       <TouchableOpacity
         style={[styles.bottom, styles.row, { backgroundColor: colors.primary }]}
-        onPress={() => alert("Para la cuarta actualización")}
+        onPress={() => {}}
       >
         <View>
           <StyledText color="#FFFFFF">Cambia tu plan</StyledText>

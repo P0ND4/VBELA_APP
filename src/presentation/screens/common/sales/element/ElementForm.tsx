@@ -1,105 +1,56 @@
-import React, { useContext, useState } from "react";
-import {
-  View,
-  StyleSheet,
-  Switch,
-  KeyboardAvoidingView,
-  ScrollView,
-  TouchableOpacity,
-  FlatList,
-} from "react-native";
+import React, { useState } from "react";
+import { View, StyleSheet, Switch, KeyboardAvoidingView, ScrollView } from "react-native";
 import { useTheme } from "@react-navigation/native";
-// import { CreateSaleContext } from "application/context/sales/CreateContext";
-import { Controller, useForm } from "react-hook-form";
-import { random, thousandsSystem } from "shared/utils";
+import {
+  Control,
+  Controller,
+  UseFormHandleSubmit,
+  UseFormStateReturn,
+  UseFormWatch,
+} from "react-hook-form";
+import { thousandsSystem } from "shared/utils";
 import { Element } from "domain/entities/data/common/element.entity";
+import { unitOptions } from "shared/constants/unit";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledInput from "presentation/components/input/StyledInput";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import SalesCard from "presentation/screens/common/sales/components/SalesCard";
-import FloorModal from "presentation/components/modal/FloorModal";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
-
-type ModalProps = {
-  visible: boolean;
-  onClose: () => void;
-};
-
-const UnitModal: React.FC<ModalProps> = ({ visible, onClose }) => {
-  const { colors } = useTheme();
-
-  const array = new Array(3);
-
-  return (
-    <FloorModal visible={visible} onClose={onClose} title="Vender por" style={{ maxHeight: 500 }}>
-      <TouchableOpacity style={[styles.row, styles.uniModalEdit]}>
-        <Ionicons name="create-outline" color={colors.primary} size={25} />
-        <StyledText style={{ marginLeft: 5 }}>Editar las unidades</StyledText>
-      </TouchableOpacity>
-      <FlatList
-        data={array}
-        keyExtractor={(item) => item}
-        renderItem={({ item }) => (
-          <>
-            <TouchableOpacity style={[{ paddingVertical: 14 }, styles.row]} onPress={() => {}}>
-              <StyledText>Ok</StyledText>
-            </TouchableOpacity>
-            <View style={{ borderBottomWidth: 1, borderColor: colors.border }} />
-          </>
-        )}
-      />
-    </FloorModal>
-  );
-};
+import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 
 type ElementFormProps = {
-  defaultValue?: Element;
-  locationID: string;
   onSubmit: (data: Element) => void;
+  control: Control<Element>;
+  handleSubmit: UseFormHandleSubmit<Element>;
+  watch: UseFormWatch<Element>;
+  formState: UseFormStateReturn<Element>;
 };
 
-const ElementForm: React.FC<ElementFormProps> = ({ onSubmit, defaultValue, locationID }) => {
-  const { control, handleSubmit, setValue, watch, formState } = useForm({
-    defaultValues: {
-      id: defaultValue?.id || random(10),
-      locationID: defaultValue?.locationID || locationID,
-      name: defaultValue?.name || "",
-      price: defaultValue?.price || 0,
-      cost: defaultValue?.cost || 0,
-      promotion: defaultValue?.promotion || 0,
-      category: defaultValue?.category || [],
-      subcategory: defaultValue?.subcategory || [],
-      description: defaultValue?.description || "",
-      code: defaultValue?.code || "",
-      unit: defaultValue?.unit || "",
-      highlight: defaultValue?.highlight || false,
-      stock: defaultValue?.stock || 0,
-      minStock: defaultValue?.minStock || 0,
-      affiliatedStockID: defaultValue?.affiliatedStockID || "",
-      creationDate: defaultValue?.creationDate || new Date().toISOString(),
-      modificationDate: new Date().toISOString(),
-    },
-  });
-
+const ElementForm: React.FC<ElementFormProps> = ({
+  onSubmit,
+  control,
+  handleSubmit,
+  watch,
+  formState,
+}) => {
   const { colors } = useTheme();
-  // const something = useContext(CreateSaleContext);
 
   const [optional, setOptional] = useState<boolean>(false);
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
   const [unitModal, setUnitModal] = useState<boolean>(false);
 
-  const { description } = watch();
+  const { description, unit } = watch();
 
   return (
     <>
       <Layout style={{ justifyContent: "space-between" }}>
         <View style={{ flex: 1 }}>
-          <SalesCard
+          {/* <SalesCard
             data={watch()}
             onPress={() => alert("Para la cuarta actualización la agregación de imagenes")}
-          />
+          /> */}
           <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
             <ScrollView
               showsVerticalScrollIndicator={false}
@@ -191,7 +142,7 @@ const ElementForm: React.FC<ElementFormProps> = ({ onSubmit, defaultValue, locat
                         />
                       )}
                     />
-                    <StyledButton
+                    {/* <StyledButton
                       style={styles.row}
                       onPress={() => alert("Para la tercera actualización")}
                     >
@@ -204,7 +155,7 @@ const ElementForm: React.FC<ElementFormProps> = ({ onSubmit, defaultValue, locat
                     >
                       <StyledText>Sub - Categoría</StyledText>
                       <Ionicons name="chevron-forward" color={colors.text} size={19} />
-                    </StyledButton>
+                    </StyledButton> */}
                     <StyledButton style={styles.row} onPress={() => setDescriptionModal(true)}>
                       <StyledText>
                         {description
@@ -227,7 +178,7 @@ const ElementForm: React.FC<ElementFormProps> = ({ onSubmit, defaultValue, locat
                       )}
                     />
                     <StyledButton style={styles.row} onPress={() => setUnitModal(true)}>
-                      <StyledText>Vender por</StyledText>
+                      <StyledText>{`Vender por ${unit && `(${unit})`}`}</StyledText>
                       <Ionicons name="chevron-forward" color={colors.text} size={19} />
                     </StyledButton>
                     <Controller
@@ -256,18 +207,38 @@ const ElementForm: React.FC<ElementFormProps> = ({ onSubmit, defaultValue, locat
           onPress={handleSubmit(onSubmit)}
         >
           <StyledText center color="#FFFFFF">
-            {defaultValue ? "Guardar" : "Añadir"} producto
+            Guardar producto
           </StyledText>
         </StyledButton>
       </Layout>
-      <InputScreenModal
-        visible={descriptionModal}
-        onClose={() => setDescriptionModal(false)}
-        title="Descripción"
-        placeholder="Escribe tu descripción"
-        onSubmit={(value) => setValue("description", value)}
+      <Controller
+        name="description"
+        control={control}
+        render={({ field: { onChange, value } }) => (
+          <InputScreenModal
+            visible={descriptionModal}
+            defaultValue={value}
+            onClose={() => setDescriptionModal(false)}
+            title="Descripción"
+            placeholder="Escribe tu descripción"
+            onSubmit={onChange}
+          />
+        )}
       />
-      <UnitModal visible={unitModal} onClose={() => setUnitModal(false)} />
+      <Controller
+        name="unit"
+        control={control}
+        render={({ field: { onChange } }) => (
+          <PickerFloorModal
+            title="SELECCIONE LA UNIDAD"
+            remove="Remover unidad"
+            visible={unitModal}
+            onClose={() => setUnitModal(false)}
+            data={unitOptions}
+            onSubmit={onChange}
+          />
+        )}
+      />
     </>
   );
 };

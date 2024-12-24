@@ -5,12 +5,12 @@ import { AuthNavigationProp } from "domain/entities/navigation";
 import { GoogleAuthentication } from "infrastructure/auth/google.auth";
 import { useTheme } from "@react-navigation/native";
 import { active } from "application/slice/user/session.slice";
+import { change } from "application/slice/user/user.slice";
 import StyledText from "presentation/components/text/StyledText";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import ProgressBar from "presentation/components/layout/ProgressBar";
-import { change } from "application/slice/user/user.slice";
 
 const SignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
   const { colors } = useTheme();
@@ -39,8 +39,8 @@ const SignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
         VBELA
       </StyledText>
       <View style={{ marginTop: 5, width: "80%" }}>
-        <StyledText style={{ marginBottom: 8 }}>
-          ------------- Inicia sesión con -------------
+        <StyledText center style={{ marginBottom: 8 }}>
+          Inicia sesión con
         </StyledText>
         <StyledButton style={styles.button} onPress={onPressGoogle}>
           <Image
@@ -49,7 +49,7 @@ const SignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
           />
           <StyledText style={{ marginLeft: 15 }}>Google</StyledText>
         </StyledButton>
-        <StyledButton
+        {/* <StyledButton
           style={styles.button}
           onPress={() => {
             alert("Para la cuarta actualización");
@@ -72,8 +72,8 @@ const SignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
           <Ionicons name="call" size={28} color={colors.primary} />
           <StyledText style={{ marginLeft: 15 }}>SMS/Llamada/WhatsApp</StyledText>
         </StyledButton>
-        <StyledText style={{ marginVertical: 8 }}>
-          --------------------- Ó ---------------------
+        <StyledText center style={{ marginVertical: 8 }}>
+          Ó
         </StyledText>
         <StyledButton
           style={styles.button}
@@ -84,7 +84,7 @@ const SignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
         >
           <Ionicons name="people-outline" color={colors.text} size={28} />
           <StyledText style={{ marginLeft: 15 }}>Ingresa cómo colaborador</StyledText>
-        </StyledButton>
+        </StyledButton> */}
       </View>
 
       <ProgressBar modalVisible={isProgressBarVisible} step={step} steps={3} />

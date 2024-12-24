@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { StyleSheet, View } from "react-native";
 import { useTheme } from "@react-navigation/native";
-import { useOrder } from "application/context/sales/OrderContext";
+import { useOrder } from "application/context/OrderContext";
 import { thousandsSystem } from "shared/utils";
 import { useAppSelector } from "application/store/hook";
-import { PaymentMethod, Selection } from "domain/entities/data/common/order.entity";
+import { Order, PaymentMethod, Save } from "domain/entities/data/common/order.entity";
 import { Status } from "domain/enums/data/element/status.enums";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
@@ -13,46 +13,99 @@ import PaymentButtons from "presentation/components/button/PaymentButtons";
 import PaymentScreen from "../components/PaymentScreen";
 
 type SalesPaymentScreenProps = {
-  onSave: (selection: Selection[], paymentMethods: PaymentMethod[], status: string) => void;
+  locationID: string;
+  tableID?: string;
+  onSave: (props: Save) => void;
+  onUpdate: (order: Order) => void;
   onMultiplePayment: (paymentMethod: PaymentMethod) => void;
 };
 
-const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({ onSave, onMultiplePayment }) => {
+const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({
+  onSave,
+  onUpdate,
+  onMultiplePayment,
+  locationID,
+  tableID,
+}) => {
   const { colors } = useTheme();
-
-  const { info, selection } = useOrder();
+  const { info, selection, order, clean } = useOrder();
+  const coin = useAppSelector((state) => state.coin);
 
   const [method, setMethod] = useState<string>("");
   const [paymentVisible, setPaymentVisible] = useState<boolean>(false);
 
-  const coin = useAppSelector((state) => state.coin);
+  const value = useMemo(() => selection.reduce((a, b) => a + b.total, 0), [selection]);
+  const total = useMemo(() => value - value * info.discount, [value, info.discount]);
 
-  const value = selection.reduce((a, b) => a + b.total, 0);
-  const total = value - value * info.discount;
+  const data = (status: Status, paymentMethods: PaymentMethod[]): Save => ({
+    selection,
+    status,
+    paymentMethods,
+    locationID,
+    tableID,
+    info,
+  });
+
+  const update = (status?: Status, paymentMethods: PaymentMethod[] = []) => {
+    const paid = paymentMethods.reduce((a, b) => a + b.amount, 0);
+
+    onUpdate({
+      ...order!,
+      selection,
+      status: status || order!.status,
+      paymentMethods,
+      paid,
+      total,
+      discount: info.discount,
+      observation: info.observation,
+      change: paid > total ? paid - total : 0,
+      modificationDate: new Date().toISOString(),
+    });
+
+    clean();
+  };
+
+  const handleSave = useCallback(() => {
+    if (order) return update();
+    onSave(data(Status.Pending, []));
+    clean();
+  }, [selection, locationID, tableID, info, onSave, update]);
+
+  const handlePaymentSave = useCallback(
+    (paymentMethod: PaymentMethod) => {
+      const { amount } = paymentMethod;
+      if (amount < total) return onMultiplePayment(paymentMethod);
+      if (order) return update(Status.Completed, [paymentMethod]);
+      onSave(data(Status.Completed, [paymentMethod]));
+      clean();
+    },
+    [total, selection, locationID, tableID, info, onSave, onMultiplePayment, update],
+  );
 
   return (
     <>
       <Layout style={{ justifyContent: "space-between" }}>
         <View style={styles.information}>
-          <View style={{ flexDirection: "row" }}>
-            <StyledText style={{ marginTop: 8, marginRight: 6 }}>{coin}</StyledText>
+          <View style={styles.row}>
+            <StyledText style={styles.coin}>{coin}</StyledText>
             <StyledText bigTitle center>
               {thousandsSystem(total)}
             </StyledText>
           </View>
           <View style={styles.buttonContainer}>
-            <StyledButton auto onPress={() => onSave(selection, [], Status.Pending)}>
+            <StyledButton auto onPress={handleSave}>
               <StyledText>Guardar pedido</StyledText>
             </StyledButton>
-            <StyledButton
+            {/* <StyledButton
               auto
               backgroundColor={colors.primary}
               onPress={() => alert("Para la tercera actualización")}
             >
               <StyledText color="#FFFFFF">Pagar a crédito</StyledText>
-            </StyledButton>
+            </StyledButton> */}
           </View>
         </View>
+
         <View style={{ flex: 2 }}>
           <PaymentButtons onPress={(id) => setMethod(id === method ? "" : id)} selected={method} />
           <StyledButton
@@ -66,14 +119,12 @@ const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({ onSave, onMulti
           </StyledButton>
         </View>
       </Layout>
+
       <PaymentScreen
         method={method}
         visible={paymentVisible}
         onClose={() => setPaymentVisible(false)}
-        onSave={(paymentMethod) => {
-          if (paymentMethod.amount >= total) onSave(selection, [paymentMethod], Status.Completed);
-          else onMultiplePayment(paymentMethod);
-        }}
+        onSave={handlePaymentSave}
         total={total}
       />
     </>
@@ -89,6 +140,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-evenly",
   },
+  row: { flexDirection: "row", alignItems: "center" },
+  coin: { marginTop: 8, marginRight: 6 },
 });
 
 export default SalesPaymentScreen;

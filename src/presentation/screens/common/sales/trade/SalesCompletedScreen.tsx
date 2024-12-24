@@ -49,7 +49,7 @@ const SalesCompletedScreen: React.FC<SalesCompletedScreenProps> = ({
         </StyledButton>
         <StyledButton backgroundColor={colors.primary} onPress={goBack}>
           <StyledText color="#FFFFFF" center>
-            Realizar un nuevo pedido
+            Regresar
           </StyledText>
         </StyledButton>
       </View>

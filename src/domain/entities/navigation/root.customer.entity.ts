@@ -1,9 +1,10 @@
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RouteProp } from "@react-navigation/native";
+import { Customer } from "../data/customers";
 
 export type RootCustomer = {
   CreateCustomer: undefined;
-  CustomerInformation: undefined;
+  CustomerInformation: { customer: Customer };
 };
 
 export type CustomerNavigationProp = { navigation: StackNavigationProp<RootCustomer> };

@@ -1,9 +1,195 @@
-import React from "react";
-import { AppNavigationProp } from "domain/entities/navigation";
-import MultipleScreen from "../common/MultipleScreen";
+import React, { useCallback, useEffect, useState } from "react";
+import { View, TouchableOpacity, StyleSheet, Image, FlatList, ListRenderItem } from "react-native";
+import { useAppDispatch, useAppSelector } from "application/store/hook";
+import { AppNavigationProp, RootApp } from "domain/entities/navigation";
+import type { Inventory as InventoryType } from "domain/entities/data/inventories";
+import { useNavigation, useTheme } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import Layout from "presentation/components/layout/Layout";
+import StyledButton from "presentation/components/button/StyledButton";
+import StyledText from "presentation/components/text/StyledText";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import InformationModal from "presentation/components/modal/InformationModal";
+import { changeDate } from "shared/utils";
+import { remove } from "application/slice/inventories/inventories.slice";
+import { batch } from "react-redux";
+import { removeInventory as removeInventoryRestaurant } from "application/slice/restaurants/restaurants.slices";
+import { removeInventory as removeInventoryStore } from "application/slice/stores/stores.slice";
 
-const Inventory: React.FC<AppNavigationProp> = () => {
-  return <MultipleScreen name="Inventario" unregistered="NO HAY INVENTARIOS REGISTRADOS" />;
+type CardInformationProps = {
+  visible: boolean;
+  onClose: () => void;
+  onPressEdit: () => void;
+  onPressDelete: () => void;
+  inventory: InventoryType;
 };
+
+const CardInformation: React.FC<CardInformationProps> = ({
+  visible,
+  onClose,
+  onPressDelete,
+  onPressEdit,
+  inventory,
+}) => {
+  const { colors } = useTheme();
+
+  return (
+    <InformationModal
+      title="Información"
+      visible={visible}
+      animationType="fade"
+      onClose={onClose}
+      headerRight={() => (
+        <>
+          <TouchableOpacity onPress={onPressDelete}>
+            <Ionicons name="trash-outline" color={colors.text} size={30} style={styles.icon} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onPressEdit}>
+            <Ionicons name="create-outline" color={colors.text} size={30} style={styles.icon} />
+          </TouchableOpacity>
+        </>
+      )}
+    >
+      <View style={{ marginTop: 10 }}>
+        <StyledText>
+          Nombre: <StyledText color={colors.primary}>{inventory.name}</StyledText>
+        </StyledText>
+        {inventory.description && (
+          <StyledText>
+            Descripción: <StyledText color={colors.primary}>{inventory.description}</StyledText>
+          </StyledText>
+        )}
+        <StyledText>
+          Fecha de creación:{" "}
+          <StyledText color={colors.primary}>
+            {changeDate(new Date(inventory.creationDate), true)}
+          </StyledText>
+        </StyledText>
+        <StyledText>
+          Fecha de modificación:{" "}
+          <StyledText color={colors.primary}>
+            {changeDate(new Date(inventory.modificationDate), true)}
+          </StyledText>
+        </StyledText>
+      </View>
+    </InformationModal>
+  );
+};
+
+//TODO LA INFORMACIÓN DE LOCATIONINFORMATION ES MUY PARECIDA A ESTE, REFACTORIZAR
+
+type NavigationProps = StackNavigationProp<RootApp>;
+
+const Card: React.FC<{ item: InventoryType }> = ({ item }) => {
+  const { colors } = useTheme();
+
+  const [showInformation, setShowInformation] = useState<boolean>(false);
+
+  const navigation = useNavigation<NavigationProps>();
+  const dispatch = useAppDispatch();
+
+  const removeData = () => {
+    batch(() => {
+      dispatch(remove({ id: item.id }));
+      dispatch(removeInventoryRestaurant({ id: item.id }));
+      dispatch(removeInventoryStore({ id: item.id }));
+    });
+  };
+
+  return (
+    <>
+      <StyledButton
+        onPress={() => {
+          navigation.navigate("InventoryRoutes", {
+            screen: "StockTab",
+            params: { inventory: item },
+          });
+        }}
+        onLongPress={() => setShowInformation(true)}
+        style={styles.card}
+      >
+        {item.highlight && (
+          <Ionicons name="star" color={colors.primary} size={18} style={{ marginRight: 6 }} />
+        )}
+        <StyledText>{item.name}</StyledText>
+      </StyledButton>
+      <CardInformation
+        visible={showInformation}
+        inventory={item}
+        onClose={() => setShowInformation(false)}
+        onPressDelete={removeData}
+        onPressEdit={() => {
+          navigation.navigate("InventoryRoutes", {
+            screen: "CreateInventory",
+            params: { inventory: item },
+          });
+        }}
+      />
+    </>
+  );
+};
+
+const Inventory: React.FC<AppNavigationProp> = ({ navigation }) => {
+  const { colors } = useTheme();
+
+  const inventories = useAppSelector((state) => state.inventories);
+
+  const [data, setData] = useState<InventoryType[]>([]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          style={{ paddingRight: 20 }}
+          onPress={() => navigation.navigate("InventoryRoutes", { screen: "CreateInventory" })}
+        >
+          <Ionicons name="add" color={colors.primary} size={30} />
+        </TouchableOpacity>
+      ),
+    });
+  }, []);
+
+  useEffect(() => {
+    setData([...inventories].sort((a, b) => (b.highlight ? 1 : 0) - (a.highlight ? 1 : 0)));
+  }, [inventories]);
+
+  const renderItem: ListRenderItem<InventoryType> = useCallback(
+    ({ item }) => <Card item={item} />,
+    [],
+  );
+
+  return (
+    <Layout>
+      {!inventories.length ? (
+        <StyledText color={colors.primary}>NO HAY INVENTARIOS REGISTRADOS</StyledText>
+      ) : (
+        <FlatList
+          data={data}
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          initialNumToRender={5}
+          maxToRenderPerBatch={5}
+          windowSize={5}
+        />
+      )}
+    </Layout>
+  );
+};
+
+const styles = StyleSheet.create({
+  notFound: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexGrow: 1,
+    width: "auto",
+  },
+  icon: { marginHorizontal: 4 },
+});
 
 export default Inventory;

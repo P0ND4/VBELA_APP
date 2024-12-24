@@ -41,7 +41,7 @@ const Card: React.FC<{ item: Location }> = ({ item }) => {
 
   return (
     <>
-      <Swipeable renderRightActions={RightSwipe}>
+      {/* <Swipeable renderRightActions={RightSwipe}> */}
         <StyledButton
           onPress={() =>
             navigation.navigate("RestaurantRoutes", {
@@ -57,7 +57,7 @@ const Card: React.FC<{ item: Location }> = ({ item }) => {
           )}
           <StyledText>{item.name}</StyledText>
         </StyledButton>
-      </Swipeable>
+      {/* </Swipeable> */}
       <LocationInformation
         visible={showInformation}
         location={item}

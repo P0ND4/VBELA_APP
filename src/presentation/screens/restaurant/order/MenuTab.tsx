@@ -1,12 +1,13 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { TouchableOpacity, View, StyleSheet } from "react-native";
 import { RestaurantRouteProp, RootRestaurant } from "domain/entities/navigation";
 import { useTheme } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { useAppDispatch } from "application/store/hook";
+import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { add, edit, remove } from "application/slice/restaurants/menu.slice";
 import { random } from "shared/utils";
 import { Element } from "domain/entities/data/common";
+import { Visible } from "domain/enums/data/inventory/visible.enums";
 import ElementTab from "presentation/screens/common/sales/element/ElementTab";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
@@ -17,6 +18,10 @@ type MenuTabProps = {
 
 const MenuTab: React.FC<MenuTabProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+
+  const restaurants = useAppSelector((state) => state.restaurants);
+
+  const [inventories, setInventories] = useState<string[]>([]);
 
   const defaultValue = route.params?.defaultValue;
   const restaurantID = route.params?.restaurantID;
@@ -75,8 +80,15 @@ const MenuTab: React.FC<MenuTabProps> = ({ navigation, route }) => {
     navigation.setOptions({ title: "Crear menú" });
   }, []);
 
+  useEffect(() => {
+    const { inventories = [] } = restaurants.find((r) => r.id === restaurantID) ?? {};
+    setInventories(inventories)
+  }, [restaurants]);
+
   return (
     <ElementTab
+      visible={Visible.Restaurant}
+      inventories={inventories}
       onSubmit={defaultValue ? update : save}
       defaultValue={defaultValue}
       locationID={restaurantID}

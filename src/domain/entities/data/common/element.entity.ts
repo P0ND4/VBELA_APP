@@ -11,9 +11,11 @@ export interface Element {
   code?: string;
   unit?: string;
   highlight?: boolean;
+  activeStock?: boolean;
   stock?: number;
   minStock?: number;
-  affiliatedStockID?: string;
+  stockIDS?: string[];
+  packageIDS?: string[];
   creationDate: string;
   modificationDate: string;
 }

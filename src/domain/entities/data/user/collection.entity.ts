@@ -1,12 +1,13 @@
 import type { Collaborator, Payroll } from "../collaborators";
 import type { Customer, Invoice } from "../customers";
-import type { Stock } from "../inventories";
+import type { Inventory, Recipe, Stock } from "../inventories";
 import type { PSCategoryHierarchy, SaleProtocol } from "../stores";
 import type { Nomenclature, Reservation, Room, Zone } from "../reservations";
-import type { Kitchen, MCategoryHierarchy, Recipe, Table } from "../restaurants";
+import type { MCategoryHierarchy, Table } from "../restaurants";
 import type { Expense, Purchase, Supplier } from "../suppliers";
 import type { Location, Element, Order } from "../common";
 import type { PaymentMethods, InvoiceInformation } from "../settings";
+import type { Kitchen } from "../kitchens";
 
 type SimpleData = string | null;
 
@@ -23,6 +24,8 @@ export interface Collection {
   customers: Customer[];
   invoices: Invoice[];
   stocks: Stock[];
+  inventories: Inventory[];
+  recipes: Recipe[];
   stores: Location[];
   restaurants: Location[];
   productsAndServicesCategoryHierarchy: PSCategoryHierarchy[];
@@ -34,10 +37,9 @@ export interface Collection {
   rooms: Room[];
   zones: Zone[];
   menuCategoryHierarchy: MCategoryHierarchy[];
-  kitchen: Kitchen[];
+  kitchens: Kitchen[];
   menu: Element[];
   orders: Order[];
-  recipes: Recipe[];
   tables: Table[];
   expenses: Expense[];
   purchases: Purchase[];

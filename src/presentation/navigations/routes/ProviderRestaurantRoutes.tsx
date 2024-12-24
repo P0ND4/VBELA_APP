@@ -1,6 +1,6 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import { OrderProvider } from "application/context/sales/OrderContext";
+import { OrderProvider } from "application/context/OrderContext";
 import { RootRestaurant } from "domain/entities/navigation";
 import CreateOrder from "presentation/screens/restaurant/order/CreateOrder";
 import MultiplePayment from "presentation/screens/store/order/MultiplePayment";

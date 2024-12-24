@@ -23,6 +23,29 @@ export const productsAndServicesSlice = createSlice({
       const { id } = action.payload;
       return state.filter((s) => s.id !== id);
     },
+    discount: (state, action: PayloadAction<{ id: string; quantity: number }[]>) => {
+      const discounts = action.payload;
+      const discountMap = new Map(discounts.map((m) => [m.id, m]));
+
+      return state.map((pas) => {
+        const found = discountMap.get(pas.id);
+        return found ? { ...pas, stock: pas.stock! - found.quantity } : pas;
+      });
+    },
+    removeStock: (state, action: PayloadAction<{ id: string }>) => {
+      const { id } = action.payload;
+      return state.map((productsAndServices) => ({
+        ...productsAndServices,
+        stockIDS: productsAndServices.stockIDS?.filter((stock) => stock !== id),
+      }));
+    },
+    removeRecipe: (state, action: PayloadAction<{ id: string }>) => {
+      const { id } = action.payload;
+      return state.map((productsAndServices) => ({
+        ...productsAndServices,
+        packageIDS: productsAndServices.packageIDS?.filter((recipe) => recipe !== id),
+      }));
+    },
     clean: () => [],
   },
   extraReducers: (builder) => {
@@ -31,5 +54,6 @@ export const productsAndServicesSlice = createSlice({
   },
 });
 
-export const { add, edit, remove, clean, change } = productsAndServicesSlice.actions;
+export const { add, edit, remove, clean, change, discount, removeStock, removeRecipe } =
+  productsAndServicesSlice.actions;
 export default productsAndServicesSlice.reducer;

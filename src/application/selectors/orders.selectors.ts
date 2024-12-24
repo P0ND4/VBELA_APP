@@ -4,5 +4,5 @@ import { Status } from "domain/enums/data/element/status.enums";
 
 export const selectPendingSales = createSelector(
   (state: RootState) => state.sales,
-  (sales) => sales.filter((s) => s.status === Status.Pending),
+  (sales) => sales.filter((s) => ![Status.Completed, Status.Canceled].includes(s.status)),
 );

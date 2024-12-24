@@ -6,7 +6,8 @@ import { AppNavigationProp, RootStore } from "domain/entities/navigation";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Location } from "domain/entities/data/common";
 import { Swipeable } from "react-native-gesture-handler";
-import { remove } from "application/slice/stores/store.slice";
+import { remove } from "application/slice/stores/stores.slice";
+import { change, SalesNavigation } from "application/appState/navigation/sales.navigation.method.slice";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledText from "presentation/components/text/StyledText";
 import Layout from "presentation/components/layout/Layout";
@@ -38,14 +39,15 @@ const Card: React.FC<{ item: Location }> = ({ item }) => {
 
   return (
     <>
-      <Swipeable renderRightActions={RightSwipe}>
+      {/* <Swipeable renderRightActions={RightSwipe}> */}
         <StyledButton
-          onPress={() =>
+          onPress={() => {
+            dispatch(change(SalesNavigation.Navigate));
             navigation.navigate("ProviderStoreRoutes", {
               screen: "CreateOrder",
               params: { storeID: item.id },
-            })
-          }
+            });
+          }}
           onLongPress={() => setShowInformation(true)}
           style={styles.card}
         >
@@ -54,7 +56,7 @@ const Card: React.FC<{ item: Location }> = ({ item }) => {
           )}
           <StyledText>{item.name}</StyledText>
         </StyledButton>
-      </Swipeable>
+      {/* </Swipeable> */}
       <LocationInformation
         visible={showInformation}
         location={item}

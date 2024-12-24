@@ -13,6 +13,7 @@ type ModalProps = {
   title: string;
   placeholder?: string;
   maxLength?: number;
+  disableHeaderRight?: boolean;
   onSubmit: (value: string) => void;
 };
 
@@ -23,6 +24,7 @@ const InputScreenModal: React.FC<ModalProps> = ({
   defaultValue = "",
   placeholder = "",
   maxLength = 3000,
+  disableHeaderRight = false,
   onSubmit,
 }) => {
   const { colors } = useTheme();
@@ -38,17 +40,19 @@ const InputScreenModal: React.FC<ModalProps> = ({
       title={title}
       visible={visible}
       onClose={onClose}
-      headerRight={() => (
-        <TouchableOpacity
-          style={{ marginRight: 25 }}
-          onPress={() => {
-            onSubmit("");
-            onClose();
-          }}
-        >
-          <StyledText color={colors.primary}>Limpiar</StyledText>
-        </TouchableOpacity>
-      )}
+      headerRight={() =>
+        !disableHeaderRight && (
+          <TouchableOpacity
+            style={{ marginRight: 25 }}
+            onPress={() => {
+              onSubmit("");
+              onClose();
+            }}
+          >
+            <StyledText color={colors.primary}>Limpiar</StyledText>
+          </TouchableOpacity>
+        )
+      }
     >
       <View style={{ flex: 1 }}>
         <TextInput

@@ -4,10 +4,11 @@ import { RestaurantRouteProp, RootRestaurant } from "domain/entities/navigation"
 import { useTheme } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { TouchableOpacity } from "react-native";
-import { Element } from "domain/entities/data/common";
+import { Element, Order, Save } from "domain/entities/data/common";
 import { add } from "application/slice/restaurants/menu.slice";
-import SalesBoxScreen from "presentation/screens/common/sales/trade/salesBoxScreen/SalesBoxScreen";
+import SalesBoxScreen from "presentation/screens/common/sales/trade/SalesBoxScreen";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import useSave, { CallbackProps } from "../hooks/useSave";
 
 type CreateOrderProps = {
   navigation: StackNavigationProp<RootRestaurant>;
@@ -16,12 +17,16 @@ type CreateOrderProps = {
 
 const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { kitchen } = useSave();
 
   const menu = useAppSelector((state) => state.menu);
+  const navigationMethod = useAppSelector((state) => state.salesNavigationMethod);
 
   const [elements, setElements] = useState<Element[]>([]);
 
+  const defaultValue = route.params?.defaultValue;
   const restaurantID = route.params.restaurantID;
+  const tableID = route.params.tableID;
 
   const dispatch = useAppDispatch();
 
@@ -45,9 +50,19 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
     setElements([...menu].filter((p) => p.locationID === restaurantID));
   }, [restaurantID, menu]);
 
+  const next = ({ order }: CallbackProps) => {
+    navigation.popToTop();
+    (navigation[navigationMethod] as StackNavigationProp<RootRestaurant>["navigate"])(
+      "RestaurantRoutes",
+      { screen: "OrderCompleted", params: { sale: order } },
+    );
+  };
+
   return (
     <SalesBoxScreen
+      defaultValue={defaultValue}
       locationID={restaurantID}
+      tableID={tableID}
       elements={elements}
       addElement={(data) => dispatch(add(data))}
       onPressEdit={(defaultValue) => {
@@ -56,10 +71,10 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
           params: { restaurantID, defaultValue },
         });
       }}
-      sendButton={() => navigation.navigate("PreviewOrder", { restaurantID })}
+      sendButton={() => navigation.navigate("PreviewOrder", { restaurantID, tableID })}
       buttonsEvent={{
-        delivery: () => alert("Para la segunda actualización"),
-        kitchen: () => alert("Para la segunda actualización"),
+        // delivery: () => alert("Para la segunda actualización"),
+        kitchen: (props: Save, order: Order | null) => kitchen(props, order, next),
       }}
     />
   );

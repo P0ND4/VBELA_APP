@@ -12,13 +12,29 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { Table as TableEntity } from "domain/entities/data/restaurants";
 import { remove } from "application/slice/restaurants/tables.slice";
 import TableInformation from "./TableInformation";
+import {
+  change,
+  SalesNavigation,
+} from "application/appState/navigation/sales.navigation.method.slice";
+import { Order } from "domain/entities/data/common";
+import { Status } from "domain/enums/data/element/status.enums";
 
 type NavigationProps = StackNavigationProp<RootRestaurant>;
 
 const Card: React.FC<{ item: TableEntity }> = ({ item }) => {
   const { colors } = useTheme();
 
+  const orders = useAppSelector((state) => state.orders);
+
   const [showInformation, setShowInformation] = useState<boolean>(false);
+  const [order, setOrder] = useState<Order>();
+
+  useEffect(() => {
+    const data = orders.find(
+      (o) => o.tableID === item.id && ![Status.Canceled, Status.Completed].includes(o.status),
+    );
+    setOrder(data);
+  }, [orders]);
 
   const navigation = useNavigation<NavigationProps>();
   const dispatch = useAppDispatch();
@@ -27,21 +43,37 @@ const Card: React.FC<{ item: TableEntity }> = ({ item }) => {
     <>
       <StyledButton
         style={styles.card}
-        onPress={() =>
+        onPress={() => {
+          dispatch(change(SalesNavigation.Navigate));
           navigation.navigate("ProviderRestaurantRoutes", {
-            screen: "CreateOrder",
-            params: { restaurantID: item.restaurantID },
-          })
-        }
+            screen: order?.status === Status.Confirmed ? "PreviewOrder" : "CreateOrder",
+            params: { restaurantID: item.restaurantID, tableID: item.id, defaultValue: order },
+          });
+        }}
         onLongPress={() => setShowInformation(true)}
       >
-        {item.highlight && (
-          <Ionicons name="star" color={colors.primary} size={18} style={{ marginRight: 6 }} />
-        )}
-        <View>
-          <StyledText>{item.name}</StyledText>
-          <StyledText verySmall>Capacidad: {thousandsSystem(item.capacity)} personas</StyledText>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {item.highlight && (
+            <Ionicons name="star" color={colors.primary} size={18} style={{ marginRight: 6 }} />
+          )}
+          <View>
+            <StyledText>{item.name}</StyledText>
+            <StyledText verySmall>Capacidad: {thousandsSystem(item.capacity)} personas</StyledText>
+          </View>
         </View>
+        {order && (
+          <View>
+            <StyledText right verySmall color={colors.primary}>
+              OCUPADO
+            </StyledText>
+            <StyledText verySmall>
+              Pedido:{" "}
+              <StyledText verySmall color={colors.primary}>
+                #{order.order}
+              </StyledText>
+            </StyledText>
+          </View>
+        )}
       </StyledButton>
       <TableInformation
         visible={showInformation}
@@ -130,10 +162,10 @@ const styles = StyleSheet.create({
   icon: { marginHorizontal: 2 },
   card: {
     flexGrow: 1,
-    flexBasis: 0,
     width: "auto",
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginHorizontal: 4,
   },
 });

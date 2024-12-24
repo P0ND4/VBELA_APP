@@ -14,7 +14,7 @@ import StyledText from "../text/StyledText";
 interface InformationModalProps extends ModalProps {
   title: string;
   visible: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   onClose: () => void;
   headerRight?: () => React.ReactNode;
   downCard?: () => React.ReactNode;

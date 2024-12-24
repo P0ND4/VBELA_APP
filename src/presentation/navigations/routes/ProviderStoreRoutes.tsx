@@ -1,7 +1,7 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { RootStore } from "domain/entities/navigation/route.store.entity";
-import { OrderProvider } from "application/context/sales/OrderContext";
+import { OrderProvider } from "application/context/OrderContext";
 import CreateOrder from "presentation/screens/store/order/CreateOrder";
 import PreviewOrder from "presentation/screens/store/order/PreviewOrder";
 import OrderPayment from "presentation/screens/store/order/OrderPayment";

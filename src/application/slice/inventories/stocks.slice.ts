@@ -1,11 +1,22 @@
-import type { Stock } from "domain/entities/data/inventories/stock.entity";
+import type { Movement, Stock } from "domain/entities/data/inventories/stock.entity";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
 const stocks = (collection: Collection) => collection.stocks;
-
 const initialState: Stock[] = [];
+
+const updateStockMovements = (
+  state: Stock[],
+  movements: Movement[],
+  updater: (stock: Stock, found: Movement) => Stock,
+) => {
+  const movementMap = new Map(movements.map((m) => [m.stockID, m]));
+  return state.map((stock) => {
+    const found = movementMap.get(stock.id);
+    return found ? updater(stock, found) : stock;
+  });
+};
 
 export const informationSlice = createSlice({
   name: "stocks",
@@ -23,6 +34,22 @@ export const informationSlice = createSlice({
       const { id } = action.payload;
       return state.filter((s) => s.id !== id);
     },
+    addMovement: (state, action: PayloadAction<Movement[]>) =>
+      updateStockMovements(state, action.payload, (stock, found) => ({
+        ...stock,
+        currentValue: found.currentValue,
+        movement: [...stock.movement, found],
+      })),
+    editMovement: (state, action: PayloadAction<Movement[]>) =>
+      updateStockMovements(state, action.payload, (stock, found) => ({
+        ...stock,
+        movement: stock.movement.map((m) => (m.id === found.id ? found : m)),
+      })),
+    removeMovement: (state, action: PayloadAction<Movement[]>) =>
+      updateStockMovements(state, action.payload, (stock, found) => ({
+        ...stock,
+        movement: stock.movement.filter((m) => m.id !== found.id),
+      })),
     clean: () => [],
   },
   extraReducers: (builder) => {
@@ -31,5 +58,6 @@ export const informationSlice = createSlice({
   },
 });
 
-export const { add, edit, remove, clean, change } = informationSlice.actions;
+export const { add, edit, remove, addMovement, editMovement, removeMovement, clean, change } =
+  informationSlice.actions;
 export default informationSlice.reducer;

@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import { formatDecimals, thousandsSystem } from "shared/utils";
-import { useOrder } from "application/context/sales/OrderContext";
+import { useOrder } from "application/context/OrderContext";
+import { Order, Save } from "domain/entities/data/common";
+import { Status } from "domain/enums/data/element/status.enums";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -12,7 +14,7 @@ import DiscountScreen from "./DiscountScreen";
 
 type ButtonsEvent = {
   delivery?: () => void;
-  kitchen?: () => void;
+  kitchen?: (props: Save, order: Order | null) => void;
   clean?: () => void;
 };
 
@@ -44,6 +46,8 @@ const Option: React.FC<OptionProps> = ({ name, onPress, color, isNavigation }) =
 };
 
 type OptionsModalProps = {
+  locationID: string;
+  tableID?: string;
   visible: boolean;
   onClose: () => void;
   onPress: () => void;
@@ -52,6 +56,8 @@ type OptionsModalProps = {
 };
 
 const OptionsModal: React.FC<OptionsModalProps> = ({
+  locationID,
+  tableID,
   visible,
   onClose,
   onPress,
@@ -59,7 +65,7 @@ const OptionsModal: React.FC<OptionsModalProps> = ({
   buttonsEvent,
 }) => {
   const { colors } = useTheme();
-  const { info, updateInfo, selection, clean } = useOrder();
+  const { info, updateInfo, selection, clean, order } = useOrder();
 
   const [observationModal, setObservationModal] = useState<boolean>(false);
   const [discountModal, setDiscountModal] = useState<boolean>(false);
@@ -77,7 +83,31 @@ const OptionsModal: React.FC<OptionsModalProps> = ({
             <Option name="Enviar a delivery" onPress={buttonsEvent.delivery} isNavigation />
           )}
           {buttonsEvent?.kitchen && (
-            <Option name="Enviar a cocina" onPress={buttonsEvent.kitchen} />
+            <Option
+              name="Enviar a cocina"
+              onPress={() => {
+                if (!buttonsEvent.kitchen) return;
+
+                const modificationDate = new Date().toISOString();
+                const orderData: Pick<Save, "selection" | "status"> = {
+                  selection,
+                  status: Status.Standby,
+                };
+
+                const data = order ? { ...order, ...orderData, modificationDate } : null;
+
+                buttonsEvent.kitchen(
+                  {
+                    ...orderData,
+                    paymentMethods: [],
+                    locationID,
+                    tableID,
+                    info,
+                  },
+                  data,
+                );
+              }}
+            />
           )}
           <Option
             name={
@@ -161,12 +191,16 @@ const ButtonBottom: React.FC<ButtonBottomProps> = ({ onPress, name, toggleModal 
 };
 
 type SalesButtonBottomProps = {
+  locationID: string;
+  tableID?: string;
   onPress?: () => void;
   name?: string;
   buttonsEvent?: ButtonsEvent;
 };
 
 const SalesButtonBottom: React.FC<SalesButtonBottomProps> = ({
+  locationID,
+  tableID,
   onPress = () => {},
   name,
   buttonsEvent,
@@ -177,6 +211,8 @@ const SalesButtonBottom: React.FC<SalesButtonBottomProps> = ({
     <>
       <ButtonBottom onPress={onPress} name={name} toggleModal={toggleModal} />
       <OptionsModal
+        locationID={locationID}
+        tableID={tableID}
         visible={modalVisible}
         onClose={toggleModal}
         onPress={onPress}

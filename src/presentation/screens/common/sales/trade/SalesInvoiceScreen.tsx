@@ -257,14 +257,14 @@ const SalesInvoiceScreen: React.FC<{ trade: Order; goEdit: () => void }> = ({ tr
         </View>
         <View style={styles.row}>
           <Button icon="document-text-outline" name="PDF" onPress={() => generatePDF({ html })} />
-          <Button
+          {/* <Button
             icon="mail-outline"
             name="Email"
             onPress={() => {
               alert("Para la cuarta actualización");
               // setEmailModal(true);
             }}
-          />
+          /> */}
           <Button icon="print-outline" name="Imprimir" onPress={() => printPDF({ html })} />
           <Button
             icon="share-social-outline"

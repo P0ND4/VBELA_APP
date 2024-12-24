@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useAppSelector } from "application/store/hook";
 import { useTheme } from "@react-navigation/native";
-import { PaymentMethod, Selection } from "domain/entities/data/common/order.entity";
-import { useOrder } from "application/context/sales/OrderContext";
+import { Order, PaymentMethod, Save } from "domain/entities/data/common/order.entity";
+import { useOrder } from "application/context/OrderContext";
 import { thousandsSystem } from "shared/utils";
 import { Status } from "domain/enums/data/element/status.enums";
 import Layout from "presentation/components/layout/Layout";
@@ -65,23 +65,38 @@ const Card: React.FC<CardProps> = ({ paymentMethod, onRemove }) => {
 };
 
 type SalesMultiplePaymentScreenProps = {
+  locationID: string;
+  tableID?: string;
   paymentMethod: PaymentMethod;
-  onSave: (selection: Selection[], paymentMethods: PaymentMethod[], status: string) => void;
+  onSave: (props: Save) => void;
+  onUpdate: (order: Order) => void;
   goBack: () => void;
 };
 
 const SalesMultiplePaymentScreen: React.FC<SalesMultiplePaymentScreenProps> = ({
+  locationID,
+  tableID,
   paymentMethod,
   goBack,
   onSave,
+  onUpdate,
 }) => {
   const { colors } = useTheme();
-  const { selection, info } = useOrder();
+  const { selection, info, order, clean } = useOrder();
 
   const [method, setMethod] = useState<string>("");
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([paymentMethod]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(() => [paymentMethod]);
   const [paymentMethodsVisible, setPaymentMethodsVisible] = useState<boolean>(false);
   const [paymentVisible, setPaymentVisible] = useState<boolean>(false);
+
+  const data = (paymentMethods: PaymentMethod[]): Save => ({
+    selection,
+    status: Status.Completed,
+    paymentMethods,
+    locationID,
+    tableID,
+    info,
+  });
 
   const onRemove = (id: string) => {
     const changed = paymentMethods.filter((p) => p.id !== id);
@@ -89,9 +104,25 @@ const SalesMultiplePaymentScreen: React.FC<SalesMultiplePaymentScreenProps> = ({
     setPaymentMethods(changed);
   };
 
-  const paid = paymentMethods.reduce((a, b) => a + b.amount, 0);
-  const value = selection.reduce((a, b) => a + b.total, 0);
-  const total = value - value * info.discount;
+  const value = useMemo(() => selection.reduce((a, b) => a + b.total, 0), [selection]);
+  const paid = useMemo(() => paymentMethods.reduce((a, b) => a + b.amount, 0), [paymentMethods]);
+  const total = useMemo(() => value - value * info.discount, [value, info.discount]);
+
+  const update = (paymentMethods: PaymentMethod[]): void => {
+    onUpdate({
+      ...order!,
+      selection,
+      status: Status.Completed,
+      paymentMethods,
+      paid,
+      total,
+      discount: info.discount,
+      observation: info.observation,
+      change: paid > total ? paid - total : 0,
+      modificationDate: new Date().toISOString(),
+    });
+    clean();
+  };
 
   return (
     <>
@@ -107,11 +138,13 @@ const SalesMultiplePaymentScreen: React.FC<SalesMultiplePaymentScreenProps> = ({
             backgroundColor={colors.primary}
             onPress={() => {
               if (paid < total) return setPaymentMethodsVisible(true);
-              onSave(selection, paymentMethods, Status.Completed);
+              if (order) return update(paymentMethods);
+              onSave(data(paymentMethods));
+              clean();
             }}
           >
             <StyledText center color="#FFFFFF">
-              {paid < total ? `Monto faltante: ${thousandsSystem(total - paid)}` : "Guardar"}
+              {paid < total ? `Monto faltante: ${thousandsSystem(total - paid)}` : "Completar pago"}
             </StyledText>
           </StyledButton>
         </View>

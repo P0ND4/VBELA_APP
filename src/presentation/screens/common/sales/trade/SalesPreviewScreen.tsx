@@ -1,17 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, FlatList, StyleSheet, TouchableOpacity, Switch, TextInput } from "react-native";
 import { Numeric, Pad } from "../../NumericPad";
 import { useTheme } from "@react-navigation/native";
-import { useOrder } from "application/context/sales/OrderContext";
-import { Selection } from "domain/entities/data/common/order.entity";
+import { useOrder } from "application/context/OrderContext";
 import { formatDecimals, random, thousandsSystem } from "shared/utils";
-import { Element } from "domain/entities/data/common/element.entity";
+import { Element, Order, Save, Selection } from "domain/entities/data/common";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import SalesButtonBottom from "../components/SalesButtonBottom";
-import CountScreen from "../components/CountScreen";
+import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import DiscountScreen from "../components/DiscountScreen";
 import ScreenModal from "presentation/components/modal/ScreenModal";
 
@@ -225,7 +224,11 @@ const Card: React.FC<CardProps> = ({ item, addElement, locationID, goBack = () =
           )}
         </>
       )}
-      <CountScreen
+      <CountScreenModal
+        title="Cantidad"
+        description={(count) =>
+          count ? `Vender ${thousandsSystem(count)} unidad del próximo item` : "Adicione un valor"
+        }
         visible={countModal}
         defaultValue={item.quantity}
         isRemove
@@ -279,25 +282,33 @@ const Card: React.FC<CardProps> = ({ item, addElement, locationID, goBack = () =
 };
 
 type SalesPreviewScreenProps = {
+  defaultValue?: Order;
   sendButton: () => void;
   goBack: () => void;
   addElement: (data: Element) => void;
   locationID: string;
+  tableID?: string;
   buttonsEvent: {
     delivery?: () => void;
-    kitchen?: () => void;
+    kitchen?: (props: Save, order: Order | null) => void;
   };
 };
 
 const SalesPreviewScreen: React.FC<SalesPreviewScreenProps> = ({
+  defaultValue,
   sendButton = () => {},
   goBack = () => {},
   addElement = () => {},
   buttonsEvent,
   locationID,
+  tableID
 }) => {
   const { colors } = useTheme();
-  const { info, updateInfo, selection } = useOrder();
+  const { info, updateInfo, selection, change } = useOrder();
+
+  useEffect(() => {
+    defaultValue && change(defaultValue);
+  }, []);
 
   const [discountModal, setDiscountModal] = useState<boolean>(false);
 
@@ -322,11 +333,11 @@ const SalesPreviewScreen: React.FC<SalesPreviewScreenProps> = ({
                 {info.discount ? `(${formatDecimals(info.discount * 100, 2)}%)` : ""} Dar descuento
               </StyledText>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => alert("Para la segunda actualización")}>
+            {/* <TouchableOpacity onPress={() => alert("Para la segunda actualización")}>
               <StyledText right color={colors.primary}>
                 Destino de entrega
               </StyledText>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             <StyledText right>
               Total: <StyledText>{!total ? "GRATIS" : thousandsSystem(total)}</StyledText>
@@ -334,6 +345,8 @@ const SalesPreviewScreen: React.FC<SalesPreviewScreenProps> = ({
           </View>
         </View>
         <SalesButtonBottom
+          locationID={locationID}
+          tableID={tableID}
           name={`${thousandsSystem(quantity)} pedidos = ${thousandsSystem(total)}`}
           onPress={() => sendButton()}
           buttonsEvent={{

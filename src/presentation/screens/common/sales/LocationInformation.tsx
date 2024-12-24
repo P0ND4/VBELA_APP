@@ -6,6 +6,7 @@ import { changeDate } from "shared/utils";
 import InformationModal from "presentation/components/modal/InformationModal";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledText from "presentation/components/text/StyledText";
+import { Inventory } from "domain/entities/data/inventories";
 
 type LocationInformationProps = {
   visible: boolean;
@@ -50,7 +51,7 @@ const LocationInformation: React.FC<LocationInformationProps> = ({
             Descripción: <StyledText color={colors.primary}>{location.description}</StyledText>
           </StyledText>
         )}
-        {!!location.inventories.length && (
+        {!!location.inventories?.length && (
           <StyledText>
             Inventario: <StyledText color={colors.primary}></StyledText>
           </StyledText>

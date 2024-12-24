@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useAppSelector } from "application/store/hook";
-import { useOrder } from "application/context/sales/OrderContext";
 import { Numeric, Pad } from "../../NumericPad";
 import { random, thousandsSystem } from "shared/utils";
-import { PaymentMethod, Selection } from "domain/entities/data/common/order.entity";
+import { PaymentMethod } from "domain/entities/data/common/order.entity";
 import ScreenModal from "presentation/components/modal/ScreenModal";
 
 type PaymentScreenProps = {

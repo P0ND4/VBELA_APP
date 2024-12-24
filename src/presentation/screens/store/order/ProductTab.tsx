@@ -1,14 +1,15 @@
-import React, { useEffect } from "react";
-import { useAppDispatch } from "application/store/hook";
+import React, { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.store.entity";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useTheme } from "@react-navigation/native";
 import { Element } from "domain/entities/data/common/element.entity";
 import { add, edit, remove } from "application/slice/stores/products.and.services.slice";
+import { random } from "shared/utils";
+import { Visible } from "domain/enums/data/inventory/visible.enums";
 import ElementTab from "presentation/screens/common/sales/element/ElementTab";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { random } from "shared/utils";
 
 type ProductTabProps = {
   navigation: StackNavigationProp<RootStore>;
@@ -17,6 +18,10 @@ type ProductTabProps = {
 
 const ProductTab: React.FC<ProductTabProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+
+  const stores = useAppSelector((state) => state.stores);
+
+  const [inventories, setInventories] = useState<string[]>([]);
 
   const defaultValue = route.params?.defaultValue;
   const storeID = route.params.storeID;
@@ -75,8 +80,15 @@ const ProductTab: React.FC<ProductTabProps> = ({ navigation, route }) => {
     navigation.setOptions({ title: "Crear producto" });
   }, []);
 
+  useEffect(() => {
+    const { inventories = [] } = stores.find((r) => r.id === storeID) ?? {};
+    setInventories(inventories);
+  }, [stores]);
+
   return (
     <ElementTab
+      visible={Visible.Store}
+      inventories={inventories}
       onSubmit={defaultValue ? update : save}
       defaultValue={defaultValue}
       locationID={storeID}

@@ -12,6 +12,7 @@ type PreviewOrderProps = {
 
 const PreviewOrder: React.FC<PreviewOrderProps> = ({ navigation, route }) => {
   const storeID = route.params.storeID;
+  const defaultValue = route.params?.defaultValue;
 
   const dispatch = useAppDispatch();
 
@@ -21,11 +22,14 @@ const PreviewOrder: React.FC<PreviewOrderProps> = ({ navigation, route }) => {
 
   return (
     <SalesPreviewScreen
-      sendButton={() => navigation.navigate("OrderPayment")}
+      defaultValue={defaultValue}
+      sendButton={() => navigation.navigate("OrderPayment", { storeID })}
       goBack={() => navigation.pop()}
       addElement={(data) => dispatch(add(data))}
       locationID={storeID}
-      buttonsEvent={{ delivery: () => alert("Para la segunda actualización") }}
+      buttonsEvent={{ 
+        // delivery: () => alert("Para la segunda actualización") 
+      }}
     />
   );
 };

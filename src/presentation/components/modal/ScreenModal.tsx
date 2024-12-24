@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Modal, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Modal, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledText from "../text/StyledText";
@@ -7,9 +7,10 @@ import StyledText from "../text/StyledText";
 type ScreenModalProps = {
   title: string;
   visible: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   onClose: () => void;
   headerRight?: () => React.ReactNode;
+  style?: StyleProp<ViewStyle>;
 };
 
 const ScreenModal: React.FC<ScreenModalProps> = ({
@@ -18,6 +19,7 @@ const ScreenModal: React.FC<ScreenModalProps> = ({
   children,
   onClose,
   headerRight = () => <></>,
+  style,
 }) => {
   const { colors } = useTheme();
 
@@ -32,7 +34,7 @@ const ScreenModal: React.FC<ScreenModalProps> = ({
         </View>
         {headerRight()}
       </View>
-      <View style={{ flex: 1, backgroundColor: colors.background }}>{children}</View>
+      <View style={[{ flex: 1, backgroundColor: colors.background }, style]}>{children}</View>
     </Modal>
   );
 };

@@ -12,7 +12,6 @@ export const restaurantsSlice = createSlice({
   initialState,
   reducers: {
     change: (_, action: PayloadAction<Location[]>) => action.payload,
-    addMultiple: (state, action: PayloadAction<Location[]>) => [...state, ...action.payload],
     add: (state, action: PayloadAction<Location>) => {
       state.push(action.payload);
     },
@@ -24,6 +23,13 @@ export const restaurantsSlice = createSlice({
       const { id } = action.payload;
       return state.filter((r) => r.id !== id);
     },
+    removeInventory: (state, action: PayloadAction<{ id: string }>) => {
+      const { id } = action.payload;
+      return state.map((r) => ({
+        ...r,
+        inventories: r.inventories.filter((i) => i !== id),
+      }));
+    },
     clean: () => [],
   },
   extraReducers: (builder) => {
@@ -32,5 +38,5 @@ export const restaurantsSlice = createSlice({
   },
 });
 
-export const { add, addMultiple, edit, remove, clean, change } = restaurantsSlice.actions;
+export const { add, edit, remove, clean, change, removeInventory } = restaurantsSlice.actions;
 export default restaurantsSlice.reducer;

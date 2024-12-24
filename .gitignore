@@ -19,3 +19,4 @@ web-build/
 google-services*.json
 *.apk
 package-lock.json
+android

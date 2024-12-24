@@ -4,11 +4,23 @@ import { Location } from "../data/common";
 import { Element } from "../data/common/element.entity";
 import { Order, PaymentMethod } from "../data/common/order.entity";
 
+interface ScreenOrder {
+  storeID: string;
+}
+
+interface Create extends ScreenOrder {
+  defaultValue?: Order;
+}
+
+interface Multiple extends ScreenOrder {
+  paymentMethod: PaymentMethod;
+}
+
 type Provider = {
-  CreateOrder: { storeID: string };
-  PreviewOrder: { storeID: string };
-  OrderPayment: undefined;
-  MultiplePayment: { paymentMethod: PaymentMethod };
+  CreateOrder: Create;
+  PreviewOrder: Create;
+  OrderPayment: ScreenOrder;
+  MultiplePayment: Multiple;
 };
 
 type NoProvider = {

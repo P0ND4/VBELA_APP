@@ -4,7 +4,11 @@ import { useTheme } from "@react-navigation/native";
 import { RootApp } from "domain/entities/navigation";
 import { useAppSelector } from "application/store/hook";
 import { thousandsSystem } from "shared/utils";
-import { selectPendingOrders, selectPendingSales } from "application/selectors";
+import {
+  selectPendingKitchen,
+  selectPendingOrders,
+  selectPendingSales,
+} from "application/selectors";
 import Accommodation from "presentation/screens/reservation/Accommodation";
 import Restaurant from "presentation/screens/restaurant/Restaurant";
 import Store from "presentation/screens/store/Store";
@@ -15,12 +19,15 @@ import StyledText from "presentation/components/text/StyledText";
 import Customer from "presentation/screens/customer/Customer";
 import Order from "presentation/screens/order/Order";
 import Setting from "presentation/screens/setting/Setting";
+import Kitchen from "presentation/screens/kitchen/Kitchen";
+import Delivery from "presentation/screens/delivery/Delivery";
 
 const Drawer = createDrawerNavigator<RootApp>();
 
 function App() {
   const sales = useAppSelector(selectPendingSales);
   const orders = useAppSelector(selectPendingOrders);
+  const kitchens = useAppSelector(selectPendingKitchen);
 
   const { colors } = useTheme();
 
@@ -63,12 +70,12 @@ function App() {
           drawerIcon: ({ color }) => <Ionicons name="pricetag-outline" size={22} color={color} />,
         }}
       />
-      {/* <Drawer.Screen
+      <Drawer.Screen
         name="Order"
         component={Order}
         options={{
           title: "Pedidos",
-          drawerIcon: ({ color }) => (
+          drawerIcon: () => (
             <View style={[styles.order, { backgroundColor: colors.primary }]}>
               <StyledText verySmall color="#FFFFFF">
                 {thousandsSystem(sales.length + orders.length)}
@@ -79,28 +86,35 @@ function App() {
       />
       <Drawer.Screen
         name="Kitchen"
-        component={Store}
+        component={Kitchen}
         options={{
           title: "Producción",
-          drawerIcon: ({ color }) => <Ionicons name="flame-outline" size={22} color={color} />,
+          drawerIcon: () => (
+            //TODO SI ES IGUAL A 0 COLOCAR UN ICONO
+            <View style={[styles.order, { backgroundColor: colors.primary }]}>
+              <StyledText verySmall color="#FFFFFF">
+                {thousandsSystem(kitchens.length)}
+              </StyledText>
+            </View>
+          ),
         }}
       />
-      <Drawer.Screen
+      {/* <Drawer.Screen
         name="Delivery"
-        component={Store}
+        component={Delivery}
         options={{
           title: "Entregas",
           drawerIcon: ({ color }) => <Ionicons name="location-outline" size={22} color={color} />,
         }}
-      />
-      <Drawer.Screen
+      /> */}
+      {/* <Drawer.Screen
         name="Customer"
         component={Customer}
         options={{
           title: "Clientes",
           drawerIcon: ({ color }) => <Ionicons name="people-outline" size={22} color={color} />,
         }}
-      />
+      /> */}
       <Drawer.Screen
         name="Inventory"
         component={Inventory}
@@ -108,7 +122,7 @@ function App() {
           title: "Inventarios",
           drawerIcon: ({ color }) => <Ionicons name="grid-outline" size={22} color={color} />,
         }}
-      /> */}
+      />
       <Drawer.Screen
         name="Setting"
         component={Setting}

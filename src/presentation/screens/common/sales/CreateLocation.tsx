@@ -1,24 +1,33 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Switch, View } from "react-native";
 import { useForm, Controller } from "react-hook-form";
+import { useAppSelector } from "application/store/hook";
 import { useTheme } from "@react-navigation/native";
 import { Location } from "domain/entities/data/common";
 import { random, thousandsSystem } from "shared/utils";
+import { Visible } from "domain/enums/data/inventory/visible.enums";
 import Layout from "presentation/components/layout/Layout";
 import StyledInput from "presentation/components/input/StyledInput";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
+import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 
 type CreateLocationProps = {
   defaultValue?: Location;
-  onSave: (data: Location[]) => void;
+  visible: Visible;
+  onSave: (data: Location) => void;
   onUpdate: (data: Location) => void;
 };
 
-const CreateLocation: React.FC<CreateLocationProps> = ({ onSave, onUpdate, defaultValue }) => {
-  const { control, handleSubmit, setValue, watch, formState } = useForm({
+const CreateLocation: React.FC<CreateLocationProps> = ({
+  onSave,
+  onUpdate,
+  visible,
+  defaultValue,
+}) => {
+  const { control, handleSubmit, watch, formState } = useForm({
     defaultValues: {
       id: defaultValue?.id || random(10),
       name: defaultValue?.name || "",
@@ -30,29 +39,30 @@ const CreateLocation: React.FC<CreateLocationProps> = ({ onSave, onUpdate, defau
     },
   });
 
+  const inventories = useAppSelector((state) => state.inventories);
+
   const { colors } = useTheme();
 
   const [optional, setOptional] = useState<boolean>(false);
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
-  const [repeat, setRepeat] = useState<string>("");
+  const [inventoryModal, setInventoryModal] = useState<boolean>(false);
 
-  const description = watch("description");
+  const [data, setData] = useState<{ label: string; value: string }[]>([]); // INVENTORIES DATA
 
-  const save = (data: Location) => {
-    const multiple = Array.from({ length: parseInt(repeat, 10) || 1 }, (_, index) => ({
-      ...data,
-      id: random(10),
-      name: `${data.name.slice(0, 25)}${index ? ` (${index})` : ""}`,
-    }));
-    onSave(multiple);
-  };
+  const { description, inventories: inv } = watch();
 
-  const handleSaveOrUpdate = (data: Location) => (defaultValue ? onUpdate(data) : save(data));
+  const handleSaveOrUpdate = (data: Location) => (defaultValue ? onUpdate(data) : onSave(data));
+
+  useEffect(() => {
+    const found = inventories.filter((i) => [Visible.Both, visible].includes(i.visible));
+    const data = found.map((f) => ({ label: f.name, value: f.id }));
+    setData(data);
+  }, [inventories]);
 
   return (
     <>
-      <Layout style={{ justifyContent: "space-between" }}>
-        <View>
+      <Layout>
+        <View style={{ flex: 1 }}>
           <Controller
             name="name"
             control={control}
@@ -86,22 +96,14 @@ const CreateLocation: React.FC<CreateLocationProps> = ({ onSave, onUpdate, defau
                 </StyledText>
                 <Ionicons name="chevron-forward" color={colors.text} size={19} />
               </StyledButton>
-              <StyledButton style={styles.row}>
-                <StyledText>Definir inventario</StyledText>
+              <StyledButton style={styles.row} onPress={() => setInventoryModal(true)}>
+                <StyledText>
+                  {!inv.length
+                    ? "Definir inventario"
+                    : `Inventario seleccionado (${thousandsSystem(inv.length)})`}
+                </StyledText>
                 <Ionicons name="chevron-forward" color={colors.text} size={19} />
               </StyledButton>
-              {!defaultValue && (
-                <StyledInput
-                  placeholder="Repetir mesa"
-                  maxLength={2}
-                  keyboardType="numeric"
-                  onChangeText={(num) => {
-                    const numeric = num.replace(/[^0-9]/g, "");
-                    setRepeat(numeric);
-                  }}
-                  value={repeat}
-                />
-              )}
               <Controller
                 name="highlight"
                 control={control}
@@ -125,14 +127,36 @@ const CreateLocation: React.FC<CreateLocationProps> = ({ onSave, onUpdate, defau
           </StyledText>
         </StyledButton>
       </Layout>
-      <InputScreenModal
-        title="Descripción"
-        placeholder="Creá una buena descripción para tu tienda"
-        visible={descriptionModal}
-        defaultValue={description}
-        maxLength={3000}
-        onClose={() => setDescriptionModal(false)}
-        onSubmit={(value) => setValue("description", value)}
+      <Controller
+        name="description"
+        control={control}
+        render={({ field: { onChange, value } }) => (
+          <InputScreenModal
+            title="Descripción"
+            placeholder="Creá una buena descripción para tu tienda"
+            visible={descriptionModal}
+            defaultValue={value}
+            maxLength={3000}
+            onClose={() => setDescriptionModal(false)}
+            onSubmit={onChange}
+          />
+        )}
+      />
+      <Controller
+        name="inventories"
+        control={control}
+        render={({ field: { onChange, value } }) => (
+          <PickerFloorModal
+            data={data}
+            multiple={value}
+            title="INVENTARIOS"
+            remove="Remover"
+            noData="NO HAY INVENTARIOS"
+            visible={inventoryModal}
+            onClose={() => setInventoryModal(false)}
+            onSubmit={onChange}
+          />
+        )}
       />
     </>
   );

@@ -16,46 +16,55 @@ type SalesCardProps = {
 const SalesCard: React.FC<SalesCardProps> = ({ onLongPress, onPress, style, data }) => {
   const { colors } = useTheme();
 
+  const affiliatedCount = (data?.packageIDS?.length ?? 0) + (data?.stockIDS?.length ?? 0);
+
+  const displayName = data?.name?.slice(0, 2).toUpperCase() || (
+    <Ionicons name="add" size={30} color={colors.border} />
+  );
+
   return (
     <TouchableOpacity
       style={[styles.row, style, { height: 55, marginBottom: 15 }]}
       onPress={onPress}
       onLongPress={onLongPress}
     >
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
+      <View style={styles.content}>
         <View
           style={[
             styles.picture,
             { borderColor: colors.border, backgroundColor: data ? colors.card : "transparent" },
           ]}
         >
-          {data?.name ? (
-            <StyledText smallParagraph>{data.name.slice(0, 2).toUpperCase()}</StyledText>
-          ) : (
-            <Ionicons name="add" size={30} color={colors.border} />
+          <StyledText smallParagraph>{displayName}</StyledText>
+        </View>
+
+        <View>
+          {data?.name && <StyledText verySmall>{data.name}</StyledText>}
+          {!!affiliatedCount && (
+            <StyledText verySmall>AFILIADO: {thousandsSystem(affiliatedCount)}</StyledText>
           )}
         </View>
-        {data?.highlight && (
-          <Ionicons name="star" size={20} color={colors.primary} style={{ marginRight: 6 }} />
-        )}
-        {data?.name && <StyledText verySmall>{data.name}</StyledText>}
       </View>
+
       <View>
-        {(data?.promotion ?? 0) > 0 && (
-          <StyledText style={{ textDecorationLine: "line-through" }} verySmall right>
-            {thousandsSystem(data?.price || "")}
+        {!!data?.promotion && (
+          <StyledText style={styles.lineThrough} verySmall right>
+            {thousandsSystem(data.price || "")}
           </StyledText>
         )}
-        {(data?.price ?? 0) > 0 && (
+        {!!data?.price && (
           <StyledText verySmall right>
             {thousandsSystem(data?.promotion || data?.price || "")}
           </StyledText>
         )}
-        {(data?.stock ?? 0) > 0 && (
+        {!!data?.stock && !!data?.minStock && (
           <StyledText verySmall>
             Stock:{" "}
-            <StyledText color={colors.primary} verySmall>
-              {thousandsSystem(data?.stock || "")}
+            <StyledText
+              verySmall
+              color={data?.stock >= data?.minStock ? colors.text : colors.primary}
+            >
+              {thousandsSystem(data?.stock)}/{thousandsSystem(data?.minStock)}
             </StyledText>
           </StyledText>
         )}
@@ -70,6 +79,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  content: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   picture: {
     marginRight: 6,
     width: 60,
@@ -78,6 +91,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     alignItems: "center",
     justifyContent: "center",
+  },
+  lineThrough: {
+    textDecorationLine: "line-through",
   },
 });
 

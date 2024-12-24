@@ -24,7 +24,7 @@ const Account = () => {
       <View style={styles.information}>
         <TouchableOpacity
           style={[styles.picture, { backgroundColor: colors.card }]}
-          onPress={() => alert("Para la cuarta actualización")}
+          onPress={() => {}}
         >
           <Ionicons name="image-outline" size={35} color={colors.text} />
         </TouchableOpacity>
@@ -37,7 +37,7 @@ const Account = () => {
         <StyledButton
           style={styles.planButton}
           backgroundColor={colors.primary}
-          onPress={() => alert("Para la cuarta actualización")}
+          onPress={() => {}}
         >
           <StyledText verySmall color="#FFFFFF">
             PLAN GRATUITO
@@ -45,11 +45,11 @@ const Account = () => {
         </StyledButton>
       </View>
       <View>
-        <StyledText right>4.0.0</StyledText>
-        <StyledButton style={styles.row} onPress={() => alert("Para la cuarta actualización")}>
+        <StyledText right>4.0.0-beta.1</StyledText>
+        {/* <StyledButton style={styles.row} onPress={() => {}}>
           <StyledText>Borrar datos personales</StyledText>
           <Ionicons name="chevron-forward" color={colors.text} size={19} />
-        </StyledButton>
+        </StyledButton> */}
         <StyledButton backgroundColor={colors.primary} onPress={logOut}>
           <StyledText color="#FFFFFF" center>
             Cerrar sesión

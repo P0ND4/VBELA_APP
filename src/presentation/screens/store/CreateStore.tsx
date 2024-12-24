@@ -3,7 +3,8 @@ import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.stor
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useAppDispatch } from "application/store/hook";
 import { Location } from "domain/entities/data/common";
-import { addMultiple, edit } from "application/slice/stores/store.slice";
+import { add, edit } from "application/slice/stores/stores.slice";
+import { Visible } from "domain/enums/data/inventory/visible.enums";
 import CreateLocation from "../common/sales/CreateLocation";
 
 type CreateStoreProps = {
@@ -20,8 +21,8 @@ const CreateStore: React.FC<CreateStoreProps> = ({ navigation, route }) => {
     navigation.setOptions({ title: `${store ? "Editar" : "Crear"} tienda` });
   }, []);
 
-  const save = (multiple: Location[]) => {
-    dispatch(addMultiple(multiple));
+  const save = (data: Location) => {
+    dispatch(add(data));
     navigation.pop();
   };
 
@@ -30,7 +31,7 @@ const CreateStore: React.FC<CreateStoreProps> = ({ navigation, route }) => {
     navigation.pop();
   };
 
-  return <CreateLocation onUpdate={update} onSave={save} defaultValue={store} />;
+  return <CreateLocation onUpdate={update} onSave={save} visible={Visible.Store} defaultValue={store} />;
 };
 
 export default CreateStore;
