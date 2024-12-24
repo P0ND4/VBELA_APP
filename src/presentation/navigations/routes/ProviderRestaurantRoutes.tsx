@@ -3,7 +3,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { OrderProvider } from "application/context/OrderContext";
 import { RootRestaurant } from "domain/entities/navigation";
 import CreateOrder from "presentation/screens/restaurant/order/CreateOrder";
-import MultiplePayment from "presentation/screens/store/order/MultiplePayment";
+import MultiplePayment from "presentation/screens/restaurant/order/MultiplePayment";
 import PreviewOrder from "presentation/screens/restaurant/order/PreviewOrder";
 import OrderPayment from "presentation/screens/restaurant/order/OrderPayment";
 
