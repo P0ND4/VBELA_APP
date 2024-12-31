@@ -48,7 +48,11 @@ export const printPDF = async ({ html, width = 390, height = 450 }: PDF): Promis
 
 const sharePDF = async (uri: string): Promise<void> => {
   try {
-    await Sharing.shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
+    await Sharing.shareAsync(uri, {
+      UTI: ".pdf",
+      mimeType: "application/pdf",
+      dialogTitle: "Compartir archivo PDF",
+    });
   } catch (err) {
     console.error("Error al compartir el PDF:", err);
   }

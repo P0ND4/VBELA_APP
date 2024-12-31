@@ -153,7 +153,7 @@ const OrdersScreen: React.FC<OrdersScreenProps> = ({
       <Layout style={{ padding: 0, justifyContent: "space-between" }}>
         {!orders.length ? (
           <StyledText color={colors.primary} style={{ padding: 20 }}>
-            NO HAY PEDIDOS REGISTRADOS
+            NO SE ENCONTRARON PEDIDOS
           </StyledText>
         ) : (
           <>
@@ -206,7 +206,7 @@ const OrdersScreen: React.FC<OrdersScreenProps> = ({
               )}
               {!data.length && (
                 <StyledText color={colors.primary} style={{ padding: 20 }}>
-                  NO HAY ORDENES PARA LA BÚSQUEDA
+                  NO HAY PEDIDOS PARA LA BÚSQUEDA
                 </StyledText>
               )}
               <FlatList

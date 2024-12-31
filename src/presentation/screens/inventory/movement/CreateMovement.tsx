@@ -51,10 +51,10 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
       stockID: defaultValue?.stockID || "",
       quantity: defaultValue?.quantity || 0,
       currentValue: defaultValue?.currentValue || 0,
-      date: defaultValue?.date || "",
+      date: defaultValue?.date || null,
       paymentMethod: defaultValue?.paymentMethod || "",
-      creationDate: defaultValue?.creationDate || new Date().toISOString(),
-      modificationDate: new Date().toISOString(),
+      creationDate: defaultValue?.creationDate || new Date().getTime(),
+      modificationDate: new Date().getTime(),
     },
   });
 

@@ -12,6 +12,7 @@ import SettingRoutes from "./routes/SettingRoutes";
 import ProviderRestaurantRoutes from "./routes/ProviderRestaurantRoutes";
 import OrderRoutes from "./routes/OrderRoutes";
 import InventoryRoutes from "./routes/InventoryRoutes";
+import StatisticsRoutes from "./routes/StatisticsRoutes";
 import App from "./App";
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -35,6 +36,7 @@ const Main: React.FC = () => {
           <Stack.Screen name="SettingRoutes" component={SettingRoutes} />
           <Stack.Screen name="OrderRoutes" component={OrderRoutes} />
           <Stack.Screen name="InventoryRoutes" component={InventoryRoutes} />
+          <Stack.Screen name="StatisticsRoutes" component={StatisticsRoutes} />
         </>
       )}
     </Stack.Navigator>

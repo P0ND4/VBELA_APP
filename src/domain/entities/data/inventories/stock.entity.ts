@@ -9,10 +9,10 @@ export type Movement = {
   type: Type;
   quantity: number;
   currentValue: number;
-  date: string;
+  date: number | null;
   paymentMethod?: string;
-  creationDate: string;
-  modificationDate: string;
+  creationDate: number;
+  modificationDate: number;
 };
 
 export interface Stock {
@@ -26,6 +26,6 @@ export interface Stock {
   brand: string;
   currentValue: number;
   movement: Movement[];
-  creationDate: string;
-  modificationDate: string;
+  creationDate: number;
+  modificationDate: number;
 }

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useAppSelector } from "application/store/hook";
-import { selectPendingSales } from "application/selectors";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
@@ -10,8 +9,12 @@ import OrdersScreen from "presentation/screens/common/orders/OrdersScreen";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
-const ProductOrder = () => {
-  const sales = useAppSelector(selectPendingSales);
+type ProductOrderProps = {
+  sales: Order[];
+  statusFilter?: Status[];
+};
+
+const ProductOrder: React.FC<ProductOrderProps> = ({ sales, statusFilter = [] }) => {
   const stores = useAppSelector((state) => state.stores);
 
   const [locationFilter, setLocationFilter] = useState<{ label: string; value: string }[]>([]);
@@ -26,7 +29,7 @@ const ProductOrder = () => {
   return (
     <OrdersScreen
       orders={sales}
-      statusFilter={[Status.Pending, Status.Standby, Status.Confirmed]}
+      statusFilter={statusFilter}
       locationFilter={locationFilter}
       navigateToInformation={(order: Order) => {
         navigation.navigate("OrderRoutes", {

@@ -41,8 +41,8 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
       brand: defaultValue?.brand || "",
       currentValue: defaultValue?.currentValue || 0,
       movement: defaultValue?.movement || [],
-      creationDate: defaultValue?.creationDate || new Date().toISOString(),
-      modificationDate: new Date().toISOString(),
+      creationDate: defaultValue?.creationDate || new Date().getTime(),
+      modificationDate: new Date().getTime(),
     },
   });
 

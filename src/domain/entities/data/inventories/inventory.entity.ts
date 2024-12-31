@@ -6,6 +6,6 @@ export interface Inventory {
   visible: Visible;
   description: string;
   highlight: boolean;
-  creationDate: string;
-  modificationDate: string;
+  creationDate: number;
+  modificationDate: number;
 }

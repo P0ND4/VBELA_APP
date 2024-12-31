@@ -38,8 +38,8 @@ export interface Order {
   change: number;
   paymentMethods: PaymentMethod[];
   observation: string;
-  creationDate: string;
-  modificationDate: string;
+  creationDate: number;
+  modificationDate: number;
 }
 
 export type Save = {

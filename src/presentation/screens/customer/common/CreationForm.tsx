@@ -90,8 +90,8 @@ const CreationForm: React.FC<CreationFormProps> = ({ disable, defaultValue, onSu
       identification: defaultValue?.identification || "",
       observation: defaultValue?.observation || "",
       credit: defaultValue?.credit || false,
-      creationDate: defaultValue?.creationDate || new Date().toISOString(),
-      modificationDate: new Date().toISOString(),
+      creationDate: defaultValue?.creationDate || new Date().getTime(),
+      modificationDate: new Date().getTime(),
     },
   });
 

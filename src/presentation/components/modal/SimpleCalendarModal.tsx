@@ -4,17 +4,25 @@ import { useTheme } from "@react-navigation/native";
 import InformationModal from "./InformationModal";
 import StyledText from "../text/StyledText";
 import StyledButton from "../button/StyledButton";
+import moment from "moment";
+import theme from "config/calendar/theme";
 
 type SimpleCalendarModalProps = {
-  defaultValue: string;
+  defaultValue?: number | null;
   visible: boolean;
+  initialDate?: string;
+  maxDate?: string;
+  minDate?: string;
   onClose: () => void;
-  onSave: (date: string) => void;
+  onSave: (date: number) => void;
 };
 
 const SimpleCalendarModal: React.FC<SimpleCalendarModalProps> = ({
   defaultValue,
   visible,
+  initialDate,
+  maxDate,
+  minDate,
   onClose,
   onSave,
 }) => {
@@ -23,7 +31,7 @@ const SimpleCalendarModal: React.FC<SimpleCalendarModalProps> = ({
   const [selected, setSelected] = useState<string>("");
 
   useEffect(() => {
-    visible && setSelected(defaultValue.split("T")[0]);
+    visible && setSelected(defaultValue ? moment(defaultValue).format("YYYY-MM-DD") : "");
   }, [visible]);
 
   return (
@@ -32,26 +40,18 @@ const SimpleCalendarModal: React.FC<SimpleCalendarModalProps> = ({
         onDayPress={(day: DateData) => {
           setSelected(day.dateString);
         }}
+        initialDate={initialDate}
+        maxDate={maxDate}
+        minDate={minDate}
         markedDates={{
           [selected]: { selected: true, disableTouchEvent: true, selectedDotColor: "orange" },
         }}
-        theme={{
-          backgroundColor: colors.background,
-          calendarBackground: colors.background,
-          textSectionTitleColor: colors.primary,
-          todayTextColor: colors.primary,
-          dayTextColor: colors.text,
-          arrowColor: colors.text,
-          monthTextColor: colors.text,
-          indicatorColor: colors.text,
-          selectedDayBackgroundColor: colors.primary,
-          selectedDayTextColor: "#ffffff",
-        }}
+        theme={theme(colors)}
       />
       <StyledButton
         backgroundColor={colors.primary}
         onPress={() => {
-          onSave(new Date(selected).toISOString());
+          onSave(moment(selected).valueOf());
           onClose();
         }}
         disable={!selected}

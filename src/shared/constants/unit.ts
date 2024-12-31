@@ -1,4 +1,4 @@
-export type UnitValue = "" | "UND" | "KG" | "G" | "MG" | "OZ" | "LB" | "L" | "ML" | "GAL" | "PT" | "FL OZ";
+export type UnitValue = "" | "UND" | "KG" | "G" | "MG" | "OZ" | "LB" | "L" | "ML" | "GAL" | "PT" | "FL OZ"; //TODO ESTO MOVELO A ENTIDADES EN LA CARPETA COMPARTIDA
 
 export const unitOptions: { label: string; value: UnitValue }[] = [
   { label: "Unidad", value: "UND" },

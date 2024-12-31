@@ -9,5 +9,6 @@ export type RootStackParamList = {
   ProviderStoreRoutes: undefined;
   OrderRoutes: undefined;
   InventoryRoutes: undefined;
+  StatisticsRoutes: undefined;
   App: undefined;
 };

@@ -10,8 +10,12 @@ import OrdersScreen from "presentation/screens/common/orders/OrdersScreen";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
-const MenuOrder = () => {
-  const orders = useAppSelector(selectPendingOrders);
+type MenuOrderProps = {
+  orders: Order[];
+  statusFilter?: Status[];
+};
+
+const MenuOrder: React.FC<MenuOrderProps> = ({ orders, statusFilter = [] }) => {
   const restaurants = useAppSelector((state) => state.restaurants);
 
   const [locationFilter, setLocationFilter] = useState<{ label: string; value: string }[]>([]);
@@ -27,7 +31,7 @@ const MenuOrder = () => {
     <OrdersScreen
       orders={orders}
       locationFilter={locationFilter}
-      statusFilter={[Status.Pending, Status.Standby, Status.Confirmed]}
+      statusFilter={statusFilter}
       navigateToInformation={(order: Order) => {
         navigation.navigate("OrderRoutes", {
           screen: "MenuViewOrder",

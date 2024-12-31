@@ -6,6 +6,7 @@ import { useTheme } from "@react-navigation/native";
 import { AppNavigationProp } from "domain/entities/navigation";
 import { thousandsSystem } from "shared/utils";
 import { useAppSelector } from "application/store/hook";
+import { Status } from "domain/enums/data/element/status.enums";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledText from "presentation/components/text/StyledText";
 import ProductOrder from "./product/ProductOrder";
@@ -50,13 +51,25 @@ const Order: React.FC<AppNavigationProp> = ({ navigation }) => {
       <Tab.Screen
         name="PEDIDOS"
         options={{ tabBarBadge: () => sales.length > 0 && <BadgeIcon count={sales.length} /> }}
-        component={ProductOrder}
-      />
+      >
+        {() => (
+          <ProductOrder
+            sales={sales}
+            statusFilter={[Status.Pending, Status.Standby, Status.Confirmed]}
+          />
+        )}
+      </Tab.Screen>
       <Tab.Screen
         name="MENÚ"
         options={{ tabBarBadge: () => orders.length > 0 && <BadgeIcon count={orders.length} /> }}
-        component={MenuOrder}
-      />
+      >
+        {() => (
+          <MenuOrder
+            orders={orders}
+            statusFilter={[Status.Pending, Status.Standby, Status.Confirmed]}
+          />
+        )}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 };

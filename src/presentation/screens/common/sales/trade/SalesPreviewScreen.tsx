@@ -262,8 +262,8 @@ const Card: React.FC<CardProps> = ({ item, addElement, locationID, goBack = () =
                 name,
                 price: item.value,
                 locationID,
-                creationDate: new Date().toISOString(),
-                modificationDate: new Date().toISOString(),
+                creationDate: new Date().getTime(),
+                modificationDate: new Date().getTime(),
               };
               addElement(data);
             }

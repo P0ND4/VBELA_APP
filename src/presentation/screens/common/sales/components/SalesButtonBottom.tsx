@@ -88,7 +88,7 @@ const OptionsModal: React.FC<OptionsModalProps> = ({
               onPress={() => {
                 if (!buttonsEvent.kitchen) return;
 
-                const modificationDate = new Date().toISOString();
+                const modificationDate = new Date().getTime();
                 const orderData: Pick<Save, "selection" | "status"> = {
                   selection,
                   status: Status.Standby,

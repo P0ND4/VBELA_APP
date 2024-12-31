@@ -59,7 +59,7 @@ const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({
       discount: info.discount,
       observation: info.observation,
       change: paid > total ? paid - total : 0,
-      modificationDate: new Date().toISOString(),
+      modificationDate: new Date().getTime(),
     });
 
     clean();

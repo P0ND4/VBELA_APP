@@ -6,6 +6,6 @@ export interface PaymentMethods {
   id: string;
   name: string;
   icon: Icons;
-  creationDate: string;
-  modificationDate: string;
+  creationDate: number;
+  modificationDate: number;
 }

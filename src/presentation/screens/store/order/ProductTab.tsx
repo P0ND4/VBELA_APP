@@ -43,12 +43,12 @@ const ProductTab: React.FC<ProductTabProps> = ({ navigation, route }) => {
       navigation.setOptions({
         headerRight: () => (
           <View style={styles.iconContainer}>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.icon}
               onPress={() => alert("Para la tercera actualización")}
             >
               <Ionicons name="share-social-outline" color={colors.text} size={25} />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             <TouchableOpacity
               style={styles.icon}
               onPress={() => {

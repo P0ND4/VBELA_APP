@@ -23,3 +23,8 @@ export const selectPendingKitchen = createSelector(
   (state: RootState) => state.kitchens,
   (kitchen) => kitchen.filter((k) => pending.includes(k.status)),
 );
+
+export const selectCompletedKitchen = createSelector(
+  (state: RootState) => state.kitchens,
+  (kitchen) => kitchen.filter((k) => k.status === Status.Completed),
+);

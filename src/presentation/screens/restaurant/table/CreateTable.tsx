@@ -28,12 +28,11 @@ const CreateTable: React.FC<CreateTableProps> = ({ navigation, route }) => {
     defaultValues: {
       id: defaultValue?.id || random(10),
       restaurantID,
-      capacity: String(defaultValue?.capacity || ""),
       name: defaultValue?.name || "",
       description: defaultValue?.description || "",
       highlight: defaultValue?.highlight || false,
-      creationDate: defaultValue?.creationDate || new Date().toISOString(),
-      modificationDate: new Date().toISOString(),
+      creationDate: defaultValue?.creationDate || new Date().getTime(),
+      modificationDate: new Date().getTime(),
     },
   });
 
@@ -99,37 +98,6 @@ const CreateTable: React.FC<CreateTableProps> = ({ navigation, route }) => {
               El nombre es requerido
             </StyledText>
           )}
-          <Controller
-            name="capacity"
-            control={control}
-            rules={{
-              validate: (num) => {
-                if (!num.length) return "La capacidad es requerida";
-                if (parseInt(num, 10) === 0) return "La capacidad tiene que ser > 0";
-                return true;
-              },
-            }}
-            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-              <>
-                <StyledInput
-                  placeholder="Capacidad"
-                  maxLength={2}
-                  keyboardType="numeric"
-                  onChangeText={(num) => {
-                    const numeric = num.replace(/[^0-9]/g, "");
-                    onChange(numeric);
-                  }}
-                  onBlur={onBlur}
-                  value={value}
-                />
-                {error && (
-                  <StyledText color={colors.primary} verySmall>
-                    {error.message}
-                  </StyledText>
-                )}
-              </>
-            )}
-          />
 
           <StyledButton style={styles.row} onPress={() => setOptional(!optional)}>
             <StyledText>Opcionales</StyledText>

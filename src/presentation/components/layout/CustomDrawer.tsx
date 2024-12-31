@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   DrawerContentComponentProps,
   DrawerContentScrollView,
@@ -10,6 +10,7 @@ import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
 import { useNavigation, useTheme } from "@react-navigation/native";
+import { Status } from "application/appState/state/state.controller.slice";
 import StyledText from "../text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledButton from "../button/StyledButton";
@@ -20,6 +21,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = (props) => {
   const { colors } = useTheme();
 
   const user = useAppSelector((state) => state.user);
+  const stateController = useAppSelector((state) => state.stateController);
 
   const navigation = useNavigation<NavigationProps>();
 
@@ -31,6 +33,8 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = (props) => {
   //     console.log(e.message);
   //   }
   // };
+
+  const condition = useMemo(() => stateController.status === Status.Active, [stateController]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -54,6 +58,22 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = (props) => {
                 PLAN GRATUITO
               </StyledText>
             </StyledButton>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={[
+                styles.state,
+                {
+                  backgroundColor: condition ? colors.primary : colors.border,
+                },
+              ]}
+            />
+            <StyledText verySmall>
+              Caja:{" "}
+              <StyledText verySmall color={colors.primary}>
+                {stateController.status}
+              </StyledText>
+            </StyledText>
           </View>
         </View>
         <DrawerItemList {...props} />
@@ -96,6 +116,12 @@ const styles = StyleSheet.create({
     width: "auto",
     paddingVertical: 5,
     paddingHorizontal: 8,
+  },
+  state: {
+    marginRight: 5,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
 });
 

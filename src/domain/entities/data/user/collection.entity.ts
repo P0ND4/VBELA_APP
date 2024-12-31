@@ -8,6 +8,7 @@ import type { Expense, Purchase, Supplier } from "../suppliers";
 import type { Location, Element, Order } from "../common";
 import type { PaymentMethods, InvoiceInformation } from "../settings";
 import type { Kitchen } from "../kitchens";
+import type { Controller } from "../controllers";
 
 type SimpleData = string | null;
 
@@ -44,5 +45,6 @@ export interface Collection {
   expenses: Expense[];
   purchases: Purchase[];
   suppliers: Supplier[];
+  controllers: Controller[];
   paymentMethods: PaymentMethods[];
 }

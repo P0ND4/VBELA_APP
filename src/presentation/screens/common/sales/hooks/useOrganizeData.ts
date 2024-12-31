@@ -28,8 +28,8 @@ export const useOrganizeData = () => {
       observation,
       paymentMethods: props.paymentMethods,
       discount,
-      creationDate: new Date().toISOString(),
-      modificationDate: new Date().toISOString(),
+      creationDate: new Date().getTime(),
+      modificationDate: new Date().getTime(),
     };
   };
 

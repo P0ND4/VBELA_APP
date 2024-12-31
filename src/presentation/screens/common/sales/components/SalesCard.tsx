@@ -16,8 +16,6 @@ type SalesCardProps = {
 const SalesCard: React.FC<SalesCardProps> = ({ onLongPress, onPress, style, data }) => {
   const { colors } = useTheme();
 
-  const affiliatedCount = (data?.packageIDS?.length ?? 0) + (data?.stockIDS?.length ?? 0);
-
   const displayName = data?.name?.slice(0, 2).toUpperCase() || (
     <Ionicons name="add" size={30} color={colors.border} />
   );
@@ -37,13 +35,7 @@ const SalesCard: React.FC<SalesCardProps> = ({ onLongPress, onPress, style, data
         >
           <StyledText smallParagraph>{displayName}</StyledText>
         </View>
-
-        <View>
-          {data?.name && <StyledText verySmall>{data.name}</StyledText>}
-          {!!affiliatedCount && (
-            <StyledText verySmall>AFILIADO: {thousandsSystem(affiliatedCount)}</StyledText>
-          )}
-        </View>
+        {data?.name && <StyledText verySmall>{data.name}</StyledText>}
       </View>
 
       <View>

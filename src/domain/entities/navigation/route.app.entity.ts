@@ -7,8 +7,11 @@ import { RootCustomer } from "./root.customer.entity";
 import { RootSetting } from "./root.setting.entity";
 import { RootOrder } from "./route.order.entity";
 import { RootInventory } from "./root.inventory.entity";
+import { RootStatistics } from "./route.statistics.entity";
 
 export type RootApp = {
+  Home: undefined;
+  Statistic: undefined;
   Reservation: undefined;
   Restaurant: undefined;
   Customer: undefined;
@@ -45,6 +48,10 @@ export type RootApp = {
   InventoryRoutes: {
     screen: keyof RootInventory;
     params?: RootInventory[keyof RootInventory];
+  };
+  StatisticsRoutes: {
+    screen: keyof RootStatistics;
+    params?: RootStatistics[keyof RootStatistics];
   };
 };
 

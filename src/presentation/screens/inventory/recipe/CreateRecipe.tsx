@@ -154,8 +154,8 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
       name: defaultValue?.name || "",
       description: defaultValue?.description || "",
       visible: defaultValue?.visible || true,
-      creationDate: defaultValue?.creationDate || new Date().toISOString(),
-      modificationDate: new Date().toISOString(),
+      creationDate: defaultValue?.creationDate || new Date().getTime(),
+      modificationDate: new Date().getTime(),
     },
   });
 

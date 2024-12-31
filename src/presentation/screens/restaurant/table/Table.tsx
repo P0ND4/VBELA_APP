@@ -56,10 +56,7 @@ const Card: React.FC<{ item: TableEntity }> = ({ item }) => {
           {item.highlight && (
             <Ionicons name="star" color={colors.primary} size={18} style={{ marginRight: 6 }} />
           )}
-          <View>
-            <StyledText>{item.name}</StyledText>
-            <StyledText verySmall>Capacidad: {thousandsSystem(item.capacity)} personas</StyledText>
-          </View>
+          <StyledText>{item.name}</StyledText>
         </View>
         {order && (
           <View>

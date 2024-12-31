@@ -40,7 +40,7 @@ const MenuViewOrder: React.FC<MenuViewOrderProps> = ({ navigation, route }) => {
   }, [orders]);
 
   const onChange = (updatedData: Partial<Order>) => {
-    const modificationDate = new Date().toISOString();
+    const modificationDate = new Date().getTime();
     const order = { ...data, ...updatedData, modificationDate };
     data && update(order);
     if (order.status === Status.Canceled) return navigation.pop();

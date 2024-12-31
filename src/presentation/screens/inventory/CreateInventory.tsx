@@ -61,8 +61,8 @@ const CreateInventory: React.FC<CreateInventoryProps> = ({ navigation, route }) 
       visible: defaultValue?.visible || Visible.Both,
       description: defaultValue?.description || "",
       highlight: defaultValue?.highlight || false,
-      creationDate: defaultValue?.creationDate || new Date().toISOString(),
-      modificationDate: new Date().toISOString(),
+      creationDate: defaultValue?.creationDate || new Date().getTime(),
+      modificationDate: new Date().getTime(),
     },
   });
 

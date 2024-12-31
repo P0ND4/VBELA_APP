@@ -48,8 +48,8 @@ const ElementTab: React.FC<ElementTabProps> = ({
     minStock: defaultValue?.minStock || 0,
     stockIDS: defaultValue?.stockIDS || [],
     packageIDS: defaultValue?.packageIDS || [],
-    creationDate: defaultValue?.creationDate || new Date().toISOString(),
-    modificationDate: new Date().toISOString(),
+    creationDate: defaultValue?.creationDate || new Date().getTime(),
+    modificationDate: new Date().getTime(),
   };
 
   const { control, handleSubmit, watch, formState } = useForm<Element>({

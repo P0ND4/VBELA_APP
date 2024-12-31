@@ -9,7 +9,7 @@ interface Discount {
   quantity: number;
 }
 
-const createMovement = (stock: Stock, quantity: number, date: string): Movement => ({
+const createMovement = (stock: Stock, quantity: number, date: number): Movement => ({
   id: random(10),
   type: Type.Output,
   inventoryID: stock.inventoryID,
@@ -49,7 +49,7 @@ export const useExtractMovement = () => {
       ([id, quantity]) => ({ id, quantity }),
     );
 
-    const date = new Date().toISOString();
+    const date = new Date().getTime();
 
     const movements = discount
       .filter(({ id }) => stocks.some((s) => s.id === id))

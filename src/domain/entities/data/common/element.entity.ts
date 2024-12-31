@@ -16,6 +16,6 @@ export interface Element {
   minStock?: number;
   stockIDS?: string[];
   packageIDS?: string[];
-  creationDate: string;
-  modificationDate: string;
+  creationDate: number;
+  modificationDate: number;
 }

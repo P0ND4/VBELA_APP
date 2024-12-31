@@ -9,6 +9,6 @@ export interface Kitchen {
   status: Status;
   selection: Selection[];
   observation: string;
-  creationDate: string;
-  modificationDate: string;
+  creationDate: number;
+  modificationDate: number;
 }

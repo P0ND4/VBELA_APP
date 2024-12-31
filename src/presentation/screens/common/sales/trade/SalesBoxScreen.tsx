@@ -103,15 +103,15 @@ type CardProps = {
 const Card: React.FC<CardProps> = ({ item, onPressEdit, onPress }) => {
   const { colors } = useTheme();
 
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  // const [modalVisible, setModalVisible] = useState<boolean>(false);
 
-  const onToggle = () => setModalVisible(!modalVisible);
+  // const onToggle = () => setModalVisible(!modalVisible);
 
   return (
     <>
-      <SalesCard onLongPress={onToggle} data={item} onPress={onPress} />
+      <SalesCard onLongPress={() => onPressEdit(item)} data={item} onPress={onPress} />
       <View style={{ borderBottomWidth: 1, borderColor: colors.border }} />
-      <CardModal visible={modalVisible} onClose={onToggle} data={item} onPressEdit={onPressEdit} />
+      {/* <CardModal visible={modalVisible} onClose={onToggle} data={item} onPressEdit={onPressEdit} /> */}
     </>
   );
 };
@@ -165,8 +165,8 @@ const UnregisteredModal: React.FC<UnregisteredModalProps> = ({
     name,
     price: value,
     locationID,
-    creationDate: new Date().toISOString(),
-    modificationDate: new Date().toISOString(),
+    creationDate: new Date().getTime(),
+    modificationDate: new Date().getTime(),
   });
 
   const clean = () => {

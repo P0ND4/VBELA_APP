@@ -4,7 +4,7 @@ import { Order } from "domain/entities/data/common/order.entity";
 import { useAppSelector } from "application/store/hook";
 import { useTheme } from "@react-navigation/native";
 import { changeDate, formatDecimals, thousandsSystem } from "shared/utils";
-import { generatePDF, printPDF } from "infrastructure/pdf/pdf.services";
+import { generatePDF, printPDF } from "infrastructure/services/pdf.services";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
@@ -157,14 +157,17 @@ const SalesInvoiceScreen: React.FC<{ trade: Order; goEdit: () => void }> = ({ tr
             <span class="text">SU NÚMERO DE ORDEN ES: ${trade.order}</span>
           </div>
           <div class="space">
-            ${trade.selection.map((tr) => {
-              return `
+            ${trade.selection.reduce((a, tr) => {
+              return (
+                a +
+                `
                 <div class="row">
                   <span class="text">${`${tr.quantity}x ${tr.name}`}</span>
                   <span class="text">${!!tr.discount ? `(${formatDecimals(tr.discount * 100, 2)}%) (-${tr.value * tr.quantity * tr.discount})` : ""} ${thousandsSystem(tr.total)}</span>
                 </div>
-              `;
-            })}
+              `
+              );
+            }, "")}
             <span class="text">Chq #${trade.order} Orden #${thousandsSystem(trade.selection.length)}</span>
           </div>
           <div style="margin-top: 20px">

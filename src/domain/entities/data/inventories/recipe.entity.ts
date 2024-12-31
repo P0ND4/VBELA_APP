@@ -11,6 +11,6 @@ export interface Recipe {
   name: string;
   description: string;
   visible: boolean;
-  creationDate: string;
-  modificationDate: string;
+  creationDate: number;
+  modificationDate: number;
 }

@@ -6,7 +6,7 @@ type Account = {
   previous: number;
   status: string;
   observation?: string;
-  creationDate: string;
+  creationDate: number;
 };
 
 export interface Customer {
@@ -26,6 +26,6 @@ export interface Customer {
   account: Account[];
   total: number;
   credit: boolean;
-  creationDate: string;
-  modificationDate: string;
+  creationDate: number;
+  modificationDate: number;
 }

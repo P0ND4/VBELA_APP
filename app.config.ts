@@ -4,7 +4,7 @@ import { ExpoConfig } from "expo/config";
 const config: ExpoConfig = {
   name: "VBELA",
   slug: "vbela",
-  version: "4.0.0-beta.2",
+  version: "4.0.0-beta.3",
   orientation: "portrait",
   icon: "./src/presentation/assets/logo.png",
   userInterfaceStyle: "light",

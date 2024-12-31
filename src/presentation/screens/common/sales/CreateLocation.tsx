@@ -34,8 +34,8 @@ const CreateLocation: React.FC<CreateLocationProps> = ({
       description: defaultValue?.description || "",
       highlight: defaultValue?.highlight || false,
       inventories: defaultValue?.inventories || [],
-      creationDate: defaultValue?.creationDate || new Date().toISOString(),
-      modificationDate: new Date().toISOString(),
+      creationDate: defaultValue?.creationDate || new Date().getTime(),
+      modificationDate: new Date().getTime(),
     },
   });
 

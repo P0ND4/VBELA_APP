@@ -185,7 +185,7 @@ const Account: React.FC<AccountProps> = ({ customer }) => {
       previous: customer.total,
       status: "Finalizado",
       observation,
-      creationDate: new Date().toISOString(),
+      creationDate: new Date().getTime(),
     };
 
     const total = customer.total + (type === Type.Add ? value : -value);

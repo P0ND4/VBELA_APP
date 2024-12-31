@@ -1,3 +1,5 @@
+import chroma from "chroma-js";
+
 type Option = boolean | undefined;
 
 interface Options {
@@ -25,4 +27,17 @@ export const random = (
   ).join("");
 
   return randomString;
+};
+
+export const generatePalette = (baseColor: string, size: number = 5): string[] => {
+  const randomColor = () => chroma.random().hex();
+  const base = chroma(baseColor || randomColor());
+
+  return Array.from({ length: size }, (_, i) =>
+    base
+      .set("hsl.h", `+${(360 / size) * i * 1.3}`) 
+      .set("hsl.l", `${0.45 + Math.random() * 0.1}`)
+      .set("hsl.s", `${0.6 + Math.random() * 0.3}`)
+      .hex(),
+  );
 };

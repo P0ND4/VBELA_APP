@@ -4,6 +4,6 @@ export interface Location {
   description?: string;
   inventories: string[];
   highlight: boolean;
-  creationDate: string;
-  modificationDate: string;
+  creationDate: number;
+  modificationDate: number;
 }

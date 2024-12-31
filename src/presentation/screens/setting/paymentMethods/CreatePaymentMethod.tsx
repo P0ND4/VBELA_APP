@@ -45,8 +45,8 @@ const CreatePaymentMethod: React.FC<CreatePaymentMethodProps> = ({ navigation, r
       id: defaultValue?.id || random(10),
       name: defaultValue?.name || "",
       icon: defaultValue?.icon || "image-outline",
-      creationDate: defaultValue?.creationDate || new Date().toISOString(),
-      modificationDate: new Date().toISOString(),
+      creationDate: defaultValue?.creationDate || new Date().getTime(),
+      modificationDate: new Date().getTime(),
     },
   });
 

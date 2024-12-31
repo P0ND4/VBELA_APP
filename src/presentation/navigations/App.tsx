@@ -21,6 +21,8 @@ import Order from "presentation/screens/order/Order";
 import Setting from "presentation/screens/setting/Setting";
 import Kitchen from "presentation/screens/kitchen/Kitchen";
 import Delivery from "presentation/screens/delivery/Delivery";
+import Home from "presentation/screens/Home";
+import Statistic from "presentation/screens/statistic/Statistic";
 
 const Drawer = createDrawerNavigator<RootApp>();
 
@@ -46,6 +48,14 @@ function App() {
       }}
       drawerContent={(props) => <CustomDrawer {...props} />}
     >
+      <Drawer.Screen
+        name="Home"
+        component={Home}
+        options={{
+          title: "Inicio",
+          drawerIcon: ({ color }) => <Ionicons name="home-outline" size={22} color={color} />,
+        }}
+      />
       {/* <Drawer.Screen
         name="Reservation"
         component={Accommodation}
@@ -54,6 +64,15 @@ function App() {
           drawerIcon: ({ color }) => <Ionicons name="business-outline" size={22} color={color} />,
         }}
       /> */}
+      <Drawer.Screen
+        name="Statistic"
+        component={Statistic}
+        options={{
+          title: "Estadística",
+          unmountOnBlur: true,
+          drawerIcon: ({ color }) => <Ionicons name="pie-chart-outline" size={22} color={color} />,
+        }}
+      />
       <Drawer.Screen
         name="Store"
         component={Store}
