@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
 import { useAppDispatch } from "application/store/hook";
 import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.store.entity";
-import SalesPreviewScreen from "presentation/screens/common/sales/trade/SalesPreviewScreen";
-import { add } from "application/slice/stores/products.and.services.slice";
+import { add } from "application/slice/stores/products.slice";
 import { StackNavigationProp } from "@react-navigation/stack";
+import SalesPreviewScreen from "presentation/screens/common/sales/trade/SalesPreviewScreen";
 
 type PreviewOrderProps = {
   navigation: StackNavigationProp<RootStore>;

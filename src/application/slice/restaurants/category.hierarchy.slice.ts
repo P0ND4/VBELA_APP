@@ -27,7 +27,7 @@ export const categoryHierarchySlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => categoryHierarchy(action.payload!));
+    builder.addCase(changeAll, (_, action) => categoryHierarchy(action.payload));
   },
 });
 

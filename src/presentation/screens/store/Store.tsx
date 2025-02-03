@@ -7,12 +7,16 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { Location } from "domain/entities/data/common";
 import { Swipeable } from "react-native-gesture-handler";
 import { remove } from "application/slice/stores/stores.slice";
-import { change, SalesNavigation } from "application/appState/navigation/sales.navigation.method.slice";
+import {
+  change,
+  SalesNavigation,
+} from "application/appState/navigation/sales.navigation.method.slice";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledText from "presentation/components/text/StyledText";
 import Layout from "presentation/components/layout/Layout";
 import LocationInformation from "../common/sales/LocationInformation";
 import StyledButton from "presentation/components/button/StyledButton";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type NavigationProps = StackNavigationProp<RootStore>;
 
@@ -37,31 +41,39 @@ const Card: React.FC<{ item: Location }> = ({ item }) => {
     );
   };
 
+  const removeItem = async (id: string) => {
+    dispatch(remove({ id }));
+    await apiClient({
+      url: endpoints.store.delete(id),
+      method: "DELETE",
+    });
+  };
+
   return (
     <>
       {/* <Swipeable renderRightActions={RightSwipe}> */}
-        <StyledButton
-          onPress={() => {
-            dispatch(change(SalesNavigation.Navigate));
-            navigation.navigate("ProviderStoreRoutes", {
-              screen: "CreateOrder",
-              params: { storeID: item.id },
-            });
-          }}
-          onLongPress={() => setShowInformation(true)}
-          style={styles.card}
-        >
-          {item.highlight && (
-            <Ionicons name="star" color={colors.primary} size={18} style={{ marginRight: 6 }} />
-          )}
-          <StyledText>{item.name}</StyledText>
-        </StyledButton>
+      <StyledButton
+        onPress={() => {
+          dispatch(change(SalesNavigation.Navigate));
+          navigation.navigate("ProviderStoreRoutes", {
+            screen: "CreateOrder",
+            params: { storeID: item.id },
+          });
+        }}
+        onLongPress={() => setShowInformation(true)}
+        style={styles.card}
+      >
+        {item.highlight && (
+          <Ionicons name="star" color={colors.primary} size={18} style={{ marginRight: 6 }} />
+        )}
+        <StyledText>{item.name}</StyledText>
+      </StyledButton>
       {/* </Swipeable> */}
       <LocationInformation
         visible={showInformation}
         location={item}
         onClose={() => setShowInformation(false)}
-        onPressDelete={() => dispatch(remove({ id: item.id }))}
+        onPressDelete={() => removeItem(item.id)}
         onPressEdit={() => {
           navigation.navigate("StoreRoutes", { screen: "CreateStore", params: { store: item } });
         }}

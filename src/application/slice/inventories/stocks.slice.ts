@@ -54,7 +54,7 @@ export const informationSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => stocks(action.payload!));
+    builder.addCase(changeAll, (_, action) => stocks(action.payload));
   },
 });
 

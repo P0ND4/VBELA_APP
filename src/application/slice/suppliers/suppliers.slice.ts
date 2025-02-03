@@ -27,7 +27,7 @@ export const supplierSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => suppliers(action.payload!));
+    builder.addCase(changeAll, (_, action) => suppliers(action.payload));
   },
 });
 

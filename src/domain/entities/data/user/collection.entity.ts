@@ -30,7 +30,7 @@ export interface Collection {
   stores: Location[];
   restaurants: Location[];
   productsAndServicesCategoryHierarchy: PSCategoryHierarchy[];
-  productsAndServices: Element[];
+  products: Element[];
   salesProtocol: SaleProtocol[];
   sales: Order[];
   nomenclatures: Nomenclature[];

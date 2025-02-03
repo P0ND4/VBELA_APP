@@ -27,7 +27,7 @@ export const collaboratorsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => collaborators(action.payload!));
+    builder.addCase(changeAll, (_, action) => collaborators(action.payload));
   },
 });
 

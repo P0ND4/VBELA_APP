@@ -12,6 +12,7 @@ import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import LocationInformation from "../common/sales/LocationInformation";
 import { Swipeable } from "react-native-gesture-handler";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
@@ -39,30 +40,39 @@ const Card: React.FC<{ item: Location }> = ({ item }) => {
     );
   };
 
+  const removeItem = async (id: string) => {
+    dispatch(remove({ id }));
+    await apiClient({
+      url: endpoints.restaurant.delete(id),
+      method: "DELETE",
+      data: { id },
+    });
+  };
+
   return (
     <>
       {/* <Swipeable renderRightActions={RightSwipe}> */}
-        <StyledButton
-          onPress={() =>
-            navigation.navigate("RestaurantRoutes", {
-              screen: "Table",
-              params: { restaurantID: item.id },
-            })
-          }
-          onLongPress={() => setShowInformation(true)}
-          style={styles.card}
-        >
-          {item.highlight && (
-            <Ionicons name="star" color={colors.primary} size={18} style={{ marginRight: 6 }} />
-          )}
-          <StyledText>{item.name}</StyledText>
-        </StyledButton>
+      <StyledButton
+        onPress={() =>
+          navigation.navigate("RestaurantRoutes", {
+            screen: "Table",
+            params: { restaurantID: item.id },
+          })
+        }
+        onLongPress={() => setShowInformation(true)}
+        style={styles.card}
+      >
+        {item.highlight && (
+          <Ionicons name="star" color={colors.primary} size={18} style={{ marginRight: 6 }} />
+        )}
+        <StyledText>{item.name}</StyledText>
+      </StyledButton>
       {/* </Swipeable> */}
       <LocationInformation
         visible={showInformation}
         location={item}
         onClose={() => setShowInformation(false)}
-        onPressDelete={() => dispatch(remove({ id: item.id }))}
+        onPressDelete={() => removeItem(item.id)}
         onPressEdit={() => {
           navigation.navigate("RestaurantRoutes", {
             screen: "CreateRestaurant",

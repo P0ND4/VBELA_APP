@@ -29,7 +29,7 @@ export const invoiceInformationSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => initialState);
-    builder.addCase(changeAll, (_, action) => invoiceInformation(action.payload!));
+    builder.addCase(changeAll, (_, action) => invoiceInformation(action.payload));
   },
 });
 

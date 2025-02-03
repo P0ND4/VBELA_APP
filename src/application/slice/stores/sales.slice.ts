@@ -27,7 +27,7 @@ export const salesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => sales(action.payload!));
+    builder.addCase(changeAll, (_, action) => sales(action.payload));
   },
 });
 

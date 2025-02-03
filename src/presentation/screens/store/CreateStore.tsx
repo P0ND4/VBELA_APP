@@ -6,6 +6,7 @@ import { Location } from "domain/entities/data/common";
 import { add, edit } from "application/slice/stores/stores.slice";
 import { Visible } from "domain/enums/data/inventory/visible.enums";
 import CreateLocation from "../common/sales/CreateLocation";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type CreateStoreProps = {
   navigation: StackNavigationProp<RootStore>;
@@ -21,17 +22,29 @@ const CreateStore: React.FC<CreateStoreProps> = ({ navigation, route }) => {
     navigation.setOptions({ title: `${store ? "Editar" : "Crear"} tienda` });
   }, []);
 
-  const save = (data: Location) => {
+  const save = async (data: Location) => {
     dispatch(add(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.store.post(),
+      method: "POST",
+      data,
+    });
   };
 
-  const update = (data: Location) => {
+  const update = async (data: Location) => {
     dispatch(edit(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.store.put(),
+      method: "PUT",
+      data,
+    });
   };
 
-  return <CreateLocation onUpdate={update} onSave={save} visible={Visible.Store} defaultValue={store} />;
+  return (
+    <CreateLocation onUpdate={update} onSave={save} visible={Visible.Store} defaultValue={store} />
+  );
 };
 
 export default CreateStore;

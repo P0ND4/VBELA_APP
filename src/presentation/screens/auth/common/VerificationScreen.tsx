@@ -9,22 +9,37 @@ import {
   TouchableWithoutFeedback,
   View,
   ActivityIndicator,
+  Vibration,
 } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
+import { batch } from "react-redux";
+import { changeAll } from "application/store/actions";
+import { login } from "infrastructure/auth/login";
+import { change } from "application/slice/user/user.slice";
+import { active } from "application/slice/user/session.slice";
+import { useAppDispatch } from "application/store/hook";
 
 type VerificationScreenProps = {
   description: string;
+  checkHandler: (code: string) => Promise<boolean>;
+  identifier: string;
 };
 
-const VerificationScreen: React.FC<VerificationScreenProps> = ({ description }) => {
+const VerificationScreen: React.FC<VerificationScreenProps> = ({
+  description,
+  checkHandler,
+  identifier,
+}) => {
   const { colors } = useTheme();
 
   const [inputContainerIsFocused, setInputContainerIsFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState("");
+
+  const dispatch = useAppDispatch();
 
   const textInputRef = useRef<TextInput>(null);
 
@@ -74,7 +89,24 @@ const VerificationScreen: React.FC<VerificationScreenProps> = ({ description }) 
 
   const handleVerification = async () => {
     setLoading(true);
-    // Lógica de verificación aquí...
+
+    const validated = await checkHandler(code);
+
+    if (!validated) {
+      Vibration.vibrate();
+      setCode("");
+    } else {
+      const user = await login(identifier);
+
+      if (user) {
+        batch(() => {
+          dispatch(changeAll(user));
+          dispatch(change({ identifier }));
+          dispatch(active());
+        });
+      }
+    }
+
     setLoading(false);
   };
 

@@ -34,7 +34,7 @@ export const storesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => stores(action.payload!));
+    builder.addCase(changeAll, (_, action) => stores(action.payload));
   },
 });
 

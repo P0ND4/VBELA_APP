@@ -7,6 +7,8 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { useAppDispatch } from "application/store/hook";
 import { random } from "shared/utils";
 import { add, edit, remove } from "application/slice/settings/payment.methods.slice";
+import { PaymentMethods } from "domain/entities/data/settings";
+import apiClient, { endpoints } from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -90,16 +92,22 @@ const CreatePaymentMethod: React.FC<CreatePaymentMethodProps> = ({ navigation, r
 
   const icon = watch("icon");
 
+  const removeItem = async (id: string) => {
+    dispatch(remove({ id }));
+    navigation.pop();
+    await apiClient({
+      url: endpoints.setting.paymentMethods.delete(id),
+      method: "DELETE",
+    });
+  };
+
   useEffect(() => {
     if (defaultValue) {
       navigation.setOptions({
         headerRight: () => (
           <TouchableOpacity
             style={{ paddingRight: 15 }}
-            onPress={() => {
-              dispatch(remove({ id: defaultValue.id }));
-              navigation.pop();
-            }}
+            onPress={() => removeItem(defaultValue.id)}
           >
             <Ionicons name="trash-outline" color={colors.text} size={25} />
           </TouchableOpacity>
@@ -107,6 +115,24 @@ const CreatePaymentMethod: React.FC<CreatePaymentMethodProps> = ({ navigation, r
       });
     }
   }, [defaultValue]);
+
+  const save = async (data: PaymentMethods) => {
+    dispatch(add(data));
+    await apiClient({
+      url: endpoints.setting.paymentMethods.post(),
+      method: "POST",
+      data,
+    });
+  };
+
+  const update = async (data: PaymentMethods) => {
+    dispatch(edit(data));
+    await apiClient({
+      url: endpoints.setting.paymentMethods.put(),
+      method: "PUT",
+      data,
+    });
+  };
 
   return (
     <Layout>
@@ -159,8 +185,7 @@ const CreatePaymentMethod: React.FC<CreatePaymentMethodProps> = ({ navigation, r
       <StyledButton
         backgroundColor={colors.primary}
         onPress={handleSubmit((data) => {
-          if (!defaultValue) dispatch(add(data));
-          else dispatch(edit(data));
+          !defaultValue ? save(data) : update(data);
           navigation.pop();
         })}
       >

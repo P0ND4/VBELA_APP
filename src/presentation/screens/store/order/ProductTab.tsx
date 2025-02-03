@@ -5,7 +5,7 @@ import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.stor
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useTheme } from "@react-navigation/native";
 import { Element } from "domain/entities/data/common/element.entity";
-import { add, edit, remove } from "application/slice/stores/products.and.services.slice";
+import { add, edit, remove } from "application/slice/stores/products.slice";
 import { random } from "shared/utils";
 import { Visible } from "domain/enums/data/inventory/visible.enums";
 import ElementTab from "presentation/screens/common/sales/element/ElementTab";

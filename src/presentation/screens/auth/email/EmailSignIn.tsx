@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Keyboard, View, ActivityIndicator } from "react-native";
+import { Keyboard, View, ActivityIndicator, StyleSheet, Alert } from "react-native";
 import { AuthNavigationProp } from "domain/entities/navigation";
 import { useTheme } from "@react-navigation/native";
+import apiClient, { endpoints } from "infrastructure/api/server";
 import StyledText from "presentation/components/text/StyledText";
 import StyledInput from "presentation/components/input/StyledInput";
 import Layout from "presentation/components/layout/Layout";
@@ -9,6 +10,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 
 import * as WebBrowser from "expo-web-browser";
 import StyledButton from "presentation/components/button/StyledButton";
+import axios from "axios";
 
 const EMAIL_EXPRESSION = /^([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$/;
 const TERMS_OF_SERVICE_URL = "https://sites.google.com/view/terminos-y-condiciones-vbela/inicio";
@@ -58,18 +60,23 @@ const EmailSignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
           Keyboard.dismiss();
           if (EMAIL_EXPRESSION.test(email) && !loading) {
             setLoading(true);
-            // const res = await verifyEmail({ email: value });
-            navigation.navigate("EmailVerification", { value: email });
-            setTimeout(() => setLoading(false), 3000);
-            // if (res.error) return Alert.alert("Error", "Hubo un fallo al enviar la verificación"); //TODO COLOCAR ALERT
-            // navigation.navigate("Verification", { value, type: "email" });
+
+            try {
+              await apiClient({
+                url: endpoints.verify.email(),
+                method: "POST",
+                data: { email },
+              });
+
+              navigation.navigate("EmailVerification", { email });
+            } catch (error) {
+              Alert.alert("Error", `Hubo un error al verificar el correo electrónico: ${error}`);
+            }
+
+            setLoading(false);
           }
         }}
-        style={{
-          flexDirection: "row",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
+        style={styles.center}
         disable={!EMAIL_EXPRESSION.test(email) || loading}
       >
         {loading && <ActivityIndicator size="small" color="#FFFFFF" />}
@@ -79,5 +86,13 @@ const EmailSignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
     </Layout>
   );
 };
+
+const styles = StyleSheet.create({
+  center: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
 
 export default EmailSignIn;

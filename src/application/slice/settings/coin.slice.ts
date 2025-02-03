@@ -12,7 +12,7 @@ export const coinSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => "USD");
-    builder.addCase(changeAll, (_, action) => coin(action.payload!));
+    builder.addCase(changeAll, (_, action) => coin(action.payload));
   },
 });
 

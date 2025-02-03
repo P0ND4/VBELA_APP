@@ -31,7 +31,7 @@ export const expensesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => expenses(action.payload!));
+    builder.addCase(changeAll, (_, action) => expenses(action.payload));
   },
 });
 

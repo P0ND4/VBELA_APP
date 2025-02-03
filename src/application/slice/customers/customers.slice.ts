@@ -27,7 +27,7 @@ export const customersSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => customers(action.payload!));
+    builder.addCase(changeAll, (_, action) => customers(action.payload));
   },
 });
 

@@ -7,6 +7,7 @@ import StyledText from "presentation/components/text/StyledText";
 import StyledInput from "presentation/components/input/StyledInput";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { change } from "application/slice/settings/coin.slice";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type CardProps = {
   name: string;
@@ -180,6 +181,15 @@ const Coin = () => {
     } else setData(coins);
   }, [search]);
 
+  const changeCoin = async (coin: string) => {
+    dispatch(change(coin));
+    await apiClient({
+      url: endpoints.setting.coin(),
+      method: "PATCH",
+      data: { coin },
+    });
+  };
+
   return (
     <Layout style={{ padding: 0 }}>
       <StyledInput
@@ -192,7 +202,7 @@ const Coin = () => {
       <FlatList
         data={data}
         keyExtractor={(item) => item}
-        renderItem={({ item }) => <Card name={item} onPress={() => dispatch(change(item))} />}
+        renderItem={({ item }) => <Card name={item} onPress={() => changeCoin(item)} />}
         initialNumToRender={10}
         maxToRenderPerBatch={5}
         windowSize={5}

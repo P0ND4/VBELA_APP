@@ -15,7 +15,7 @@ export const darkModeSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => false);
-    builder.addCase(changeAll, (_, action) => mode(action.payload!));
+    builder.addCase(changeAll, (_, action) => mode(action.payload));
   },
 });
 

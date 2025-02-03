@@ -3,12 +3,12 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const productsAndServices = (collection: Collection) => collection.productsAndServices;
+const products = (collection: Collection) => collection.products;
 
 const initialState: Element[] = [];
 
-export const productsAndServicesSlice = createSlice({
-  name: "products-and-services",
+export const productsSlice = createSlice({
+  name: "products",
   initialState,
   reducers: {
     change: (_, action: PayloadAction<Element[]>) => action.payload,
@@ -34,26 +34,26 @@ export const productsAndServicesSlice = createSlice({
     },
     removeStock: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;
-      return state.map((productsAndServices) => ({
-        ...productsAndServices,
-        stockIDS: productsAndServices.stockIDS?.filter((stock) => stock !== id),
+      return state.map((products) => ({
+        ...products,
+        stockIDS: products.stockIDS?.filter((stock) => stock !== id),
       }));
     },
     removeRecipe: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;
-      return state.map((productsAndServices) => ({
-        ...productsAndServices,
-        packageIDS: productsAndServices.packageIDS?.filter((recipe) => recipe !== id),
+      return state.map((products) => ({
+        ...products,
+        packageIDS: products.packageIDS?.filter((recipe) => recipe !== id),
       }));
     },
     clean: () => [],
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => productsAndServices(action.payload!));
+    builder.addCase(changeAll, (_, action) => products(action.payload));
   },
 });
 
 export const { add, edit, remove, clean, change, discount, removeStock, removeRecipe } =
-  productsAndServicesSlice.actions;
-export default productsAndServicesSlice.reducer;
+  productsSlice.actions;
+export default productsSlice.reducer;

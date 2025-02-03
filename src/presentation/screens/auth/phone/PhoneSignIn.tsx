@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Keyboard, View, ActivityIndicator, StyleSheet } from "react-native";
+import { Keyboard, View, ActivityIndicator, StyleSheet, Alert } from "react-native";
 import { AuthNavigationProp } from "domain/entities/navigation";
 import { useTheme } from "@react-navigation/native";
 import StyledText from "presentation/components/text/StyledText";
@@ -10,6 +10,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import FlagButton from "presentation/components/button/FlagButton";
 import PhoneNumberPicker from "presentation/components/forms/PhoneNumberPicker";
 import { Country } from "domain/entities/shared/Country";
+import apiClient, { endpoints } from "infrastructure/api/server";
 import countries from "shared/data/countries.json";
 
 import * as localization from "expo-localization";
@@ -91,18 +92,24 @@ const PhoneSignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
     async (channel: string) => {
       const phoneNumber = `+${countrySelection.country_phone_code}${phone}`;
 
-      navigation.navigate("PhoneVerification", { value: phoneNumber });
-      // setDisable(true);
-      // const res = await verifyPhoneNumber({
-      //   phoneNumber,
-      //   channel,
-      // });
-      // if (res.error)
-      //   return Alert.alert(
-      //     "Error",
-      //     `Hubo un fallo al enviar la verificación ${res.message ? `de tipo: ${res.message}` : ""}`,
-      //   );
-      // navigation.navigate("Verification", { value: phoneNumber, type: "phone" });
+      setDisable(true);
+
+      try {
+        await apiClient({
+          url: endpoints.verify.phone(),
+          method: "POST",
+          data: {
+            to: phoneNumber,
+            channel,
+          },
+        });
+
+        navigation.navigate("PhoneVerification", { phone: phoneNumber });
+      } catch (error) {
+        Alert.alert("Error", `Hubo un error al verificar el número de teléfono: ${error}`);
+      }
+
+      setDisable(false);
     },
     [countrySelection, phone],
   );

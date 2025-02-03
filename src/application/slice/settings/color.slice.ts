@@ -14,7 +14,7 @@ export const colorSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => 0);
-    builder.addCase(changeAll, (_, action) => color(action.payload!));
+    builder.addCase(changeAll, (_, action) => color(action.payload));
   },
 });
 

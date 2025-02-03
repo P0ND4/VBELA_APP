@@ -27,7 +27,7 @@ export const reservationsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => reservations(action.payload!));
+    builder.addCase(changeAll, (_, action) => reservations(action.payload));
   },
 });
 

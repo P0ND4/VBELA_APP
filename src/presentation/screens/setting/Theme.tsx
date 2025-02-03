@@ -7,6 +7,7 @@ import { change } from "application/slice/settings/color.slice";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type CardProps = {
   name: string;
@@ -20,11 +21,17 @@ const Card: React.FC<CardProps> = ({ name, value }) => {
 
   const dispatch = useAppDispatch();
 
+  const changeColor = async () => {
+    dispatch(change(value));
+    await apiClient({
+      url: endpoints.setting.color(),
+      method: "PATCH",
+      data: { color: value },
+    });
+  };
+
   return (
-    <TouchableOpacity
-      style={[styles.card, { borderColor: colors.border }]}
-      onPress={() => dispatch(change(value))}
-    >
+    <TouchableOpacity style={[styles.card, { borderColor: colors.border }]} onPress={changeColor}>
       <StyledText>{name}</StyledText>
       {color === value && <Ionicons name="checkmark" size={30} color={colors.primary} />}
     </TouchableOpacity>
@@ -38,12 +45,18 @@ const Theme: React.FC = () => {
 
   const dispatch = useAppDispatch();
 
+  const changeTheme = async () => {
+    dispatch(toggle());
+    await apiClient({
+      url: endpoints.setting.darkMode(),
+      method: "PATCH",
+      data: { darkMode: !darkMode },
+    });
+  };
+
   return (
     <Layout style={{ padding: 0 }}>
-      <TouchableOpacity
-        style={[styles.card, { borderColor: colors.border }]}
-        onPress={() => dispatch(toggle())}
-      >
+      <TouchableOpacity style={[styles.card, { borderColor: colors.border }]} onPress={changeTheme}>
         <StyledText>
           MODO <StyledText color={colors.primary}>({darkMode ? "OSCURO" : "CLARO"})</StyledText>
         </StyledText>

@@ -27,7 +27,7 @@ export const invoicesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => invoices(action.payload!));
+    builder.addCase(changeAll, (_, action) => invoices(action.payload));
   },
 });
 

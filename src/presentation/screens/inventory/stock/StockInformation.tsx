@@ -15,7 +15,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { remove } from "application/slice/inventories/stocks.slice";
 import { removeIngredient } from "application/slice/inventories/recipes.slice";
 import { batch } from "react-redux";
-import { removeStock as removeStockProduct } from "application/slice/stores/products.and.services.slice";
+import { removeStock as removeStockProduct } from "application/slice/stores/products.slice";
 import { removeStock as removeStockMenu } from "application/slice/restaurants/menu.slice";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {

@@ -26,7 +26,7 @@ export const zonesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => zones(action.payload!));
+    builder.addCase(changeAll, (_, action) => zones(action.payload));
   },
 });
 

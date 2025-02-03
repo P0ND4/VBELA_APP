@@ -4,6 +4,7 @@ import { useTheme } from "@react-navigation/native";
 import { Country } from "domain/entities/shared/Country";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { change } from "application/slice/settings/invoice.information.slice";
+import apiClient, { endpoints } from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledInput from "presentation/components/input/StyledInput";
 import StyledButton from "presentation/components/button/StyledButton";
@@ -41,6 +42,25 @@ const Invoice = () => {
     const found = countries.find((c) => c.country_phone_code === invoiceInformation.countryCode);
     if (found) setCountrySelection(found);
   }, [invoiceInformation]);
+
+  const changeInvoice = async () => {
+    const data = {
+      company,
+      business,
+      address,
+      identification,
+      countryCode: countrySelection.country_phone_code,
+      phoneNumber,
+      complement,
+    };
+    dispatch(change(data));
+    Alert.alert("Guardado", "Se ha guardado la información satisfactoriamente.");
+    await apiClient({
+      url: endpoints.setting.invoiceInformation(),
+      method: "PATCH",
+      data,
+    });
+  };
 
   return (
     <>
@@ -89,22 +109,7 @@ const Invoice = () => {
             onChangeText={(text) => setComplement(text)}
           />
         </View>
-        <StyledButton
-          backgroundColor={colors.primary}
-          onPress={() => {
-            const data = {
-              company,
-              business,
-              address,
-              identification,
-              countryCode: countrySelection.country_phone_code,
-              phoneNumber,
-              complement,
-            };
-            dispatch(change(data));
-            Alert.alert("Guardado", "Se ha guardado la información satisfactoriamente.");
-          }}
-        >
+        <StyledButton backgroundColor={colors.primary} onPress={changeInvoice}>
           <StyledText color="#FFFFFF" center>
             Guardar
           </StyledText>

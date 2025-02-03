@@ -16,7 +16,7 @@ import ScreenModal from "presentation/components/modal/ScreenModal";
 import StyledTextInformation from "presentation/components/text/StyledTextInformation";
 import { batch } from "react-redux";
 import { remove } from "application/slice/inventories/recipes.slice";
-import { removeRecipe as removeRecipeProduct } from "application/slice/stores/products.and.services.slice";
+import { removeRecipe as removeRecipeProduct } from "application/slice/stores/products.slice";
 import { removeRecipe as removeRecipeMenu } from "application/slice/restaurants/menu.slice";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {

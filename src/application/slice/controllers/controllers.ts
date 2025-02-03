@@ -27,7 +27,7 @@ export const controllersSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => payroll(action.payload!));
+    builder.addCase(changeAll, (_, action) => payroll(action.payload));
   },
 });
 

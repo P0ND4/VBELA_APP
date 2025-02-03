@@ -28,7 +28,7 @@ export const tablesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => tables(action.payload!));
+    builder.addCase(changeAll, (_, action) => tables(action.payload));
   },
 });
 

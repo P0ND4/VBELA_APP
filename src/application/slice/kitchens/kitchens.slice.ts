@@ -27,7 +27,7 @@ export const kitchensSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => kitchens(action.payload!));
+    builder.addCase(changeAll, (_, action) => kitchens(action.payload));
   },
 });
 

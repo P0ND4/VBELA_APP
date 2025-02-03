@@ -5,8 +5,8 @@ export type RootAuth = {
   SignIn: undefined;
   PhoneSignIn: undefined;
   EmailSignIn: undefined;
-  EmailVerification: { value: string };
-  PhoneVerification: { value: string };
+  EmailVerification: { email: string };
+  PhoneVerification: { phone: string };
   UserSelection: undefined;
 };
 

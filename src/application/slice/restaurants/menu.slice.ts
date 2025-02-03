@@ -49,7 +49,7 @@ export const menuSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => menu(action.payload!));
+    builder.addCase(changeAll, (_, action) => menu(action.payload));
   },
 });
 

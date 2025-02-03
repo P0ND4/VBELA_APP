@@ -27,7 +27,7 @@ export const roomsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => rooms(action.payload!));
+    builder.addCase(changeAll, (_, action) => rooms(action.payload));
   },
 });
 

@@ -2,7 +2,7 @@ import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { Order, Save, Selection } from "domain/entities/data/common/order.entity";
 import { add, edit } from "application/slice/stores/sales.slice";
 import { batch } from "react-redux";
-import { discount } from "application/slice/stores/products.and.services.slice";
+import { discount } from "application/slice/stores/products.slice";
 import {
   useExtractMovement,
   useExtractStock,
@@ -14,7 +14,7 @@ import { addMovement } from "application/slice/inventories/stocks.slice";
 export type CallbackProps = { order: Order };
 
 const useSave = () => {
-  const products = useAppSelector((state) => state.productsAndServices);
+  const products = useAppSelector((state) => state.products);
 
   const { organizeOrder } = useOrganizeData();
   const extractMovement = useExtractMovement();

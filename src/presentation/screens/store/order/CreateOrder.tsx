@@ -5,9 +5,10 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.store.entity";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { Element } from "domain/entities/data/common/element.entity";
-import { add } from "application/slice/stores/products.and.services.slice";
+import { add } from "application/slice/stores/products.slice";
 import SalesBoxScreen from "presentation/screens/common/sales/trade/SalesBoxScreen";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type CreateOrderProps = {
   navigation: StackNavigationProp<RootStore>;
@@ -17,7 +18,7 @@ type CreateOrderProps = {
 const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
-  const products = useAppSelector((state) => state.productsAndServices);
+  const products = useAppSelector((state) => state.products);
 
   const [elements, setElements] = useState<Element[]>([]);
 
@@ -25,6 +26,15 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
   const defaultValue = route.params?.defaultValue;
 
   const dispatch = useAppDispatch();
+
+  const addElement = async (data: Element) => {
+    dispatch(add(data));
+    await apiClient({
+      url: endpoints.product.post(),
+      method: "POST",
+      data,
+    });
+  };
 
   useEffect(() => {
     navigation.setOptions({
@@ -51,7 +61,7 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
       defaultValue={defaultValue}
       locationID={storeID}
       elements={elements}
-      addElement={(data) => dispatch(add(data))}
+      addElement={addElement}
       onPressEdit={(defaultValue) => {
         navigation.navigate("StoreRoutes", {
           screen: "ProductTab",
@@ -59,9 +69,11 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
         });
       }}
       sendButton={() => navigation.navigate("PreviewOrder", { storeID })}
-      buttonsEvent={{ 
-        // delivery: () => alert("Para la segunda actualización") 
-      }}
+      buttonsEvent={
+        {
+          // delivery: () => alert("Para la segunda actualización")
+        }
+      }
     />
   );
 };

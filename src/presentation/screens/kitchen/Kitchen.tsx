@@ -18,7 +18,7 @@ const Tab = createMaterialTopTabNavigator();
 
 //TODO EN DELIVERY TENEMOS 3 ESTADOS: ESPERANDO (Llevado por - agregar), ENVIADO Y ENTREGADO.
 
-const Kitchen = () => {
+const Kitchen: React.FC = () => {
   const { colors } = useTheme();
 
   const requested = useAppSelector(selectRequestedOrder);

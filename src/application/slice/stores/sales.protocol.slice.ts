@@ -27,7 +27,7 @@ export const salesProtocolSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => salesProtocol(action.payload!));
+    builder.addCase(changeAll, (_, action) => salesProtocol(action.payload));
   },
 });
 
