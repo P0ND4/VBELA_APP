@@ -1,10 +1,9 @@
-import "ts-node/register"; // Add this to import TypeScript files
 import { ExpoConfig } from "expo/config";
 
 const config: ExpoConfig = {
   name: "VBELA",
   slug: "vbela",
-  version: "4.0.0-beta.4",
+  version: process.env.EXPO_PUBLIC_VERSION ?? "1.0.0",
   orientation: "portrait",
   icon: "./src/presentation/assets/logo.png",
   userInterfaceStyle: "automatic",
@@ -29,8 +28,8 @@ const config: ExpoConfig = {
   },
   android: {
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json",
-    // package: "com.app.vbela",
-    // versionCode: 68,
+    package: "com.app.vbela",
+    versionCode: 68,
     adaptiveIcon: {
       foregroundImage: "./src/presentation/assets/adaptive-icon.png",
       backgroundColor: "#FFFFFF",
@@ -54,7 +53,7 @@ const config: ExpoConfig = {
     androidMode: "default",
     icon: "./src/presentation/assets/notification-icon.png",
   },
-  scheme: ["vbela", "fb1235340873743796"],
+  scheme: ["vbela"],
   extra: { eas: { projectId: "0dd838a6-95db-4883-9a7f-7e6112496cd0" } },
   owner: "lmacml",
   experiments: {

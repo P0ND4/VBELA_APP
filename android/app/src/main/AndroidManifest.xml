@@ -32,7 +32,6 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="vbela"/>
-        <data android:scheme="fb1235340873743796"/>
         <data android:scheme="com.app.vbela"/>
         <data android:scheme="exp+vbela"/>
       </intent-filter>
