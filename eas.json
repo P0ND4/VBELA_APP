@@ -5,20 +5,10 @@
   },
   "build": {
     "development": {
-      "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease",
-        "developmentClient": true
-      }
+      "environment": "development"
     },
     "production": {
-      "ios": {
-        "resourceClass": "m1-medium"
-      },
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://vbelapp.com",
-        "EXPO_PUBLIC_VERSION": "4.0.0-beta.4"
-      }
+      "environment": "production"
     }
   },
   "submit": {

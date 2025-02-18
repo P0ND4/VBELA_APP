@@ -8,8 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "postinstall": "patch-package",
-    "lint": "eslint ./src",
-    "tsc": "tsc ./src"
+    "lint": "eslint ./src"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
@@ -74,6 +73,7 @@
   "devDependencies": {
     "@babel/core": "^7.24.0",
     "@types/chroma-js": "^2.4.5",
+    "@types/node": "^22.13.4",
     "@types/react": "~18.2.79",
     "babel-plugin-module-resolver": "^5.0.0",
     "babel-plugin-transform-inline-environment-variables": "^0.4.4",
