@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./src/presentation/assets/logo.png" alt="VBELA Logo" width="200">
+  <img src="./src/presentation/assets/icon.png" alt="VBELA Logo" width="200">
 </p>
 
 # VBELA
