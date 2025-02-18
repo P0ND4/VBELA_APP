@@ -28,8 +28,6 @@ const config: ExpoConfig = {
   },
   android: {
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json",
-    package: "com.app.vbela",
-    versionCode: 68,
     adaptiveIcon: {
       foregroundImage: "./src/presentation/assets/adaptive-icon.png",
       backgroundColor: "#FFFFFF",
