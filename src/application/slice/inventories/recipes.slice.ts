@@ -23,6 +23,10 @@ export const informationSlice = createSlice({
       const { id } = action.payload;
       return state.filter((s) => s.id !== id);
     },
+    removeByInventoryID: (state, action: PayloadAction<{ inventoryID: string }>) => {
+      const { inventoryID } = action.payload;
+      return state.filter((s) => s.inventoryID !== inventoryID);
+    },
     removeIngredient: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;
       return state.map((recipe) => ({
@@ -38,5 +42,6 @@ export const informationSlice = createSlice({
   },
 });
 
-export const { add, edit, remove, clean, change, removeIngredient } = informationSlice.actions;
+export const { add, edit, remove, clean, change, removeIngredient, removeByInventoryID } =
+  informationSlice.actions;
 export default informationSlice.reducer;

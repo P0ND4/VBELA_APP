@@ -19,6 +19,7 @@ import Layout from "presentation/components/layout/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type CreateStockProps = {
   navigation: StackNavigationProp<RootInventory>;
@@ -40,7 +41,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
       reference: defaultValue?.reference || "",
       brand: defaultValue?.brand || "",
       currentValue: defaultValue?.currentValue || 0,
-      movement: defaultValue?.movement || [],
+      movements: defaultValue?.movements || [],
       creationDate: defaultValue?.creationDate || new Date().getTime(),
       modificationDate: new Date().getTime(),
     },
@@ -57,14 +58,24 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
 
   const dispatch = useAppDispatch();
 
-  const save = (data: Stock) => {
+  const save = async (data: Stock) => {
     dispatch(add(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.stock.post(),
+      method: "POST",
+      data,
+    });
   };
 
-  const update = (data: Stock) => {
+  const update = async (data: Stock) => {
     dispatch(edit(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.stock.put(),
+      method: "PUT",
+      data,
+    });
   };
 
   const handleSaveOrUpdate = (data: Stock) => (defaultValue ? update(data) : save(data));

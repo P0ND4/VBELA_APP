@@ -1,22 +1,24 @@
 import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useAppDispatch } from "application/store/hook";
 import { useTheme } from "@react-navigation/native";
+import { cleanAll } from "application/store/actions";
+import { signOutWithGoogle } from "infrastructure/auth/google.auth";
+import apiClient, { endpoints } from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { cleanAll } from "application/store/actions";
-import { signOutWithGoogle } from "infrastructure/auth/google.auth";
 
 const Account = () => {
   const { colors } = useTheme();
 
   const dispatch = useAppDispatch();
 
-  const logOut = async () => {
+  const logOut = async (callback: () => void) => {
     await signOutWithGoogle();
     dispatch(cleanAll());
+    callback();
   };
 
   return (
@@ -34,11 +36,7 @@ const Account = () => {
             Sincronizado
           </StyledText>
         </View>
-        <StyledButton
-          style={styles.planButton}
-          backgroundColor={colors.primary}
-          onPress={() => {}}
-        >
+        <StyledButton style={styles.planButton} backgroundColor={colors.primary} onPress={() => {}}>
           <StyledText verySmall color="#FFFFFF">
             PLAN GRATUITO
           </StyledText>
@@ -46,11 +44,51 @@ const Account = () => {
       </View>
       <View>
         <StyledText right>4.0.0-beta.1</StyledText>
-        {/* <StyledButton style={styles.row} onPress={() => {}}>
-          <StyledText>Borrar datos personales</StyledText>
+        <StyledButton
+          style={styles.row}
+          onPress={() => {
+            Alert.alert(
+              "EY!",
+              "¿Estás seguro de que deseas borrar tu cuenta?",
+              [
+                {
+                  text: "Si",
+                  onPress: () => {
+                    const callback = async () => {
+                      await apiClient({
+                        url: endpoints.user.delete(),
+                        method: "DELETE",
+                      });
+                    };
+                    logOut(callback);
+                  },
+                },
+                {
+                  text: "No",
+                  style: "cancel",
+                },
+              ],
+              {
+                cancelable: true,
+              },
+            );
+          }}
+        >
+          <StyledText>Borrar cuenta</StyledText>
           <Ionicons name="chevron-forward" color={colors.text} size={19} />
-        </StyledButton> */}
-        <StyledButton backgroundColor={colors.primary} onPress={logOut}>
+        </StyledButton>
+        <StyledButton
+          backgroundColor={colors.primary}
+          onPress={() => {
+            const callback = async () => {
+              await apiClient({
+                url: endpoints.auth.logout(),
+                method: "POST",
+              });
+            };
+            logOut(callback);
+          }}
+        >
           <StyledText color="#FFFFFF" center>
             Cerrar sesión
           </StyledText>

@@ -14,6 +14,7 @@ import StyledInput from "presentation/components/input/StyledInput";
 import StyledButton from "presentation/components/button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type CreateTableProps = {
   navigation: StackNavigationProp<RootRestaurant>;
@@ -55,7 +56,7 @@ const CreateTable: React.FC<CreateTableProps> = ({ navigation, route }) => {
     });
   }, [restaurants]);
 
-  const save = (data: Table) => {
+  const save = async (data: Table) => {
     const multiple = Array.from({ length: parseInt(repeat, 10) || 1 }, (_, index) => ({
       ...data,
       id: random(10),
@@ -63,16 +64,27 @@ const CreateTable: React.FC<CreateTableProps> = ({ navigation, route }) => {
     }));
     dispatch(addMultiple(multiple));
     navigation.pop();
+    await apiClient({
+      url: endpoints.table.postMultiple(),
+      method: "POST",
+      data: multiple,
+    });
   };
 
-  const update = (data: Table) => {
+  const update = async (data: Table) => {
+    console.log(data);
     dispatch(edit(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.table.put(),
+      method: "PUT",
+      data,
+    });
   };
 
-  const handleSaveOrUpdate = (data: any) => {
-    const changed = { ...data, capacity: parseInt(data.capacity, 10) };
-    defaultValue ? update(changed) : save(changed);
+  const handleSaveOrUpdate = (data: Table) => {
+    if (defaultValue) update(data);
+    else save(data);
   };
 
   return (

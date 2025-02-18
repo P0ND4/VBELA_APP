@@ -20,6 +20,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import ScreenModal from "presentation/components/modal/ScreenModal";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 const GET_TAB_NAME = {
   [Visible.Both]: "RECETAS/PAQUETES",
@@ -176,14 +177,24 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
     navigation.setOptions({ title: `Crear ${GET_TAB_NAME[inventory.visible]}` });
   }, [inventory]);
 
-  const save = (data: Recipe) => {
+  const save = async (data: Recipe) => {
     dispatch(add(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.recipe.post(),
+      method: "POST",
+      data,
+    });
   };
 
-  const update = (data: Recipe) => {
+  const update = async (data: Recipe) => {
     dispatch(edit(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.recipe.put(),
+      method: "PUT",
+      data,
+    });
   };
 
   const cost = ingredients.reduce((a, b) => {

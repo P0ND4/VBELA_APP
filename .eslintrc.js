@@ -10,5 +10,6 @@ module.exports = {
       },
     ],
     "react-hooks/exhaustive-deps": "off",
+    "import/no-unresolved": "off",
   },
 };

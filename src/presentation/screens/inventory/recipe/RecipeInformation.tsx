@@ -18,6 +18,7 @@ import { batch } from "react-redux";
 import { remove } from "application/slice/inventories/recipes.slice";
 import { removeRecipe as removeRecipeProduct } from "application/slice/stores/products.slice";
 import { removeRecipe as removeRecipeMenu } from "application/slice/restaurants/menu.slice";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   const { colors } = useTheme();
@@ -119,11 +120,16 @@ const RecipeInformation: React.FC<CreateStockProps> = ({ navigation, route }) =>
     else setData(found);
   }, [recipes, recipe]);
 
-  const removeData = () => {
+  const removeData = async () => {
     batch(() => {
       dispatch(remove({ id: recipe.id }));
-      dispatch(removeRecipeProduct({ id: recipe.id }));
-      dispatch(removeRecipeMenu({ id: recipe.id }));
+      dispatch(removeRecipeProduct({ ids: [recipe.id] }));
+      dispatch(removeRecipeMenu({ ids: [recipe.id] }));
+    });
+
+    await apiClient({
+      url: endpoints.recipe.delete(recipe.id),
+      method: "DELETE",
     });
   };
 

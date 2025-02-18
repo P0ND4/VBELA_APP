@@ -23,12 +23,8 @@ const Sale: React.FC<SaleProps> = ({ navigation, route }) => {
 
   return (
     <Tab.Navigator>
-      <Tab.Screen name="PEDIDOS">
-        {() => <ProductOrder sales={sales} />}
-      </Tab.Screen>
-      <Tab.Screen name="MENÚ">
-        {() => <MenuOrder orders={orders}  />}
-      </Tab.Screen>
+      <Tab.Screen name="PEDIDOS">{() => <ProductOrder sales={sales} />}</Tab.Screen>
+      <Tab.Screen name="MENÚ">{() => <MenuOrder orders={orders} />}</Tab.Screen>
     </Tab.Navigator>
   );
 };

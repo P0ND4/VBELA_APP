@@ -26,11 +26,21 @@ const CreateRestaurant: React.FC<CreateRestaurantProps> = ({ navigation, route }
   const save = async (data: Location) => {
     dispatch(add(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.restaurant.post(),
+      method: "POST",
+      data,
+    });
   };
 
   const update = async (data: Location) => {
     dispatch(edit(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.restaurant.put(),
+      method: "PUT",
+      data,
+    });
   };
 
   return (

@@ -13,7 +13,7 @@ import StyledButton from "presentation/components/button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import SwipeButton from "presentation/components/button/SwipeButton";
 import OrderInformation from "./OrderInformation";
-import OrderDetails from "./OrderDetails";
+// import OrderDetails from "./OrderDetails";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
 import FloorModal from "presentation/components/modal/FloorModal";
 import PaymentScreen from "presentation/screens/common/sales/components/PaymentScreen";
@@ -72,14 +72,14 @@ const Option: React.FC<OptionProps> = ({ name, onPress, iconColor, textColor, ic
   );
 };
 
-type OptionsModal = {
+type OptionsModalProps = {
   visible: boolean;
   onClose: () => void;
   onEditOrder: () => void;
   onChange: (updatedData: Partial<Order>) => void;
 };
 
-const OptionsModal: React.FC<OptionsModal> = ({ visible, onClose, onEditOrder, onChange }) => {
+const OptionsModal: React.FC<OptionsModalProps> = ({ visible, onClose, onEditOrder, onChange }) => {
   const { colors } = useTheme();
 
   return (
@@ -126,13 +126,6 @@ type ViewOrderProps = {
 const ViewOrder: React.FC<ViewOrderProps> = ({ onEditOrder, order, onChange }) => {
   const { colors } = useTheme();
 
-  if (!order)
-    return (
-      <Layout>
-        <StyledText color={colors.primary}>PRODUCTO NO ENCONTRADO</StyledText>
-      </Layout>
-    );
-
   const coin = useAppSelector((state) => state.coin);
 
   const [observationModal, setObservationModal] = useState<boolean>(false);
@@ -146,13 +139,20 @@ const ViewOrder: React.FC<ViewOrderProps> = ({ onEditOrder, order, onChange }) =
   const status = [Status.Pending, Status.Standby, Status.Confirmed];
 
   const value = useMemo(
-    () => order?.selection?.reduce((a, b) => a + b.total, 0),
+    () => order?.selection?.reduce((a, b) => a + b.total, 0) ?? 0,
     [order?.selection],
   );
   const paid = useMemo(
-    () => order?.paymentMethods?.reduce((a, b) => a + b.amount, 0),
+    () => order?.paymentMethods?.reduce((a, b) => a + b.amount, 0) ?? 0,
     [order?.paymentMethods],
   );
+
+  if (!order)
+    return (
+      <Layout>
+        <StyledText color={colors.primary}>PRODUCTO NO ENCONTRADO</StyledText>
+      </Layout>
+    );
 
   const buttonText = !order.paymentMethods.length
     ? "Ir al Pago"

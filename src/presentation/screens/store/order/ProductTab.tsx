@@ -8,6 +8,7 @@ import { Element } from "domain/entities/data/common/element.entity";
 import { add, edit, remove } from "application/slice/stores/products.slice";
 import { random } from "shared/utils";
 import { Visible } from "domain/enums/data/inventory/visible.enums";
+import apiClient, { endpoints } from "infrastructure/api/server";
 import ElementTab from "presentation/screens/common/sales/element/ElementTab";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
@@ -28,14 +29,33 @@ const ProductTab: React.FC<ProductTabProps> = ({ navigation, route }) => {
 
   const dispatch = useAppDispatch();
 
-  const save = (data: Element) => {
+  const save = async (data: Element) => {
     dispatch(add(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.product.post(),
+      method: "POST",
+      data,
+    });
   };
 
-  const update = (data: Element) => {
+  const update = async (data: Element) => {
     dispatch(edit(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.product.put(),
+      method: "PUT",
+      data,
+    });
+  };
+
+  const removeItem = async (id: string) => {
+    dispatch(remove({ id }));
+    navigation.pop();
+    await apiClient({
+      url: endpoints.product.delete(id),
+      method: "DELETE",
+    });
   };
 
   useEffect(() => {
@@ -61,13 +81,7 @@ const ProductTab: React.FC<ProductTabProps> = ({ navigation, route }) => {
             >
               <Ionicons name="duplicate-outline" color={colors.text} size={25} />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.icon}
-              onPress={() => {
-                dispatch(remove({ id: defaultValue.id }));
-                navigation.pop();
-              }}
-            >
+            <TouchableOpacity style={styles.icon} onPress={() => removeItem(defaultValue.id)}>
               <Ionicons name="trash-outline" color={colors.text} size={25} />
             </TouchableOpacity>
           </View>

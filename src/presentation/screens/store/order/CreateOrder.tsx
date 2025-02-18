@@ -6,9 +6,10 @@ import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.stor
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { Element } from "domain/entities/data/common/element.entity";
 import { add } from "application/slice/stores/products.slice";
+import apiClient, { endpoints } from "infrastructure/api/server";
+import { transformElement } from "presentation/screens/common/sales/transformers/element.transformer";
 import SalesBoxScreen from "presentation/screens/common/sales/trade/SalesBoxScreen";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import apiClient, { endpoints } from "infrastructure/api/server";
 
 type CreateOrderProps = {
   navigation: StackNavigationProp<RootStore>;
@@ -28,11 +29,12 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
   const dispatch = useAppDispatch();
 
   const addElement = async (data: Element) => {
-    dispatch(add(data));
+    const elementTransformed = transformElement(data);
+    dispatch(add(elementTransformed));
     await apiClient({
       url: endpoints.product.post(),
       method: "POST",
-      data,
+      data: elementTransformed,
     });
   };
 

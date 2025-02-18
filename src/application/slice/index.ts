@@ -8,7 +8,7 @@ import * as suppliers from "./suppliers";
 import * as user from "./user";
 import * as settings from "./settings";
 import * as kitchens from "./kitchens";
-import * as controllers from "./controllers";
+import * as handlers from "./handlers";
 
 export default {
   ...collaborators,
@@ -21,5 +21,5 @@ export default {
   ...user,
   ...settings,
   ...kitchens,
-  ...controllers
+  ...handlers,
 };

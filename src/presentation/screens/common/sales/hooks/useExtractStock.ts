@@ -1,6 +1,6 @@
 import { Element, Selection } from "domain/entities/data/common";
 
-type Discount = { id: string; quantity: number };
+export type Discount = { id: string; quantity: number };
 
 export const useExtractStock = () => {
   const extractStock = (selection: Selection[], elements: Element[]): Discount[] => {

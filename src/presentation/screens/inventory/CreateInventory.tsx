@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Switch, TouchableOpacity } from "react-native";
+import { StyleSheet, View, Switch } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 import {
   InventoryRouteProp,
@@ -17,27 +17,9 @@ import StyledButton from "presentation/components/button/StyledButton";
 import StyledInput from "presentation/components/input/StyledInput";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
-import FloorModal from "presentation/components/modal/FloorModal";
 import { add, edit } from "application/slice/inventories/inventories.slice";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
-
-type OptionProps = {
-  name: string;
-  onPress: () => void;
-};
-
-const Option: React.FC<OptionProps> = ({ name, onPress }) => {
-  const { colors } = useTheme();
-
-  return (
-    <>
-      <TouchableOpacity style={[{ paddingVertical: 14 }, styles.row]} onPress={onPress}>
-        <StyledText>{name}</StyledText>
-      </TouchableOpacity>
-      <View style={{ borderBottomWidth: 1, borderColor: colors.border }} />
-    </>
-  );
-};
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 const visibleData = [
   { label: "Ambos", value: Visible.Both },
@@ -54,7 +36,7 @@ type CreateInventoryProps = {
 const CreateInventory: React.FC<CreateInventoryProps> = ({ navigation, route }) => {
   const defaultValue = route.params?.inventory;
 
-  const { control, handleSubmit, setValue, watch, formState } = useForm({
+  const { control, handleSubmit, watch, formState } = useForm({
     defaultValues: {
       id: defaultValue?.id || random(10),
       name: defaultValue?.name || "",
@@ -76,14 +58,24 @@ const CreateInventory: React.FC<CreateInventoryProps> = ({ navigation, route }) 
 
   const dispatch = useAppDispatch();
 
-  const save = (data: Inventory) => {
+  const save = async (data: Inventory) => {
     dispatch(add(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.inventory.post(),
+      method: "POST",
+      data,
+    });
   };
 
-  const update = (data: Inventory) => {
+  const update = async (data: Inventory) => {
     dispatch(edit(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.inventory.put(),
+      method: "PUT",
+      data,
+    });
   };
 
   const handleSaveOrUpdate = (data: Inventory) => (defaultValue ? update(data) : save(data));

@@ -8,11 +8,12 @@ import { selectCompletedOrders, selectCompletedSales } from "application/selecto
 import { active, clean, Status } from "application/appState/state/state.controller.slice";
 import { batch } from "react-redux";
 import { Order } from "domain/entities/data/common";
-import { add } from "application/slice/controllers/controllers";
+import { add } from "application/slice/handlers/handlers.slice";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 const Home: React.FC = () => {
   const { colors } = useTheme();
@@ -36,6 +37,25 @@ const Home: React.FC = () => {
   };
 
   const value = useMemo(() => (!condition ? filtered([...orders, ...sales]) : 0), [orders, sales]);
+
+  const save = async () => {
+    const data = {
+      id: random(10),
+      start: stateController.start!,
+      end: Date.now(),
+      creationDate: Date.now(),
+      modificationDate: Date.now(),
+    };
+    batch(() => {
+      dispatch(add(data));
+      dispatch(clean());
+    });
+    await apiClient({
+      url: endpoints.handler.post(),
+      method: "POST",
+      data,
+    });
+  };
 
   return (
     <Layout>
@@ -70,19 +90,7 @@ const Home: React.FC = () => {
                 { text: "No estoy seguro", style: "cancel" },
                 {
                   text: "Estoy seguro",
-                  onPress: () => {
-                    batch(() => {
-                      const data = {
-                        id: random(10),
-                        start: stateController.start!,
-                        end: Date.now(),
-                        creationDate: Date.now(),
-                        modificationDate: Date.now(),
-                      };
-                      dispatch(add(data));
-                      dispatch(clean());
-                    });
-                  },
+                  onPress: save,
                 },
               ],
               { cancelable: true },

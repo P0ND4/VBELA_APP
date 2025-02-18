@@ -27,9 +27,11 @@ const PreviewOrder: React.FC<PreviewOrderProps> = ({ navigation, route }) => {
       goBack={() => navigation.pop()}
       addElement={(data) => dispatch(add(data))}
       locationID={storeID}
-      buttonsEvent={{ 
-        // delivery: () => alert("Para la segunda actualización") 
-      }}
+      buttonsEvent={
+        {
+          // delivery: () => alert("Para la segunda actualización")
+        }
+      }
     />
   );
 };

@@ -23,6 +23,10 @@ export const productsSlice = createSlice({
       const { id } = action.payload;
       return state.filter((s) => s.id !== id);
     },
+    removeByLocationID: (state, action: PayloadAction<{ locationID: string }>) => {
+      const { locationID } = action.payload;
+      return state.filter((s) => s.locationID !== locationID);
+    },
     discount: (state, action: PayloadAction<{ id: string; quantity: number }[]>) => {
       const discounts = action.payload;
       const discountMap = new Map(discounts.map((m) => [m.id, m]));
@@ -32,18 +36,18 @@ export const productsSlice = createSlice({
         return found ? { ...pas, stock: pas.stock! - found.quantity } : pas;
       });
     },
-    removeStock: (state, action: PayloadAction<{ id: string }>) => {
-      const { id } = action.payload;
+    removeStock: (state, action: PayloadAction<{ ids: string[] }>) => {
+      const { ids } = action.payload;
       return state.map((products) => ({
         ...products,
-        stockIDS: products.stockIDS?.filter((stock) => stock !== id),
+        stockIDS: products.stockIDS?.filter((stock) => !ids.includes(stock)),
       }));
     },
-    removeRecipe: (state, action: PayloadAction<{ id: string }>) => {
-      const { id } = action.payload;
+    removeRecipe: (state, action: PayloadAction<{ ids: string[] }>) => {
+      const { ids } = action.payload;
       return state.map((products) => ({
         ...products,
-        packageIDS: products.packageIDS?.filter((recipe) => recipe !== id),
+        packageIDS: products.packageIDS?.filter((recipe) => !ids.includes(recipe)),
       }));
     },
     clean: () => [],
@@ -54,6 +58,15 @@ export const productsSlice = createSlice({
   },
 });
 
-export const { add, edit, remove, clean, change, discount, removeStock, removeRecipe } =
-  productsSlice.actions;
+export const {
+  add,
+  edit,
+  remove,
+  clean,
+  change,
+  discount,
+  removeStock,
+  removeRecipe,
+  removeByLocationID,
+} = productsSlice.actions;
 export default productsSlice.reducer;

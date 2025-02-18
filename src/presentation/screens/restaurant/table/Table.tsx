@@ -18,6 +18,7 @@ import {
 } from "application/appState/navigation/sales.navigation.method.slice";
 import { Order } from "domain/entities/data/common";
 import { Status } from "domain/enums/data/element/status.enums";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type NavigationProps = StackNavigationProp<RootRestaurant>;
 
@@ -38,6 +39,14 @@ const Card: React.FC<{ item: TableEntity }> = ({ item }) => {
 
   const navigation = useNavigation<NavigationProps>();
   const dispatch = useAppDispatch();
+
+  const removeItem = async () => {
+    dispatch(remove({ id: item.id }));
+    await apiClient({
+      url: endpoints.table.delete(item.id),
+      method: "DELETE",
+    });
+  };
 
   return (
     <>
@@ -76,7 +85,7 @@ const Card: React.FC<{ item: TableEntity }> = ({ item }) => {
         visible={showInformation}
         table={item}
         onClose={() => setShowInformation(false)}
-        onPressDelete={() => dispatch(remove({ id: item.id }))}
+        onPressDelete={removeItem}
         onPressEdit={() =>
           navigation.navigate("CreateTable", {
             defaultValue: item,

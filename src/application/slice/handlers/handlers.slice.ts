@@ -1,21 +1,21 @@
-import type { Controller } from "domain/entities/data/controllers/controller.entity";
+import type { Handler } from "domain/entities/data/handlers/handler.entity";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const payroll = (collection: Collection) => collection.controllers;
+const payroll = (collection: Collection) => collection.handlers;
 
-const initialState: Controller[] = [];
+const initialState: Handler[] = [];
 
 export const controllersSlice = createSlice({
-  name: "controllers",
+  name: "handlers",
   initialState,
   reducers: {
-    change: (_, action: PayloadAction<Controller[]>) => action.payload,
-    add: (state, action: PayloadAction<Controller>) => {
+    change: (_, action: PayloadAction<Handler[]>) => action.payload,
+    add: (state, action: PayloadAction<Handler>) => {
       state.push(action.payload);
     },
-    edit: (state, action: PayloadAction<Controller>) => {
+    edit: (state, action: PayloadAction<Handler>) => {
       const controller = action.payload;
       return state.map((s) => (s.id === controller.id ? controller : s));
     },

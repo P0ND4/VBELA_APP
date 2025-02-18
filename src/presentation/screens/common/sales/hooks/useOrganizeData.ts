@@ -17,7 +17,7 @@ export const useOrganizeData = () => {
     return {
       id: random(10),
       locationID: props.locationID,
-      tableID: props.tableID ?? undefined,
+      tableID: props.tableID ?? null,
       invoice: `000${random(5, { number: true })}`,
       order: random(4, { number: true }),
       paid,

@@ -6,11 +6,11 @@ type Icons = keyof typeof Ionicons.glyphMap;
 export type Selection = {
   id: string;
   name: string;
-  unit?: string;
+  unit: string;
   registered: boolean;
-  activeStock?: boolean;
-  packageIDS?: string[];
-  stockIDS?: string[];
+  activeStock: boolean;
+  packageIDS: string[];
+  stockIDS: string[];
   discount: number;
   total: number;
   quantity: number;
@@ -28,7 +28,7 @@ export interface Order {
   id: string;
   invoice: string;
   locationID: string;
-  tableID?: string;
+  tableID: string | null;
   order: string;
   status: Status;
   selection: Selection[];

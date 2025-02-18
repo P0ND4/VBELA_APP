@@ -1,4 +1,4 @@
-export interface Controller {
+export interface Handler {
   id: string;
   start: number;
   end: number;

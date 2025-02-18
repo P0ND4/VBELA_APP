@@ -18,6 +18,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import InformationModal from "presentation/components/modal/InformationModal";
 import { Type } from "domain/enums/data/inventory/movement.enums";
 import { useAppSelector } from "application/store/hook";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type NavigationProps = StackNavigationProp<RootInventory>;
 
@@ -28,6 +29,14 @@ const MovementCard: React.FC<{ movement: Movement }> = ({ movement }) => {
 
   const dispatch = useDispatch();
   const navigation = useNavigation<NavigationProps>();
+
+  const removeItem = async () => {
+    dispatch(removeMovement([movement]));
+    await apiClient({
+      url: endpoints.stock.deleteMovement(movement.id),
+      method: "DELETE",
+    });
+  };
 
   return (
     <>
@@ -60,7 +69,7 @@ const MovementCard: React.FC<{ movement: Movement }> = ({ movement }) => {
         title="INFORMACIÓN EXTRA"
         animationType="fade"
         headerRight={() => (
-          <TouchableOpacity onPress={() => dispatch(removeMovement([movement]))}>
+          <TouchableOpacity onPress={removeItem}>
             <Ionicons name="trash-outline" color={colors.primary} size={25} />
           </TouchableOpacity>
         )}
@@ -124,8 +133,8 @@ const MovementInformation: React.FC<MovementInformationProps> = ({ navigation, r
 
   useEffect(() => {
     const found = stocks.find((s) => s.id === stockID);
-    if (!found || !found.movement.length) return navigation.pop();
-    const movements = found.movement.filter((m) => !type || m.type === type);
+    if (!found || !found.movements.length) return navigation.pop();
+    const movements = found.movements.filter((m) => !type || m.type === type);
     setData(movements);
   }, [stocks, type]);
 

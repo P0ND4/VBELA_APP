@@ -4,10 +4,10 @@ import { ExpoConfig } from "expo/config";
 const config: ExpoConfig = {
   name: "VBELA",
   slug: "vbela",
-  version: "4.0.0-beta.3",
+  version: "4.0.0-beta.4",
   orientation: "portrait",
   icon: "./src/presentation/assets/logo.png",
-  userInterfaceStyle: "light",
+  userInterfaceStyle: "automatic",
   splash: {
     image: "./src/presentation/assets/splash.png",
     resizeMode: "contain",
@@ -28,9 +28,9 @@ const config: ExpoConfig = {
     },
   },
   android: {
-    googleServicesFile: process.env.GOOGLE_SERVICES_JSON,
+    googleServicesFile: "./google-services.json", // process.env.GOOGLE_SERVICES_JSON
     package: "com.app.vbela",
-    versionCode: 67,
+    versionCode: 68,
     adaptiveIcon: {
       foregroundImage: "./src/presentation/assets/adaptive-icon.png",
       backgroundColor: "#FFFFFF",

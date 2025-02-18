@@ -13,6 +13,9 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import LocationInformation from "../common/sales/LocationInformation";
 import { Swipeable } from "react-native-gesture-handler";
 import apiClient, { endpoints } from "infrastructure/api/server";
+import { batch } from "react-redux";
+import { removeByLocationID } from "application/slice/restaurants/menu.slice";
+import { removeByRestaurantID } from "application/slice/restaurants/tables.slice";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
@@ -41,11 +44,14 @@ const Card: React.FC<{ item: Location }> = ({ item }) => {
   };
 
   const removeItem = async (id: string) => {
-    dispatch(remove({ id }));
+    batch(() => {
+      dispatch(remove({ id }));
+      dispatch(removeByLocationID({ locationID: id }));
+      dispatch(removeByRestaurantID({ restaurantID: id }));
+    });
     await apiClient({
       url: endpoints.restaurant.delete(id),
       method: "DELETE",
-      data: { id },
     });
   };
 

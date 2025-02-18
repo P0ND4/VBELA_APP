@@ -15,7 +15,7 @@ import { Order } from "domain/entities/data/common";
 import { PieChart } from "react-native-gifted-charts";
 import { Kitchen } from "domain/entities/data/kitchens";
 import { AppNavigationProp } from "domain/entities/navigation";
-import { remove } from "application/slice/controllers/controllers";
+import { remove } from "application/slice/handlers/handlers.slice";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -25,6 +25,7 @@ import MultipleCalendarModal from "presentation/components/modal/MultipleCalenda
 import ReportModal from "./components/ReportModal";
 import PaymentMethodsModal from "./components/PaymentMethodsModal";
 import TotalGainModal from "./components/TotalGainModal";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type Icons = keyof typeof Ionicons.glyphMap;
 
@@ -113,7 +114,7 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
   const ordersCompleted = useAppSelector(selectCompletedOrders);
   const salesCompleted = useAppSelector(selectCompletedSales);
   const kitchen = useAppSelector(selectCompletedKitchen);
-  const controllers = useAppSelector((state) => state.controllers);
+  const handlers = useAppSelector((state) => state.handlers);
 
   const [simpleCalendarModal, setSimpleCalendarModal] = useState<boolean>(false);
   const [multipleCalendarModal, setMultipleCalendarModal] = useState<boolean>(false);
@@ -227,6 +228,15 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
     return "Todos";
   }, [date]);
 
+  const removeItem = async (id: string) => {
+    setDate(resetDate);
+    dispatch(remove({ id }));
+    await apiClient({
+      url: endpoints.handler.delete(id),
+      method: "DELETE",
+    });
+  };
+
   return (
     <>
       <Layout style={{ padding: 0 }}>
@@ -237,8 +247,8 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
             <Ionicons name="chevron-forward" size={15} color={colors.text} />
           </StyledButton>
           <FlatList
-            data={controllers}
-            scrollEnabled={controllers.length > 2}
+            data={handlers}
+            scrollEnabled={handlers.length > 2}
             keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
             horizontal
@@ -254,10 +264,7 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
                       { text: "No estoy seguro", style: "cancel" },
                       {
                         text: "Estoy seguro",
-                        onPress: () => {
-                          setDate(resetDate);
-                          dispatch(remove({ id: item.id }));
-                        },
+                        onPress: () => removeItem(item.id),
                       },
                     ],
                     { cancelable: true },

@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, FlatList } from "react-native";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { Selection } from "domain/entities/data/common";
 import { edit } from "application/slice/kitchens/kitchens.slice";
-import { Kitchen as KitchenType } from "domain/entities/data/kitchens";
+import { Kitchen, Kitchen as KitchenType } from "domain/entities/data/kitchens";
 import { Status } from "domain/enums/data/kitchen/status.enums";
 import { useTheme } from "@react-navigation/native";
 import { changeDate, thousandsSystem } from "shared/utils";
@@ -14,6 +14,7 @@ import StyledButton from "presentation/components/button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import StyledText from "presentation/components/text/StyledText";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 const Order: React.FC<{ order: Selection }> = ({ order }) => {
   return (
@@ -108,6 +109,17 @@ const KitchenScreen: React.FC<KitchenScreenProps> = ({ orders, status }) => {
     setRestaurantFilter(data);
   }, [restaurants]);
 
+  const update = async (item: Kitchen) => {
+    if (!status) return;
+    const data = { ...item, status, modificationDate: Date.now() };
+    dispatch(edit(data));
+    await apiClient({
+      url: endpoints.kitchen.put(),
+      method: "PUT",
+      data,
+    });
+  };
+
   return (
     <>
       <Layout style={{ padding: 0 }}>
@@ -153,15 +165,7 @@ const KitchenScreen: React.FC<KitchenScreenProps> = ({ orders, status }) => {
               <FlatList
                 data={data}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <Card
-                    order={item}
-                    onPress={() => {
-                      if (!status) return;
-                      dispatch(edit({ ...item, status, modificationDate: Date.now() }));
-                    }}
-                  />
-                )}
+                renderItem={({ item }) => <Card order={item} onPress={() => update(item)} />}
               />
             </View>
           </>

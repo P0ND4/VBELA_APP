@@ -10,6 +10,7 @@ import { Element } from "domain/entities/data/common";
 import { Visible } from "domain/enums/data/inventory/visible.enums";
 import ElementTab from "presentation/screens/common/sales/element/ElementTab";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type MenuTabProps = {
   navigation: StackNavigationProp<RootRestaurant>;
@@ -28,14 +29,33 @@ const MenuTab: React.FC<MenuTabProps> = ({ navigation, route }) => {
 
   const dispatch = useAppDispatch();
 
-  const save = (data: Element) => {
+  const save = async (data: Element) => {
     dispatch(add(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.menu.post(),
+      method: "POST",
+      data,
+    });
   };
 
-  const update = (data: Element) => {
+  const update = async (data: Element) => {
     dispatch(edit(data));
     navigation.pop();
+    await apiClient({
+      url: endpoints.menu.put(),
+      method: "PUT",
+      data,
+    });
+  };
+
+  const removeItem = async (id: string) => {
+    dispatch(remove({ id }));
+    navigation.pop();
+    await apiClient({
+      url: endpoints.menu.delete(id),
+      method: "DELETE",
+    });
   };
 
   useEffect(() => {
@@ -61,13 +81,7 @@ const MenuTab: React.FC<MenuTabProps> = ({ navigation, route }) => {
             >
               <Ionicons name="duplicate-outline" color={colors.text} size={25} />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.icon}
-              onPress={() => {
-                dispatch(remove({ id: defaultValue.id }));
-                navigation.pop();
-              }}
-            >
+            <TouchableOpacity style={styles.icon} onPress={() => removeItem(defaultValue.id)}>
               <Ionicons name="trash-outline" color={colors.text} size={25} />
             </TouchableOpacity>
           </View>
@@ -82,7 +96,7 @@ const MenuTab: React.FC<MenuTabProps> = ({ navigation, route }) => {
 
   useEffect(() => {
     const { inventories = [] } = restaurants.find((r) => r.id === restaurantID) ?? {};
-    setInventories(inventories)
+    setInventories(inventories);
   }, [restaurants]);
 
   return (

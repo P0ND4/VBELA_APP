@@ -54,10 +54,11 @@ const Card: React.FC<CardProps> = ({ recipe, onPress, onLongPress }) => {
   );
 };
 
-const GET_TAB_NAME = {
+const GET_TAB_NAME: { [key in Visible]: string } = {
   [Visible.Both]: "RECETAS/PAQUETES",
   [Visible.Restaurant]: "RECETAS",
   [Visible.Store]: "PAQUETES",
+  [Visible.None]: "SIN VISIBILIDAD",
 };
 
 type RecipeProps = {

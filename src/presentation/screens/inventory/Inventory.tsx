@@ -15,6 +15,17 @@ import { remove } from "application/slice/inventories/inventories.slice";
 import { batch } from "react-redux";
 import { removeInventory as removeInventoryRestaurant } from "application/slice/restaurants/restaurants.slices";
 import { removeInventory as removeInventoryStore } from "application/slice/stores/stores.slice";
+import apiClient, { endpoints } from "infrastructure/api/server";
+import { removeByInventoryID as removeByInventoryIDStock } from "application/slice/inventories/stocks.slice";
+import { removeByInventoryID as removeByInventoryIDRecipe } from "application/slice/inventories/recipes.slice";
+import {
+  removeRecipe as removeRecipeProduct,
+  removeStock as removeStockProduct,
+} from "application/slice/stores/products.slice";
+import {
+  removeRecipe as removeRecipeMenu,
+  removeStock as removeStockMenu,
+} from "application/slice/restaurants/menu.slice";
 
 type CardInformationProps = {
   visible: boolean;
@@ -81,6 +92,9 @@ const CardInformation: React.FC<CardInformationProps> = ({
 type NavigationProps = StackNavigationProp<RootApp>;
 
 const Card: React.FC<{ item: InventoryType }> = ({ item }) => {
+  const stocks = useAppSelector((state) => state.stocks);
+  const recipes = useAppSelector((state) => state.recipes);
+
   const { colors } = useTheme();
 
   const [showInformation, setShowInformation] = useState<boolean>(false);
@@ -88,13 +102,31 @@ const Card: React.FC<{ item: InventoryType }> = ({ item }) => {
   const navigation = useNavigation<NavigationProps>();
   const dispatch = useAppDispatch();
 
-  const removeData = () => {
+  const removeData = useCallback(async () => {
+    const stockIDS = stocks
+      .filter((stock) => stock.inventoryID === item.id)
+      .map((stock) => stock.id);
+    const recipeIDS = recipes
+      .filter((recipe) => recipe.inventoryID === item.id)
+      .map((recipe) => recipe.id);
+
     batch(() => {
       dispatch(remove({ id: item.id }));
       dispatch(removeInventoryRestaurant({ id: item.id }));
       dispatch(removeInventoryStore({ id: item.id }));
+      dispatch(removeByInventoryIDStock({ inventoryID: item.id }));
+      dispatch(removeByInventoryIDRecipe({ inventoryID: item.id }));
+      dispatch(removeStockProduct({ ids: stockIDS }));
+      dispatch(removeStockMenu({ ids: stockIDS }));
+      dispatch(removeRecipeProduct({ ids: recipeIDS }));
+      dispatch(removeRecipeMenu({ ids: recipeIDS }));
     });
-  };
+
+    await apiClient({
+      url: endpoints.inventory.delete(item.id),
+      method: "DELETE",
+    });
+  }, [dispatch, item.id, recipes, stocks]);
 
   return (
     <>

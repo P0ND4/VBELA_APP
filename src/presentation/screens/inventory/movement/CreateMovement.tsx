@@ -19,6 +19,7 @@ import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import SimpleCalendarModal from "presentation/components/modal/SimpleCalendarModal";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type CreateEntryProps = {
   navigation: StackNavigationProp<RootInventory>;
@@ -51,7 +52,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
       stockID: defaultValue?.stockID || "",
       quantity: defaultValue?.quantity || 0,
       currentValue: defaultValue?.currentValue || 0,
-      date: defaultValue?.date || null,
+      date: defaultValue?.date || new Date().getTime(),
       paymentMethod: defaultValue?.paymentMethod || "",
       creationDate: defaultValue?.creationDate || new Date().getTime(),
       modificationDate: new Date().getTime(),
@@ -80,17 +81,30 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
 
   const isRequired = (value: any) => !!value;
 
-  const save = (data: Movement) => {
+  const save = async (data: Movement) => {
     dispatch(addMovement([data]));
     navigation.pop();
+    await apiClient({
+      url: endpoints.stock.postMovement(),
+      method: "POST",
+      data,
+    });
   };
 
-  const update = (data: Movement) => {
+  const update = async (data: Movement) => {
     dispatch(editMovement([data]));
     navigation.pop();
+    await apiClient({
+      url: endpoints.stock.putMovement(),
+      method: "PUT",
+      data,
+    });
   };
 
-  const handleSaveOrUpdate = (data: Movement) => (defaultValue ? update(data) : save(data));
+  const handleSaveOrUpdate = (data: Movement) => {
+    if (defaultValue) update(data);
+    else save(data);
+  };
 
   return (
     <>

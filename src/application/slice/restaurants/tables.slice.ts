@@ -24,6 +24,10 @@ export const tablesSlice = createSlice({
       const { id } = action.payload;
       return state.filter((s) => s.id !== id);
     },
+    removeByRestaurantID: (state, action: PayloadAction<{ restaurantID: string }>) => {
+      const { restaurantID } = action.payload;
+      return state.filter((s) => s.restaurantID !== restaurantID);
+    },
     clean: () => [],
   },
   extraReducers: (builder) => {
@@ -32,5 +36,6 @@ export const tablesSlice = createSlice({
   },
 });
 
-export const { add, addMultiple, edit, remove, clean, change } = tablesSlice.actions;
+export const { add, addMultiple, edit, remove, clean, change, removeByRestaurantID } =
+  tablesSlice.actions;
 export default tablesSlice.reducer;

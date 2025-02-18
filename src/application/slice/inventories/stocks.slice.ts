@@ -34,21 +34,25 @@ export const informationSlice = createSlice({
       const { id } = action.payload;
       return state.filter((s) => s.id !== id);
     },
+    removeByInventoryID: (state, action: PayloadAction<{ inventoryID: string }>) => {
+      const { inventoryID } = action.payload;
+      return state.filter((s) => s.inventoryID !== inventoryID);
+    },
     addMovement: (state, action: PayloadAction<Movement[]>) =>
       updateStockMovements(state, action.payload, (stock, found) => ({
         ...stock,
         currentValue: found.currentValue,
-        movement: [...stock.movement, found],
+        movements: [...stock.movements, found],
       })),
     editMovement: (state, action: PayloadAction<Movement[]>) =>
       updateStockMovements(state, action.payload, (stock, found) => ({
         ...stock,
-        movement: stock.movement.map((m) => (m.id === found.id ? found : m)),
+        movements: stock.movements.map((m) => (m.id === found.id ? found : m)),
       })),
     removeMovement: (state, action: PayloadAction<Movement[]>) =>
       updateStockMovements(state, action.payload, (stock, found) => ({
         ...stock,
-        movement: stock.movement.filter((m) => m.id !== found.id),
+        movements: stock.movements.filter((m) => m.id !== found.id),
       })),
     clean: () => [],
   },
@@ -58,6 +62,15 @@ export const informationSlice = createSlice({
   },
 });
 
-export const { add, edit, remove, addMovement, editMovement, removeMovement, clean, change } =
-  informationSlice.actions;
+export const {
+  add,
+  edit,
+  remove,
+  addMovement,
+  editMovement,
+  removeMovement,
+  clean,
+  change,
+  removeByInventoryID,
+} = informationSlice.actions;
 export default informationSlice.reducer;

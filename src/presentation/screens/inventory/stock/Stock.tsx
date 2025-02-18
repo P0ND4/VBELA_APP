@@ -26,7 +26,7 @@ const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
   const { colors } = useTheme();
 
   const coin = useAppSelector((state) => state.coin);
-  const quantity = stock.movement.reduce((a, b) => a + b.quantity, 0);
+  const quantity = stock.movements.reduce((a, b) => a + b.quantity, 0);
 
   return (
     <StyledButton

@@ -23,6 +23,10 @@ export const menuSlice = createSlice({
       const { id } = action.payload;
       return state.filter((s) => s.id !== id);
     },
+    removeByLocationID: (state, action: PayloadAction<{ locationID: string }>) => {
+      const { locationID } = action.payload;
+      return state.filter((s) => s.locationID !== locationID);
+    },
     discount: (state, action: PayloadAction<{ id: string; quantity: number }[]>) => {
       const discounts = action.payload;
       const discountMap = new Map(discounts.map((m) => [m.id, m]));
@@ -31,18 +35,18 @@ export const menuSlice = createSlice({
         return found ? { ...menu, stock: menu.stock! - found.quantity } : menu;
       });
     },
-    removeStock: (state, action: PayloadAction<{ id: string }>) => {
-      const { id } = action.payload;
-      return state.map((menu) => ({
-        ...menu,
-        stockIDS: menu.stockIDS?.filter((stock) => stock !== id),
+    removeStock: (state, action: PayloadAction<{ ids: string[] }>) => {
+      const { ids } = action.payload;
+      return state.map((products) => ({
+        ...products,
+        stockIDS: products.stockIDS?.filter((stock) => !ids.includes(stock)),
       }));
     },
-    removeRecipe: (state, action: PayloadAction<{ id: string }>) => {
-      const { id } = action.payload;
-      return state.map((menu) => ({
-        ...menu,
-        packageIDS: menu.packageIDS?.filter((recipe) => recipe !== id),
+    removeRecipe: (state, action: PayloadAction<{ ids: string[] }>) => {
+      const { ids } = action.payload;
+      return state.map((products) => ({
+        ...products,
+        packageIDS: products.packageIDS?.filter((recipe) => !ids.includes(recipe)),
       }));
     },
     clean: () => [],
@@ -53,6 +57,15 @@ export const menuSlice = createSlice({
   },
 });
 
-export const { add, edit, remove, clean, change, discount, removeStock, removeRecipe } =
-  menuSlice.actions;
+export const {
+  add,
+  edit,
+  remove,
+  clean,
+  change,
+  discount,
+  removeStock,
+  removeRecipe,
+  removeByLocationID,
+} = menuSlice.actions;
 export default menuSlice.reducer;

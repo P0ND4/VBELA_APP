@@ -19,18 +19,13 @@ interface ApiResponse<T> {
 }
 
 const baseURL = process.env.EXPO_PUBLIC_API_URL;
-const API = axios.create({ baseURL });
-
-API.interceptors.response.use(
-  (response) => response.data,
-  (error) => Promise.reject(error),
-);
 
 const apiClient = async <T>(config: AxiosRequestConfig): Promise<ApiResponse<T>> => {
+  const token = await AsyncStorage.getItem("access_token");
+  const headers = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
   try {
-    const token = await AsyncStorage.getItem("access_token");
-    const headers = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-    return await API({ ...config, ...headers });
+    const response = await axios({ baseURL, ...config, ...headers });
+    return response.data;
   } catch (error) {
     console.error("API Error:", error);
     throw error;
@@ -40,6 +35,7 @@ const apiClient = async <T>(config: AxiosRequestConfig): Promise<ApiResponse<T>>
 export const endpoints = {
   auth: {
     login: () => "/api/v1/user/auth/login",
+    logout: () => "/api/v1/user/auth/logout",
   },
   verify: {
     email: () => "/api/v1/user/verify/email",
@@ -51,6 +47,7 @@ export const endpoints = {
   },
   user: {
     get: () => "/api/v1/user",
+    delete: () => "/api/v1/user",
   },
   setting: {
     darkMode: () => "/api/v1/user/setting/dark-mode",
@@ -82,6 +79,9 @@ export const endpoints = {
     post: () => "/api/v1/user/stock",
     put: () => "/api/v1/user/stock",
     delete: (id: string) => `/api/v1/user/stock/${id}`,
+    postMovement: () => "/api/v1/user/stock/movement",
+    putMovement: () => "/api/v1/user/stock/movement",
+    deleteMovement: (id: string) => `/api/v1/user/stock/movement/${id}`,
   },
   menu: {
     post: () => "/api/v1/user/menu",
@@ -100,6 +100,7 @@ export const endpoints = {
   },
   table: {
     post: () => "/api/v1/user/table",
+    postMultiple: () => "/api/v1/user/table/multiple",
     put: () => "/api/v1/user/table",
     delete: (id: string) => `/api/v1/user/table/${id}`,
   },
@@ -112,6 +113,16 @@ export const endpoints = {
     post: () => "/api/v1/user/store",
     put: () => "/api/v1/user/store",
     delete: (id: string) => `/api/v1/user/store/${id}`,
+  },
+  sale: {
+    post: () => "/api/v1/user/sale",
+    put: () => "/api/v1/user/sale",
+    delete: (id: string) => `/api/v1/user/sale/${id}`,
+  },
+  handler: {
+    post: () => "/api/v1/user/handler",
+    put: () => "/api/v1/user/handler",
+    delete: (id: string) => `/api/v1/user/handler/${id}`,
   },
 };
 

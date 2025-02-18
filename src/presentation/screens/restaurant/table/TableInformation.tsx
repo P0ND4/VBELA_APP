@@ -49,9 +49,6 @@ const TableInformation: React.FC<TableInformationProps> = ({
           Descripción: <StyledText color={colors.primary}>{table.description}</StyledText>
         </StyledText>
         <StyledText>
-          Capacidad: <StyledText color={colors.primary}>Para {table.capacity} personas</StyledText>
-        </StyledText>
-        <StyledText>
           Dinero recolectado: <StyledText color={colors.primary}>0</StyledText>
         </StyledText>
         <StyledText>

@@ -17,6 +17,7 @@ import { removeIngredient } from "application/slice/inventories/recipes.slice";
 import { batch } from "react-redux";
 import { removeStock as removeStockProduct } from "application/slice/stores/products.slice";
 import { removeStock as removeStockMenu } from "application/slice/restaurants/menu.slice";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   const { colors } = useTheme();
@@ -55,12 +56,17 @@ const StockInformation: React.FC<CreateStockProps> = ({ navigation, route }) => 
     else setData(found);
   }, [stocks, stock]);
 
-  const removeData = () => {
+  const removeData = async () => {
     batch(() => {
       dispatch(remove({ id: stock.id }));
       dispatch(removeIngredient({ id: stock.id }));
-      dispatch(removeStockProduct({ id: stock.id }));
-      dispatch(removeStockMenu({ id: stock.id }));
+      dispatch(removeStockProduct({ ids: [stock.id] }));
+      dispatch(removeStockMenu({ ids: [stock.id] }));
+    });
+
+    await apiClient({
+      url: endpoints.stock.delete(stock.id),
+      method: "DELETE",
     });
   };
 
@@ -75,7 +81,7 @@ const StockInformation: React.FC<CreateStockProps> = ({ navigation, route }) => 
           <Card name="Punto de reorden" value={thousandsSystem(data.reorder)} />
           {data.reference && <Card name="Referencia" value={data.reference} />}
           {data.brand && <Card name="Marca" value={data.brand} />}
-          {!!data.movement.length && (
+          {!!data.movements.length && (
             <TouchableOpacity
               style={[styles.card, { borderColor: colors.border }]}
               onPress={() => navigation.navigate("MovementInformation", { stockID: stock.id })}
