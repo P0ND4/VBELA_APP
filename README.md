@@ -19,7 +19,7 @@ VBELA es una aplicación móvil desarrollada con React Native y Expo. Este proye
 1. Clona el repositorio:
 
    ```sh
-   git clone https://github.com/tu-usuario/vbela.git
+   git clone https://github.com/P0ND4/VBELA_APP.git
    ```
 
 2. Accede al directorio del proyecto:
