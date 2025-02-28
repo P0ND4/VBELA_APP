@@ -1,0 +1,47 @@
+# Node
+node_modules/
+
+# Expo
+.expo/
+.expo-shared/
+.expo-env
+eas.json
+
+# Builds
+dist/
+build/
+web-build/
+*.apk
+*.aab
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Envs
+*.env
+*.env.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+
+# Android
+/android
+
+# iOS
+/ios
+
+# Testing
+coverage/
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

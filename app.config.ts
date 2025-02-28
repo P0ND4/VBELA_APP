@@ -1,9 +1,13 @@
-import { ExpoConfig } from "expo/config";
+import { ConfigContext, ExpoConfig } from "expo/config";
 
-const config: ExpoConfig = {
+export default ({ config }: ConfigContext): ExpoConfig => ({
+  ...config,
   name: "VBELA",
+  description:
+    "VBELA es una aplicación móvil desarrollada con React Native y Expo. Este proyecto está diseñado para proporcionar una experiencia de usuario fluida y eficiente en dispositivos Android.",
   slug: "vbela",
   version: process.env.EXPO_PUBLIC_VERSION ?? "1.0.0",
+  platforms: ["android"],
   orientation: "portrait",
   icon: "./src/presentation/assets/logo.png",
   userInterfaceStyle: "automatic",
@@ -27,6 +31,7 @@ const config: ExpoConfig = {
     },
   },
   android: {
+    package: "com.app.vbela",
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json",
     adaptiveIcon: {
       foregroundImage: "./src/presentation/assets/adaptive-icon.png",
@@ -51,12 +56,9 @@ const config: ExpoConfig = {
     androidMode: "default",
     icon: "./src/presentation/assets/notification-icon.png",
   },
-  scheme: ["vbela"],
   extra: { eas: { projectId: "0dd838a6-95db-4883-9a7f-7e6112496cd0" } },
   owner: "lmacml",
   experiments: {
     tsconfigPaths: true,
   },
-};
-
-export default config;
+});
