@@ -20,6 +20,7 @@ type MenuTabProps = {
 const MenuTab: React.FC<MenuTabProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
+  const menuGroup = useAppSelector((state) => state.menuGroup);
   const restaurants = useAppSelector((state) => state.restaurants);
 
   const [inventories, setInventories] = useState<string[]>([]);
@@ -43,7 +44,7 @@ const MenuTab: React.FC<MenuTabProps> = ({ navigation, route }) => {
     dispatch(edit(data));
     navigation.pop();
     await apiClient({
-      url: endpoints.menu.put(),
+      url: endpoints.menu.put(data.id),
       method: "PUT",
       data,
     });
@@ -106,6 +107,7 @@ const MenuTab: React.FC<MenuTabProps> = ({ navigation, route }) => {
       onSubmit={defaultValue ? update : save}
       defaultValue={defaultValue}
       locationID={restaurantID}
+      groups={menuGroup}
     />
   );
 };

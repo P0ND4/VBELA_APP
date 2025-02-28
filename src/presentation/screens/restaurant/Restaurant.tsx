@@ -14,7 +14,8 @@ import LocationInformation from "../common/sales/LocationInformation";
 import { Swipeable } from "react-native-gesture-handler";
 import apiClient, { endpoints } from "infrastructure/api/server";
 import { batch } from "react-redux";
-import { removeByLocationID } from "application/slice/restaurants/menu.slice";
+import { removeByLocationID as removeMenuByLocationID } from "application/slice/restaurants/menu.slice";
+import { removeByLocationID as removeGroupByLocationID } from "application/slice/restaurants/menu.group.slice";
 import { removeByRestaurantID } from "application/slice/restaurants/tables.slice";
 
 type NavigationProps = StackNavigationProp<RootApp>;
@@ -46,7 +47,8 @@ const Card: React.FC<{ item: Location }> = ({ item }) => {
   const removeItem = async (id: string) => {
     batch(() => {
       dispatch(remove({ id }));
-      dispatch(removeByLocationID({ locationID: id }));
+      dispatch(removeMenuByLocationID({ locationID: id }));
+      dispatch(removeGroupByLocationID({ locationID: id }));
       dispatch(removeByRestaurantID({ restaurantID: id }));
     });
     await apiClient({

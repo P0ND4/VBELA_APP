@@ -7,7 +7,7 @@ import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { Element } from "domain/entities/data/common/element.entity";
 import { add } from "application/slice/stores/products.slice";
 import apiClient, { endpoints } from "infrastructure/api/server";
-import { transformElement } from "presentation/screens/common/sales/transformers/element.transformer";
+import { Group } from "domain/entities/data";
 import SalesBoxScreen from "presentation/screens/common/sales/trade/SalesBoxScreen";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
@@ -19,8 +19,10 @@ type CreateOrderProps = {
 const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
+  const productGroup = useAppSelector((state) => state.productGroup);
   const products = useAppSelector((state) => state.products);
 
+  const [groups, setGroups] = useState<Group[]>([]);
   const [elements, setElements] = useState<Element[]>([]);
 
   const storeID = route.params.storeID;
@@ -29,12 +31,11 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
   const dispatch = useAppDispatch();
 
   const addElement = async (data: Element) => {
-    const elementTransformed = transformElement(data);
-    dispatch(add(elementTransformed));
+    dispatch(add(data));
     await apiClient({
       url: endpoints.product.post(),
       method: "POST",
-      data: elementTransformed,
+      data,
     });
   };
 
@@ -58,12 +59,20 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
     setElements([...products].filter((p) => p.locationID === storeID));
   }, [storeID, products]);
 
+  useEffect(() => {
+    setGroups([...productGroup].filter((m) => m.locationID === storeID));
+  }, [storeID, productGroup]);
+
   return (
     <SalesBoxScreen
       defaultValue={defaultValue}
       locationID={storeID}
+      groups={groups}
       elements={elements}
       addElement={addElement}
+      onPressGroup={(group?: Group) => {
+        navigation.navigate("StoreRoutes", { screen: "CreateGroup", params: { group, storeID } });
+      }}
       onPressEdit={(defaultValue) => {
         navigation.navigate("StoreRoutes", {
           screen: "ProductTab",

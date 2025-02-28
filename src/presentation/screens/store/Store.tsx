@@ -18,7 +18,8 @@ import LocationInformation from "../common/sales/LocationInformation";
 import StyledButton from "presentation/components/button/StyledButton";
 import apiClient, { endpoints } from "infrastructure/api/server";
 import { batch } from "react-redux";
-import { removeByLocationID } from "application/slice/stores/products.slice";
+import { removeByLocationID as removeProductByLocationID } from "application/slice/stores/products.slice";
+import { removeByLocationID as removeGroupByLocationID } from "application/slice/stores/product.group.slice";
 
 type NavigationProps = StackNavigationProp<RootStore>;
 
@@ -46,7 +47,8 @@ const Card: React.FC<{ item: Location }> = ({ item }) => {
   const removeItem = async (id: string) => {
     batch(() => {
       dispatch(remove({ id }));
-      dispatch(removeByLocationID({ locationID: id }));
+      dispatch(removeProductByLocationID({ locationID: id }));
+      dispatch(removeGroupByLocationID({ locationID: id }));
     });
     await apiClient({
       url: endpoints.store.delete(id),

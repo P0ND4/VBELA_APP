@@ -128,7 +128,7 @@ const CreatePaymentMethod: React.FC<CreatePaymentMethodProps> = ({ navigation, r
   const update = async (data: PaymentMethods) => {
     dispatch(edit(data));
     await apiClient({
-      url: endpoints.setting.paymentMethods.put(),
+      url: endpoints.setting.paymentMethods.put(data.id),
       method: "PUT",
       data,
     });
@@ -185,7 +185,8 @@ const CreatePaymentMethod: React.FC<CreatePaymentMethodProps> = ({ navigation, r
       <StyledButton
         backgroundColor={colors.primary}
         onPress={handleSubmit((data) => {
-          !defaultValue ? save(data) : update(data);
+          if (!defaultValue) save(data);
+          else update(data);
           navigation.pop();
         })}
       >

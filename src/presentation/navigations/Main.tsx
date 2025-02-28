@@ -2,6 +2,7 @@ import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { RootStackParamList } from "domain/entities/navigation/root.stack.param.list.entity";
 import { useAppSelector } from "application/store/hook";
+import { useBackgroundSync } from "infrastructure/offline/useBackgroundSync";
 import AuthRoutes from "./routes/AuthRoutes";
 import ProviderStoreRoutes from "./routes/ProviderStoreRoutes";
 import ReservationRoutes from "./routes/ReservationRoutes";
@@ -14,11 +15,14 @@ import OrderRoutes from "./routes/OrderRoutes";
 import InventoryRoutes from "./routes/InventoryRoutes";
 import StatisticsRoutes from "./routes/StatisticsRoutes";
 import App from "./App";
+import CollaboratorRoutes from "./routes/CollaboratorRoutes";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
 const Main: React.FC = () => {
   const session = useAppSelector((state) => state.session);
+
+  useBackgroundSync();
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -37,6 +41,7 @@ const Main: React.FC = () => {
           <Stack.Screen name="OrderRoutes" component={OrderRoutes} />
           <Stack.Screen name="InventoryRoutes" component={InventoryRoutes} />
           <Stack.Screen name="StatisticsRoutes" component={StatisticsRoutes} />
+          <Stack.Screen name="CollaboratorRoutes" component={CollaboratorRoutes} />
         </>
       )}
     </Stack.Navigator>

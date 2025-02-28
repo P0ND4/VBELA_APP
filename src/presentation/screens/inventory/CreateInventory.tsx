@@ -72,7 +72,7 @@ const CreateInventory: React.FC<CreateInventoryProps> = ({ navigation, route }) 
     dispatch(edit(data));
     navigation.pop();
     await apiClient({
-      url: endpoints.inventory.put(),
+      url: endpoints.inventory.put(data.id),
       method: "PUT",
       data,
     });

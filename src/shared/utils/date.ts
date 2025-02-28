@@ -9,7 +9,7 @@ export const beautifulChangeDate = (date: Readonly<Date>): string =>
   moment(date).format("dddd, DD [de] MMM [de] YYYY");
 
 export const changeDate = (date: Readonly<Date>, time?: boolean): string =>
-  moment(date).format(`DD/MM/YYYY ${time ? "HH:mm" : ""}`);
+  moment(date).format(`DD/MM/YYYY${time ? " HH:mm" : ""}`);
 
 export const formatTimeDHM = (start: number, end: number): string => {
   const duration = moment.duration(moment(end).diff(moment(start)));

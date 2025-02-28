@@ -25,7 +25,7 @@ const SignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
         const user = await login(res.data.user.email);
         if (user) {
           batch(() => {
-            dispatch(changeAll(user));
+            dispatch(changeAll(user[0]));
             dispatch(active());
           });
         }

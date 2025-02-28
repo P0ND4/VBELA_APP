@@ -2,6 +2,7 @@ import type { Element } from "domain/entities/data/common/element.entity";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
+import { Group } from "domain/entities/data";
 
 const menu = (collection: Collection) => collection.menu;
 
@@ -37,16 +38,34 @@ export const menuSlice = createSlice({
     },
     removeStock: (state, action: PayloadAction<{ ids: string[] }>) => {
       const { ids } = action.payload;
-      return state.map((products) => ({
-        ...products,
-        stockIDS: products.stockIDS?.filter((stock) => !ids.includes(stock)),
+      return state.map((menu) => ({
+        ...menu,
+        stockIDS: menu.stockIDS?.filter((stock) => !ids.includes(stock)),
       }));
     },
     removeRecipe: (state, action: PayloadAction<{ ids: string[] }>) => {
       const { ids } = action.payload;
-      return state.map((products) => ({
-        ...products,
-        packageIDS: products.packageIDS?.filter((recipe) => !ids.includes(recipe)),
+      return state.map((menu) => ({
+        ...menu,
+        packageIDS: menu.packageIDS?.filter((recipe) => !ids.includes(recipe)),
+      }));
+    },
+    updateSubcategories: (state, action: PayloadAction<Group>) => {
+      const group = action.payload;
+      return state.map((menu) => ({
+        ...menu,
+        subcategories: menu.subcategories.filter(
+          (sub) =>
+            sub.category !== group.id || group.subcategories.some((s) => s.id === sub.subcategory),
+        ),
+      }));
+    },
+    removeCategory: (state, action: PayloadAction<{ id: string }>) => {
+      const { id } = action.payload;
+      return state.map((menu) => ({
+        ...menu,
+        categories: menu.categories.filter((c) => c !== id),
+        subcategories: menu.subcategories.filter((s) => s.category !== id),
       }));
     },
     clean: () => [],
@@ -67,5 +86,7 @@ export const {
   removeStock,
   removeRecipe,
   removeByLocationID,
+  updateSubcategories,
+  removeCategory,
 } = menuSlice.actions;
 export default menuSlice.reducer;

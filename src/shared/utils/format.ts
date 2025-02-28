@@ -1,8 +1,22 @@
 export const thousandsSystem = (number: number | string): string => {
   const num = String(number);
   const parts = num.split(".");
-  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+  // Formatear la parte entera con separadores de miles
+  parts[0] = parts[0]
+    .split("")
+    .reverse()
+    .join("")
+    .replace(/(\d{3})/g, "$1.")
+    .split("")
+    .reverse()
+    .join("")
+    .replace(/^\./, "");
+
+  // Limitar la parte decimal a 2 dígitos
   if (parts[1]) parts[1] = parts[1].slice(0, 2);
+
+  // Unir las partes con una coma
   return parts.join(",");
 };
 

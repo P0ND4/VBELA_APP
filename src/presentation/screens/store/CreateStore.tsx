@@ -36,7 +36,7 @@ const CreateStore: React.FC<CreateStoreProps> = ({ navigation, route }) => {
     dispatch(edit(data));
     navigation.pop();
     await apiClient({
-      url: endpoints.store.put(),
+      url: endpoints.store.put(data.id),
       method: "PUT",
       data,
     });

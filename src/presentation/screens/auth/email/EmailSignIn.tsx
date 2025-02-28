@@ -3,6 +3,7 @@ import { Keyboard, View, ActivityIndicator, StyleSheet, Alert } from "react-nati
 import { AuthNavigationProp } from "domain/entities/navigation";
 import { useTheme } from "@react-navigation/native";
 import apiClient, { endpoints } from "infrastructure/api/server";
+import { EMAIL_EXPRESSION } from "shared/constants/expressions";
 import StyledText from "presentation/components/text/StyledText";
 import StyledInput from "presentation/components/input/StyledInput";
 import Layout from "presentation/components/layout/Layout";
@@ -10,9 +11,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 
 import * as WebBrowser from "expo-web-browser";
 import StyledButton from "presentation/components/button/StyledButton";
-import axios from "axios";
 
-const EMAIL_EXPRESSION = /^([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$/;
 const TERMS_OF_SERVICE_URL = "https://sites.google.com/view/terminos-y-condiciones-vbela/inicio";
 const PRIVACY_POLICY_URL = "https://sites.google.com/view/politica-de-privacidad-vbela/principal";
 
@@ -40,7 +39,7 @@ const EmailSignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
         keyboardType="email-address"
         maxLength={64}
         value={email}
-        onChangeText={(email) => setEmail(email)}
+        onChangeText={setEmail}
         placeholder="Correo electrónico"
       />
       <StyledText style={{ marginBottom: 20 }} verySmall>

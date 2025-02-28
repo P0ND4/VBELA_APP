@@ -23,6 +23,7 @@ import Kitchen from "presentation/screens/kitchen/Kitchen";
 import Delivery from "presentation/screens/delivery/Delivery";
 import Home from "presentation/screens/Home";
 import Statistic from "presentation/screens/statistic/Statistic";
+import Collaborator from "presentation/screens/collaborator/Collaborator";
 
 const Drawer = createDrawerNavigator<RootApp>();
 
@@ -109,7 +110,6 @@ function App() {
         options={{
           title: "Producción",
           drawerIcon: () => (
-            //TODO SI ES IGUAL A 0 COLOCAR UN ICONO
             <View style={[styles.order, { backgroundColor: colors.primary }]}>
               <StyledText verySmall color="#FFFFFF">
                 {thousandsSystem(kitchens.length)}
@@ -142,6 +142,14 @@ function App() {
           drawerIcon: ({ color }) => <Ionicons name="grid-outline" size={22} color={color} />,
         }}
       />
+      {/* <Drawer.Screen
+        name="Collaborator"
+        component={Collaborator}
+        options={{
+          title: "Colaboradores",
+          drawerIcon: ({ color }) => <Ionicons name="people-outline" size={22} color={color} />,
+        }}
+      /> */}
       <Drawer.Screen
         name="Setting"
         component={Setting}

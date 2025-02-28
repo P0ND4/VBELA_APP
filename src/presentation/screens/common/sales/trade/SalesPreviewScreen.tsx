@@ -3,7 +3,7 @@ import { View, FlatList, StyleSheet, TouchableOpacity, Switch, TextInput } from 
 import { Numeric, Pad } from "../../NumericPad";
 import { useTheme } from "@react-navigation/native";
 import { useOrder } from "application/context/OrderContext";
-import { formatDecimals, random, thousandsSystem } from "shared/utils";
+import { formatDecimals, thousandsSystem } from "shared/utils";
 import { Element, Order, Save, Selection } from "domain/entities/data/common";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
@@ -13,6 +13,7 @@ import SalesButtonBottom from "../components/SalesButtonBottom";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import DiscountScreen from "../components/DiscountScreen";
 import ScreenModal from "presentation/components/modal/ScreenModal";
+import { send } from "../utils/transform.element";
 
 type ValueModalProps = {
   visible: boolean;
@@ -256,17 +257,7 @@ const Card: React.FC<CardProps> = ({ item, addElement, locationID, goBack = () =
           onClose={() => setDescriptionModal(false)}
           defaultValue={item.name}
           onSave={(name, register) => {
-            if (register) {
-              const data = {
-                id: random(10),
-                name,
-                price: item.value,
-                locationID,
-                creationDate: new Date().getTime(),
-                modificationDate: new Date().getTime(),
-              };
-              addElement(data);
-            }
+            if (register) addElement(send({ name, value: item.value, locationID }));
             updateSelection({ ...item, name, registered: register });
           }}
         />
@@ -301,7 +292,7 @@ const SalesPreviewScreen: React.FC<SalesPreviewScreenProps> = ({
   addElement = () => {},
   buttonsEvent,
   locationID,
-  tableID
+  tableID,
 }) => {
   const { colors } = useTheme();
   const { info, updateInfo, selection, change } = useOrder();

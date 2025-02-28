@@ -8,13 +8,13 @@ import { random, thousandsSystem } from "shared/utils";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { addMultiple, edit } from "application/slice/restaurants/tables.slice";
 import { Table } from "domain/entities/data/restaurants";
+import apiClient, { endpoints } from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledInput from "presentation/components/input/StyledInput";
 import StyledButton from "presentation/components/button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
-import apiClient, { endpoints } from "infrastructure/api/server";
 
 type CreateTableProps = {
   navigation: StackNavigationProp<RootRestaurant>;
@@ -76,7 +76,7 @@ const CreateTable: React.FC<CreateTableProps> = ({ navigation, route }) => {
     dispatch(edit(data));
     navigation.pop();
     await apiClient({
-      url: endpoints.table.put(),
+      url: endpoints.table.put(data.id),
       method: "PUT",
       data,
     });

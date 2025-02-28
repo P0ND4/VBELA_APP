@@ -47,7 +47,7 @@ const CreateLocation: React.FC<CreateLocationProps> = ({
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
   const [inventoryModal, setInventoryModal] = useState<boolean>(false);
 
-  const [data, setData] = useState<{ label: string; value: string }[]>([]); // INVENTORIES DATA
+  const [data, setData] = useState<{ label: string; value: string }[]>([]);
 
   const { description, inventories: inv } = watch();
 

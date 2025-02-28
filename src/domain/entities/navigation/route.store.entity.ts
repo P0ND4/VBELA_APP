@@ -1,6 +1,6 @@
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RouteProp } from "@react-navigation/native";
-import { Location } from "../data/common";
+import { Group, Location } from "../data/common";
 import { Element } from "../data/common/element.entity";
 import { Order, PaymentMethod } from "../data/common/order.entity";
 
@@ -27,6 +27,7 @@ type NoProvider = {
   ProductTab: { storeID: string; defaultValue?: Element };
   OrderCompleted: { sale: Order };
   CreateStore: { store?: Location };
+  CreateGroup: { storeID: string; group?: Group };
   Invoice: { sale: Order };
 };
 

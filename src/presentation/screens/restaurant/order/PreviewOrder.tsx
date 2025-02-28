@@ -3,9 +3,10 @@ import { RestaurantRouteProp, RootRestaurant } from "domain/entities/navigation"
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { add } from "application/slice/restaurants/menu.slice";
-import { Order, Save } from "domain/entities/data/common";
+import { Order, Element, Save } from "domain/entities/data/common";
 import SalesPreviewScreen from "presentation/screens/common/sales/trade/SalesPreviewScreen";
 import useSave, { CallbackProps } from "../hooks/useSave";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type PreviewOrderProps = {
   navigation: StackNavigationProp<RootRestaurant>;
@@ -15,7 +16,7 @@ type PreviewOrderProps = {
 const PreviewOrder: React.FC<PreviewOrderProps> = ({ navigation, route }) => {
   const { kitchen } = useSave();
 
-const navigationMethod = useAppSelector((state) => state.salesNavigationMethod);
+  const navigationMethod = useAppSelector((state) => state.salesNavigationMethod);
 
   const defaultValue = route.params?.defaultValue;
   const restaurantID = route.params.restaurantID;
@@ -35,12 +36,21 @@ const navigationMethod = useAppSelector((state) => state.salesNavigationMethod);
     );
   };
 
+  const addElement = async (data: Element) => {
+    dispatch(add(data));
+    await apiClient({
+      url: endpoints.menu.post(),
+      method: "POST",
+      data,
+    });
+  };
+
   return (
     <SalesPreviewScreen
       defaultValue={defaultValue}
       sendButton={() => navigation.navigate("OrderPayment", { restaurantID, tableID })}
       goBack={() => navigation.pop()}
-      addElement={(data) => dispatch(add(data))}
+      addElement={addElement}
       locationID={restaurantID}
       tableID={tableID}
       buttonsEvent={{

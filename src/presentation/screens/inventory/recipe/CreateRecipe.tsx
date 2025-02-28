@@ -191,7 +191,7 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
     dispatch(edit(data));
     navigation.pop();
     await apiClient({
-      url: endpoints.recipe.put(),
+      url: endpoints.recipe.put(data.id),
       method: "PUT",
       data,
     });
@@ -239,7 +239,7 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
             </StyledText>
           )}
           <StyledButton style={styles.row} onPress={() => setValueModal(true)}>
-            <StyledText>Valor de receta {!!value && `(${thousandsSystem(value)})`}</StyledText>
+            <StyledText>Precio de venta {!!value && `(${thousandsSystem(value)})`}</StyledText>
             <Ionicons name="chevron-forward" color={colors.text} size={19} />
           </StyledButton>
           {formState.errors.value && (

@@ -7,12 +7,14 @@ import CreateRestaurant from "presentation/screens/restaurant/CreateRestaurant";
 import OrderCompleted from "presentation/screens/restaurant/order/OrderCompleted";
 import Invoice from "presentation/screens/restaurant/order/Invoice";
 import MenuTab from "presentation/screens/restaurant/order/MenuTab";
+import CreateGroup from "presentation/screens/restaurant/group/CreateGroup";
 
 const Stack = createStackNavigator<RootRestaurant>();
 
 const RestaurantRoutes: React.FC = () => {
   return (
     <Stack.Navigator>
+      <Stack.Screen name="CreateGroup" component={CreateGroup} />
       <Stack.Screen name="CreateRestaurant" component={CreateRestaurant} />
       <Stack.Screen name="CreateTable" component={CreateTable} />
       <Stack.Screen name="Table" component={Table} />

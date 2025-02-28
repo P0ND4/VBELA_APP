@@ -5,12 +5,14 @@ import CreateStore from "presentation/screens/store/CreateStore";
 import ProductTab from "presentation/screens/store/order/ProductTab";
 import OrderCompleted from "presentation/screens/store/order/OrderCompleted";
 import Invoice from "presentation/screens/store/order/Invoice";
+import CreateGroup from "presentation/screens/store/group/CreateGroup";
 
 const Stack = createStackNavigator<RootStore>();
 
 const StoreRoutes: React.FC = () => {
   return (
     <Stack.Navigator>
+      <Stack.Screen name="CreateGroup" component={CreateGroup} />
       <Stack.Screen name="CreateStore" component={CreateStore} />
       <Stack.Screen name="ProductTab" component={ProductTab} />
       <Stack.Screen name="OrderCompleted" component={OrderCompleted} />

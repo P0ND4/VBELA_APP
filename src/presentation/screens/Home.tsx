@@ -9,11 +9,11 @@ import { active, clean, Status } from "application/appState/state/state.controll
 import { batch } from "react-redux";
 import { Order } from "domain/entities/data/common";
 import { add } from "application/slice/handlers/handlers.slice";
+import apiClient, { endpoints } from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import apiClient, { endpoints } from "infrastructure/api/server";
 
 const Home: React.FC = () => {
   const { colors } = useTheme();

@@ -7,12 +7,12 @@ import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
 import type { Stock as StockType } from "domain/entities/data/inventories";
+import { Type } from "domain/enums/data/inventory/movement.enums";
 import StyledInput from "presentation/components/input/StyledInput";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
-import { Type } from "domain/enums/data/inventory/movement.enums";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
@@ -25,7 +25,6 @@ type CardProps = {
 const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
   const { colors } = useTheme();
 
-  const coin = useAppSelector((state) => state.coin);
   const quantity = stock.movements.reduce((a, b) => a + b.quantity, 0);
 
   return (
@@ -34,17 +33,22 @@ const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
       onPress={() => onPress(stock)}
       onLongPress={() => onLongPress(stock)}
     >
-      <View>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {quantity < stock.reorder && (
+          <Ionicons name="warning-outline" size={22} color={colors.primary} />
+        )}
         <StyledText>
           {stock.name} {stock.unit && `(${stock.unit})`}
         </StyledText>
-        <StyledText>
-          Total: {stock.currentValue * quantity} {coin}
+      </View>
+      <View style={{ alignItems: "flex-end" }}>
+        <StyledText bold color={quantity >= stock.reorder ? colors.text : colors.primary}>
+          {thousandsSystem(quantity)}
+        </StyledText>
+        <StyledText verySmall color={colors.primary}>
+          {thousandsSystem(stock.currentValue * quantity)}
         </StyledText>
       </View>
-      <StyledText right color={quantity >= stock.reorder ? colors.text : colors.primary}>
-        {thousandsSystem(quantity)}/{thousandsSystem(stock.reorder)}
-      </StyledText>
     </StyledButton>
   );
 };

@@ -15,8 +15,8 @@ import countries from "shared/data/countries.json";
 
 import * as localization from "expo-localization";
 import * as WebBrowser from "expo-web-browser";
+import { PHONE_EXPRESSION } from "shared/constants/expressions";
 
-const PHONE_EXPRESSION = /^[0-9]{7,20}$/;
 const TERMS_OF_SERVICE_URL = "https://sites.google.com/view/terminos-y-condiciones-vbela/inicio";
 const PRIVACY_POLICY_URL = "https://sites.google.com/view/politica-de-privacidad-vbela/principal";
 
@@ -134,7 +134,7 @@ const PhoneSignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
           keyboardType="numeric"
           maxLength={20}
           value={phone}
-          onChangeText={(phone) => setPhone(phone)}
+          onChangeText={setPhone}
           placeholder="Número de teléfono"
         />
       </View>

@@ -72,7 +72,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
     dispatch(edit(data));
     navigation.pop();
     await apiClient({
-      url: endpoints.stock.put(),
+      url: endpoints.stock.put(data.id),
       method: "PUT",
       data,
     });
@@ -122,7 +122,6 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
               <Controller
                 name="reference"
                 control={control}
-                rules={{ required: true }}
                 render={({ field: { onChange, onBlur, value } }) => (
                   <StyledInput
                     placeholder="Referencia"
@@ -136,7 +135,6 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
               <Controller
                 name="brand"
                 control={control}
-                rules={{ required: true }}
                 render={({ field: { onChange, onBlur, value } }) => (
                   <StyledInput
                     placeholder="Marca"

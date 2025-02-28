@@ -20,6 +20,7 @@ type ProductTabProps = {
 const ProductTab: React.FC<ProductTabProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
+  const productGroup = useAppSelector((state) => state.productGroup);
   const stores = useAppSelector((state) => state.stores);
 
   const [inventories, setInventories] = useState<string[]>([]);
@@ -43,7 +44,7 @@ const ProductTab: React.FC<ProductTabProps> = ({ navigation, route }) => {
     dispatch(edit(data));
     navigation.pop();
     await apiClient({
-      url: endpoints.product.put(),
+      url: endpoints.product.put(data.id),
       method: "PUT",
       data,
     });
@@ -106,6 +107,7 @@ const ProductTab: React.FC<ProductTabProps> = ({ navigation, route }) => {
       onSubmit={defaultValue ? update : save}
       defaultValue={defaultValue}
       locationID={storeID}
+      groups={productGroup}
     />
   );
 };

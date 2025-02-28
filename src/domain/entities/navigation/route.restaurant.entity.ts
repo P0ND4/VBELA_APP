@@ -1,6 +1,6 @@
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RouteProp } from "@react-navigation/native";
-import { Location } from "../data/common";
+import { Group, Location } from "../data/common";
 import { Element } from "../data/common/element.entity";
 import { Order, PaymentMethod } from "../data/common/order.entity";
 import { Table } from "../data/restaurants";
@@ -31,6 +31,7 @@ type NoProvider = {
   OrderCompleted: { sale: Order };
   CreateRestaurant: { restaurant?: Location };
   CreateTable: { restaurantID: string; defaultValue?: Table };
+  CreateGroup: { restaurantID: string; group?: Group };
   Invoice: { sale: Order };
 };
 

@@ -1,14 +1,27 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Collection } from "domain/entities/data/user";
 import apiClient, { endpoints } from "infrastructure/api/server";
+import CryptoJS from "crypto-js";
 
-export const login = async (identifier: string) => {
+const getServerTime = async () => {
+  const response = await apiClient<{ timestamp: number }>({
+    url: endpoints.auth.serverTime(),
+    method: "GET",
+  });
+  return response.data.timestamp;
+};
+
+export const login = async (identifier: string, collaborator: string | null = null) => {
   try {
+    const secret = process.env.LOGIN_SECRET;
+    const serverTimestamp = await getServerTime();
+    const hash = CryptoJS.HmacSHA256(`${identifier}:${serverTimestamp}`, secret!).toString();
+
     // Realizar login
     const loginResponse = await apiClient<{ access_token: string }>({
       url: endpoints.auth.login(),
       method: "POST",
-      data: { identifier, expoID: null },
+      data: { identifier, collaborator, expoID: null, hash, timestamp: serverTimestamp },
     });
 
     // Verificar si la respuesta es exitosa
@@ -20,7 +33,7 @@ export const login = async (identifier: string) => {
     await AsyncStorage.setItem("access_token", token);
 
     // Obtener usuario después de login
-    const userResponse = await apiClient<Collection>({
+    const userResponse = await apiClient<Collection[]>({
       url: endpoints.user.get(),
       method: "GET",
       data: { identifier, expoID: null },

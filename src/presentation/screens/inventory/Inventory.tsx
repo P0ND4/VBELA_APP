@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, TouchableOpacity, StyleSheet, Image, FlatList, ListRenderItem } from "react-native";
+import { View, TouchableOpacity, StyleSheet, FlatList, ListRenderItem } from "react-native";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { AppNavigationProp, RootApp } from "domain/entities/navigation";
 import type { Inventory as InventoryType } from "domain/entities/data/inventories";

@@ -88,7 +88,7 @@ const useSave = () => {
     callback && callback({ order, kitchen: null });
 
     await apiClient({
-      url: endpoints.order.put(),
+      url: endpoints.order.put(order.id),
       method: "PUT",
       data: {
         movements,

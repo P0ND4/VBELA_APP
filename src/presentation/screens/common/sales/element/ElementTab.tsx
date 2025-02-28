@@ -10,12 +10,14 @@ import { Visible } from "domain/enums/data/inventory/visible.enums";
 import StockElement from "./ElementStock";
 import CreateElement from "./ElementForm";
 import { UnitValue } from "shared/constants/unit";
+import { Group } from "domain/entities/data";
 
 const Tab = createMaterialTopTabNavigator();
 
 type TabScreenProps = MaterialTopTabScreenProps<any, any>;
 
 type ElementTabProps = {
+  groups: Group[];
   inventories: string[];
   visible: Visible.Store | Visible.Restaurant;
   onSubmit: (data: Element) => void;
@@ -24,6 +26,7 @@ type ElementTabProps = {
 };
 
 const ElementTab: React.FC<ElementTabProps> = ({
+  groups,
   onSubmit,
   visible,
   inventories,
@@ -37,8 +40,8 @@ const ElementTab: React.FC<ElementTabProps> = ({
     price: defaultValue?.price || 0,
     cost: defaultValue?.cost || 0,
     promotion: defaultValue?.promotion || 0,
-    category: defaultValue?.category || [],
-    subcategory: defaultValue?.subcategory || [],
+    categories: defaultValue?.categories || [],
+    subcategories: defaultValue?.subcategories || [],
     description: defaultValue?.description || "",
     code: defaultValue?.code || "",
     unit: (defaultValue?.unit || "") as UnitValue,
@@ -62,6 +65,7 @@ const ElementTab: React.FC<ElementTabProps> = ({
         {(props: TabScreenProps) => (
           <CreateElement
             {...props}
+            groups={groups}
             onSubmit={onSubmit}
             control={control}
             handleSubmit={handleSubmit}

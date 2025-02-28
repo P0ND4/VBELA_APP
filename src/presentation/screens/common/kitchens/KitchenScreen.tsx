@@ -114,7 +114,7 @@ const KitchenScreen: React.FC<KitchenScreenProps> = ({ orders, status }) => {
     const data = { ...item, status, modificationDate: Date.now() };
     dispatch(edit(data));
     await apiClient({
-      url: endpoints.kitchen.put(),
+      url: endpoints.kitchen.put(item.id),
       method: "PUT",
       data,
     });

@@ -37,7 +37,7 @@ const CreateRestaurant: React.FC<CreateRestaurantProps> = ({ navigation, route }
     dispatch(edit(data));
     navigation.pop();
     await apiClient({
-      url: endpoints.restaurant.put(),
+      url: endpoints.restaurant.put(data.id),
       method: "PUT",
       data,
     });

@@ -1,20 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
-  Modal,
+  ListRenderItem,
   StyleSheet,
   Switch,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { useTheme } from "@react-navigation/native";
-import { random, thousandsSystem } from "shared/utils";
+import { changeDate, thousandsSystem } from "shared/utils";
 import { useOrder } from "application/context/OrderContext";
-import { Save, Element, Order } from "domain/entities/data/common";
+import {
+  Save,
+  Element,
+  Order,
+  Group as GroupType,
+  GroupSubCategory,
+} from "domain/entities/data/common";
 import { Pad } from "presentation/screens/common/NumericPad";
+import { unitOptions } from "shared/constants/unit";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledInput from "presentation/components/input/StyledInput";
@@ -24,121 +30,11 @@ import SalesButtonBottom from "../components/SalesButtonBottom";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import ScreenModal from "presentation/components/modal/ScreenModal";
 import SalesCard from "../components/SalesCard";
-
-type CardModalProps = {
-  visible: boolean;
-  onClose: () => void;
-  onPressEdit: (data: Element) => void;
-  data: Element;
-};
-
-const CardModal: React.FC<CardModalProps> = ({ visible, onClose, data, onPressEdit }) => {
-  const { colors } = useTheme();
-
-  return (
-    <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#0005" }]} />
-      </TouchableWithoutFeedback>
-      <View style={styles.cardPreviewContainer}>
-        <TouchableOpacity onPress={() => onClose()}>
-          <Ionicons name="close" color={colors.background} size={42} />
-        </TouchableOpacity>
-        <View style={[styles.cardPreview, { backgroundColor: colors.background }]}>
-          <View style={[styles.backgroundImagePreview, { backgroundColor: colors.card }]}>
-            <TouchableOpacity
-              style={[styles.enlarge, { backgroundColor: colors.background }]}
-              onPress={() => alert("Para la tercera actualización")}
-            >
-              <Ionicons
-                name="code"
-                style={{ transform: [{ rotate: "-45deg" }] }}
-                color={colors.text}
-                size={20}
-              />
-            </TouchableOpacity>
-          </View>
-          <View style={{ padding: 20 }}>
-            <View style={{ marginBottom: 15 }}>
-              <StyledText color={colors.primary}>{data.name}</StyledText>
-              <StyledText>{data.description}</StyledText>
-            </View>
-            <View style={{ flexDirection: "row" }}>
-              <StyledText subtitle color={colors.primary}>
-                {thousandsSystem(data?.promotion || data?.price)}
-              </StyledText>
-              {(data?.promotion || 0) > 0 && (
-                <StyledText smallParagraph style={{ marginLeft: 5 }} lineThrough>
-                  {thousandsSystem(data?.price)}
-                </StyledText>
-              )}
-            </View>
-          </View>
-        </View>
-        <View style={[styles.row, { width: "50%", justifyContent: "space-evenly" }]}>
-          <TouchableOpacity
-            onPress={() => onPressEdit(data)}
-            style={[styles.buttonPreviewContent, { backgroundColor: colors.background }]}
-          >
-            <Ionicons name="pencil" color={colors.text} size={20} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.buttonPreviewContent, { backgroundColor: colors.background }]}
-            onPress={() => alert("Para la tercera actualización")}
-          >
-            <Ionicons name="share-social" color={colors.text} size={20} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-};
-
-type CardProps = {
-  item: Element;
-  onPress?: () => void;
-  onPressEdit: (data: Element) => void;
-};
-
-const Card: React.FC<CardProps> = ({ item, onPressEdit, onPress }) => {
-  const { colors } = useTheme();
-
-  // const [modalVisible, setModalVisible] = useState<boolean>(false);
-
-  // const onToggle = () => setModalVisible(!modalVisible);
-
-  return (
-    <>
-      <SalesCard onLongPress={() => onPressEdit(item)} data={item} onPress={onPress} />
-      <View style={{ borderBottomWidth: 1, borderColor: colors.border }} />
-      {/* <CardModal visible={modalVisible} onClose={onToggle} data={item} onPressEdit={onPressEdit} /> */}
-    </>
-  );
-};
-
-type ModalProps = {
-  visible: boolean;
-  onClose: () => void;
-};
-
-const FilterModal: React.FC<ModalProps> = ({ visible, onClose }) => {
-  const { colors } = useTheme();
-
-  return (
-    <ScreenModal title="Filtro" visible={visible} onClose={onClose}>
-      <Layout>
-        <StyledButton style={styles.row}>
-          <StyledText>Categoría</StyledText>
-          <Ionicons name="chevron-forward" color={colors.text} size={19} />
-        </StyledButton>
-        <StyledButton style={styles.row}>
-          <StyledText>Sub - Categoría</StyledText>
-          <Ionicons name="chevron-forward" color={colors.text} size={19} />
-        </StyledButton>
-      </Layout>
-    </ScreenModal>
-  );
-};
+import InformationModal from "presentation/components/modal/InformationModal";
+import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
+import SimpleCalendarModal from "presentation/components/modal/SimpleCalendarModal";
+import { send } from "../utils/transform.element";
+import moment from "moment";
 
 type UnregisteredModalProps = {
   visible: boolean;
@@ -159,15 +55,6 @@ const UnregisteredModal: React.FC<UnregisteredModalProps> = ({
   const [name, setName] = useState<string>("");
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
   const [register, setRegister] = useState<boolean>(false);
-
-  const send = ({ name = "Sin nombre" }: { name?: string } = {}) => ({
-    id: random(10),
-    name,
-    price: value,
-    locationID,
-    creationDate: new Date().getTime(),
-    modificationDate: new Date().getTime(),
-  });
 
   const clean = () => {
     setRegister(false);
@@ -206,7 +93,7 @@ const UnregisteredModal: React.FC<UnregisteredModalProps> = ({
               maxValue={9999999999}
               condition={value > 0}
               onSave={() => {
-                onSave(send(), register);
+                onSave(send({ name, value, locationID }), register);
                 onClose();
                 clean();
               }}
@@ -251,7 +138,7 @@ const UnregisteredModal: React.FC<UnregisteredModalProps> = ({
             style={{ marginTop: 10 }}
             disable={!name}
             onPress={() => {
-              onSave(send({ name }), register);
+              onSave(send({ name, value, locationID }), register);
               setDescriptionModal(false);
               onClose();
               clean();
@@ -267,12 +154,20 @@ const UnregisteredModal: React.FC<UnregisteredModalProps> = ({
   );
 };
 
+type Filters = {
+  unit: string;
+  creationDate: null | number;
+  modificationDate: null | number;
+};
+
 type SalesBoxScreenProps = {
   defaultValue?: Order;
+  groups: GroupType[];
   elements: Element[];
   sendButton: () => void;
   addElement: (data: Element) => void;
   onPressEdit: (data: Element) => void;
+  onPressGroup: (group?: GroupType) => void;
   locationID: string;
   tableID?: string;
   buttonsEvent: {
@@ -281,13 +176,21 @@ type SalesBoxScreenProps = {
   };
 };
 
+const filterInitialState = {
+  unit: "",
+  creationDate: null,
+  modificationDate: null,
+};
+
 const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
   defaultValue,
+  groups,
   elements,
   locationID,
   tableID,
   sendButton = () => {},
   onPressEdit = () => {},
+  onPressGroup = () => {},
   addElement = () => {},
   buttonsEvent = {},
 }) => {
@@ -306,14 +209,109 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
   const [data, setData] = useState<Element[]>([]);
   const [search, setSearch] = useState<string>("");
 
-  useEffect(() => {
-    const sort = [...elements].sort((a, b) => (b.highlight ? 1 : 0) - (a.highlight ? 1 : 0));
+  const [categorySelected, setCategorySelected] = useState<GroupType | null>(null);
+  const [subcategorySelected, setSubcategorySelected] = useState<GroupSubCategory | null>(null);
 
-    if (search) {
-      const filtered = sort.filter((s) => {});
-      setData(filtered);
-    } else setData(sort);
-  }, [elements, search]);
+  const [filters, setFilters] = useState<Filters>(filterInitialState);
+
+  const [unitModal, setUnitModal] = useState<boolean>(false);
+  const [creationDateCalendarModal, setCreationDateCalendarModal] = useState<boolean>(false);
+  const [modificationDateCalendarModal, setModificationDateCalendarModal] =
+    useState<boolean>(false);
+
+  useEffect(() => {
+    setCategorySelected(null);
+    setSubcategorySelected(null);
+  }, [groups]);
+
+  useEffect(() => {
+    let sort = [...elements].sort((a, b) => {
+      if (b.highlight !== a.highlight) return b.highlight ? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
+
+    if (search)
+      sort = sort.filter(
+        (element) =>
+          element.name.toLowerCase().includes(search.toLowerCase()) ||
+          element.description.toLowerCase().includes(search.toLowerCase()) ||
+          element.code.includes(search),
+      );
+
+    if (categorySelected)
+      sort = sort.filter((element) => element.categories.includes(categorySelected.id));
+
+    if (subcategorySelected)
+      sort = sort.filter((element) =>
+        element.subcategories.some((s) => s.subcategory === subcategorySelected.id),
+      );
+
+    if (filters.unit) sort = sort.filter((element) => element.unit === filters.unit);
+
+    if (filters.creationDate)
+      sort = sort.filter((element) =>
+        moment(element.creationDate).isSame(moment(filters.creationDate), "day"),
+      );
+
+    if (filters.modificationDate)
+      sort = sort.filter((element) =>
+        moment(element.modificationDate).isSame(moment(filters.modificationDate), "day"),
+      );
+
+    setData(sort);
+  }, [elements, search, categorySelected, subcategorySelected, filters]);
+
+  const renderItemElement: ListRenderItem<Element> = useCallback(
+    ({ item }) => (
+      <>
+        <SalesCard
+          onLongPress={() => onPressEdit(item)}
+          data={item}
+          onPress={() => addSelection(item, true, count)}
+        />
+        <View style={{ borderBottomWidth: 1, borderColor: colors.border }} />
+      </>
+    ),
+    [count, addSelection],
+  );
+
+  const renderItemCategory: ListRenderItem<GroupType> = useCallback(
+    ({ item }) => (
+      <StyledButton
+        style={styles.group}
+        backgroundColor={categorySelected?.id === item.id ? colors.primary : colors.card}
+        onLongPress={() => onPressGroup(item)}
+        onPress={() => {
+          setSubcategorySelected(null);
+          if (categorySelected?.id === item.id) setCategorySelected(null);
+          else setCategorySelected(item);
+        }}
+      >
+        <StyledText verySmall color={categorySelected?.id === item.id ? "#FFFFFF" : colors.text}>
+          {item.category}
+        </StyledText>
+      </StyledButton>
+    ),
+    [categorySelected],
+  );
+
+  const renderItemSubCategory: ListRenderItem<GroupSubCategory> = useCallback(
+    ({ item }) => (
+      <StyledButton
+        style={styles.group}
+        backgroundColor={subcategorySelected?.id === item.id ? colors.primary : colors.card}
+        onPress={() => {
+          if (subcategorySelected?.id === item.id) setSubcategorySelected(null);
+          else setSubcategorySelected(item);
+        }}
+      >
+        <StyledText verySmall color={subcategorySelected?.id === item.id ? "#FFFFFF" : colors.text}>
+          {item.name}
+        </StyledText>
+      </StyledButton>
+    ),
+    [subcategorySelected],
+  );
 
   return (
     <>
@@ -329,15 +327,9 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
                 placeholder="Buscar por nombre"
               />
               <View style={{ flexDirection: "row", marginLeft: 8 }}>
-                {/* <StyledButton
-                  style={styles.headerButton}
-                  onPress={() => {
-                    alert("Para la tercera actualización");
-                    // setFilterModal(true)
-                  }}
-                >
+                <StyledButton style={styles.headerButton} onPress={() => setFilterModal(true)}>
                   <Ionicons name="list-outline" size={20} color={colors.primary} />
-                </StyledButton> */}
+                </StyledButton>
                 <StyledButton
                   style={[{ marginHorizontal: 8, width: "auto" }, styles.headerButton]}
                   onPress={() => setUnregisteredModal(true)}
@@ -349,6 +341,37 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
                 </StyledButton>
               </View>
             </View>
+            <View>
+              <View style={styles.row}>
+                <FlatList
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ flexGrow: 1 }}
+                  data={groups}
+                  horizontal
+                  keyExtractor={(group) => group.id}
+                  renderItem={renderItemCategory}
+                />
+                <StyledButton
+                  style={[styles.group, { marginLeft: 5 }]}
+                  backgroundColor={colors.primary}
+                  onPress={() => onPressGroup()}
+                >
+                  <StyledText verySmall color="#FFFFFF">
+                    Crear categoría
+                  </StyledText>
+                </StyledButton>
+              </View>
+              {categorySelected && (
+                <FlatList
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ flexGrow: 1 }}
+                  data={categorySelected.subcategories}
+                  horizontal
+                  keyExtractor={(group) => group.id}
+                  renderItem={renderItemSubCategory}
+                />
+              )}
+            </View>
             {!data.length && (
               <StyledText color={colors.primary} style={{ marginTop: 8 }}>
                 NO SE ENCONTRARON RESULTADOS
@@ -357,13 +380,7 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
             <FlatList
               data={data}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <Card
-                  item={item}
-                  onPressEdit={onPressEdit}
-                  onPress={() => addSelection(item, true, count)}
-                />
-              )}
+              renderItem={renderItemElement}
               style={{ marginTop: 8 }}
             />
             <SalesButtonBottom
@@ -403,7 +420,74 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
           addSelection(item, register, count);
         }}
       />
-      <FilterModal visible={filterModal} onClose={() => setFilterModal(false)} />
+      <InformationModal
+        title="Filtros"
+        animationType="fade"
+        visible={filterModal}
+        onClose={() => setFilterModal(false)}
+      >
+        <StyledButton
+          style={styles.row}
+          onLongPress={() => setFilters({ ...filters, unit: "" })}
+          onPress={() => setUnitModal(true)}
+        >
+          <StyledText smallParagraph>Unidad {filters.unit && `(${filters.unit})`}</StyledText>
+          <Ionicons name="chevron-forward" color={colors.text} size={14} />
+        </StyledButton>
+        <StyledButton
+          style={styles.row}
+          onLongPress={() => setFilters({ ...filters, creationDate: null })}
+          onPress={() => setCreationDateCalendarModal(true)}
+        >
+          <StyledText smallParagraph>
+            Fecha de creación{" "}
+            {filters.creationDate && `(${changeDate(new Date(filters.creationDate))})`}
+          </StyledText>
+          <Ionicons name="chevron-forward" color={colors.text} size={14} />
+        </StyledButton>
+        <StyledButton
+          style={styles.row}
+          onLongPress={() => setFilters({ ...filters, modificationDate: null })}
+          onPress={() => setModificationDateCalendarModal(true)}
+        >
+          <StyledText smallParagraph>
+            Fecha de modificación{" "}
+            {filters.modificationDate && `(${changeDate(new Date(filters.modificationDate))})`}
+          </StyledText>
+          <Ionicons name="chevron-forward" color={colors.text} size={14} />
+        </StyledButton>
+        <StyledButton
+          backgroundColor={colors.primary}
+          onPress={() => {
+            setFilters(filterInitialState);
+            setFilterModal(false);
+          }}
+        >
+          <StyledText smallParagraph center color="#FFFFFF">
+            Remover filtros
+          </StyledText>
+        </StyledButton>
+      </InformationModal>
+      <PickerFloorModal
+        title="SELECCIONE LA UNIDAD"
+        remove="Remover unidad"
+        visible={unitModal}
+        onClose={() => setUnitModal(false)}
+        data={unitOptions}
+        onSubmit={(unit) => setFilters({ ...filters, unit: String(unit) })}
+      />
+      <SimpleCalendarModal
+        defaultValue={filters.creationDate}
+        visible={creationDateCalendarModal}
+        onClose={() => setCreationDateCalendarModal(false)}
+        onSave={(date) => setFilters({ ...filters, creationDate: date })}
+      />
+      <SimpleCalendarModal
+        defaultValue={filters.modificationDate}
+        visible={modificationDateCalendarModal}
+        onClose={() => setModificationDateCalendarModal(false)}
+        onSave={(date) => setFilters({ ...filters, modificationDate: date })}
+      />
     </>
   );
 };
@@ -431,36 +515,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     borderBottomWidth: 2,
   },
-  cardPreviewContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    flex: 1,
-  },
-  cardPreview: {
-    marginVertical: 20,
-    width: "80%",
-    borderRadius: 5,
-  },
-  buttonPreviewContent: {
-    height: 50,
-    width: 50,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  backgroundImagePreview: {
-    width: "100%",
-    height: 200,
-    position: "relative",
-  },
-  enlarge: {
-    position: "absolute",
-    right: 10,
-    top: 10,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
+  group: {
+    width: "auto",
+    marginRight: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    minWidth: 80,
     alignItems: "center",
   },
 });

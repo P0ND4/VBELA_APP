@@ -3,7 +3,9 @@ import { useAppDispatch } from "application/store/hook";
 import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.store.entity";
 import { add } from "application/slice/stores/products.slice";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { Element } from "domain/entities/data/common/element.entity";
 import SalesPreviewScreen from "presentation/screens/common/sales/trade/SalesPreviewScreen";
+import apiClient, { endpoints } from "infrastructure/api/server";
 
 type PreviewOrderProps = {
   navigation: StackNavigationProp<RootStore>;
@@ -20,12 +22,21 @@ const PreviewOrder: React.FC<PreviewOrderProps> = ({ navigation, route }) => {
     navigation.setOptions({ title: "Previsualizar orden" });
   }, []);
 
+  const addElement = async (data: Element) => {
+    dispatch(add(data));
+    await apiClient({
+      url: endpoints.product.post(),
+      method: "POST",
+      data,
+    });
+  };
+
   return (
     <SalesPreviewScreen
       defaultValue={defaultValue}
       sendButton={() => navigation.navigate("OrderPayment", { storeID })}
       goBack={() => navigation.pop()}
-      addElement={(data) => dispatch(add(data))}
+      addElement={addElement}
       locationID={storeID}
       buttonsEvent={
         {
