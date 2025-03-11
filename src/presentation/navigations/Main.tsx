@@ -16,6 +16,7 @@ import InventoryRoutes from "./routes/InventoryRoutes";
 import StatisticsRoutes from "./routes/StatisticsRoutes";
 import App from "./App";
 import CollaboratorRoutes from "./routes/CollaboratorRoutes";
+import SupplierRoutes from "./routes/SupplierRoutes";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -42,6 +43,7 @@ const Main: React.FC = () => {
           <Stack.Screen name="InventoryRoutes" component={InventoryRoutes} />
           <Stack.Screen name="StatisticsRoutes" component={StatisticsRoutes} />
           <Stack.Screen name="CollaboratorRoutes" component={CollaboratorRoutes} />
+          <Stack.Screen name="SupplierRoutes" component={SupplierRoutes} />
         </>
       )}
     </Stack.Navigator>

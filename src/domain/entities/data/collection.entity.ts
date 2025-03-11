@@ -3,7 +3,7 @@ import type { Customer, Invoice } from "./customers";
 import type { Inventory, Recipe, Stock } from "./inventories";
 import type { Nomenclature, Reservation, Room, Zone } from "./reservations";
 import type { Table } from "./restaurants";
-import type { Expense, Purchase, Supplier } from "./suppliers";
+import type { Economy, Supplier } from "./suppliers";
 import type { Location, Element, Order, Group } from "./common";
 import type { PaymentMethods, InvoiceInformation } from "./settings";
 import type { Kitchen } from "./kitchens";
@@ -40,8 +40,7 @@ export interface Collection {
   menu: Element[];
   orders: Order[];
   tables: Table[];
-  expenses: Expense[];
-  purchases: Purchase[];
+  economies: Economy[];
   suppliers: Supplier[];
   handlers: Handler[];
   paymentMethods: PaymentMethods[];

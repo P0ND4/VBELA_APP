@@ -11,15 +11,15 @@ import {
   change,
   SalesNavigation,
 } from "application/appState/navigation/sales.navigation.method.slice";
+import apiClient, { endpoints } from "infrastructure/api/server";
+import { batch } from "react-redux";
+import { removeByLocationID as removeProductByLocationID } from "application/slice/stores/products.slice";
+import { removeByLocationID as removeGroupByLocationID } from "application/slice/stores/product.group.slice";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledText from "presentation/components/text/StyledText";
 import Layout from "presentation/components/layout/Layout";
 import LocationInformation from "../common/sales/LocationInformation";
 import StyledButton from "presentation/components/button/StyledButton";
-import apiClient, { endpoints } from "infrastructure/api/server";
-import { batch } from "react-redux";
-import { removeByLocationID as removeProductByLocationID } from "application/slice/stores/products.slice";
-import { removeByLocationID as removeGroupByLocationID } from "application/slice/stores/product.group.slice";
 
 type NavigationProps = StackNavigationProp<RootStore>;
 

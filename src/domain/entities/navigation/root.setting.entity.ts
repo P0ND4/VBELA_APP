@@ -6,7 +6,6 @@ export type RootSetting = {
   Account: undefined;
   PaymentMethods: undefined;
   CreatePaymentMethod?: { defaultValue: PaymentMethods };
-  Coin: undefined;
   Theme: undefined;
   Invoice: undefined;
 };

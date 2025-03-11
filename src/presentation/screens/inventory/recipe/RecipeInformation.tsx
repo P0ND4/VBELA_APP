@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, StyleSheet, ScrollView, TouchableOpacity, FlatList } from "react-native";
 import Layout from "presentation/components/layout/Layout";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -62,13 +62,16 @@ type IngredientsModalProps = {
 };
 
 const IngredientsModal: React.FC<IngredientsModalProps> = ({ recipe, visible, onClose }) => {
-  const coin = useAppSelector((state) => state.coin);
   const stocks = useAppSelector((state) => state.stocks);
 
-  const cost = recipe.ingredients.reduce((a, b) => {
-    const { currentValue = 0 } = stocks.find((s) => s.id === b.id) ?? {};
-    return a + currentValue * b.quantity;
-  }, 0);
+  const cost = useMemo(
+    () =>
+      recipe.ingredients.reduce((a, b) => {
+        const { currentValue = 0 } = stocks.find((s) => s.id === b.id) ?? {};
+        return a + currentValue * b.quantity;
+      }, 0),
+    [recipe.ingredients, stocks],
+  );
 
   return (
     <ScreenModal title="Ingredientes" visible={visible} onClose={onClose}>
@@ -81,11 +84,11 @@ const IngredientsModal: React.FC<IngredientsModalProps> = ({ recipe, visible, on
       <View style={{ padding: 20 }}>
         <StyledTextInformation
           label="Valor de la receta"
-          value={`${thousandsSystem(recipe.value)} ${coin}`}
+          value={`${thousandsSystem(recipe.value)}`}
         />
         <StyledTextInformation
           label="Costo del stock"
-          value={`${thousandsSystem(cost)} ${coin}`}
+          value={`${thousandsSystem(cost)}`}
           valueColor="#f71010"
         />
       </View>

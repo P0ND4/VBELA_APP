@@ -18,7 +18,8 @@ export const menuSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Element>) => {
       const menu = action.payload;
-      return state.map((s) => (s.id === menu.id ? menu : s));
+      const index = state.findIndex((s) => s.id === menu.id);
+      if (index !== -1) state[index] = menu;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;
@@ -31,42 +32,38 @@ export const menuSlice = createSlice({
     discount: (state, action: PayloadAction<{ id: string; quantity: number }[]>) => {
       const discounts = action.payload;
       const discountMap = new Map(discounts.map((m) => [m.id, m]));
-      return state.map((menu) => {
+      state.forEach((menu) => {
         const found = discountMap.get(menu.id);
-        return found ? { ...menu, stock: menu.stock! - found.quantity } : menu;
+        if (found) menu.stock -= found.quantity;
       });
     },
     removeStock: (state, action: PayloadAction<{ ids: string[] }>) => {
       const { ids } = action.payload;
-      return state.map((menu) => ({
-        ...menu,
-        stockIDS: menu.stockIDS?.filter((stock) => !ids.includes(stock)),
-      }));
+      state.forEach((menu) => {
+        menu.stockIDS = menu.stockIDS?.filter((stock) => !ids.includes(stock));
+      });
     },
     removeRecipe: (state, action: PayloadAction<{ ids: string[] }>) => {
       const { ids } = action.payload;
-      return state.map((menu) => ({
-        ...menu,
-        packageIDS: menu.packageIDS?.filter((recipe) => !ids.includes(recipe)),
-      }));
+      state.forEach((menu) => {
+        menu.packageIDS = menu.packageIDS?.filter((recipe) => !ids.includes(recipe));
+      });
     },
     updateSubcategories: (state, action: PayloadAction<Group>) => {
       const group = action.payload;
-      return state.map((menu) => ({
-        ...menu,
-        subcategories: menu.subcategories.filter(
+      state.forEach((menu) => {
+        menu.subcategories = menu.subcategories.filter(
           (sub) =>
             sub.category !== group.id || group.subcategories.some((s) => s.id === sub.subcategory),
-        ),
-      }));
+        );
+      });
     },
     removeCategory: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;
-      return state.map((menu) => ({
-        ...menu,
-        categories: menu.categories.filter((c) => c !== id),
-        subcategories: menu.subcategories.filter((s) => s.category !== id),
-      }));
+      state.forEach((menu) => {
+        menu.categories = menu.categories.filter((c) => c !== id);
+        menu.subcategories = menu.subcategories.filter((s) => s.category !== id);
+      });
     },
     clean: () => [],
   },

@@ -56,11 +56,6 @@ const Setting: React.FC<AppNavigationProp> = ({ navigation }) => {
         onPress={() => navigation.navigate("SettingRoutes", { screen: "PaymentMethods" })}
       />
       <Card
-        icon="wallet-outline"
-        left="Moneda"
-        onPress={() => navigation.navigate("SettingRoutes", { screen: "Coin" })}
-      />
-      <Card
         icon="receipt-outline"
         left="Factura"
         onPress={() => navigation.navigate("SettingRoutes", { screen: "Invoice" })}

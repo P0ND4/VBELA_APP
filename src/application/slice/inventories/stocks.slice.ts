@@ -9,14 +9,17 @@ const initialState: Stock[] = [];
 const updateStockMovements = (
   state: Stock[],
   movements: Movement[],
-  updater: (stock: Stock, found: Movement) => Stock,
+  updateFn: (stock: Stock, movement: Movement) => Stock,
 ) => {
   const movementMap = new Map(movements.map((m) => [m.stockID, m]));
   return state.map((stock) => {
-    const found = movementMap.get(stock.id);
-    return found ? updater(stock, found) : stock;
+    const movement = movementMap.get(stock.id);
+    return movement ? updateFn(stock, movement) : stock;
   });
 };
+
+const calculateQuantity = (movements: Movement[]) =>
+  movements.reduce((acc, m) => acc + m.quantity, 0);
 
 export const informationSlice = createSlice({
   name: "stocks",
@@ -28,7 +31,8 @@ export const informationSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Stock>) => {
       const stock = action.payload;
-      return state.map((s) => (s.id === stock.id ? stock : s));
+      const index = state.findIndex((s) => s.id === stock.id);
+      if (index !== -1) state[index] = stock;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;
@@ -39,21 +43,33 @@ export const informationSlice = createSlice({
       return state.filter((s) => s.inventoryID !== inventoryID);
     },
     addMovement: (state, action: PayloadAction<Movement[]>) =>
-      updateStockMovements(state, action.payload, (stock, found) => ({
-        ...stock,
-        currentValue: found.currentValue,
-        movements: [...stock.movements, found],
-      })),
+      updateStockMovements(state, action.payload, (stock, movement) => {
+        const movements = [...stock.movements, movement];
+        return {
+          ...stock,
+          quantity: calculateQuantity(movements),
+          currentValue: movement.currentValue,
+          movements,
+        };
+      }),
     editMovement: (state, action: PayloadAction<Movement[]>) =>
-      updateStockMovements(state, action.payload, (stock, found) => ({
-        ...stock,
-        movements: stock.movements.map((m) => (m.id === found.id ? found : m)),
-      })),
+      updateStockMovements(state, action.payload, (stock, movement) => {
+        const movements = stock.movements.map((m) => (m.id === movement.id ? movement : m));
+        return {
+          ...stock,
+          quantity: calculateQuantity(movements),
+          movements,
+        };
+      }),
     removeMovement: (state, action: PayloadAction<Movement[]>) =>
-      updateStockMovements(state, action.payload, (stock, found) => ({
-        ...stock,
-        movements: stock.movements.filter((m) => m.id !== found.id),
-      })),
+      updateStockMovements(state, action.payload, (stock, movement) => {
+        const movements = stock.movements.filter((m) => m.id !== movement.id);
+        return {
+          ...stock,
+          quantity: calculateQuantity(movements),
+          movements,
+        };
+      }),
     clean: () => [],
   },
   extraReducers: (builder) => {

@@ -17,7 +17,8 @@ export const paymentMethodsSlice = createSlice({
     },
     edit: (state, action: PayloadAction<PaymentMethods>) => {
       const method = action.payload;
-      return state.map((m) => (m.id === method.id ? method : m));
+      const index = state.findIndex((m) => m.id === method.id);
+      if (index !== -1) state[index] = method;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;

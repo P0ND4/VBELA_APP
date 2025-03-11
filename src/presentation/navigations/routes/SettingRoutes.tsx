@@ -4,7 +4,6 @@ import { RootSetting } from "domain/entities/navigation/root.setting.entity";
 import Account from "presentation/screens/setting/Account";
 import PaymentMethods from "presentation/screens/setting/paymentMethods/PaymentMethods";
 import CreatePaymentMethod from "presentation/screens/setting/paymentMethods/CreatePaymentMethod";
-import Coin from "presentation/screens/setting/Coin";
 import Theme from "presentation/screens/setting/Theme";
 import Invoice from "presentation/screens/setting/Invoice";
 
@@ -27,8 +26,6 @@ const SettingRoutes: React.FC = () => {
           options={{ title: "Crear método de pago" }}
         />
       </Stack.Group>
-
-      <Stack.Screen name="Coin" component={Coin} options={{ title: "Moneda" }} />
       <Stack.Screen name="Theme" component={Theme} options={{ title: "Tema" }} />
       <Stack.Screen
         name="Invoice"

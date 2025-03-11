@@ -8,7 +8,10 @@ import { Order } from "domain/entities/data/common";
 import { Status } from "domain/enums/data/element/status.enums";
 import ViewOrder from "../common/ViewOrderScreen";
 import useSave from "presentation/screens/restaurant/hooks/useSave";
-import { change, SalesNavigation } from "application/appState/navigation/sales.navigation.method.slice";
+import {
+  change,
+  SalesNavigation,
+} from "application/appState/navigation/sales.navigation.method.slice";
 
 type MenuViewOrderProps = {
   navigation: StackNavigationProp<RootRestaurant>;

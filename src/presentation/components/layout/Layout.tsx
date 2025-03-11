@@ -9,11 +9,11 @@ type StyledButtonProps = {
 };
 
 const Layout: React.FC<StyledButtonProps> = ({ style, children }) => {
-  const { colors } = useTheme();
+  const { colors, dark } = useTheme();
 
   return (
     <View style={[{ flex: 1, padding: 20 }, style]}>
-      <StatusBar style="auto" backgroundColor={colors.notification} />
+      <StatusBar style={dark ? "light" : "dark"} backgroundColor={colors.notification} />
       {children}
     </View>
   );

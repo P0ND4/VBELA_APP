@@ -11,7 +11,8 @@ import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { Controller, useForm } from "react-hook-form";
 import { Movement, Stock } from "domain/entities/data/inventories";
 import { addMovement, editMovement } from "application/slice/inventories/stocks.slice";
-import { Type } from "domain/enums/data/inventory/movement.enums";
+import { Type as TypeMovement } from "domain/enums/data/inventory/movement.enums";
+import apiClient, { endpoints } from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
@@ -19,36 +20,43 @@ import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import SimpleCalendarModal from "presentation/components/modal/SimpleCalendarModal";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
-import apiClient, { endpoints } from "infrastructure/api/server";
 
 type CreateEntryProps = {
   navigation: StackNavigationProp<RootInventory>;
   route: InventoryRouteProp<"CreateMovement">;
 };
 
+type PickerFloorModalData = { label: string; value: string }[];
+
 const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
+  const suppliers = useAppSelector((state) => state.suppliers);
   const stocks = useAppSelector((state) => state.stocks);
 
-  const [data, setData] = useState<{ label: string; value: string }[]>([]);
-  const [stock, setStock] = useState<Stock>();
+  const [supplierData, setSupplierData] = useState<PickerFloorModalData>([]);
+  const [stockData, setStockData] = useState<PickerFloorModalData>([]);
+  const [stock, setStock] = useState<Stock | null>(null);
 
+  const [supplierValueModal, setSupplierValueModal] = useState<boolean>(false);
+  const [supplierModal, setSupplierModal] = useState<boolean>(false);
   const [stockModal, setStockModal] = useState<boolean>(false);
   const [calendarModal, setCalendarModal] = useState<boolean>(false);
   const [quantityModal, setQuantityModal] = useState<boolean>(false);
   const [valueModal, setValueModal] = useState<boolean>(false);
+  const [optional, setOptional] = useState<boolean>(false);
 
   const defaultValue = route.params?.movement;
   const inventoryID = route.params.inventoryID;
   const type = route.params.type;
 
-  const { control, handleSubmit, setValue, watch, formState } = useForm({
+  const { control, handleSubmit, setValue, watch, formState } = useForm<Movement>({
     defaultValues: {
       id: defaultValue?.id || random(10),
       type,
       inventoryID,
-      supplierID: defaultValue?.supplierID || "",
+      supplier: defaultValue?.supplier || null,
+      supplierValue: defaultValue?.supplierValue || 0,
       stockID: defaultValue?.stockID || "",
       quantity: defaultValue?.quantity || 0,
       currentValue: defaultValue?.currentValue || 0,
@@ -59,27 +67,34 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
     },
   });
 
-  const { stockID, quantity, currentValue, date } = watch();
+  const { supplier, supplierValue, stockID, quantity, currentValue, date } = watch();
 
   const dispatch = useAppDispatch();
 
   useEffect(() => {
+    const data = suppliers.map((s) => ({ label: s.name, value: s.id }));
+    setSupplierData(data);
+  }, [suppliers]);
+
+  useEffect(() => {
     const found = stocks.filter((s) => s.inventoryID === inventoryID);
     const data = found.map((s) => ({ label: `${s.name} ${s.unit && `(${s.unit})`}`, value: s.id }));
-    setData(data);
+    setStockData(data);
   }, [stocks, inventoryID]);
 
   useEffect(() => {
     const foundStock = stocks.find((s) => s.id === stockID);
-    setValue("currentValue", foundStock?.currentValue ?? 0);
-    setStock(foundStock);
+    if (foundStock) {
+      setValue("currentValue", foundStock.currentValue);
+      setStock(foundStock);
+    }
   }, [stockID, stocks]);
 
   useEffect(() => {
-    navigation.setOptions({ title: `Crear ${type === Type.Entry ? "entrada" : "salida"}` });
+    navigation.setOptions({ title: `Crear ${type === TypeMovement.Entry ? "entrada" : "salida"}` });
   }, [type]);
 
-  const isRequired = (value: any) => !!value;
+  const isRequired = (value: string | number | boolean) => !!value;
 
   const save = async (data: Movement) => {
     dispatch(addMovement([data]));
@@ -101,32 +116,36 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
     });
   };
 
-  const handleSaveOrUpdate = (data: Movement) => {
-    if (defaultValue) update(data);
-    else save(data);
+  const handleSaveOrUpdate = async (data: Movement) => {
+    const action = defaultValue ? update : save;
+    await action(data);
   };
 
   return (
     <>
       <Layout>
         <View style={{ flex: 1 }}>
-          {stock && type === Type.Entry && (
+          {stock && type === TypeMovement.Entry && (
             <StyledText center style={{ marginBottom: 15 }}>
               Valor anterior:{" "}
               <StyledText color={colors.primary}>{thousandsSystem(stock.currentValue)}</StyledText>
             </StyledText>
           )}
           <View>
-            <StyledButton style={styles.row} onPress={() => setStockModal(true)}>
-              <StyledText>
-                {stock ? `${stock.name} ${stock.unit && `(${stock.unit})`}` : "Stock"}
-              </StyledText>
-              <Ionicons name="chevron-forward" color={colors.text} size={19} />
-            </StyledButton>
-            {formState.errors.stockID && (
-              <StyledText color={colors.primary} verySmall>
-                El Stock es requerido
-              </StyledText>
+            {!defaultValue && (
+              <>
+                <StyledButton style={styles.row} onPress={() => setStockModal(true)}>
+                  <StyledText>
+                    {stock ? `${stock.name} ${stock.unit && `(${stock.unit})`}` : "Stock"}
+                  </StyledText>
+                  <Ionicons name="chevron-forward" color={colors.text} size={19} />
+                </StyledButton>
+                {formState.errors.stockID && (
+                  <StyledText color={colors.primary} verySmall>
+                    El Stock es requerido
+                  </StyledText>
+                )}
+              </>
             )}
             <StyledButton style={styles.row} onPress={() => setQuantityModal(true)}>
               <StyledText>Cantidad {!!quantity && `(${thousandsSystem(quantity)})`}</StyledText>
@@ -137,7 +156,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
                 La cantidad es requerida
               </StyledText>
             )}
-            {type === Type.Entry && (
+            {type === TypeMovement.Entry && (
               <>
                 <StyledButton style={styles.row} onPress={() => setValueModal(true)}>
                   <StyledText>
@@ -152,6 +171,22 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
                 )}
               </>
             )}
+            {supplier && (
+              <>
+                <StyledButton style={styles.row} onPress={() => setSupplierValueModal(true)}>
+                  <StyledText>
+                    Valor de {type.toLowerCase()}{" "}
+                    {!!supplierValue && `(${thousandsSystem(supplierValue)})`}
+                  </StyledText>
+                  <Ionicons name="chevron-forward" color={colors.text} size={19} />
+                </StyledButton>
+                {formState.errors.supplierValue && (
+                  <StyledText color={colors.primary} verySmall>
+                    El valor de {type.toLowerCase()} del proveedor es requerida
+                  </StyledText>
+                )}
+              </>
+            )}
             <StyledButton style={styles.row} onPress={() => setCalendarModal(true)}>
               <StyledText>Fecha de entrada {date && `(${changeDate(new Date(date))})`}</StyledText>
               <Ionicons name="chevron-forward" color={colors.text} size={19} />
@@ -161,10 +196,18 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
                 La fecha de entrada es requerida
               </StyledText>
             )}
-            {/* <StyledButton style={styles.row} onPress={() => {}}>
-              <StyledText>Proveedor</StyledText>
-              <Ionicons name="chevron-forward" color={colors.text} size={19} />
-            </StyledButton> */}
+            <StyledButton style={styles.row} onPress={() => setOptional(!optional)}>
+              <StyledText>Opcionales</StyledText>
+              <Ionicons name={optional ? "caret-up" : "caret-down"} color={colors.text} />
+            </StyledButton>
+            {optional && (
+              <>
+                <StyledButton style={styles.row} onPress={() => setSupplierModal(true)}>
+                  <StyledText>{supplier ? supplier.name : "Proveedor"}</StyledText>
+                  <Ionicons name="chevron-forward" color={colors.text} size={19} />
+                </StyledButton>
+              </>
+            )}
             {/* <StyledButton style={styles.row} onPress={() => {}}>
               <StyledText>Método de pago</StyledText>
               <Ionicons name="chevron-forward" color={colors.text} size={19} />
@@ -177,21 +220,23 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
           </StyledText>
         </StyledButton>
       </Layout>
-      <Controller
-        name="stockID"
-        rules={{ validate: isRequired }}
-        control={control}
-        render={({ field: { onChange } }) => (
-          <PickerFloorModal
-            title="SELECCIONE EL STOCK"
-            remove="Remover stock"
-            visible={stockModal}
-            onClose={() => setStockModal(false)}
-            data={data}
-            onSubmit={onChange}
-          />
-        )}
-      />
+      {!defaultValue && (
+        <Controller
+          name="stockID"
+          rules={{ validate: isRequired }}
+          control={control}
+          render={({ field: { onChange } }) => (
+            <PickerFloorModal
+              title="SELECCIONE EL STOCK"
+              remove="Remover stock"
+              visible={stockModal}
+              onClose={() => setStockModal(false)}
+              data={stockData}
+              onSubmit={onChange}
+            />
+          )}
+        />
+      )}
       <Controller
         name="date"
         rules={{ validate: isRequired }}
@@ -212,8 +257,10 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
         render={({ field: { onChange, value } }) => (
           <CountScreenModal
             title="Cantidad"
-            negativeNumber={type === Type.Output}
-            description={() => "Defina la cantidad de entrada"}
+            negativeNumber={type === TypeMovement.Output}
+            description={() =>
+              `Defina la cantidad de ${type === TypeMovement.Entry ? "entrada" : "salida"}`
+            }
             visible={quantityModal}
             defaultValue={value}
             isRemove={!!value}
@@ -223,7 +270,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
           />
         )}
       />
-      {type === Type.Entry && (
+      {type === TypeMovement.Entry && (
         <Controller
           name="currentValue"
           control={control}
@@ -237,6 +284,42 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
               isRemove={!!value}
               maxValue={9999999999}
               onClose={() => setValueModal(false)}
+              onSave={onChange}
+            />
+          )}
+        />
+      )}
+      <Controller
+        name="supplier"
+        control={control}
+        render={({ field: { onChange } }) => (
+          <PickerFloorModal
+            title="SELECCIONE EL PROVEEDOR"
+            remove="Remover proveedor"
+            visible={supplierModal}
+            onClose={() => setSupplierModal(false)}
+            data={supplierData}
+            onSubmit={(supplierID) => {
+              const supplier = suppliers.find((s) => s.id === supplierID);
+              onChange(supplier ? { id: supplier.id, name: supplier.name } : null);
+            }}
+          />
+        )}
+      />
+      {supplier && (
+        <Controller
+          name="supplierValue"
+          control={control}
+          rules={{ validate: isRequired }}
+          render={({ field: { onChange, value } }) => (
+            <CountScreenModal
+              title={`Valor del ${type === TypeMovement.Entry ? "ingreso" : "egreso"}`}
+              description={() => "Defina el valor por el proveedor asociado"}
+              visible={supplierValueModal}
+              defaultValue={value}
+              isRemove={!!value}
+              maxValue={9999999999}
+              onClose={() => setSupplierValueModal(false)}
               onSave={onChange}
             />
           )}

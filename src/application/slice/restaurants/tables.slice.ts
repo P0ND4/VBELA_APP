@@ -12,13 +12,16 @@ export const tablesSlice = createSlice({
   initialState,
   reducers: {
     change: (_, action: PayloadAction<Table[]>) => action.payload,
-    addMultiple: (state, action: PayloadAction<Table[]>) => [...state, ...action.payload],
+    addMultiple: (state, action: PayloadAction<Table[]>) => {
+      state.push(...action.payload);
+    },
     add: (state, action: PayloadAction<Table>) => {
       state.push(action.payload);
     },
     edit: (state, action: PayloadAction<Table>) => {
       const table = action.payload;
-      return state.map((s) => (s.id === table.id ? table : s));
+      const index = state.findIndex((s) => s.id === table.id);
+      if (index !== -1) state[index] = table;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;

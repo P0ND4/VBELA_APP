@@ -17,7 +17,8 @@ export const collaboratorsSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Collaborator>) => {
       const collaborator = action.payload;
-      return state.map((s) => (s.id === collaborator.id ? collaborator : s));
+      const index = state.findIndex((s) => s.id === collaborator.id);
+      if (index !== -1) state[index] = collaborator;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;

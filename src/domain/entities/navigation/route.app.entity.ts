@@ -9,6 +9,7 @@ import { RootOrder } from "./route.order.entity";
 import { RootInventory } from "./root.inventory.entity";
 import { RootStatistics } from "./route.statistics.entity";
 import { RootCollaborator } from "./root.collaborator.entity";
+import { RootSupplier } from "./root.supplier.entity";
 
 export type RootApp = {
   Home: undefined;
@@ -23,6 +24,7 @@ export type RootApp = {
   Setting: undefined;
   Order: undefined;
   Collaborator: undefined;
+  Supplier: undefined;
   OrderRoutes: {
     screen: keyof RootOrder;
     params?: RootOrder[keyof RootOrder];
@@ -58,6 +60,10 @@ export type RootApp = {
   CollaboratorRoutes: {
     screen: keyof RootCollaborator;
     params?: RootCollaborator[keyof RootCollaborator];
+  };
+  SupplierRoutes: {
+    screen: keyof RootSupplier;
+    params?: RootSupplier[keyof RootSupplier];
   };
 };
 

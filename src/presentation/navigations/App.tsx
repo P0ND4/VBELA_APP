@@ -24,6 +24,7 @@ import Delivery from "presentation/screens/delivery/Delivery";
 import Home from "presentation/screens/Home";
 import Statistic from "presentation/screens/statistic/Statistic";
 import Collaborator from "presentation/screens/collaborator/Collaborator";
+import Supplier from "presentation/screens/supplier/Supplier";
 
 const Drawer = createDrawerNavigator<RootApp>();
 
@@ -134,6 +135,14 @@ function App() {
           drawerIcon: ({ color }) => <Ionicons name="people-outline" size={22} color={color} />,
         }}
       /> */}
+      <Drawer.Screen
+        name="Supplier"
+        component={Supplier}
+        options={{
+          title: "Proveedores",
+          drawerIcon: ({ color }) => <Ionicons name="albums-outline" size={22} color={color} />,
+        }}
+      />
       <Drawer.Screen
         name="Inventory"
         component={Inventory}

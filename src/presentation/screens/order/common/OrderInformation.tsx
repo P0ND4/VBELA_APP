@@ -3,14 +3,11 @@ import { FlatList, StyleSheet, View } from "react-native";
 import { Selection } from "domain/entities/data/common";
 import { thousandsSystem } from "shared/utils";
 import { useTheme } from "@react-navigation/native";
-import { useAppSelector } from "application/store/hook";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 
 const Card: React.FC<{ item: Selection }> = ({ item }) => {
   const { colors } = useTheme();
-
-  const coin = useAppSelector((state) => state.coin);
 
   return (
     <View style={[styles.card, { borderColor: colors.border }]}>
@@ -19,7 +16,7 @@ const Card: React.FC<{ item: Selection }> = ({ item }) => {
         <StyledText>{item.name}</StyledText>
       </View>
       <StyledText>
-        {coin} {thousandsSystem(item.total)}{" "}
+        {thousandsSystem(item.total)}{" "}
         {!!item.discount && (
           <StyledText color={colors.primary}>
             {`(-${thousandsSystem(item.quantity * item.value * item.discount)})`}

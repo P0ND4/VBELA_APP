@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FlatList, StyleSheet, Switch, View } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
@@ -197,10 +197,14 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
     });
   };
 
-  const cost = ingredients.reduce((a, b) => {
-    const { currentValue = 0 } = stocks.find((s) => s.id === b.id) ?? {};
-    return a + currentValue * b.quantity;
-  }, 0);
+  const cost = useMemo(
+    () =>
+      ingredients.reduce((a, b) => {
+        const { currentValue = 0 } = stocks.find((s) => s.id === b.id) ?? {};
+        return a + currentValue * b.quantity;
+      }, 0),
+    [ingredients, stocks],
+  );
 
   const handleSaveOrUpdate = (data: Recipe) => (defaultValue ? update(data) : save(data));
 

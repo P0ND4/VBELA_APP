@@ -161,6 +161,16 @@ export const endpoints = {
     put: (id: string) => `/api/v1/user/handler/${id}`,
     delete: (id: string) => `/api/v1/user/handler/${id}`,
   },
+  supplier: {
+    post: () => "/api/v1/user/supplier",
+    put: (id: string) => `/api/v1/user/supplier/${id}`,
+    delete: (id: string) => `/api/v1/user/supplier/${id}`,
+  },
+  economy: {
+    post: () => "/api/v1/user/economy",
+    put: (id: string) => `/api/v1/user/economy/${id}`,
+    delete: (id: string) => `/api/v1/user/economy/${id}`,
+  },
 };
 
 export default apiClient;

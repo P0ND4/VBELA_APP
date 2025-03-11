@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "@react-navigation/native";
-import { changeDate, thousandsSystem } from "shared/utils";
+import { thousandsSystem } from "shared/utils";
 import { useOrder } from "application/context/OrderContext";
 import {
   Save,
@@ -20,7 +20,7 @@ import {
   GroupSubCategory,
 } from "domain/entities/data/common";
 import { Pad } from "presentation/screens/common/NumericPad";
-import { unitOptions } from "shared/constants/unit";
+import { send } from "../utils/transform.element";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledInput from "presentation/components/input/StyledInput";
@@ -30,11 +30,6 @@ import SalesButtonBottom from "../components/SalesButtonBottom";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import ScreenModal from "presentation/components/modal/ScreenModal";
 import SalesCard from "../components/SalesCard";
-import InformationModal from "presentation/components/modal/InformationModal";
-import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
-import SimpleCalendarModal from "presentation/components/modal/SimpleCalendarModal";
-import { send } from "../utils/transform.element";
-import moment from "moment";
 
 type UnregisteredModalProps = {
   visible: boolean;
@@ -154,12 +149,6 @@ const UnregisteredModal: React.FC<UnregisteredModalProps> = ({
   );
 };
 
-type Filters = {
-  unit: string;
-  creationDate: null | number;
-  modificationDate: null | number;
-};
-
 type SalesBoxScreenProps = {
   defaultValue?: Order;
   groups: GroupType[];
@@ -174,12 +163,6 @@ type SalesBoxScreenProps = {
     delivery?: () => void;
     kitchen?: (props: Save, order: Order | null) => void;
   };
-};
-
-const filterInitialState = {
-  unit: "",
-  creationDate: null,
-  modificationDate: null,
 };
 
 const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
@@ -203,7 +186,6 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
 
   const [countModal, setCountModal] = useState<boolean>(false);
   const [unregisteredModal, setUnregisteredModal] = useState<boolean>(false);
-  const [filterModal, setFilterModal] = useState<boolean>(false);
 
   const [count, setCount] = useState<number>(1);
   const [data, setData] = useState<Element[]>([]);
@@ -211,13 +193,6 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
 
   const [categorySelected, setCategorySelected] = useState<GroupType | null>(null);
   const [subcategorySelected, setSubcategorySelected] = useState<GroupSubCategory | null>(null);
-
-  const [filters, setFilters] = useState<Filters>(filterInitialState);
-
-  const [unitModal, setUnitModal] = useState<boolean>(false);
-  const [creationDateCalendarModal, setCreationDateCalendarModal] = useState<boolean>(false);
-  const [modificationDateCalendarModal, setModificationDateCalendarModal] =
-    useState<boolean>(false);
 
   useEffect(() => {
     setCategorySelected(null);
@@ -246,20 +221,8 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
         element.subcategories.some((s) => s.subcategory === subcategorySelected.id),
       );
 
-    if (filters.unit) sort = sort.filter((element) => element.unit === filters.unit);
-
-    if (filters.creationDate)
-      sort = sort.filter((element) =>
-        moment(element.creationDate).isSame(moment(filters.creationDate), "day"),
-      );
-
-    if (filters.modificationDate)
-      sort = sort.filter((element) =>
-        moment(element.modificationDate).isSame(moment(filters.modificationDate), "day"),
-      );
-
     setData(sort);
-  }, [elements, search, categorySelected, subcategorySelected, filters]);
+  }, [elements, search, categorySelected, subcategorySelected]);
 
   const renderItemElement: ListRenderItem<Element> = useCallback(
     ({ item }) => (
@@ -327,9 +290,6 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
                 placeholder="Buscar por nombre"
               />
               <View style={{ flexDirection: "row", marginLeft: 8 }}>
-                <StyledButton style={styles.headerButton} onPress={() => setFilterModal(true)}>
-                  <Ionicons name="list-outline" size={20} color={colors.primary} />
-                </StyledButton>
                 <StyledButton
                   style={[{ marginHorizontal: 8, width: "auto" }, styles.headerButton]}
                   onPress={() => setUnregisteredModal(true)}
@@ -357,7 +317,7 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
                   onPress={() => onPressGroup()}
                 >
                   <StyledText verySmall color="#FFFFFF">
-                    Crear categoría
+                    + Categoría
                   </StyledText>
                 </StyledButton>
               </View>
@@ -419,74 +379,6 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
           register && addElement(item);
           addSelection(item, register, count);
         }}
-      />
-      <InformationModal
-        title="Filtros"
-        animationType="fade"
-        visible={filterModal}
-        onClose={() => setFilterModal(false)}
-      >
-        <StyledButton
-          style={styles.row}
-          onLongPress={() => setFilters({ ...filters, unit: "" })}
-          onPress={() => setUnitModal(true)}
-        >
-          <StyledText smallParagraph>Unidad {filters.unit && `(${filters.unit})`}</StyledText>
-          <Ionicons name="chevron-forward" color={colors.text} size={14} />
-        </StyledButton>
-        <StyledButton
-          style={styles.row}
-          onLongPress={() => setFilters({ ...filters, creationDate: null })}
-          onPress={() => setCreationDateCalendarModal(true)}
-        >
-          <StyledText smallParagraph>
-            Fecha de creación{" "}
-            {filters.creationDate && `(${changeDate(new Date(filters.creationDate))})`}
-          </StyledText>
-          <Ionicons name="chevron-forward" color={colors.text} size={14} />
-        </StyledButton>
-        <StyledButton
-          style={styles.row}
-          onLongPress={() => setFilters({ ...filters, modificationDate: null })}
-          onPress={() => setModificationDateCalendarModal(true)}
-        >
-          <StyledText smallParagraph>
-            Fecha de modificación{" "}
-            {filters.modificationDate && `(${changeDate(new Date(filters.modificationDate))})`}
-          </StyledText>
-          <Ionicons name="chevron-forward" color={colors.text} size={14} />
-        </StyledButton>
-        <StyledButton
-          backgroundColor={colors.primary}
-          onPress={() => {
-            setFilters(filterInitialState);
-            setFilterModal(false);
-          }}
-        >
-          <StyledText smallParagraph center color="#FFFFFF">
-            Remover filtros
-          </StyledText>
-        </StyledButton>
-      </InformationModal>
-      <PickerFloorModal
-        title="SELECCIONE LA UNIDAD"
-        remove="Remover unidad"
-        visible={unitModal}
-        onClose={() => setUnitModal(false)}
-        data={unitOptions}
-        onSubmit={(unit) => setFilters({ ...filters, unit: String(unit) })}
-      />
-      <SimpleCalendarModal
-        defaultValue={filters.creationDate}
-        visible={creationDateCalendarModal}
-        onClose={() => setCreationDateCalendarModal(false)}
-        onSave={(date) => setFilters({ ...filters, creationDate: date })}
-      />
-      <SimpleCalendarModal
-        defaultValue={filters.modificationDate}
-        visible={modificationDateCalendarModal}
-        onClose={() => setModificationDateCalendarModal(false)}
-        onSave={(date) => setFilters({ ...filters, modificationDate: date })}
       />
     </>
   );

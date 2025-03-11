@@ -2,7 +2,6 @@ import React from "react";
 import { View, FlatList, StyleSheet, TouchableOpacity } from "react-native";
 import { PaymentMethod } from "domain/entities/data/common";
 import { useTheme } from "@react-navigation/native";
-import { useAppSelector } from "application/store/hook";
 import { thousandsSystem } from "shared/utils";
 import Layout from "presentation/components/layout/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -17,19 +16,12 @@ type CardProps = {
 const Card: React.FC<CardProps> = ({ paymentMethod, onRemove, isRemove }) => {
   const { colors } = useTheme();
 
-  const coin = useAppSelector((state) => state.coin);
-
   return (
     <View style={[styles.card, { borderColor: colors.border }]}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <Ionicons name={paymentMethod.icon} color={colors.text} size={32} />
         <StyledText style={{ marginHorizontal: 15 }}>{paymentMethod.method}</StyledText>
-        <StyledText>
-          <StyledText verySmall color={colors.primary}>
-            {coin}
-          </StyledText>{" "}
-          {thousandsSystem(paymentMethod.amount)}
-        </StyledText>
+        <StyledText>{thousandsSystem(paymentMethod.amount)}</StyledText>
       </View>
       {isRemove && (
         <TouchableOpacity onPress={() => onRemove(paymentMethod.id)}>

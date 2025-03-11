@@ -28,8 +28,6 @@ const StatusOption: React.FC<{ item: Status; onChange: () => void }> = ({ item, 
 type OrderProps = { order: OrderType; navigateToInformation: (order: OrderType) => void };
 
 const Order: React.FC<OrderProps> = ({ order, navigateToInformation }) => {
-  const coin = useAppSelector((state) => state.coin);
-
   const { color, icon, lineThrough } = useStatusInfo(order.status);
 
   return (
@@ -38,7 +36,7 @@ const Order: React.FC<OrderProps> = ({ order, navigateToInformation }) => {
         <View style={styles.alignHorizontally}>
           <Ionicons name={icon} size={25} color={color} />
           <StyledText style={{ marginHorizontal: 4 }} lineThrough={lineThrough}>
-            {coin} {thousandsSystem(order.total)}
+            {thousandsSystem(order.total)}
           </StyledText>
           {/* <StyledText verySmall lineThrough={lineThrough}>
             por NOMBRE
@@ -73,14 +71,13 @@ type CardProps = {
 const Card: React.FC<CardProps> = ({ group, navigateToInformation }) => {
   const { colors } = useTheme();
 
-  const coin = useAppSelector((state) => state.coin);
   const total = group.orders.reduce((a, b) => a + b.total, 0);
 
   return (
     <View style={[styles.card, { borderColor: colors.border }]}>
       <StyledText smallSubtitle>{beautifulChangeDate(addDays(new Date(group.date), 1))}</StyledText>
       <StyledText color={colors.primary}>
-        {thousandsSystem(group.orders.length)} pedidos, {coin} {thousandsSystem(total)}
+        {thousandsSystem(group.orders.length)} pedidos, {thousandsSystem(total)}
       </StyledText>
       <View style={{ marginTop: 15 }}>
         {group.orders.map((order) => (
@@ -120,8 +117,6 @@ const OrdersScreen: React.FC<OrdersScreenProps> = ({
   navigateToInformation,
 }) => {
   const { colors } = useTheme();
-
-  const coin = useAppSelector((state) => state.coin);
 
   const [search, setSearch] = useState<string>("");
   const [filters, setFilters] = useState({ status: "Todos", location: "Todos" });
@@ -222,7 +217,7 @@ const OrdersScreen: React.FC<OrdersScreenProps> = ({
                 Total en pedidos
               </StyledText>
               <StyledText>
-                {coin} {thousandsSystem(total)} de {thousandsSystem(allOrders.length)} pedidos
+                {thousandsSystem(total)} de {thousandsSystem(allOrders.length)} pedidos
               </StyledText>
             </View>
           </>

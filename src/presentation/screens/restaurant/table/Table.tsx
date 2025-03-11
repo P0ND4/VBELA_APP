@@ -1,12 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { View, TouchableOpacity, StyleSheet, FlatList, ListRenderItem } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, TouchableOpacity, StyleSheet, FlatList } from "react-native";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import Layout from "presentation/components/layout/Layout";
-import StyledText from "presentation/components/text/StyledText";
-import StyledButton from "presentation/components/button/StyledButton";
-import { thousandsSystem } from "shared/utils";
 import { RestaurantRouteProp, RootRestaurant } from "domain/entities/navigation";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Table as TableEntity } from "domain/entities/data/restaurants";
@@ -19,23 +14,32 @@ import {
 import { Order } from "domain/entities/data/common";
 import { Status } from "domain/enums/data/element/status.enums";
 import apiClient, { endpoints } from "infrastructure/api/server";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import Layout from "presentation/components/layout/Layout";
+import StyledText from "presentation/components/text/StyledText";
+import StyledButton from "presentation/components/button/StyledButton";
 
 type NavigationProps = StackNavigationProp<RootRestaurant>;
 
-const Card: React.FC<{ item: TableEntity }> = ({ item }) => {
+const Card: React.FC<{ item: TableEntity; refresh: boolean }> = React.memo(({ item, refresh }) => {
   const { colors } = useTheme();
-
   const orders = useAppSelector((state) => state.orders);
-
   const [showInformation, setShowInformation] = useState<boolean>(false);
-  const [order, setOrder] = useState<Order>();
+  const [order, setOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     const data = orders.find(
       (o) => o.tableID === item.id && ![Status.Canceled, Status.Completed].includes(o.status),
     );
-    setOrder(data);
+    setOrder(data ?? null);
   }, [orders]);
+
+  const getDurationInMinutes = (order: Order) => {
+    const now = new Date();
+    const creationDate = new Date(order.creationDate);
+    const diffInMilliseconds = now.getTime() - creationDate.getTime();
+    return `${Math.floor(diffInMilliseconds / (1000 * 60))} minutos`;
+  };
 
   const navigation = useNavigation<NavigationProps>();
   const dispatch = useAppDispatch();
@@ -61,11 +65,18 @@ const Card: React.FC<{ item: TableEntity }> = ({ item }) => {
         }}
         onLongPress={() => setShowInformation(true)}
       >
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {item.highlight && (
-            <Ionicons name="star" color={colors.primary} size={18} style={{ marginRight: 6 }} />
+        <View>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {item.highlight && (
+              <Ionicons name="star" color={colors.primary} size={18} style={{ marginRight: 6 }} />
+            )}
+            <StyledText>{item.name}</StyledText>
+          </View>
+          {order && (
+            <StyledText verySmall color={colors.primary}>
+              {getDurationInMinutes(order)}
+            </StyledText>
           )}
-          <StyledText>{item.name}</StyledText>
         </View>
         {order && (
           <View>
@@ -95,7 +106,9 @@ const Card: React.FC<{ item: TableEntity }> = ({ item }) => {
       />
     </>
   );
-};
+});
+
+Card.displayName = "Card";
 
 type TableProps = {
   navigation: StackNavigationProp<RootRestaurant>;
@@ -104,24 +117,16 @@ type TableProps = {
 
 const Table: React.FC<TableProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
-
   const restaurantID = route.params.restaurantID;
-
   const restaurants = useAppSelector((state) => state.restaurants);
   const tables = useAppSelector((state) => state.tables);
-
   const [data, setData] = useState<TableEntity[]>([]);
+  const [refresh, setRefresh] = useState(false);
 
   useEffect(() => {
     const restaurant = restaurants.find((r) => r.id === restaurantID);
-
     navigation.setOptions({
       title: `Mesas: ${restaurant?.name}`,
-    });
-  }, []);
-
-  useEffect(() => {
-    navigation.setOptions({
       headerRight: () => (
         <TouchableOpacity
           style={{ paddingRight: 20 }}
@@ -131,17 +136,20 @@ const Table: React.FC<TableProps> = ({ navigation, route }) => {
         </TouchableOpacity>
       ),
     });
-  }, []);
 
-  useEffect(() => {
     const found = tables.filter((t) => t.restaurantID === restaurantID);
     setData([...found].sort((a, b) => (b.highlight ? 1 : 0) - (a.highlight ? 1 : 0)));
-  }, [tables, restaurantID]);
+  }, [restaurants, tables, restaurantID, colors.primary, navigation]);
 
-  const renderItem: ListRenderItem<TableEntity> = useCallback(
-    ({ item }) => <Card item={item} />,
-    [],
-  );
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefresh((prev) => !prev);
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const renderItem = ({ item }: { item: TableEntity }) => <Card item={item} refresh={refresh} />;
 
   return (
     <Layout>

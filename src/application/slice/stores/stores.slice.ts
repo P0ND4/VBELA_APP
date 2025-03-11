@@ -17,7 +17,8 @@ export const storesSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Location>) => {
       const store = action.payload;
-      return state.map((s) => (s.id === store.id ? store : s));
+      const index = state.findIndex((s) => s.id === store.id);
+      if (index !== -1) state[index] = store;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;
@@ -25,10 +26,9 @@ export const storesSlice = createSlice({
     },
     removeInventory: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;
-      return state.map((s) => ({
-        ...s,
-        inventories: s.inventories.filter((i) => i !== id),
-      }));
+      state.forEach((s) => {
+        s.inventories = s.inventories.filter((i) => i !== id);
+      });
     },
     clean: () => [],
   },

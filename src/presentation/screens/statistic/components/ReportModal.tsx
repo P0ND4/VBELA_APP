@@ -3,7 +3,6 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import { Order } from "domain/entities/data/common";
 import { changeDate, thousandsSystem } from "shared/utils";
-import { useAppSelector } from "application/store/hook";
 import { generatePDF, printPDF, generateExcel } from "infrastructure/services";
 import StyledText from "presentation/components/text/StyledText";
 import ModalComponent from "presentation/components/modal/ModalComponent";
@@ -88,8 +87,6 @@ const dataConverter = (quantities: ReportSelection[], Pertenece: "Restaurante" |
 
 const ReportModal: React.FC<ReportModalProps> = ({ visible, orders, sales, onClose }) => {
   const { colors } = useTheme();
-
-  const coin = useAppSelector((state) => state.coin);
 
   const OQuantity = useMemo(() => calculateQuantity(orders), [orders]);
   const SQuantity = useMemo(() => calculateQuantity(sales), [sales]);
@@ -190,7 +187,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, orders, sales, onClo
               <span class="text">${thousandsSystem(quantity)}</span>
             </div>
               <div class="row">
-                <span class="text">VALOR TOTAL ${coin}:</span>
+                <span class="text">VALOR TOTAL:</span>
                 <span class="text">${thousandsSystem(total)}</span>
               </div>
             </div>

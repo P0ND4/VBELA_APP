@@ -1,21 +1,21 @@
-import type { Supplier } from "domain/entities/data/suppliers/supplier.entity";
+import type { Economy } from "domain/entities/data/suppliers/economy.entity";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const suppliers = (collection: Collection) => collection.suppliers;
+const economies = (collection: Collection) => collection.economies;
 
-const initialState: Supplier[] = [];
+const initialState: Economy[] = [];
 
-export const supplierSlice = createSlice({
-  name: "suppliers",
+export const economiesSlice = createSlice({
+  name: "economies",
   initialState,
   reducers: {
-    change: (_, action: PayloadAction<Supplier[]>) => action.payload,
-    add: (state, action: PayloadAction<Supplier>) => {
+    change: (_, action: PayloadAction<Economy[]>) => action.payload,
+    add: (state, action: PayloadAction<Economy>) => {
       state.push(action.payload);
     },
-    edit: (state, action: PayloadAction<Supplier>) => {
+    edit: (state, action: PayloadAction<Economy>) => {
       const supplier = action.payload;
       const index = state.findIndex((s) => s.id === supplier.id);
       if (index !== -1) state[index] = supplier;
@@ -28,9 +28,9 @@ export const supplierSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => suppliers(action.payload));
+    builder.addCase(changeAll, (_, action) => economies(action.payload));
   },
 });
 
-export const { add, edit, remove, clean, change } = supplierSlice.actions;
-export default supplierSlice.reducer;
+export const { clean, change, add, edit, remove } = economiesSlice.actions;
+export default economiesSlice.reducer;

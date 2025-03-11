@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { View, FlatList, StyleSheet, Alert } from "react-native";
 import { useAppSelector } from "application/store/hook";
 import { useNavigation, useTheme } from "@react-navigation/native";
-import type { Inventory, Recipe as RecipeType } from "domain/entities/data/inventories";
+import type { Inventory, Recipe as RecipeType, Stock } from "domain/entities/data/inventories";
 import { Visible } from "domain/enums/data/inventory/visible.enums";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
@@ -15,45 +15,57 @@ import StyledButton from "presentation/components/button/StyledButton";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
-type CardProps = {
-  recipe: RecipeType;
-  onPress: (recipe: RecipeType) => void;
-  onLongPress: (recipe: RecipeType) => void;
+// Helper function to calculate available portions for a recipe
+const calculatePortion = (recipe: RecipeType, stocks: Stock[]): number => {
+  const stocksMap = new Map(stocks.map((stock) => [stock.id, stock.quantity]));
+
+  const minPortions = recipe.ingredients.map((ingredient) => {
+    const stockQuantity = stocksMap.get(ingredient.id) || 0;
+    return Math.floor(stockQuantity / ingredient.quantity);
+  });
+
+  return Math.min(...minPortions);
 };
 
-const Card: React.FC<CardProps> = ({ recipe, onPress, onLongPress }) => {
-  const { colors } = useTheme();
+// Helper function to calculate the cost of a recipe
+const calculateCost = (recipe: RecipeType, stocks: Stock[]): number => {
+  return recipe.ingredients.reduce((total, ingredient) => {
+    const stock = stocks.find((s) => s.id === ingredient.id);
+    return total + (stock?.currentValue || 0) * ingredient.quantity;
+  }, 0);
+};
 
-  const coin = useAppSelector((state) => state.coin);
+// Card component to display recipe information
+const Card: React.FC<{ recipe: RecipeType; onPress: () => void; onLongPress: () => void }> = ({
+  recipe,
+  onPress,
+  onLongPress,
+}) => {
+  const { colors } = useTheme();
   const stocks = useAppSelector((state) => state.stocks);
 
-  const cost = recipe.ingredients.reduce((a, b) => {
-    const { currentValue = 0 } = stocks.find((s) => s.id === b.id) ?? {};
-    return a + currentValue * b.quantity;
-  }, 0);
+  const portions = useMemo(() => calculatePortion(recipe, stocks), [recipe, stocks]);
+  const cost = useMemo(() => calculateCost(recipe, stocks), [recipe, stocks]);
 
   return (
-    <StyledButton
-      style={styles.row}
-      onPress={() => onPress(recipe)}
-      onLongPress={() => onLongPress(recipe)}
-    >
+    <StyledButton style={styles.row} onPress={onPress} onLongPress={onLongPress}>
       <View>
         <StyledText>{recipe.name}</StyledText>
-        <StyledText>{thousandsSystem(recipe.ingredients.length)} Ingredientes</StyledText>
+        <StyledText verySmall>{thousandsSystem(portions)} Porciones</StyledText>
       </View>
       <View>
-        <StyledText color={colors.primary} right>
-          {thousandsSystem(recipe.value)} {coin}
+        <StyledText color={colors.primary} right bold>
+          {thousandsSystem(recipe.value)}
         </StyledText>
-        <StyledText color="#f71010" right>
-          {thousandsSystem(cost)} {coin}
+        <StyledText color="#f71010" right verySmall>
+          {thousandsSystem(cost)}
         </StyledText>
       </View>
     </StyledButton>
   );
 };
 
+// Mapping for visibility types
 const GET_TAB_NAME: { [key in Visible]: string } = {
   [Visible.Both]: "RECETAS/PAQUETES",
   [Visible.Restaurant]: "RECETAS",
@@ -61,39 +73,41 @@ const GET_TAB_NAME: { [key in Visible]: string } = {
   [Visible.None]: "SIN VISIBILIDAD",
 };
 
-type RecipeProps = {
-  inventory: Inventory;
-};
-
-const Recipe: React.FC<RecipeProps> = ({ inventory }) => {
+// Main Recipe component
+const Recipe: React.FC<{ inventory: Inventory }> = ({ inventory }) => {
   const recipes = useAppSelector((state) => state.recipes);
   const stocks = useAppSelector((state) => state.stocks);
+  const { colors } = useTheme();
+  const navigation = useNavigation<NavigationProps>();
 
-  const found = useMemo(() => recipes.filter((s) => s.inventoryID === inventory.id), [recipes]);
+  const filteredRecipes = useMemo(
+    () => recipes.filter((recipe) => recipe.inventoryID === inventory.id),
+    [recipes, inventory],
+  );
 
-  const [data, setData] = useState<RecipeType[]>(recipes);
-  const [search, setSearch] = useState<string>("");
+  const [search, setSearch] = useState("");
+  const [data, setData] = useState<RecipeType[]>(filteredRecipes);
 
   useEffect(() => {
-    if (!search) return setData(found);
+    if (!search) {
+      setData(filteredRecipes);
+      return;
+    }
+
     const searchTerm = search.toLowerCase();
-    const filtered = found.filter(
-      (s) =>
-        s.name.toLowerCase().includes(searchTerm) ||
-        s.description.toLowerCase().includes(searchTerm),
+    const filtered = filteredRecipes.filter(
+      (recipe) =>
+        recipe.name.toLowerCase().includes(searchTerm) ||
+        recipe.description.toLowerCase().includes(searchTerm),
     );
     setData(filtered);
-  }, [search, recipes]);
-
-  const { colors } = useTheme();
-
-  const navigation = useNavigation<NavigationProps>();
+  }, [search, filteredRecipes]);
 
   const NAME = GET_TAB_NAME[inventory.visible];
 
   return (
     <Layout style={{ padding: 0 }}>
-      {!!found.length && (
+      {!!filteredRecipes.length && (
         <StyledInput
           placeholder="Busca por nombre, descripción."
           stylesContainer={{ marginVertical: 0, borderRadius: 0 }}
@@ -104,10 +118,10 @@ const Recipe: React.FC<RecipeProps> = ({ inventory }) => {
       )}
       <View style={{ paddingHorizontal: 20, paddingVertical: 15, flex: 1 }}>
         <View style={{ flexGrow: 1 }}>
-          {!found.length && (
+          {!filteredRecipes.length && (
             <StyledText color={colors.primary}>NO HAY {NAME} REGISTRADOS</StyledText>
           )}
-          {!!found.length && (
+          {!!filteredRecipes.length && (
             <>
               {!data.length && (
                 <StyledText color={colors.primary}>NO HAY {NAME} PARA LA BUSQUEDA</StyledText>
@@ -119,16 +133,16 @@ const Recipe: React.FC<RecipeProps> = ({ inventory }) => {
                 renderItem={({ item }) => (
                   <Card
                     recipe={item}
-                    onPress={(recipe) =>
+                    onPress={() =>
                       navigation.navigate("InventoryRoutes", {
                         screen: "RecipeInformation",
-                        params: { recipe },
+                        params: { recipe: item },
                       })
                     }
-                    onLongPress={(recipe) =>
+                    onLongPress={() =>
                       navigation.navigate("InventoryRoutes", {
                         screen: "CreateRecipe",
-                        params: { recipe, inventory },
+                        params: { recipe: item, inventory },
                       })
                     }
                   />
@@ -141,10 +155,12 @@ const Recipe: React.FC<RecipeProps> = ({ inventory }) => {
           backgroundColor={colors.primary}
           onPress={() => {
             const found = stocks.filter((s) => s.inventoryID === inventory.id);
-            if (!found.length)
-              return Alert.alert("OOPS!", `No hay stocks registrados para crear ${NAME}`, [], {
+            if (!found.length) {
+              Alert.alert("OOPS!", `No hay stocks registrados para crear ${NAME}`, [], {
                 cancelable: true,
               });
+              return;
+            }
 
             navigation.navigate("InventoryRoutes", {
               screen: "CreateRecipe",

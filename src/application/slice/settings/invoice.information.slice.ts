@@ -3,7 +3,6 @@ import { changeAll, cleanAll } from "application/store/actions";
 import { InvoiceInformation } from "domain/entities/data/settings/invoice.information.entity";
 import { Collection } from "domain/entities/data/user";
 import countries from "shared/data/countries.json";
-
 import * as localization from "expo-localization";
 
 const invoiceInformation = (collection: Collection) => collection.invoiceInformation;

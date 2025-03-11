@@ -1,23 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
-import Layout from "presentation/components/layout/Layout";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useTheme } from "@react-navigation/native";
-import {
-  InventoryRouteProp,
-  RootInventory,
-} from "domain/entities/navigation/root.inventory.entity";
-import { changeDate, thousandsSystem } from "shared/utils";
-import { Stock } from "domain/entities/data/inventories";
+import { changeDate } from "shared/utils";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
+import apiClient, { endpoints } from "infrastructure/api/server";
+import { RootSupplier, SupplierRouteProp } from "domain/entities/navigation/root.supplier.entity";
+import { Supplier } from "domain/entities/data";
+import { remove } from "application/slice/suppliers/suppliers.slice";
+import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { remove } from "application/slice/inventories/stocks.slice";
-import { removeIngredient } from "application/slice/inventories/recipes.slice";
-import { batch } from "react-redux";
-import { removeStock as removeStockProduct } from "application/slice/stores/products.slice";
-import { removeStock as removeStockMenu } from "application/slice/restaurants/menu.slice";
-import apiClient, { endpoints } from "infrastructure/api/server";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   const { colors } = useTheme();
@@ -30,19 +23,20 @@ const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   );
 };
 
-type StockInformationProps = {
-  navigation: StackNavigationProp<RootInventory>;
-  route: InventoryRouteProp<"StockInformation">;
+type SupplierInformationProps = {
+  navigation: StackNavigationProp<RootSupplier>;
+  route: SupplierRouteProp<"SupplierInformation">;
 };
 
-const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }) => {
+const SupplierInformation: React.FC<SupplierInformationProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
-  const stocks = useAppSelector((state) => state.stocks);
+  const suppliers = useAppSelector((state) => state.suppliers);
+  const economies = useAppSelector((state) => state.economies);
 
-  const stock = route.params.stock;
+  const supplier = route.params.supplier;
 
-  const [data, setData] = useState<Stock>(stock);
+  const [data, setData] = useState<Supplier>(supplier);
 
   const dispatch = useAppDispatch();
 
@@ -51,21 +45,20 @@ const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }
   }, [data]);
 
   useEffect(() => {
-    const found = stocks.find((s) => s.id === stock.id);
+    const found = suppliers.find((s) => s.id === supplier.id);
     if (!found) navigation.pop();
     else setData(found);
-  }, [stocks, stock]);
+  }, [suppliers, supplier]);
+
+  const economy: boolean = useMemo(
+    () => economies.some((e) => e.supplier?.id === supplier.id),
+    [economies],
+  );
 
   const removeData = async () => {
-    batch(() => {
-      dispatch(remove({ id: stock.id }));
-      dispatch(removeIngredient({ id: stock.id }));
-      dispatch(removeStockProduct({ ids: [stock.id] }));
-      dispatch(removeStockMenu({ ids: [stock.id] }));
-    });
-
+    dispatch(remove({ id: supplier.id }));
     await apiClient({
-      url: endpoints.stock.delete(stock.id),
+      url: endpoints.supplier.delete(supplier.id),
       method: "DELETE",
     });
   };
@@ -76,21 +69,17 @@ const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }
         <ScrollView style={{ flexGrow: 1 }}>
           <Card name="ID" value={data.id} />
           <Card name="Nombre" value={data.name} />
-          {data.unit && <Card name="Unidad" value={data.unit} />}
-          <Card name="Visible" value={data.visible ? "Si" : "No"} />
-          <Card name="Punto de reorden" value={thousandsSystem(data.reorder)} />
-          {data.reference && <Card name="Referencia" value={data.reference} />}
-          {data.brand && <Card name="Marca" value={data.brand} />}
-          {!!data.movements.length && (
+          {data.identification && <Card name="Identificación" value={data.identification} />}
+          {data.description && <Card name="Descripción" value={data.description} />}
+          {economy && (
             <TouchableOpacity
               style={[styles.card, { borderColor: colors.border }]}
-              onPress={() => navigation.navigate("MovementInformation", { stockID: stock.id })}
+              onPress={() => navigation.navigate("EconomyInformation", { supplierID: supplier.id })}
             >
               <StyledText>Movimiento</StyledText>
               <Ionicons name="chevron-forward" color={colors.text} size={19} />
             </TouchableOpacity>
           )}
-          <Card name="Valor actual" value={thousandsSystem(data.currentValue)} />
           <Card name="Fecha de creación" value={changeDate(new Date(data.creationDate), true)} />
           <Card
             name="Fecha de modificación"
@@ -124,4 +113,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default StockInformation;
+export default SupplierInformation;

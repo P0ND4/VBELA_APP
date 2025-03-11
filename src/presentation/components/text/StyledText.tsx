@@ -12,7 +12,7 @@ type TextProps = {
   subtitle?: boolean;
   smallSubtitle?: boolean;
   bigParagraph?: boolean;
-  paragrahp?: boolean;
+  paragraph?: boolean;
   smallParagraph?: boolean;
   verySmall?: boolean;
   center?: boolean;
@@ -35,7 +35,7 @@ const StyledText: React.FC<TextProps> = ({
   subtitle,
   smallSubtitle,
   bigParagraph,
-  paragrahp,
+  paragraph,
   smallParagraph,
   verySmall,
   center,
@@ -50,7 +50,7 @@ const StyledText: React.FC<TextProps> = ({
   const { colors } = useTheme();
 
   const stylesTaken: StyleProp<TextStyle> = [
-    { fontSize: 18 },
+    { fontSize: 18, flexShrink: 1, flexWrap: "wrap" },
     bigTitle && { fontSize: 40 },
     title && { fontSize: 35 },
     smallTitle && { fontSize: 32 },
@@ -58,14 +58,14 @@ const StyledText: React.FC<TextProps> = ({
     subtitle && { fontSize: 26 },
     smallSubtitle && { fontSize: 23 },
     bigParagraph && { fontSize: 20 },
-    paragrahp && { fontSize: 18 },
+    paragraph && { fontSize: 18 },
     smallParagraph && { fontSize: 14 },
     verySmall && { fontSize: 13 },
     color ? { color: color } : { color: enableDarkMode ? colors.text : "#000000" },
     center && { textAlign: "center" },
     justify && { textAlign: "justify" },
     right && { textAlign: "right" },
-    bold && { fontWeight: "bold" },
+    bold && { fontWeight: "700" },
     lineThrough && { textDecorationLine: "line-through" },
     style,
   ];

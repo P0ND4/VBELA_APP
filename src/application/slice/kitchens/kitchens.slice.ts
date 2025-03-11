@@ -17,7 +17,8 @@ export const kitchensSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Kitchen>) => {
       const kitchen = action.payload;
-      return state.map((s) => (s.id === kitchen.id ? kitchen : s));
+      const index = state.findIndex((s) => s.id === kitchen.id);
+      if (index !== -1) state[index] = kitchen;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;

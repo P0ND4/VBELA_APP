@@ -5,7 +5,8 @@ export type Movement = {
   id: string;
   inventoryID: string;
   stockID: string;
-  supplierID?: string;
+  supplier: { id: string; name: string } | null;
+  supplierValue: number;
   type: Type;
   quantity: number;
   currentValue: number;
@@ -25,6 +26,7 @@ export interface Stock {
   reference: string;
   brand: string;
   currentValue: number;
+  quantity: number;
   movements: Movement[];
   creationDate: number;
   modificationDate: number;

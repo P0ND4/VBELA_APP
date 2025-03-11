@@ -86,7 +86,6 @@ const Button: React.FC<ButtonProps> = ({ icon, name, onPress }) => {
 
 const SalesInvoiceScreen: React.FC<{ trade: Order; goEdit: () => void }> = ({ trade, goEdit }) => {
   const information = useAppSelector((state) => state.invoiceInformation);
-  const coin = useAppSelector((state) => state.coin);
 
   const { colors } = useTheme();
 
@@ -170,6 +169,16 @@ const SalesInvoiceScreen: React.FC<{ trade: Order; goEdit: () => void }> = ({ tr
             }, "")}
             <span class="text">Chq #${trade.order} Orden #${thousandsSystem(trade.selection.length)}</span>
           </div>
+          ${
+            trade.observation
+              ? `
+              <div class="space">
+                <p class="text" style="text-align: justify">${
+                  trade.observation.slice(0, 200) + (trade.observation.length > 200 ? "..." : "")
+                }</p>
+              </div>`
+              : ""
+          }
           <div style="margin-top: 20px">
             ${
               !!trade.discount
@@ -182,7 +191,7 @@ const SalesInvoiceScreen: React.FC<{ trade: Order; goEdit: () => void }> = ({ tr
                 : ""
             }
             <div class="row">
-              <span class="text">TOTAL ${coin}:</span>
+              <span class="text">TOTAL:</span>
               <span class="text">${thousandsSystem(trade.total)}</span>
             </div>
           </div>
@@ -236,6 +245,7 @@ const SalesInvoiceScreen: React.FC<{ trade: Order; goEdit: () => void }> = ({ tr
                   {trade.selection.map((tr) => {
                     return (
                       <Division
+                        key={tr.id}
                         left={`${tr.quantity}x ${tr.name}`}
                         right={`${!!tr.discount ? `(${formatDecimals(tr.discount * 100, 2)}%) (-${tr.value * tr.quantity * tr.discount})` : ""} ${thousandsSystem(tr.total)}`}
                       />
@@ -245,6 +255,14 @@ const SalesInvoiceScreen: React.FC<{ trade: Order; goEdit: () => void }> = ({ tr
                     Chq #{trade.order} Orden #{thousandsSystem(trade.selection.length)}
                   </StyledText>
                 </View>
+                {trade.observation && (
+                  <View style={[styles.space, { borderColor: colors.border }]}>
+                    <StyledText justify>
+                      {trade.observation.slice(0, 200) +
+                        (trade.observation.length > 200 ? "..." : "")}
+                    </StyledText>
+                  </View>
+                )}
                 <View style={{ paddingVertical: 15 }}>
                   {!!trade.discount && (
                     <Division
@@ -252,7 +270,7 @@ const SalesInvoiceScreen: React.FC<{ trade: Order; goEdit: () => void }> = ({ tr
                       right={thousandsSystem(totalNoDiscount * trade.discount)}
                     />
                   )}
-                  <Division left={`TOTAL ${coin}:`} right={thousandsSystem(trade.total)} />
+                  <Division left="TOTAL:" right={thousandsSystem(trade.total)} />
                 </View>
               </View>
             </ViewShot>

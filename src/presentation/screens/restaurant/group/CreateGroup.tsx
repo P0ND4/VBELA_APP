@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { TouchableOpacity } from "react-native";
 import GroupForm from "presentation/screens/common/sales/group/GroupForm";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RestaurantRouteProp, RootRestaurant, StoreRouteProp } from "domain/entities/navigation";
+import { RestaurantRouteProp, RootRestaurant } from "domain/entities/navigation";
 import { useAppDispatch } from "application/store/hook";
 import { add, edit, remove } from "application/slice/restaurants/menu.group.slice";
 import { Group } from "domain/entities/data";

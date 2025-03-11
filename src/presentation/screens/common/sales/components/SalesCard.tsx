@@ -22,7 +22,7 @@ const SalesCard: React.FC<SalesCardProps> = ({ onLongPress, onPress, style, data
 
   return (
     <TouchableOpacity
-      style={[styles.row, style, { height: 55, marginBottom: 15 }]}
+      style={[styles.row, style, { height: 55, marginBottom: 5 }]}
       onPress={onPress}
       onLongPress={onLongPress}
     >
@@ -35,6 +35,9 @@ const SalesCard: React.FC<SalesCardProps> = ({ onLongPress, onPress, style, data
         >
           <StyledText smallParagraph>{displayName}</StyledText>
         </View>
+        {data?.highlight && (
+          <Ionicons name="star" color={colors.primary} size={18} style={{ marginRight: 6 }} />
+        )}
         {data?.name && <StyledText verySmall>{data.name}</StyledText>}
       </View>
 

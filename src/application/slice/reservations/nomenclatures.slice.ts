@@ -17,7 +17,8 @@ export const nomenclaturesSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Nomenclature>) => {
       const nomenclature = action.payload;
-      return state.map((s) => (s.id === nomenclature.id ? nomenclature : s));
+      const index = state.findIndex((s) => s.id === nomenclature.id);
+      if (index !== -1) state[index] = nomenclature;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;

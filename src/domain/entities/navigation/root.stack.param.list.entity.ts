@@ -11,5 +11,6 @@ export type RootStackParamList = {
   InventoryRoutes: undefined;
   StatisticsRoutes: undefined;
   CollaboratorRoutes: undefined;
+  SupplierRoutes: undefined;
   App: undefined;
 };

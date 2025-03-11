@@ -3,13 +3,14 @@ import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { RestaurantRouteProp, RootRestaurant } from "domain/entities/navigation";
 import { useTheme } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { TouchableOpacity } from "react-native";
+import { TouchableOpacity, StyleSheet } from "react-native";
 import { Element, Group, Order, Save } from "domain/entities/data/common";
 import { add } from "application/slice/restaurants/menu.slice";
 import useSave, { CallbackProps } from "../hooks/useSave";
 import apiClient, { endpoints } from "infrastructure/api/server";
 import SalesBoxScreen from "presentation/screens/common/sales/trade/SalesBoxScreen";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import StyledText from "presentation/components/text/StyledText";
 
 type CreateOrderProps = {
   navigation: StackNavigationProp<RootRestaurant>;
@@ -35,15 +36,16 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
 
   useEffect(() => {
     navigation.setOptions({
-      title: "Crear pedido",
+      title: "Lista de menú",
       headerRight: () => (
         <TouchableOpacity
-          style={{ paddingRight: 20 }}
+          style={styles.create}
           onPress={() =>
             navigation.push("RestaurantRoutes", { screen: "MenuTab", params: { restaurantID } })
           }
         >
-          <Ionicons name="add" color={colors.primary} size={30} />
+          <Ionicons name="add" color={colors.primary} size={20} />
+          <StyledText smallParagraph>Menú</StyledText>
         </TouchableOpacity>
       ),
     });
@@ -83,7 +85,7 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
       elements={elements}
       addElement={addElement}
       onPressGroup={(group?: Group) => {
-        navigation.navigate("RestaurantRoutes", {
+        navigation.push("RestaurantRoutes", {
           screen: "CreateGroup",
           params: { group, restaurantID },
         });
@@ -102,5 +104,14 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
     />
   );
 };
+
+const styles = StyleSheet.create({
+  create: {
+    paddingRight: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
 
 export default CreateOrder;

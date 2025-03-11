@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const sales = (collection: Collection) => collection.productGroup;
+const sales = (collection: Collection) => collection.menuGroup;
 
 const initialState: Group[] = [];
 
@@ -17,7 +17,8 @@ export const menuGroupSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Group>) => {
       const group = action.payload;
-      return state.map((s) => (s.id === group.id ? group : s));
+      const index = state.findIndex((s) => s.id === group.id);
+      if (index !== -1) state[index] = group;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;

@@ -12,6 +12,7 @@ import { useAppDispatch } from "application/store/hook";
 import { Stock } from "domain/entities/data/inventories";
 import { add, edit } from "application/slice/inventories/stocks.slice";
 import { unitOptions, UnitValue } from "shared/constants/unit";
+import apiClient, { endpoints } from "infrastructure/api/server";
 import StyledText from "presentation/components/text/StyledText";
 import StyledInput from "presentation/components/input/StyledInput";
 import StyledButton from "presentation/components/button/StyledButton";
@@ -19,7 +20,6 @@ import Layout from "presentation/components/layout/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
-import apiClient, { endpoints } from "infrastructure/api/server";
 
 type CreateStockProps = {
   navigation: StackNavigationProp<RootInventory>;
@@ -30,7 +30,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
   const defaultValue = route.params?.stock;
   const inventoryID = route.params.inventoryID;
 
-  const { control, handleSubmit, watch, formState } = useForm({
+  const { control, handleSubmit, watch, formState } = useForm<Stock>({
     defaultValues: {
       id: defaultValue?.id || random(10),
       inventoryID,
@@ -41,6 +41,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
       reference: defaultValue?.reference || "",
       brand: defaultValue?.brand || "",
       currentValue: defaultValue?.currentValue || 0,
+      quantity: defaultValue?.quantity || 0,
       movements: defaultValue?.movements || [],
       creationDate: defaultValue?.creationDate || new Date().getTime(),
       modificationDate: new Date().getTime(),

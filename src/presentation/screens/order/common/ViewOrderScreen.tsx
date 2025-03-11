@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
-import { useAppSelector } from "application/store/hook";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { thousandsSystem } from "shared/utils";
 import { useStatusInfo } from "../hooks/useStatusInfo";
@@ -126,8 +125,6 @@ type ViewOrderProps = {
 const ViewOrder: React.FC<ViewOrderProps> = ({ onEditOrder, order, onChange }) => {
   const { colors } = useTheme();
 
-  const coin = useAppSelector((state) => state.coin);
-
   const [observationModal, setObservationModal] = useState<boolean>(false);
   const [optionsModal, setOptionsModal] = useState<boolean>(false);
   const [statusModal, setStatusModal] = useState<boolean>(false);
@@ -166,7 +163,7 @@ const ViewOrder: React.FC<ViewOrderProps> = ({ onEditOrder, order, onChange }) =
         <View style={styles.header}>
           <View style={styles.row}>
             <StyledText subtitle lineThrough={order.status === Status.Canceled}>
-              {coin} {thousandsSystem(order.total)}{" "}
+              {thousandsSystem(order.total)}{" "}
               {!!order.discount && (
                 <StyledText
                   color={colors.primary}

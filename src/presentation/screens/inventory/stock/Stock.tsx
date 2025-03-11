@@ -6,7 +6,7 @@ import { thousandsSystem } from "shared/utils";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
-import type { Stock as StockType } from "domain/entities/data/inventories";
+import type { Recipe, Stock as StockType } from "domain/entities/data/inventories";
 import { Type } from "domain/enums/data/inventory/movement.enums";
 import StyledInput from "presentation/components/input/StyledInput";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -15,6 +15,16 @@ import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 
 type NavigationProps = StackNavigationProp<RootApp>;
+
+const calculatePortion = (stock: StockType, recipes: Recipe[]): number => {
+  const totalQuantityRequired = recipes.reduce((acc, recipe) => {
+    const ingredient = recipe.ingredients.find((i) => i.id === stock.id);
+    return acc + (ingredient ? ingredient.quantity : 0);
+  }, 0);
+
+  if (totalQuantityRequired === 0) return 0;
+  return Math.floor(stock.quantity / totalQuantityRequired);
+};
 
 type CardProps = {
   stock: StockType;
@@ -25,7 +35,7 @@ type CardProps = {
 const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
   const { colors } = useTheme();
 
-  const quantity = stock.movements.reduce((a, b) => a + b.quantity, 0);
+  const recipes = useAppSelector((state) => state.recipes);
 
   return (
     <StyledButton
@@ -33,20 +43,25 @@ const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
       onPress={() => onPress(stock)}
       onLongPress={() => onLongPress(stock)}
     >
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        {quantity < stock.reorder && (
-          <Ionicons name="warning-outline" size={22} color={colors.primary} />
-        )}
-        <StyledText>
-          {stock.name} {stock.unit && `(${stock.unit})`}
+      <View>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {stock.quantity < stock.reorder && (
+            <Ionicons name="warning-outline" size={22} color={colors.primary} />
+          )}
+          <StyledText>
+            {stock.name} {stock.unit && `(${stock.unit})`}
+          </StyledText>
+        </View>
+        <StyledText color={colors.text} verySmall>
+          {thousandsSystem(calculatePortion(stock, recipes))} Porciones
         </StyledText>
       </View>
       <View style={{ alignItems: "flex-end" }}>
-        <StyledText bold color={quantity >= stock.reorder ? colors.text : colors.primary}>
-          {thousandsSystem(quantity)}
+        <StyledText bold color={stock.quantity >= stock.reorder ? colors.text : colors.primary}>
+          {thousandsSystem(stock.quantity)}
         </StyledText>
         <StyledText verySmall color={colors.primary}>
-          {thousandsSystem(stock.currentValue * quantity)}
+          {thousandsSystem(stock.currentValue * stock.quantity)}
         </StyledText>
       </View>
     </StyledButton>
@@ -64,6 +79,13 @@ const Stock: React.FC<StockProps> = ({ inventoryID }) => {
 
   const [data, setData] = useState<StockType[]>([]);
   const [search, setSearch] = useState<string>("");
+
+  const total = useMemo(() => {
+    return data.reduce((acc, stock) => {
+      const total = stock.quantity * stock.currentValue;
+      return acc + total;
+    }, 0);
+  }, [data]);
 
   useEffect(() => {
     if (!search) return setData(found);
@@ -110,7 +132,7 @@ const Stock: React.FC<StockProps> = ({ inventoryID }) => {
                     })
                   }
                 >
-                  <StyledText>Registrar salida</StyledText>
+                  <StyledText center>Registrar salida</StyledText>
                 </StyledButton>
                 <StyledButton
                   style={styles.movement}
@@ -122,7 +144,9 @@ const Stock: React.FC<StockProps> = ({ inventoryID }) => {
                     })
                   }
                 >
-                  <StyledText color="#FFFFFF">Registrar entrada</StyledText>
+                  <StyledText color="#FFFFFF" center>
+                    Registrar entrada
+                  </StyledText>
                 </StyledButton>
               </View>
               {!data.length && (
@@ -155,6 +179,9 @@ const Stock: React.FC<StockProps> = ({ inventoryID }) => {
             </>
           )}
         </View>
+        <StyledText style={{ marginVertical: 10 }}>
+          Valor total: <StyledText color={colors.primary}>{thousandsSystem(total)}</StyledText>
+        </StyledText>
         <StyledButton
           backgroundColor={colors.primary}
           onPress={() =>

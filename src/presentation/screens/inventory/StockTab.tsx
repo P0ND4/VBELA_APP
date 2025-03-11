@@ -20,12 +20,12 @@ const GET_TAB_NAME: { [key in Visible]: string } = {
   [Visible.None]: "SIN VISIBILIDAD",
 };
 
-type CreateInventoryProps = {
+type StockTabProps = {
   navigation: StackNavigationProp<RootInventory>;
   route: InventoryRouteProp<"StockTab">;
 };
 
-const StockTab: React.FC<CreateInventoryProps> = ({ navigation, route }) => {
+const StockTab: React.FC<StockTabProps> = ({ navigation, route }) => {
   const inventories = useAppSelector((state) => state.inventories);
 
   const inventory = route.params.inventory;

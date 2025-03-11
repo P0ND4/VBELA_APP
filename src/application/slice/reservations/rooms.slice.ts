@@ -17,7 +17,8 @@ export const roomsSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Room>) => {
       const room = action.payload;
-      return state.map((s) => (s.id === room.id ? room : s));
+      const index = state.findIndex((s) => s.id === room.id);
+      if (index !== -1) state[index] = room;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;

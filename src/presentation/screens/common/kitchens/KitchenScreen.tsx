@@ -7,14 +7,13 @@ import { Kitchen, Kitchen as KitchenType } from "domain/entities/data/kitchens";
 import { Status } from "domain/enums/data/kitchen/status.enums";
 import { useTheme } from "@react-navigation/native";
 import { changeDate, thousandsSystem } from "shared/utils";
-import moment from "moment";
+import apiClient, { endpoints } from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledInput from "presentation/components/input/StyledInput";
 import StyledButton from "presentation/components/button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import StyledText from "presentation/components/text/StyledText";
-import apiClient, { endpoints } from "infrastructure/api/server";
 
 const Order: React.FC<{ order: Selection }> = ({ order }) => {
   return (
@@ -28,49 +27,62 @@ const Order: React.FC<{ order: Selection }> = ({ order }) => {
   );
 };
 
-const Card: React.FC<{ order: KitchenType; onPress: () => void }> = ({ order, onPress }) => {
-  const { colors } = useTheme();
+const Card: React.FC<{ order: KitchenType; onPress: () => void; refresh: boolean }> = React.memo(
+  ({ order, onPress, refresh }) => {
+    const { colors } = useTheme();
 
-  return (
-    <View style={[styles.card, { borderColor: colors.border }]}>
-      <View style={styles.row}>
-        <View style={{ flex: 1 }}>
-          <StyledText smallSubtitle>{order.location}</StyledText>
-          <View style={styles.row}>
-            <StyledText>
-              Orden: <StyledText color={colors.primary}>{order.order}</StyledText>
-            </StyledText>
-            <StyledText>{changeDate(new Date(order.creationDate))}</StyledText>
+    const getDurationInMinutes = (creationDate: Date) => {
+      const now = new Date();
+      const diffInMilliseconds = now.getTime() - creationDate.getTime();
+      return `${Math.floor(diffInMilliseconds / (1000 * 60))} minutos`;
+    };
+
+    return (
+      <View style={[styles.card, { borderColor: colors.border }]}>
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <StyledText smallSubtitle>{order.location}</StyledText>
+            <View style={styles.row}>
+              <StyledText>
+                Orden: <StyledText color={colors.primary}>{order.order}</StyledText>
+              </StyledText>
+              <StyledText>{changeDate(new Date(order.creationDate))}</StyledText>
+            </View>
           </View>
+          {order.status !== Status.Completed && (
+            <StyledButton
+              style={[styles.cardButton, { borderColor: colors.border }]}
+              onPress={onPress}
+            >
+              <Ionicons name="checkmark" size={22} color={colors.primary} />
+              <StyledText verySmall>
+                {order.status === Status.Confirmed ? "ENTREGADO" : "TERMINADO"}
+              </StyledText>
+            </StyledButton>
+          )}
         </View>
-        {order.status !== Status.Completed && (
-          <StyledButton
-            style={[styles.cardButton, { borderColor: colors.border }]}
-            onPress={onPress}
-          >
-            <Ionicons name="checkmark" size={22} color={colors.primary} />
-            <StyledText verySmall>
-              {order.status === Status.Confirmed ? "ENTREGADO" : "TERMINADO"}
+        <View style={{ marginVertical: 10 }}>
+          {order.selection.map((order) => (
+            <Order key={order.id} order={order} />
+          ))}
+        </View>
+        <View>
+          <StyledText>Creación {new Date(order.creationDate).toLocaleTimeString()}</StyledText>
+          {order.observation && (
+            <StyledText justify>
+              Observación: <StyledText color={colors.primary}>{order.observation}</StyledText>
             </StyledText>
-          </StyledButton>
-        )}
-      </View>
-      <View style={{ marginVertical: 10 }}>
-        {order.selection.map((order) => (
-          <Order key={order.id} order={order} />
-        ))}
-      </View>
-      <View>
-        <StyledText>Creación {moment(new Date(order.creationDate)).format("HH:mm")}</StyledText>
-        {order.observation && (
-          <StyledText justify>
-            Observación: <StyledText color={colors.primary}>{order.observation}</StyledText>
+          )}
+          <StyledText color={colors.primary}>
+            {getDurationInMinutes(new Date(order.creationDate))}
           </StyledText>
-        )}
+        </View>
       </View>
-    </View>
-  );
-};
+    );
+  },
+);
+
+Card.displayName = "Card";
 
 type KitchenScreenProps = {
   orders: KitchenType[];
@@ -84,9 +96,11 @@ const KitchenScreen: React.FC<KitchenScreenProps> = ({ orders, status }) => {
 
   const [search, setSearch] = useState<string>("");
   const [filters, setFilters] = useState({ restaurant: "Todos" });
-
   const [restaurantModal, setRestaurantModal] = useState<boolean>(false);
   const [restaurantFilter, setRestaurantFilter] = useState<{ label: string; value: string }[]>([]);
+  const [refresh, setRefresh] = useState(false);
+
+  const dispatch = useAppDispatch();
 
   const data = useMemo(() => {
     const isDefaultFilter = filters.restaurant === "Todos" && !search;
@@ -101,8 +115,6 @@ const KitchenScreen: React.FC<KitchenScreenProps> = ({ orders, status }) => {
 
     return orders.filter((o) => matchesSearch(o) && matchesFilters(o));
   }, [orders, search, filters]);
-
-  const dispatch = useAppDispatch();
 
   useEffect(() => {
     const data = restaurants.map((r) => ({ label: r.name, value: r.id }));
@@ -119,6 +131,14 @@ const KitchenScreen: React.FC<KitchenScreenProps> = ({ orders, status }) => {
       data,
     });
   };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefresh((prev) => !prev);
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <>
@@ -139,11 +159,6 @@ const KitchenScreen: React.FC<KitchenScreenProps> = ({ orders, status }) => {
             />
             <View style={{ flex: 1 }}>
               <View style={[styles.filterContainer, { borderColor: colors.border }]}>
-                {/* <TouchableOpacity style={styles.alignHorizontally} onPress={() => {}}>
-                    <Ionicons name="people-outline" size={25} />
-                    <StyledText style={{ marginHorizontal: 5 }}>Vendedores</StyledText>
-                    <Ionicons name={false ? "caret-up" : "caret-down"} />
-                  </TouchableOpacity> */}
                 <TouchableOpacity
                   style={styles.alignHorizontally}
                   onPress={() => setRestaurantModal(true)}
@@ -154,7 +169,7 @@ const KitchenScreen: React.FC<KitchenScreenProps> = ({ orders, status }) => {
                       ? "Todos los restaurantes"
                       : restaurantFilter.find((l) => l.value === filters.restaurant)?.label}
                   </StyledText>
-                  <Ionicons name={false ? "caret-up" : "caret-down"} />
+                  <Ionicons name={restaurantModal ? "caret-up" : "caret-down"} />
                 </TouchableOpacity>
               </View>
               {!data.length && (
@@ -165,7 +180,9 @@ const KitchenScreen: React.FC<KitchenScreenProps> = ({ orders, status }) => {
               <FlatList
                 data={data}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => <Card order={item} onPress={() => update(item)} />}
+                renderItem={({ item }) => (
+                  <Card order={item} onPress={() => update(item)} refresh={refresh} />
+                )}
               />
             </View>
           </>
@@ -191,15 +208,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  order: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    right: 5,
-    top: 13,
-  },
   alignHorizontally: {
     marginTop: 5,
     flexDirection: "row",
@@ -207,7 +215,7 @@ const styles = StyleSheet.create({
   },
   filterContainer: {
     flexDirection: "row",
-    justifyContent: "center", //TODO PENDIENTE AQUI
+    justifyContent: "center",
     alignItems: "center",
     flexWrap: "wrap",
     paddingHorizontal: 20,

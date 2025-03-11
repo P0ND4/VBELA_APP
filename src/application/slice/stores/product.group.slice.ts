@@ -17,7 +17,8 @@ export const productGroupSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Group>) => {
       const group = action.payload;
-      return state.map((s) => (s.id === group.id ? group : s));
+      const index = state.findIndex((s) => s.id === group.id);
+      if (index !== -1) state[index] = group;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;

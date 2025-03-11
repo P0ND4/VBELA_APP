@@ -6,6 +6,7 @@ import { Collection } from "domain/entities/data/user";
 const zones = (collection: Collection) => collection.zones;
 
 const initialState: Zone[] = [];
+
 export const zonesSlice = createSlice({
   name: "zones",
   initialState,
@@ -16,7 +17,8 @@ export const zonesSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Zone>) => {
       const zone = action.payload;
-      return state.map((s) => (s.id === zone.id ? zone : s));
+      const index = state.findIndex((s) => s.id === zone.id);
+      if (index !== -1) state[index] = zone;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;

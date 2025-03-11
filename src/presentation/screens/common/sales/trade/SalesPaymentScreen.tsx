@@ -3,7 +3,6 @@ import { StyleSheet, View } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import { useOrder } from "application/context/OrderContext";
 import { thousandsSystem } from "shared/utils";
-import { useAppSelector } from "application/store/hook";
 import { Order, PaymentMethod, Save } from "domain/entities/data/common/order.entity";
 import { Status } from "domain/enums/data/element/status.enums";
 import Layout from "presentation/components/layout/Layout";
@@ -29,7 +28,6 @@ const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({
 }) => {
   const { colors } = useTheme();
   const { info, selection, order, clean } = useOrder();
-  const coin = useAppSelector((state) => state.coin);
 
   const [method, setMethod] = useState<string>("");
   const [paymentVisible, setPaymentVisible] = useState<boolean>(false);
@@ -87,7 +85,6 @@ const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({
       <Layout style={{ justifyContent: "space-between" }}>
         <View style={styles.information}>
           <View style={styles.row}>
-            <StyledText style={styles.coin}>{coin}</StyledText>
             <StyledText bigTitle center>
               {thousandsSystem(total)}
             </StyledText>
@@ -141,7 +138,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-evenly",
   },
   row: { flexDirection: "row", alignItems: "center" },
-  coin: { marginTop: 8, marginRight: 6 },
 });
 
 export default SalesPaymentScreen;

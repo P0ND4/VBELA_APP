@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { TouchableOpacity } from "react-native";
+import { StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.store.entity";
@@ -10,6 +10,7 @@ import apiClient, { endpoints } from "infrastructure/api/server";
 import { Group } from "domain/entities/data";
 import SalesBoxScreen from "presentation/screens/common/sales/trade/SalesBoxScreen";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import StyledText from "presentation/components/text/StyledText";
 
 type CreateOrderProps = {
   navigation: StackNavigationProp<RootStore>;
@@ -41,15 +42,16 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
 
   useEffect(() => {
     navigation.setOptions({
-      title: "Crear pedido",
+      title: "Lista de productos",
       headerRight: () => (
         <TouchableOpacity
-          style={{ paddingRight: 20 }}
+          style={styles.create}
           onPress={() =>
             navigation.navigate("StoreRoutes", { screen: "ProductTab", params: { storeID } })
           }
         >
-          <Ionicons name="add" color={colors.primary} size={30} />
+          <Ionicons name="add" color={colors.primary} size={20} />
+          <StyledText smallParagraph>Producto</StyledText>
         </TouchableOpacity>
       ),
     });
@@ -88,5 +90,14 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
     />
   );
 };
+
+const styles = StyleSheet.create({
+  create: {
+    paddingRight: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
 
 export default CreateOrder;

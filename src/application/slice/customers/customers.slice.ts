@@ -17,7 +17,8 @@ export const customersSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Customer>) => {
       const customer = action.payload;
-      return state.map((s) => (s.id === customer.id ? customer : s));
+      const index = state.findIndex((s) => s.id === customer.id);
+      if (index !== -1) state[index] = customer;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;

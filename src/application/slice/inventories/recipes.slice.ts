@@ -17,7 +17,8 @@ export const informationSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Recipe>) => {
       const recipe = action.payload;
-      return state.map((s) => (s.id === recipe.id ? recipe : s));
+      const index = state.findIndex((s) => s.id === recipe.id);
+      if (index !== -1) state[index] = recipe;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;
@@ -29,10 +30,9 @@ export const informationSlice = createSlice({
     },
     removeIngredient: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;
-      return state.map((recipe) => ({
-        ...recipe,
-        ingredients: recipe.ingredients.filter((ingredient) => ingredient.id !== id),
-      }));
+      state.forEach((recipe) => {
+        recipe.ingredients = recipe.ingredients.filter((ingredient) => ingredient.id !== id);
+      });
     },
     clean: () => [],
   },

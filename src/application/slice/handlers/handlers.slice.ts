@@ -3,11 +3,11 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const payroll = (collection: Collection) => collection.handlers;
+const handlers = (collection: Collection) => collection.handlers;
 
 const initialState: Handler[] = [];
 
-export const controllersSlice = createSlice({
+export const handlersSlice = createSlice({
   name: "handlers",
   initialState,
   reducers: {
@@ -16,8 +16,9 @@ export const controllersSlice = createSlice({
       state.push(action.payload);
     },
     edit: (state, action: PayloadAction<Handler>) => {
-      const controller = action.payload;
-      return state.map((s) => (s.id === controller.id ? controller : s));
+      const handler = action.payload;
+      const index = state.findIndex((s) => s.id === handler.id);
+      if (index !== -1) state[index] = handler;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;
@@ -27,9 +28,9 @@ export const controllersSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => payroll(action.payload));
+    builder.addCase(changeAll, (_, action) => handlers(action.payload));
   },
 });
 
-export const { add, edit, remove, clean, change } = controllersSlice.actions;
-export default controllersSlice.reducer;
+export const { add, edit, remove, clean, change } = handlersSlice.actions;
+export default handlersSlice.reducer;

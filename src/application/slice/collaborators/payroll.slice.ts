@@ -17,7 +17,8 @@ export const payrollSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Payroll>) => {
       const payroll = action.payload;
-      return state.map((s) => (s.id === payroll.id ? payroll : s));
+      const index = state.findIndex((s) => s.id === payroll.id);
+      if (index !== -1) state[index] = payroll;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;

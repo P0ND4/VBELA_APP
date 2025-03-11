@@ -1,8 +1,8 @@
 import React, { useMemo } from "react";
+import moment from "moment";
 import { Alert, StyleSheet, View } from "react-native";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { useTheme } from "@react-navigation/native";
-import moment from "moment";
 import { changeDate, random, thousandsSystem } from "shared/utils";
 import { selectCompletedOrders, selectCompletedSales } from "application/selectors";
 import { active, clean, Status } from "application/appState/state/state.controller.slice";
@@ -20,7 +20,6 @@ const Home: React.FC = () => {
 
   const orders = useAppSelector(selectCompletedOrders);
   const sales = useAppSelector(selectCompletedSales);
-  const coin = useAppSelector((state) => state.coin);
   const stateController = useAppSelector((state) => state.stateController);
 
   const dispatch = useAppDispatch();
@@ -73,9 +72,7 @@ const Home: React.FC = () => {
           color={condition ? colors.text : colors.primary}
           size={120}
         />
-        <StyledText smallTitle>
-          {coin} {thousandsSystem(value)}
-        </StyledText>
+        <StyledText smallTitle>{thousandsSystem(value)}</StyledText>
         <StyledText color={colors.primary}>{!condition ? "ABIERTO" : "CERRADO"}</StyledText>
       </View>
       <StyledButton

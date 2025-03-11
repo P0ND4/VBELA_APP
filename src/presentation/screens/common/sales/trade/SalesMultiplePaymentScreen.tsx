@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
-import { useAppSelector } from "application/store/hook";
 import { useTheme } from "@react-navigation/native";
 import { Order, PaymentMethod, Save } from "domain/entities/data/common/order.entity";
 import { useOrder } from "application/context/OrderContext";
@@ -43,19 +42,12 @@ type CardProps = {
 const Card: React.FC<CardProps> = ({ paymentMethod, onRemove }) => {
   const { colors } = useTheme();
 
-  const coin = useAppSelector((state) => state.coin);
-
   return (
     <View style={[styles.card, { borderColor: colors.border }]}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <Ionicons name={paymentMethod.icon} color={colors.text} size={32} />
         <StyledText style={{ marginHorizontal: 15 }}>{paymentMethod.method}</StyledText>
-        <StyledText>
-          <StyledText verySmall color={colors.primary}>
-            {coin}
-          </StyledText>{" "}
-          {thousandsSystem(paymentMethod.amount)}
-        </StyledText>
+        <StyledText>{thousandsSystem(paymentMethod.amount)}</StyledText>
       </View>
       <TouchableOpacity onPress={() => onRemove(paymentMethod.id)}>
         <Ionicons name="close-circle-outline" color={colors.text} size={32} />

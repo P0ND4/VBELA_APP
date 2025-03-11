@@ -17,7 +17,8 @@ export const restaurantsSlice = createSlice({
     },
     edit: (state, action: PayloadAction<Location>) => {
       const restaurant = action.payload;
-      return state.map((r) => (r.id === restaurant.id ? restaurant : r));
+      const index = state.findIndex((r) => r.id === restaurant.id);
+      if (index !== -1) state[index] = restaurant;
     },
     remove: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;
@@ -25,10 +26,9 @@ export const restaurantsSlice = createSlice({
     },
     removeInventory: (state, action: PayloadAction<{ id: string }>) => {
       const { id } = action.payload;
-      return state.map((r) => ({
-        ...r,
-        inventories: r.inventories.filter((i) => i !== id),
-      }));
+      state.forEach((r) => {
+        r.inventories = r.inventories.filter((i) => i !== id);
+      });
     },
     clean: () => [],
   },
