@@ -13,6 +13,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
+import Table from "presentation/components/layout/Table";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
@@ -70,9 +71,10 @@ const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
 
 type StockProps = {
   inventoryID: string;
+  visualization: "block" | "table";
 };
 
-const Stock: React.FC<StockProps> = ({ inventoryID }) => {
+const Stock: React.FC<StockProps> = ({ inventoryID, visualization }) => {
   const stocks = useAppSelector((state) => state.stocks);
 
   const found = useMemo(() => stocks.filter((s) => s.inventoryID === inventoryID), [stocks]);
@@ -154,28 +156,52 @@ const Stock: React.FC<StockProps> = ({ inventoryID }) => {
                   NO HAY ÍTEMS PARA LA BUSQUEDA
                 </StyledText>
               )}
-              <FlatList
-                data={data}
-                style={{ flexGrow: 1 }}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <Card
-                    stock={item}
-                    onPress={(stock) =>
-                      navigation.navigate("InventoryRoutes", {
-                        screen: "StockInformation",
-                        params: { stock },
-                      })
-                    }
-                    onLongPress={(stock) =>
-                      navigation.navigate("InventoryRoutes", {
-                        screen: "CreateStock",
-                        params: { inventoryID, stock },
-                      })
-                    }
-                  />
-                )}
-              />
+              {!!data.length && (
+                <>
+                  {visualization === "block" ? (
+                    <FlatList
+                      data={data}
+                      style={{ flexGrow: 1 }}
+                      keyExtractor={(item) => item.id}
+                      renderItem={({ item }) => (
+                        <Card
+                          stock={item}
+                          onPress={(stock) =>
+                            navigation.navigate("InventoryRoutes", {
+                              screen: "StockInformation",
+                              params: { stock },
+                            })
+                          }
+                          onLongPress={(stock) =>
+                            navigation.navigate("InventoryRoutes", {
+                              screen: "CreateStock",
+                              params: { inventoryID, stock },
+                            })
+                          }
+                        />
+                      )}
+                    />
+                  ) : (
+                    <Table
+                      full
+                      containerStyle={{ marginVertical: 4 }}
+                      scrollHorizontalEnable={false}
+                    >
+                      <Table.Header data={["Producto", "Cantidad", "Valor"]}>
+                        {data.map((data) => (
+                          <Table.Body
+                            data={[
+                              data.name,
+                              thousandsSystem(data.quantity),
+                              thousandsSystem(data.quantity * data.currentValue),
+                            ]}
+                          />
+                        ))}
+                      </Table.Header>
+                    </Table>
+                  )}
+                </>
+              )}
             </>
           )}
         </View>
@@ -195,9 +221,6 @@ const Stock: React.FC<StockProps> = ({ inventoryID }) => {
             Crear ítem
           </StyledText>
         </StyledButton>
-        {/* <StyledButton onPress={() => {}}>
-          <StyledText center>Categorías</StyledText>
-        </StyledButton> */}
       </View>
     </Layout>
   );

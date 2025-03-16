@@ -5,12 +5,10 @@ import { useAppSelector } from "application/store/hook";
 import type { Supplier as SupplierType } from "domain/entities/data";
 import { AppNavigationProp, RootApp } from "domain/entities/navigation";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { Type } from "domain/enums/data/supplier/economy.enums";
 import Layout from "presentation/components/layout/Layout";
 import StyledInput from "presentation/components/input/StyledInput";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledText from "presentation/components/text/StyledText";
-import StyledButton from "presentation/components/button/StyledButton";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
@@ -57,10 +55,11 @@ const Supplier: React.FC<AppNavigationProp> = ({ navigation }) => {
     navigation.setOptions({
       headerRight: () => (
         <TouchableOpacity
-          style={{ paddingRight: 20 }}
+          style={{ paddingRight: 20, flexDirection: "row", alignItems: "center" }}
           onPress={() => navigation.navigate("SupplierRoutes", { screen: "CreateSupplier" })}
         >
-          <Ionicons name="add" color={colors.primary} size={30} />
+          <Ionicons name="add" color={colors.primary} size={20} />
+          <StyledText smallParagraph>Proveedor</StyledText>
         </TouchableOpacity>
       ),
     });
@@ -101,33 +100,6 @@ const Supplier: React.FC<AppNavigationProp> = ({ navigation }) => {
           )}
           {!!data.length && (
             <>
-              <View style={[styles.evenly, { padding: 20 }]}>
-                <StyledButton
-                  style={styles.economy}
-                  onPress={() =>
-                    navigation.navigate("SupplierRoutes", {
-                      screen: "CreateEconomy",
-                      params: { type: Type.Income },
-                    })
-                  }
-                >
-                  <StyledText center>Registrar ingreso</StyledText>
-                </StyledButton>
-                <StyledButton
-                  style={styles.economy}
-                  backgroundColor={colors.primary}
-                  onPress={() =>
-                    navigation.navigate("SupplierRoutes", {
-                      screen: "CreateEconomy",
-                      params: { type: Type.Egress },
-                    })
-                  }
-                >
-                  <StyledText color="#FFFFFF" center>
-                    Registrar egreso
-                  </StyledText>
-                </StyledButton>
-              </View>
               {!data.length && (
                 <StyledText color={colors.primary} style={{ marginVertical: 10 }}>
                   NO HAY ÍTEMS PARA LA BUSQUEDA
@@ -149,11 +121,6 @@ const Supplier: React.FC<AppNavigationProp> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  evenly: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",

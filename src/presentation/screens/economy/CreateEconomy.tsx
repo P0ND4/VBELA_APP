@@ -5,11 +5,11 @@ import { useTheme } from "@react-navigation/native";
 import { changeDate, random, thousandsSystem } from "shared/utils";
 import { Economy } from "domain/entities/data/suppliers/economy.entity";
 import { unitOptions } from "shared/constants/unit";
-import { Type } from "domain/enums/data/supplier/economy.enums";
+import { Type } from "domain/enums/data/economy/economy.enums";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootSupplier, SupplierRouteProp } from "domain/entities/navigation/root.supplier.entity";
-import { add, edit } from "application/slice/suppliers/economies.slice";
+import { RootEconomy, EconomyRouteProp } from "domain/entities/navigation/root.economy.entity";
+import { add, edit } from "application/slice/economies/economies.slice";
 import apiClient, { endpoints } from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
@@ -22,8 +22,8 @@ import SimpleCalendarModal from "presentation/components/modal/SimpleCalendarMod
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
 
 type CreateEconomyProps = {
-  navigation: StackNavigationProp<RootSupplier>;
-  route: SupplierRouteProp<"CreateEconomy">;
+  navigation: StackNavigationProp<RootEconomy>;
+  route: EconomyRouteProp<"CreateEconomy">;
 };
 
 const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
@@ -108,15 +108,6 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ flexGrow: 1 }}
             >
-              <StyledButton style={styles.row} onPress={() => setSupplierModal(true)}>
-                <StyledText>{supplier ? supplier.name : "Proveedor"}</StyledText>
-                <Ionicons name="chevron-forward" color={colors.text} size={19} />
-              </StyledButton>
-              {formState.errors.supplier && (
-                <StyledText color={colors.primary} verySmall>
-                  El proveedor es requerido
-                </StyledText>
-              )}
               <Controller
                 name="name"
                 control={control}
@@ -157,9 +148,7 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
                 </StyledText>
               )}
               <StyledButton style={styles.row} onPress={() => setCalendarModal(true)}>
-                <StyledText>
-                  Fecha de entrada {date && `(${changeDate(new Date(date))})`}
-                </StyledText>
+                <StyledText>Fecha {date && `(${changeDate(new Date(date))})`}</StyledText>
                 <Ionicons name="chevron-forward" color={colors.text} size={19} />
               </StyledButton>
               {formState.errors.date && (
@@ -173,6 +162,10 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
               </StyledButton>
               {optional && (
                 <>
+                  <StyledButton style={styles.row} onPress={() => setSupplierModal(true)}>
+                    <StyledText>{supplier ? supplier.name : "Proveedor"}</StyledText>
+                    <Ionicons name="chevron-forward" color={colors.text} size={19} />
+                  </StyledButton>
                   <StyledButton style={styles.row} onPress={() => setDescriptionModal(true)}>
                     <StyledText>
                       {description
@@ -224,12 +217,12 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
       </Layout>
       <Controller
         name="supplier"
-        rules={{ validate: isRequired }}
         control={control}
         render={({ field: { onChange } }) => (
           <PickerFloorModal
             title="SELECCIONE EL PROVEEDOR"
             remove="Remover proveedor"
+            noData="NO HAY PROVEEDORES"
             visible={supplierModal}
             onClose={() => setSupplierModal(false)}
             data={data}
@@ -266,10 +259,10 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
         render={({ field: { onChange, value } }) => (
           <InputScreenModal
             title="Descripción"
-            placeholder="Creá una buena descripción para tu proveedor"
+            placeholder="Creá una buena descripción"
             visible={descriptionModal}
             defaultValue={value}
-            maxLength={3000}
+            maxLength={500}
             onClose={() => setDescriptionModal(false)}
             onSubmit={onChange}
           />

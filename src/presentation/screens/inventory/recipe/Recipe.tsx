@@ -12,6 +12,7 @@ import StyledInput from "presentation/components/input/StyledInput";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledButton from "presentation/components/button/StyledButton";
+import Table from "presentation/components/layout/Table";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
@@ -73,8 +74,13 @@ const GET_TAB_NAME: { [key in Visible]: string } = {
   [Visible.None]: "SIN VISIBILIDAD",
 };
 
+type RecipeProps = {
+  inventory: Inventory;
+  visualization: "block" | "table";
+};
+
 // Main Recipe component
-const Recipe: React.FC<{ inventory: Inventory }> = ({ inventory }) => {
+const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
   const recipes = useAppSelector((state) => state.recipes);
   const stocks = useAppSelector((state) => state.stocks);
   const { colors } = useTheme();
@@ -126,28 +132,46 @@ const Recipe: React.FC<{ inventory: Inventory }> = ({ inventory }) => {
               {!data.length && (
                 <StyledText color={colors.primary}>NO HAY {NAME} PARA LA BUSQUEDA</StyledText>
               )}
-              <FlatList
-                data={data}
-                style={{ flexGrow: 1 }}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <Card
-                    recipe={item}
-                    onPress={() =>
-                      navigation.navigate("InventoryRoutes", {
-                        screen: "RecipeInformation",
-                        params: { recipe: item },
-                      })
-                    }
-                    onLongPress={() =>
-                      navigation.navigate("InventoryRoutes", {
-                        screen: "CreateRecipe",
-                        params: { recipe: item, inventory },
-                      })
-                    }
-                  />
-                )}
-              />
+              {!!data.length && (
+                <>
+                  {visualization === "block" ? (
+                    <FlatList
+                      data={data}
+                      style={{ flexGrow: 1 }}
+                      keyExtractor={(item) => item.id}
+                      renderItem={({ item }) => (
+                        <Card
+                          recipe={item}
+                          onPress={() =>
+                            navigation.navigate("InventoryRoutes", {
+                              screen: "RecipeInformation",
+                              params: { recipe: item },
+                            })
+                          }
+                          onLongPress={() =>
+                            navigation.navigate("InventoryRoutes", {
+                              screen: "CreateRecipe",
+                              params: { recipe: item, inventory },
+                            })
+                          }
+                        />
+                      )}
+                    />
+                  ) : (
+                    <Table
+                      full
+                      containerStyle={{ marginVertical: 4 }}
+                      scrollHorizontalEnable={false}
+                    >
+                      <Table.Header data={["Receta", "Valor"]}>
+                        {data.map((data) => (
+                          <Table.Body data={[data.name, thousandsSystem(data.value)]} />
+                        ))}
+                      </Table.Header>
+                    </Table>
+                  )}
+                </>
+              )}
             </>
           )}
         </View>

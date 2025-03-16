@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  TouchableWithoutFeedback,
-  TouchableOpacity,
-  FlatList,
-  Image,
-  StyleSheet,
-} from "react-native";
+import { View, TouchableOpacity, FlatList, Image, StyleSheet } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import StyledText from "presentation/components/text/StyledText";
 import StyledInput from "presentation/components/input/StyledInput";

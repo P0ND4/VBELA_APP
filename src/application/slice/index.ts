@@ -9,6 +9,7 @@ import * as user from "./user";
 import * as settings from "./settings";
 import * as kitchens from "./kitchens";
 import * as handlers from "./handlers";
+import * as economies from "./economies";
 
 export default {
   ...collaborators,
@@ -22,4 +23,5 @@ export default {
   ...settings,
   ...kitchens,
   ...handlers,
+  ...economies,
 };

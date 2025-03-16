@@ -341,7 +341,7 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
               data={data}
               keyExtractor={(item) => item.id}
               renderItem={renderItemElement}
-              style={{ marginTop: 8 }}
+              style={{ marginTop: 8, flexGrow: 1 }}
             />
             <SalesButtonBottom
               locationID={locationID}

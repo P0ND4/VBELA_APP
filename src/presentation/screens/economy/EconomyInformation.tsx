@@ -1,16 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useTheme } from "@react-navigation/native";
-import { changeDate } from "shared/utils";
+import { changeDate, thousandsSystem } from "shared/utils";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import apiClient, { endpoints } from "infrastructure/api/server";
-import { RootSupplier, SupplierRouteProp } from "domain/entities/navigation/root.supplier.entity";
-import { Supplier } from "domain/entities/data";
-import { remove } from "application/slice/suppliers/suppliers.slice";
+import { EconomyRouteProp, RootEconomy } from "domain/entities/navigation/root.economy.entity";
+import { Economy } from "domain/entities/data";
+import { remove } from "application/slice/economies/economies.slice";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import InformationModal from "presentation/components/modal/InformationModal";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   const { colors } = useTheme();
@@ -23,20 +24,20 @@ const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   );
 };
 
-type SupplierInformationProps = {
-  navigation: StackNavigationProp<RootSupplier>;
-  route: SupplierRouteProp<"SupplierInformation">;
+type EconomyInformationProps = {
+  navigation: StackNavigationProp<RootEconomy>;
+  route: EconomyRouteProp<"EconomyInformation">;
 };
 
-const SupplierInformation: React.FC<SupplierInformationProps> = ({ navigation, route }) => {
+const EconomyInformation: React.FC<EconomyInformationProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
-  const suppliers = useAppSelector((state) => state.suppliers);
   const economies = useAppSelector((state) => state.economies);
 
-  const supplier = route.params.supplier;
+  const economy = route.params.economy;
 
-  const [data, setData] = useState<Supplier>(supplier);
+  const [data, setData] = useState<Economy>(economy);
+  const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
 
   const dispatch = useAppDispatch();
 
@@ -45,20 +46,15 @@ const SupplierInformation: React.FC<SupplierInformationProps> = ({ navigation, r
   }, [data]);
 
   useEffect(() => {
-    const found = suppliers.find((s) => s.id === supplier.id);
+    const found = economies.find((s) => s.id === economy.id);
     if (!found) navigation.pop();
     else setData(found);
-  }, [suppliers, supplier]);
-
-  const economy: boolean = useMemo(
-    () => economies.some((e) => e.supplier?.id === supplier.id),
-    [economies],
-  );
+  }, [economy, economies]);
 
   const removeData = async () => {
-    dispatch(remove({ id: supplier.id }));
+    dispatch(remove({ id: economy.id }));
     await apiClient({
-      url: endpoints.supplier.delete(supplier.id),
+      url: endpoints.economy.delete(economy.id),
       method: "DELETE",
     });
   };
@@ -69,17 +65,23 @@ const SupplierInformation: React.FC<SupplierInformationProps> = ({ navigation, r
         <ScrollView style={{ flexGrow: 1 }}>
           <Card name="ID" value={data.id} />
           <Card name="Nombre" value={data.name} />
-          {data.identification && <Card name="Identificación" value={data.identification} />}
-          {data.description && <Card name="Descripción" value={data.description} />}
-          {economy && (
+          {data.supplier && <Card name="Proveedor" value={data.supplier.name} />}
+          <Card name="Tipo" value={data.type} />
+          <Card name="Valor" value={thousandsSystem(data.value)} />
+          <Card name="Cantidad" value={thousandsSystem(data.quantity)} />
+          <Card name="Fecha" value={changeDate(new Date(data.date))} />
+          {data.unit && <Card name="Unidad" value={data.unit} />}
+          {data.description && (
             <TouchableOpacity
               style={[styles.card, { borderColor: colors.border }]}
-              onPress={() => navigation.navigate("SupplierEconomy", { supplierID: supplier.id })}
+              onPress={() => setDescriptionModal(true)}
             >
-              <StyledText>Movimiento</StyledText>
+              <StyledText>Descripción</StyledText>
               <Ionicons name="chevron-forward" color={colors.text} size={19} />
             </TouchableOpacity>
           )}
+          {data.reference && <Card name="Referencia" value={data.reference} />}
+          {data.brand && <Card name="Marca" value={data.brand} />}
           <Card name="Fecha de creación" value={changeDate(new Date(data.creationDate), true)} />
           <Card
             name="Fecha de modificación"
@@ -93,6 +95,16 @@ const SupplierInformation: React.FC<SupplierInformationProps> = ({ navigation, r
           </TouchableOpacity>
         </ScrollView>
       </Layout>
+      {data.description && (
+        <InformationModal
+          visible={descriptionModal}
+          animationType="fade"
+          onClose={() => setDescriptionModal(false)}
+          title="Descripción"
+        >
+          <StyledText color={colors.primary}>{data.description}</StyledText>
+        </InformationModal>
+      )}
     </>
   );
 };
@@ -113,4 +125,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SupplierInformation;
+export default EconomyInformation;

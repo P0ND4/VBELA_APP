@@ -10,6 +10,7 @@ import { RootInventory } from "./root.inventory.entity";
 import { RootStatistics } from "./route.statistics.entity";
 import { RootCollaborator } from "./root.collaborator.entity";
 import { RootSupplier } from "./root.supplier.entity";
+import { RootEconomy } from "./root.economy.entity";
 
 export type RootApp = {
   Home: undefined;
@@ -24,6 +25,8 @@ export type RootApp = {
   Setting: undefined;
   Order: undefined;
   Collaborator: undefined;
+  Economy: undefined;
+  Payroll: undefined;
   Supplier: undefined;
   OrderRoutes: {
     screen: keyof RootOrder;
@@ -64,6 +67,10 @@ export type RootApp = {
   SupplierRoutes: {
     screen: keyof RootSupplier;
     params?: RootSupplier[keyof RootSupplier];
+  };
+  EconomyRoutes: {
+    screen: keyof RootEconomy;
+    params?: RootEconomy[keyof RootEconomy];
   };
 };
 

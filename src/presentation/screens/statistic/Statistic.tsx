@@ -14,6 +14,7 @@ import {
 import { Order } from "domain/entities/data/common";
 import { PieChart } from "react-native-gifted-charts";
 import { Kitchen } from "domain/entities/data/kitchens";
+import { Economy } from "domain/entities/data";
 import { AppNavigationProp } from "domain/entities/navigation";
 import { remove } from "application/slice/handlers/handlers.slice";
 import Layout from "presentation/components/layout/Layout";
@@ -22,9 +23,6 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledButton from "presentation/components/button/StyledButton";
 import SimpleCalendarModal from "presentation/components/modal/SimpleCalendarModal";
 import MultipleCalendarModal from "presentation/components/modal/MultipleCalendarModal";
-import ReportModal from "./components/ReportModal";
-import PaymentMethodsModal from "./components/PaymentMethodsModal";
-import TotalGainModal from "./components/TotalGainModal";
 import apiClient, { endpoints } from "infrastructure/api/server";
 
 type Icons = keyof typeof Ionicons.glyphMap;
@@ -83,14 +81,14 @@ const Card: React.FC<CardProps> = ({ name, value, description, onPress, right })
   );
 };
 
-enum Type {
+export enum Type {
   All = "Todos",
   Date = "Fecha",
   Period = "Periodo",
   Controller = "Controlador",
 }
 
-type DateType = {
+export type DateType = {
   id: string | null;
   start: number | null;
   end: number | null;
@@ -115,12 +113,10 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
   const salesCompleted = useAppSelector(selectCompletedSales);
   const kitchen = useAppSelector(selectCompletedKitchen);
   const handlers = useAppSelector((state) => state.handlers);
+  const economies = useAppSelector((state) => state.economies);
 
   const [simpleCalendarModal, setSimpleCalendarModal] = useState<boolean>(false);
   const [multipleCalendarModal, setMultipleCalendarModal] = useState<boolean>(false);
-  const [reportModal, setReportModal] = useState<boolean>(false);
-  const [paymentMethodsModal, setPaymentMethodsModal] = useState<boolean>(false);
-  const [totalGainModal, setTotalGainModal] = useState<boolean>(false);
 
   const resetDate = {
     id: null,
@@ -147,7 +143,13 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
   const OFCanceled = useMemo(() => filtered<Order>(ordersCanceled), [ordersCanceled, date]);
   const SFCanceled = useMemo(() => filtered<Order>(salesCanceled), [salesCanceled, date]);
 
+  const economiesFiltered = useMemo(() => filtered<Economy>(economies), [economies, date]);
   const kitchenFiltered = useMemo(() => filtered<Kitchen>(kitchen), [kitchen, date]);
+
+  const totalCostOfSale = useMemo(
+    () => economiesFiltered.reduce((a, b) => a + b.quantity * b.value, 0),
+    [economiesFiltered],
+  );
 
   const calculateTotal = (orders: Order[]) =>
     orders.reduce(
@@ -371,7 +373,12 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
           <Card
             name="Ganancia total"
             value={thousandsSystem(totalRevenue)}
-            onPress={() => setTotalGainModal(true)}
+            onPress={() =>
+              navigation.navigate("StatisticsRoutes", {
+                screen: "TotalGain",
+                params: { orders: OFCompleted, sales: SFCompleted },
+              })
+            }
           />
           <Card
             name="Medios de pago"
@@ -391,9 +398,24 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
                   )
                 : null
             }
-            onPress={() => setPaymentMethodsModal(true)}
+            onPress={() =>
+              navigation.navigate("StatisticsRoutes", {
+                screen: "PaymentMethod",
+                params: { data: paymentMethods },
+              })
+            }
           />
           <Card name="Cantidad vendidas" value={thousandsSystem(quantitySold)} />
+          <Card
+            name="Costos/Ventas"
+            value={thousandsSystem(totalCostOfSale)}
+            onPress={() =>
+              navigation.navigate("StatisticsRoutes", {
+                screen: "Indicators",
+                params: { economies: economiesFiltered },
+              })
+            }
+          />
           <Card
             name="Producción finalizada"
             value={thousandsSystem(kitchenFiltered.length)}
@@ -406,9 +428,17 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
           />
         </ScrollView>
         <View style={{ padding: 20 }}>
-          <StyledButton backgroundColor={colors.primary} onPress={() => setReportModal(true)}>
+          <StyledButton
+            backgroundColor={colors.primary}
+            onPress={() =>
+              navigation.navigate("StatisticsRoutes", {
+                screen: "Report",
+                params: { orders: OFCompleted, sales: SFCompleted, date: resetDate },
+              })
+            }
+          >
             <StyledText center color="#FFFFFF">
-              Informe de ventas
+              Reporte de ventas
             </StyledText>
           </StyledButton>
         </View>
@@ -434,23 +464,6 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
         onSave={({ start, end }) => {
           setDate({ id: "Period", type: Type.Period, start, end });
         }}
-      />
-      <ReportModal
-        visible={reportModal}
-        onClose={() => setReportModal(false)}
-        orders={OFCompleted}
-        sales={SFCompleted}
-      />
-      <PaymentMethodsModal
-        data={paymentMethods}
-        visible={paymentMethodsModal}
-        onClose={() => setPaymentMethodsModal(false)}
-      />
-      <TotalGainModal
-        visible={totalGainModal}
-        onClose={() => setTotalGainModal(false)}
-        orders={OFCompleted}
-        sales={SFCompleted}
       />
     </>
   );

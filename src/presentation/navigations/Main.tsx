@@ -14,9 +14,10 @@ import ProviderRestaurantRoutes from "./routes/ProviderRestaurantRoutes";
 import OrderRoutes from "./routes/OrderRoutes";
 import InventoryRoutes from "./routes/InventoryRoutes";
 import StatisticsRoutes from "./routes/StatisticsRoutes";
-import App from "./App";
 import CollaboratorRoutes from "./routes/CollaboratorRoutes";
 import SupplierRoutes from "./routes/SupplierRoutes";
+import EconomyRoutes from "./routes/EconomyRoutes";
+import App from "./App";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -44,6 +45,7 @@ const Main: React.FC = () => {
           <Stack.Screen name="StatisticsRoutes" component={StatisticsRoutes} />
           <Stack.Screen name="CollaboratorRoutes" component={CollaboratorRoutes} />
           <Stack.Screen name="SupplierRoutes" component={SupplierRoutes} />
+          <Stack.Screen name="EconomyRoutes" component={EconomyRoutes} />
         </>
       )}
     </Stack.Navigator>

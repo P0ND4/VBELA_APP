@@ -25,6 +25,8 @@ import Home from "presentation/screens/Home";
 import Statistic from "presentation/screens/statistic/Statistic";
 import Collaborator from "presentation/screens/collaborator/Collaborator";
 import Supplier from "presentation/screens/supplier/Supplier";
+import Payroll from "presentation/screens/payroll/Payroll";
+import Economy from "presentation/screens/economy/Economy";
 
 const Drawer = createDrawerNavigator<RootApp>();
 
@@ -136,6 +138,22 @@ function App() {
         }}
       /> */}
       <Drawer.Screen
+        name="Payroll"
+        component={Payroll}
+        options={{
+          title: "Nómina",
+          drawerIcon: ({ color }) => <Ionicons name="newspaper-outline" size={22} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="Economy"
+        component={Economy}
+        options={{
+          title: "Ingreso/Egreso",
+          drawerIcon: ({ color }) => <Ionicons name="card-outline" size={22} color={color} />,
+        }}
+      />
+      <Drawer.Screen
         name="Supplier"
         component={Supplier}
         options={{
@@ -167,57 +185,6 @@ function App() {
           drawerIcon: ({ color }) => <Ionicons name="settings-outline" size={22} color={color} />,
         }}
       />
-
-      {/* {(!helperStatus.active || helperStatus.accessToStatistics) && (
-        <Drawer.Screen
-          name="Statistic"
-          component={Statistic}
-          options={{
-            title: "Estadísticas",
-            drawerIcon: ({ color }) => (
-              <Ionicons name="stats-chart-outline" size={22} color={color} />
-            ),
-          }}
-        />
-      )}
-      {!helperStatus.active && (
-        <Drawer.Screen
-          name="Helper"
-          component={Helper}
-          options={{
-            title: "Equipo de trabajo",
-            drawerIcon: ({ color }) => (
-              <Ionicons name="recording-outline" size={22} color={color} />
-            ),
-          }}
-        />
-      )}
-      {(!helperStatus.active || helperStatus.accessToRoster) && (
-        <Drawer.Screen
-          name="CreateRoster"
-          component={CreateRoster}
-          options={{
-            title: "Nómina",
-            drawerIcon: ({ color }) => (
-              <Ionicons name="clipboard-outline" size={22} color={color} />
-            ),
-          }}
-          listeners={({ navigation }) => ({
-            blur: () => navigation.setParams({ editing: false, item: null }),
-          })}
-        />
-      )}
-      {(!helperStatus.active || helperStatus.accessToSupplier) && (
-        <Drawer.Screen
-          name="Providers"
-          component={Supplier}
-          options={{
-            title: "Proveedores",
-            drawerIcon: ({ color }) => <Ionicons name="cube-outline" size={22} color={color} />,
-          }}
-        />
-      )}
-      */}
     </Drawer.Navigator>
   );
 }

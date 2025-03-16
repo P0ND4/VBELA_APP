@@ -1,4 +1,4 @@
-import { Type } from "domain/enums/data/supplier/economy.enums";
+import { Type } from "domain/enums/data/economy/economy.enums";
 
 type SupplierType = {
   id: string;
