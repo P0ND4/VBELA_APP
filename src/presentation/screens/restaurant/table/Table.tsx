@@ -38,7 +38,8 @@ const Card: React.FC<{ item: TableEntity; refresh: boolean }> = React.memo(({ it
     const now = new Date();
     const creationDate = new Date(order.creationDate);
     const diffInMilliseconds = now.getTime() - creationDate.getTime();
-    return `${Math.floor(diffInMilliseconds / (1000 * 60))} minutos`;
+    const time = Math.floor(diffInMilliseconds / (1000 * 60));
+    return `${time > 1000 ? "Más de 1.000" : time} minutos`;
   };
 
   const navigation = useNavigation<NavigationProps>();

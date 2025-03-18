@@ -21,6 +21,8 @@ type TextProps = {
   children?: React.ReactNode;
   bold?: boolean;
   lineThrough?: boolean;
+  numberOfLines?: number;
+  ellipsizeMode?: "middle" | "head" | "tail" | "clip" | undefined;
   onPress?: () => void;
   enableDarkMode?: boolean;
 };
@@ -44,6 +46,8 @@ const StyledText: React.FC<TextProps> = ({
   children,
   bold,
   lineThrough,
+  ellipsizeMode,
+  numberOfLines,
   onPress,
   enableDarkMode = true,
 }) => {
@@ -71,7 +75,12 @@ const StyledText: React.FC<TextProps> = ({
   ];
 
   return (
-    <Text onPress={onPress} style={stylesTaken}>
+    <Text
+      onPress={onPress}
+      numberOfLines={numberOfLines}
+      ellipsizeMode={ellipsizeMode}
+      style={stylesTaken}
+    >
       {children}
     </Text>
   );

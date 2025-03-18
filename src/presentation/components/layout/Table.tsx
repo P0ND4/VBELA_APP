@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useState } from "react";
 import {
   View,
   ScrollView,
@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import StyledText from "../text/StyledText";
+import InformationModal from "../modal/InformationModal";
 
 // Contextos para validar el uso correcto de los componentes
 const TableContext = createContext<boolean>(false);
@@ -36,6 +37,7 @@ interface TableHeaderProps {
 }
 
 interface TableBodyProps {
+  onPressCompleteData?: boolean;
   data: (string | { text: string; onPress?: () => void; style?: StyleProp<TextStyle> })[];
 }
 
@@ -96,25 +98,50 @@ const defaultStyles = (tableProps: TableProps, borderColor: string) => [
 
 interface TableCellProps {
   item: string | { text: string; onPress?: () => void; style?: StyleProp<TextStyle> };
+  onPressCompleteData?: boolean;
   defaultStyle: StyleProp<ViewStyle>;
   color?: string;
 }
 
-const TableCell: React.FC<TableCellProps> = ({ item, defaultStyle, color }) => {
+const TableCell: React.FC<TableCellProps> = ({
+  item,
+  defaultStyle,
+  color,
+  onPressCompleteData,
+}) => {
+  const { colors } = useTheme();
+
+  const [showDataModal, setShowDataModal] = useState<boolean>(false);
+
   const text = typeof item === "string" ? item : item.text;
   const style = typeof item === "object" ? item.style : undefined;
   const onPress = typeof item === "object" ? item.onPress : undefined;
 
   const renderContent = (text: string, style: StyleProp<ViewStyle>, color?: string) => (
-    <StyledText style={style} color={color}>
+    <StyledText smallParagraph style={style} color={color} numberOfLines={1} ellipsizeMode="tail">
       {text}
     </StyledText>
   );
 
-  return onPress ? (
-    <TouchableOpacity onPress={onPress}>
-      {renderContent(text, [defaultStyle, style], color)}
-    </TouchableOpacity>
+  return onPress || onPressCompleteData ? (
+    <>
+      <TouchableOpacity
+        onPress={() => {
+          if (onPress) onPress();
+          else setShowDataModal(true);
+        }}
+      >
+        {renderContent(text, [defaultStyle, style], color)}
+      </TouchableOpacity>
+      <InformationModal
+        title="INFORMACIÓN"
+        animationType="fade"
+        visible={showDataModal}
+        onClose={() => setShowDataModal(false)}
+      >
+        <StyledText color={colors.primary}>{text}</StyledText>
+      </InformationModal>
+    </>
   ) : (
     renderContent(text, [defaultStyle, style], color)
   );
@@ -147,7 +174,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({ data, children }) => {
 };
 
 // Componente Table.Body
-const TableBody: React.FC<TableBodyProps> = ({ data }) => {
+const TableBody: React.FC<TableBodyProps> = ({ data, onPressCompleteData }) => {
   const isInsideTable = useContext(TableContext);
   const isInsideHeader = useContext(TableHeaderContext);
   const tableProps = useContext(TablePropsContext);
@@ -164,6 +191,7 @@ const TableBody: React.FC<TableBodyProps> = ({ data }) => {
           key={index}
           item={item}
           defaultStyle={[tableProps.bodyStyle, ...defaultStyles(tableProps, colors.border)]}
+          onPressCompleteData={onPressCompleteData}
         />
       ))}
     </View>

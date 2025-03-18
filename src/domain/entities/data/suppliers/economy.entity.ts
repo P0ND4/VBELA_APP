@@ -1,15 +1,15 @@
 import { Type } from "domain/enums/data/economy/economy.enums";
 
-type SupplierType = {
+type DetailsType = {
   id: string;
   name: string;
 };
 
 export interface Economy {
   id: string;
-  supplier: SupplierType | null;
+  supplier: DetailsType | null;
   type: Type;
-  name: string;
+  category: DetailsType;
   value: number;
   quantity: number;
   unit: string;
@@ -19,4 +19,5 @@ export interface Economy {
   brand: string;
   creationDate: number;
   modificationDate: number;
+  isOrder?: boolean;
 }

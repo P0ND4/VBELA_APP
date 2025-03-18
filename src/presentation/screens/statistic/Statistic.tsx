@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from "react";
-import { Alert, FlatList, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useTheme } from "@react-navigation/native";
-import { changeDate, generatePalette, thousandsSystem } from "shared/utils";
-import { useAppDispatch, useAppSelector } from "application/store/hook";
+import { generatePalette, thousandsSystem } from "shared/utils";
+import { useAppSelector } from "application/store/hook";
 import moment from "moment";
 import {
   selectCanceledOrders,
@@ -16,38 +16,17 @@ import { PieChart } from "react-native-gifted-charts";
 import { Kitchen } from "domain/entities/data/kitchens";
 import { Economy } from "domain/entities/data";
 import { AppNavigationProp } from "domain/entities/navigation";
-import { remove } from "application/slice/handlers/handlers.slice";
+import FullFilterDate, {
+  DateType,
+  resetDate,
+  Type,
+} from "presentation/components/layout/FullFilterDate";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledButton from "presentation/components/button/StyledButton";
-import SimpleCalendarModal from "presentation/components/modal/SimpleCalendarModal";
-import MultipleCalendarModal from "presentation/components/modal/MultipleCalendarModal";
-import apiClient, { endpoints } from "infrastructure/api/server";
 
 type Icons = keyof typeof Ionicons.glyphMap;
-
-type FilterButtonProps = {
-  name: string;
-  selected?: boolean;
-  onPress: () => void;
-};
-
-const FilterButton: React.FC<FilterButtonProps> = ({ name, onPress, selected }) => {
-  const { colors } = useTheme();
-
-  return (
-    <StyledButton
-      backgroundColor={selected ? colors.primary : colors.card}
-      style={styles.filterButton}
-      onPress={onPress}
-    >
-      <StyledText verySmall color={selected ? "#FFFFFF" : colors.text}>
-        {name}
-      </StyledText>
-    </StyledButton>
-  );
-};
 
 type CardProps = {
   name: string;
@@ -81,20 +60,6 @@ const Card: React.FC<CardProps> = ({ name, value, description, onPress, right })
   );
 };
 
-export enum Type {
-  All = "Todos",
-  Date = "Fecha",
-  Period = "Periodo",
-  Controller = "Controlador",
-}
-
-export type DateType = {
-  id: string | null;
-  start: number | null;
-  end: number | null;
-  type: Type;
-};
-
 export type PaymentMethodSummary = {
   id: string;
   text: string;
@@ -112,22 +77,9 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
   const ordersCompleted = useAppSelector(selectCompletedOrders);
   const salesCompleted = useAppSelector(selectCompletedSales);
   const kitchen = useAppSelector(selectCompletedKitchen);
-  const handlers = useAppSelector((state) => state.handlers);
   const economies = useAppSelector((state) => state.economies);
 
-  const [simpleCalendarModal, setSimpleCalendarModal] = useState<boolean>(false);
-  const [multipleCalendarModal, setMultipleCalendarModal] = useState<boolean>(false);
-
-  const resetDate = {
-    id: null,
-    type: Type.Date,
-    start: moment(Date.now()).startOf("day").valueOf(),
-    end: moment(Date.now()).endOf("day").valueOf(),
-  };
-
   const [date, setDate] = useState<DateType>(resetDate);
-
-  const dispatch = useAppDispatch();
 
   const filtered = <T extends { creationDate: number }>(items: T[]): T[] => {
     return items.filter(
@@ -221,132 +173,14 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
     [OFCompleted, SFCompleted],
   );
 
-  const startEndText = useMemo(() => {
-    const dateChanged = (d: number) => changeDate(new Date(d), Type.Controller === date.type);
-    const period = `${dateChanged(date.start!)} - ${dateChanged(date.end!)}`;
-
-    if (Type.Date === date.type) return changeDate(new Date(date.start!));
-    if ([Type.Controller, Type.Period].includes(date.type)) return period;
-    return "Todos";
-  }, [date]);
-
-  const removeItem = async (id: string) => {
-    setDate(resetDate);
-    dispatch(remove({ id }));
-    await apiClient({
-      url: endpoints.handler.delete(id),
-      method: "DELETE",
-    });
-  };
-
   return (
     <>
       <Layout style={{ padding: 0 }}>
-        <View style={{ padding: 20, borderBottomWidth: 1, borderColor: colors.border }}>
-          <StyledButton style={styles.row} onPress={() => setSimpleCalendarModal(true)}>
-            <Ionicons name="chevron-back" size={15} color={colors.text} />
-            <StyledText center>{startEndText}</StyledText>
-            <Ionicons name="chevron-forward" size={15} color={colors.text} />
-          </StyledButton>
-          <FlatList
-            data={handlers}
-            scrollEnabled={handlers.length > 2}
-            keyExtractor={(item) => item.id}
-            showsHorizontalScrollIndicator={false}
-            horizontal
-            ItemSeparatorComponent={() => <View style={{ marginHorizontal: 4 }} />}
-            renderItem={({ item }) => (
-              <StyledButton
-                style={styles.filterButton}
-                onLongPress={() =>
-                  Alert.alert(
-                    "EY!",
-                    "¿Está seguro que desea eliminar el controlador (apertura/cierre) de caja?",
-                    [
-                      { text: "No estoy seguro", style: "cancel" },
-                      {
-                        text: "Estoy seguro",
-                        onPress: () => removeItem(item.id),
-                      },
-                    ],
-                    { cancelable: true },
-                  )
-                }
-                onPress={() => {
-                  setDate({ id: item.id, type: Type.Controller, start: item.start, end: item.end });
-                }}
-                backgroundColor={date.id === item.id ? colors.primary : colors.card}
-              >
-                <StyledText verySmall color={date.id === item.id ? "#FFFFFF" : colors.text}>
-                  Apertura: {changeDate(new Date(item.start), true)}
-                </StyledText>
-                <StyledText verySmall color={date.id === item.id ? "#FFFFFF" : colors.text}>
-                  Cierre: {changeDate(new Date(item.end), true)}
-                </StyledText>
-              </StyledButton>
-            )}
-          />
-          <View style={styles.row}>
-            <FilterButton
-              name="Todos"
-              selected={date.id === "All"}
-              onPress={() => setDate({ type: Type.All, start: null, end: null, id: "All" })}
-            />
-            <FilterButton
-              name="Día"
-              selected={date.id === "Day"}
-              onPress={() => {
-                setDate({
-                  id: "Day",
-                  type: Type.Date,
-                  start: moment(Date.now()).startOf("day").valueOf(),
-                  end: moment(Date.now()).endOf("day").valueOf(),
-                });
-              }}
-            />
-            <FilterButton
-              name="Semana"
-              selected={date.id === "Week"}
-              onPress={() => {
-                setDate({
-                  id: "Week",
-                  type: Type.Period,
-                  start: moment(Date.now()).startOf("day").subtract(1, "weeks").valueOf(),
-                  end: moment(Date.now()).endOf("day").valueOf(),
-                });
-              }}
-            />
-            <FilterButton
-              name="Mes"
-              selected={date.id === "Month"}
-              onPress={() => {
-                setDate({
-                  id: "Month",
-                  type: Type.Period,
-                  start: moment(Date.now()).startOf("day").subtract(1, "months").valueOf(),
-                  end: moment(Date.now()).endOf("day").valueOf(),
-                });
-              }}
-            />
-            <FilterButton
-              name="Año"
-              selected={date.id === "Year"}
-              onPress={() => {
-                setDate({
-                  id: "Year",
-                  type: Type.Period,
-                  start: moment(Date.now()).endOf("day").subtract(1, "years").valueOf(),
-                  end: moment(Date.now()).startOf("day").valueOf(),
-                });
-              }}
-            />
-            <FilterButton
-              name="Período"
-              selected={date.id === "Period"}
-              onPress={() => setMultipleCalendarModal(true)}
-            />
-          </View>
-        </View>
+        <FullFilterDate
+          style={{ padding: 20, borderBottomWidth: 1, borderColor: colors.border }}
+          date={date}
+          setDate={setDate}
+        />
         <ScrollView style={{ flexGrow: 1 }}>
           <Card name="Facturación" value={thousandsSystem(totalBill)} />
           <Card
@@ -443,28 +277,6 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
           </StyledButton>
         </View>
       </Layout>
-      <SimpleCalendarModal
-        defaultValue={date.start}
-        visible={simpleCalendarModal}
-        maxDate={moment().format("YYYY-MM-DD")}
-        onClose={() => setSimpleCalendarModal(false)}
-        onSave={(date) => {
-          setDate({
-            id: null,
-            type: Type.Date,
-            start: moment(date).startOf("day").valueOf(),
-            end: moment(date).endOf("day").valueOf(),
-          });
-        }}
-      />
-      <MultipleCalendarModal
-        visible={multipleCalendarModal}
-        maxDate={moment().format("YYYY-MM-DD")}
-        onClose={() => setMultipleCalendarModal(false)}
-        onSave={({ start, end }) => {
-          setDate({ id: "Period", type: Type.Period, start, end });
-        }}
-      />
     </>
   );
 };
@@ -483,7 +295,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  filterButton: { width: "auto", paddingHorizontal: 12, paddingVertical: 5 },
 });
 
 export default Statistic;

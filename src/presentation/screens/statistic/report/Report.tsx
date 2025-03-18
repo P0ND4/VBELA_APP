@@ -11,7 +11,7 @@ import { Order } from "domain/entities/data";
 import { changeDate, thousandsSystem } from "shared/utils";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStatistics, StatisticsRouteProp } from "domain/entities/navigation";
-import { Type } from "../Statistic";
+import { startEndTextHandler } from "presentation/components/layout/FullFilterDate";
 
 type Icons = keyof typeof Ionicons.glyphMap;
 
@@ -98,14 +98,7 @@ const Report: React.FC<ReportProps> = ({ navigation, route }) => {
   const OQuantity = useMemo(() => calculateQuantity(orders), [orders]);
   const SQuantity = useMemo(() => calculateQuantity(sales), [sales]);
 
-  const startEndText = useMemo(() => {
-    const dateChanged = (d: number) => changeDate(new Date(d), Type.Controller === date.type);
-    const period = `${dateChanged(date.start!)} - ${dateChanged(date.end!)}`;
-
-    if (Type.Date === date.type) return changeDate(new Date(date.start!));
-    if ([Type.Controller, Type.Period].includes(date.type)) return period;
-    return "Todos";
-  }, [date]);
+  const startEndText = useMemo(() => startEndTextHandler(date), [date]);
 
   const quantity = useMemo(
     () => [...OQuantity, ...SQuantity].reduce((a, b) => a + b.quantity, 0),

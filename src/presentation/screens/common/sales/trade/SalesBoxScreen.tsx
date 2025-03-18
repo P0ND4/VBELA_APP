@@ -289,7 +289,7 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
                 onChangeText={setSearch}
                 placeholder="Buscar por nombre"
               />
-              <View style={{ flexDirection: "row", marginLeft: 8 }}>
+              <View style={{ flexDirection: "row" }}>
                 <StyledButton
                   style={[{ marginHorizontal: 8, width: "auto" }, styles.headerButton]}
                   onPress={() => setUnregisteredModal(true)}

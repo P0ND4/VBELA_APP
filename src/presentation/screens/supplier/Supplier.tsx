@@ -131,9 +131,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 25,
   },
   card: {
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 0.5,
+    paddingVertical: 20,
+    paddingHorizontal: 25,
+    borderBottomWidth: 1,
   },
 });
 

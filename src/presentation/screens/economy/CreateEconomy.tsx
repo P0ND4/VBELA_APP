@@ -26,8 +26,11 @@ type CreateEconomyProps = {
   route: EconomyRouteProp<"CreateEconomy">;
 };
 
+type PickerType = { label: string; value: string }[];
+
 const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
   const suppliers = useAppSelector((state) => state.suppliers);
+  const economicGroup = useAppSelector((state) => state.economicGroup);
 
   const defaultValue = route.params?.economy;
   const type = route.params?.type;
@@ -37,7 +40,7 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
       id: defaultValue?.id || random(10),
       supplier: defaultValue?.supplier || null,
       type,
-      name: defaultValue?.name || "",
+      category: defaultValue?.category || undefined,
       value: defaultValue?.value || 0,
       quantity: defaultValue?.quantity || 0,
       unit: defaultValue?.unit || "",
@@ -52,7 +55,8 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
 
   const { colors } = useTheme();
 
-  const [data, setData] = useState<{ label: string; value: string }[]>([]);
+  const [economicGroupData, setEconomicGroupData] = useState<PickerType>([]);
+  const [supplierData, setSupplierData] = useState<PickerType>([]);
 
   const [optional, setOptional] = useState<boolean>(false);
   const [supplierModal, setSupplierModal] = useState<boolean>(false);
@@ -61,14 +65,22 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
   const [calendarModal, setCalendarModal] = useState<boolean>(false);
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
   const [quantityModal, setQuantityModal] = useState<boolean>(false);
+  const [economicModal, setEconomicModal] = useState<boolean>(false);
 
-  const { supplier, unit, value, date, description, quantity } = watch();
+  const { supplier, unit, value, date, description, category, quantity } = watch();
 
   const dispatch = useAppDispatch();
 
   useEffect(() => {
+    const data = economicGroup
+      .filter((e) => e.visible === type || e.visible === Type.Both)
+      .map((e) => ({ label: e.name, value: e.id }));
+    setEconomicGroupData(data);
+  }, [type]);
+
+  useEffect(() => {
     const data = suppliers.map((s) => ({ label: s.name, value: s.id }));
-    setData(data);
+    setSupplierData(data);
   }, [suppliers]);
 
   useEffect(() => {
@@ -108,23 +120,15 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ flexGrow: 1 }}
             >
-              <Controller
-                name="name"
-                control={control}
-                rules={{ required: true }}
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <StyledInput
-                    placeholder="Nombre"
-                    maxLength={30}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    value={value}
-                  />
-                )}
-              />
-              {formState.errors.name && (
+              <StyledButton style={styles.row} onPress={() => setEconomicModal(true)}>
+                <StyledText>
+                  {category ? `Categoría (${category.name})` : "Seleccione la categoría"}
+                </StyledText>
+                <Ionicons name="chevron-forward" color={colors.text} size={19} />
+              </StyledButton>
+              {formState.errors.category && (
                 <StyledText color={colors.primary} verySmall>
-                  El nombre es requerido
+                  La categoría es requerido
                 </StyledText>
               )}
               <StyledButton style={styles.row} onPress={() => setQuantityModal(true)}>
@@ -137,14 +141,12 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
                 </StyledText>
               )}
               <StyledButton style={styles.row} onPress={() => setCurrentValueModal(true)}>
-                <StyledText>
-                  Precio por unidad {!!value && `(${thousandsSystem(value)})`}
-                </StyledText>
+                <StyledText>Valor {!!value && `(${thousandsSystem(value)})`}</StyledText>
                 <Ionicons name="chevron-forward" color={colors.text} size={19} />
               </StyledButton>
               {formState.errors.value && (
                 <StyledText color={colors.primary} verySmall>
-                  El precio por unidad es requerida
+                  El valor por unidad es requerida
                 </StyledText>
               )}
               <StyledButton style={styles.row} onPress={() => setCalendarModal(true)}>
@@ -225,7 +227,7 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
             noData="NO HAY PROVEEDORES"
             visible={supplierModal}
             onClose={() => setSupplierModal(false)}
-            data={data}
+            data={supplierData}
             onSubmit={(supplierID) => {
               const supplier = suppliers.find((s) => s.id === supplierID);
               onChange(supplier ? { id: supplier.id, name: supplier.name } : null);
@@ -309,6 +311,25 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
             onClose={() => setUnitModal(false)}
             data={unitOptions}
             onSubmit={onChange}
+          />
+        )}
+      />
+      <Controller
+        name="category"
+        control={control}
+        rules={{ required: true }}
+        render={({ field: { onChange } }) => (
+          <PickerFloorModal
+            title="SELECCIONE LA CATEGORÍA"
+            remove="Remover unidad"
+            noData="NO HAY CATEGORÍAS CREADAS"
+            visible={economicModal}
+            onClose={() => setEconomicModal(false)}
+            data={economicGroupData}
+            onSubmit={(economicID) => {
+              const economic = economicGroup.find((s) => s.id === economicID);
+              onChange(economic ? { id: economic.id, name: economic.name } : null);
+            }}
           />
         )}
       />

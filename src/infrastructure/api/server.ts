@@ -86,6 +86,11 @@ export const endpoints = {
       put: (id: string) => `/api/v1/user/setting/payment-methods/${id}`,
       delete: (id: string) => `/api/v1/user/setting/payment-methods/${id}`,
     },
+    economicGroup: {
+      post: () => "/api/v1/user/setting/economic-group",
+      put: (id: string) => `/api/v1/user/setting/economic-group/${id}`,
+      delete: (id: string) => `/api/v1/user/setting/economic-group/${id}`,
+    },
   },
   kitchen: {
     post: () => "/api/v1/user/kitchen",

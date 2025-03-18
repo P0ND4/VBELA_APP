@@ -6,6 +6,8 @@ import PaymentMethods from "presentation/screens/setting/paymentMethods/PaymentM
 import CreatePaymentMethod from "presentation/screens/setting/paymentMethods/CreatePaymentMethod";
 import Theme from "presentation/screens/setting/Theme";
 import Invoice from "presentation/screens/setting/Invoice";
+import EconomicGroup from "presentation/screens/setting/economicGroup/EconomicGroup";
+import CreateEconomicGroup from "presentation/screens/setting/economicGroup/CreateEconomicGroup";
 
 const Stack = createStackNavigator<RootSetting>();
 
@@ -13,6 +15,18 @@ const SettingRoutes: React.FC = () => {
   return (
     <Stack.Navigator>
       <Stack.Screen name="Account" component={Account} options={{ title: "Cuenta" }} />
+      <Stack.Group>
+        <Stack.Screen
+          name="EconomicGroup"
+          component={EconomicGroup}
+          options={{ title: "Categoría de ingreso/egreso" }}
+        />
+        <Stack.Screen
+          name="CreateEconomicGroup"
+          component={CreateEconomicGroup}
+          options={{ title: "Crear Categoría de ingreso/egreso" }}
+        />
+      </Stack.Group>
 
       <Stack.Group>
         <Stack.Screen

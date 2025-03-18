@@ -5,7 +5,7 @@ import type { Nomenclature, Reservation, Room, Zone } from "./reservations";
 import type { Table } from "./restaurants";
 import type { Economy, Supplier } from "./suppliers";
 import type { Location, Element, Order, Group } from "./common";
-import type { PaymentMethods, InvoiceInformation } from "./settings";
+import type { PaymentMethods, InvoiceInformation, EconomicGroup } from "./settings";
 import type { Kitchen } from "./kitchens";
 import type { Handler } from "./handlers";
 
@@ -41,6 +41,7 @@ export interface Collection {
   orders: Order[];
   tables: Table[];
   economies: Economy[];
+  economicGroup: EconomicGroup[];
   suppliers: Supplier[];
   handlers: Handler[];
   paymentMethods: PaymentMethods[];

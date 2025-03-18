@@ -1,9 +1,11 @@
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RouteProp } from "@react-navigation/native";
-import { PaymentMethods } from "../data/settings/payment.methods.entity";
+import { EconomicGroup, PaymentMethods } from "../data";
 
 export type RootSetting = {
   Account: undefined;
+  EconomicGroup: undefined;
+  CreateEconomicGroup?: { defaultValue: EconomicGroup };
   PaymentMethods: undefined;
   CreatePaymentMethod?: { defaultValue: PaymentMethods };
   Theme: undefined;

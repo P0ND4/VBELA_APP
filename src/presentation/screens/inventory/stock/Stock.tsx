@@ -182,16 +182,16 @@ const Stock: React.FC<StockProps> = ({ inventoryID, visualization }) => {
                       )}
                     />
                   ) : (
-                    <Table
-                      full
-                      containerStyle={{ marginVertical: 4 }}
-                      scrollHorizontalEnable={false}
-                    >
-                      <Table.Header data={["Producto", "Cantidad", "Valor"]}>
+                    <Table full containerStyle={{ marginVertical: 4 }}>
+                      <Table.Header
+                        data={[{ text: "Producto", style: { width: 150 } }, "Cantidad", "Valor"]}
+                      >
                         {data.map((data) => (
                           <Table.Body
+                            key={data.id}
+                            onPressCompleteData={true}
                             data={[
-                              data.name,
+                              { text: data.name, style: { width: 150 } },
                               thousandsSystem(data.quantity),
                               thousandsSystem(data.quantity * data.currentValue),
                             ]}

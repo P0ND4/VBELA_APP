@@ -42,7 +42,7 @@ const EconomyInformation: React.FC<EconomyInformationProps> = ({ navigation, rou
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    navigation.setOptions({ title: `Información: ${data.name}` });
+    navigation.setOptions({ title: `Información: ${data.category.name}` });
   }, [data]);
 
   useEffect(() => {
@@ -64,7 +64,7 @@ const EconomyInformation: React.FC<EconomyInformationProps> = ({ navigation, rou
       <Layout style={{ padding: 0 }}>
         <ScrollView style={{ flexGrow: 1 }}>
           <Card name="ID" value={data.id} />
-          <Card name="Nombre" value={data.name} />
+          <Card name="Nombre" value={data.category.name} />
           {data.supplier && <Card name="Proveedor" value={data.supplier.name} />}
           <Card name="Tipo" value={data.type} />
           <Card name="Valor" value={thousandsSystem(data.value)} />

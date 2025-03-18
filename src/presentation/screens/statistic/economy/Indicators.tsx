@@ -73,7 +73,7 @@ const Indicators: React.FC<IndicatorsProps> = ({ route }) => {
           )}
           <View style={{ marginVertical: 10 }}>
             {economies.map((e) => (
-              <Card key={e.id} name={e.name} value={e.value * e.quantity} />
+              <Card key={e.id} name={e.category.name} value={e.value * e.quantity} />
             ))}
           </View>
           {economies.length > 0 && (

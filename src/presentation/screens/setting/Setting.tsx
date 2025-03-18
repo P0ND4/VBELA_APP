@@ -61,6 +61,11 @@ const Setting: React.FC<AppNavigationProp> = ({ navigation }) => {
         onPress={() => navigation.navigate("SettingRoutes", { screen: "Invoice" })}
       />
       <Card
+        icon="cash-outline"
+        left="Categoría de ingreso/egreso"
+        onPress={() => navigation.navigate("SettingRoutes", { screen: "EconomicGroup" })}
+      />
+      <Card
         icon="logo-whatsapp"
         left="whatsapp"
         paragraph="Ingresa a nuestro grupo de whatsapp"
