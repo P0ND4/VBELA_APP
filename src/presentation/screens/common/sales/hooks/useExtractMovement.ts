@@ -1,6 +1,6 @@
 import { useAppSelector } from "application/store/hook";
 import { Selection } from "domain/entities/data/common";
-import { Movement, Stock } from "domain/entities/data/inventories";
+import { Inventory, Movement, Stock } from "domain/entities/data/inventories";
 import { Type } from "domain/enums/data/inventory/movement.enums";
 import { random } from "shared/utils";
 
@@ -9,11 +9,18 @@ interface Discount {
   quantity: number;
 }
 
-const createMovement = (stock: Stock, quantity: number, date: number): Movement => ({
+const createMovement = (
+  stock: Stock,
+  inventory: Inventory,
+  quantity: number,
+  date: number,
+): Movement => ({
   id: random(10),
+  supplier: null,
+  supplierValue: 0,
   type: Type.Output,
-  inventoryID: stock.inventoryID,
-  stockID: stock.id,
+  inventory: { id: inventory.id, name: inventory.name },
+  stock: { id: stock.id, name: stock.name, unit: stock.unit, currentValue: stock.currentValue },
   quantity: -quantity,
   currentValue: stock.currentValue,
   date,
@@ -27,6 +34,7 @@ const addQuantity = (acc: Map<string, number>, { id, quantity }: Discount) => {
 };
 
 export const useExtractMovement = () => {
+  const inventories = useAppSelector((state) => state.inventories);
   const recipes = useAppSelector((state) => state.recipes);
   const stocks = useAppSelector((state) => state.stocks);
 
@@ -55,7 +63,8 @@ export const useExtractMovement = () => {
       .filter(({ id }) => stocks.some((s) => s.id === id))
       .map(({ id, quantity }) => {
         const stock = stocks.find((s) => s.id === id)!;
-        return createMovement(stock, quantity, date);
+        const inventory = inventories.find((i) => i.id === stock.inventoryID)!;
+        return createMovement(stock, inventory, quantity, date);
       });
 
     return movements;

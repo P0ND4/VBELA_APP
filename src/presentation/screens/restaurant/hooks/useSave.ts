@@ -10,11 +10,11 @@ import {
 } from "presentation/screens/common/sales/hooks";
 import { Status } from "domain/enums/data/element/status.enums";
 import { batch } from "react-redux";
-import { addMovement } from "application/slice/inventories/stocks.slice";
 import { discount } from "application/slice/restaurants/menu.slice";
 import { Kitchen } from "domain/entities/data/kitchens";
 import { Movement } from "domain/entities/data/inventories";
 import apiClient, { endpoints } from "infrastructure/api/server";
+import { add as addMovement } from "application/slice/inventories/movements.slice";
 
 export type CallbackProps = { order: Order; kitchen: Kitchen | null };
 
@@ -36,7 +36,7 @@ const useSave = () => {
   };
 
   const handler = (movements: Movement[], discounts: Discount[]) => {
-    !!movements.length && dispatch(addMovement(movements));
+    !!movements.length && movements.forEach((movement) => dispatch(addMovement(movement)));
     !!discounts.length && dispatch(discount(discounts));
   };
 

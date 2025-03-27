@@ -1,6 +1,6 @@
 import type { Collaborator, Payroll } from "./collaborators";
 import type { Customer, Invoice } from "./customers";
-import type { Inventory, Recipe, Stock } from "./inventories";
+import type { Inventory, Movement, Recipe, Stock } from "./inventories";
 import type { Nomenclature, Reservation, Room, Zone } from "./reservations";
 import type { Table } from "./restaurants";
 import type { Economy, Supplier } from "./suppliers";
@@ -24,8 +24,10 @@ export interface Collection {
   customers: Customer[];
   invoices: Invoice[];
   stocks: Stock[];
+  stockGroup: Group[];
   inventories: Inventory[];
   recipes: Recipe[];
+  recipeGroup: Group[];
   stores: Location[];
   restaurants: Location[];
   productGroup: Group[];
@@ -45,4 +47,5 @@ export interface Collection {
   suppliers: Supplier[];
   handlers: Handler[];
   paymentMethods: PaymentMethods[];
+  movements: Movement[];
 }

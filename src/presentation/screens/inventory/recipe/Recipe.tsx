@@ -13,6 +13,8 @@ import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledButton from "presentation/components/button/StyledButton";
 import Table from "presentation/components/layout/Table";
+import GroupSection from "presentation/components/layout/GroupSection";
+import { Group, GroupSubCategory } from "domain/entities/data";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
@@ -83,37 +85,61 @@ type RecipeProps = {
 const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
   const recipes = useAppSelector((state) => state.recipes);
   const stocks = useAppSelector((state) => state.stocks);
+  const recipeGroup = useAppSelector((state) => state.recipeGroup);
+
   const { colors } = useTheme();
   const navigation = useNavigation<NavigationProps>();
 
-  const filteredRecipes = useMemo(
+  const found = useMemo(
     () => recipes.filter((recipe) => recipe.inventoryID === inventory.id),
     [recipes, inventory],
   );
 
+  const [groups, setGroups] = useState<Group[]>([]);
   const [search, setSearch] = useState("");
-  const [data, setData] = useState<RecipeType[]>(filteredRecipes);
+  const [data, setData] = useState<RecipeType[]>(found);
+
+  const [categorySelected, setCategorySelected] = useState<Group | null>(null);
+  const [subcategorySelected, setSubcategorySelected] = useState<GroupSubCategory | null>(null);
 
   useEffect(() => {
-    if (!search) {
-      setData(filteredRecipes);
-      return;
+    setCategorySelected(null);
+    setSubcategorySelected(null);
+  }, [recipeGroup]);
+
+  useEffect(() => {
+    let filtered = found;
+
+    if (search) {
+      const searchTerm = search.toLowerCase();
+      filtered = filtered.filter(
+        (recipe) =>
+          recipe.name.toLowerCase().includes(searchTerm) ||
+          recipe.description.toLowerCase().includes(searchTerm),
+      );
     }
 
-    const searchTerm = search.toLowerCase();
-    const filtered = filteredRecipes.filter(
-      (recipe) =>
-        recipe.name.toLowerCase().includes(searchTerm) ||
-        recipe.description.toLowerCase().includes(searchTerm),
-    );
+    if (categorySelected)
+      filtered = filtered.filter((stock) => stock.categories.includes(categorySelected.id));
+
+    if (subcategorySelected)
+      filtered = filtered.filter((stock) =>
+        stock.subcategories.some((s) => s.subcategory === subcategorySelected.id),
+      );
+
     setData(filtered);
-  }, [search, filteredRecipes]);
+  }, [search, found, categorySelected, subcategorySelected]);
+
+  useEffect(() => {
+    const data = recipeGroup.filter((group) => group.ownerID === inventory.id);
+    setGroups(data);
+  }, [recipeGroup, inventory.id]);
 
   const NAME = GET_TAB_NAME[inventory.visible];
 
   return (
     <Layout style={{ padding: 0 }}>
-      {!!filteredRecipes.length && (
+      {!!found.length && (
         <StyledInput
           placeholder="Busca por nombre, descripción."
           stylesContainer={{ marginVertical: 0, borderRadius: 0 }}
@@ -124,11 +150,31 @@ const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
       )}
       <View style={{ paddingHorizontal: 20, paddingVertical: 15, flex: 1 }}>
         <View style={{ flexGrow: 1 }}>
-          {!filteredRecipes.length && (
+          {!found.length && (
             <StyledText color={colors.primary}>NO HAY {NAME} REGISTRADOS</StyledText>
           )}
-          {!!filteredRecipes.length && (
+          {!!found.length && (
             <>
+              <GroupSection
+                groups={groups}
+                group={categorySelected}
+                subGroup={subcategorySelected}
+                onPressCreateGroup={(group) =>
+                  navigation.navigate("InventoryRoutes", {
+                    screen: "CreateRecipeGroup",
+                    params: { group, inventoryID: inventory.id },
+                  })
+                }
+                onPressGroup={(item) => {
+                  setSubcategorySelected(null);
+                  if (categorySelected?.id === item.id) setCategorySelected(null);
+                  else setCategorySelected(item);
+                }}
+                onPressSubGroup={(item) => {
+                  if (subcategorySelected?.id === item.id) setSubcategorySelected(null);
+                  else setSubcategorySelected(item);
+                }}
+              />
               {!data.length && (
                 <StyledText color={colors.primary}>NO HAY {NAME} PARA LA BUSQUEDA</StyledText>
               )}
@@ -165,7 +211,10 @@ const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
                     >
                       <Table.Header data={["Receta", "Valor"]}>
                         {data.map((data) => (
-                          <Table.Body data={[data.name, thousandsSystem(data.value)]} />
+                          <Table.Body
+                            key={data.id}
+                            data={[data.name, thousandsSystem(data.value)]}
+                          />
                         ))}
                       </Table.Header>
                     </Table>

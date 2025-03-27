@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import Layout from "presentation/components/layout/Layout";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -39,6 +39,7 @@ const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }
   const { colors } = useTheme();
 
   const stocks = useAppSelector((state) => state.stocks);
+  const movements = useAppSelector((state) => state.movements);
 
   const stock = route.params.stock;
 
@@ -55,6 +56,11 @@ const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }
     if (!found) navigation.pop();
     else setData(found);
   }, [stocks, stock]);
+
+  const movement: boolean = useMemo(
+    () => movements.some((e) => e.stock?.id === stock.id),
+    [movements],
+  );
 
   const removeData = async () => {
     batch(() => {
@@ -81,7 +87,7 @@ const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }
           <Card name="Punto de reorden" value={thousandsSystem(data.reorder)} />
           {data.reference && <Card name="Referencia" value={data.reference} />}
           {data.brand && <Card name="Marca" value={data.brand} />}
-          {!!data.movements.length && (
+          {movement && (
             <TouchableOpacity
               style={[styles.card, { borderColor: colors.border }]}
               onPress={() => navigation.navigate("MovementInformation", { stockID: stock.id })}

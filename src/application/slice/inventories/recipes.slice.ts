@@ -1,4 +1,4 @@
-import type { Recipe } from "domain/entities/data/inventories";
+import type { Group, Recipe } from "domain/entities/data";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
@@ -34,6 +34,22 @@ export const informationSlice = createSlice({
         recipe.ingredients = recipe.ingredients.filter((ingredient) => ingredient.id !== id);
       });
     },
+    updateSubcategories: (state, action: PayloadAction<Group>) => {
+      const group = action.payload;
+      state.forEach((product) => {
+        product.subcategories = product.subcategories.filter(
+          (sub) =>
+            sub.category !== group.id || group.subcategories.some((s) => s.id === sub.subcategory),
+        );
+      });
+    },
+    removeCategory: (state, action: PayloadAction<{ id: string }>) => {
+      const { id } = action.payload;
+      state.forEach((product) => {
+        product.categories = product.categories.filter((c) => c !== id);
+        product.subcategories = product.subcategories.filter((s) => s.category !== id);
+      });
+    },
     clean: () => [],
   },
   extraReducers: (builder) => {
@@ -42,6 +58,15 @@ export const informationSlice = createSlice({
   },
 });
 
-export const { add, edit, remove, clean, change, removeIngredient, removeByInventoryID } =
-  informationSlice.actions;
+export const {
+  add,
+  edit,
+  remove,
+  clean,
+  change,
+  removeIngredient,
+  removeByInventoryID,
+  updateSubcategories,
+  removeCategory,
+} = informationSlice.actions;
 export default informationSlice.reducer;

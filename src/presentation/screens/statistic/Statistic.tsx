@@ -14,7 +14,7 @@ import {
 import { Order } from "domain/entities/data/common";
 import { PieChart } from "react-native-gifted-charts";
 import { Kitchen } from "domain/entities/data/kitchens";
-import { Economy } from "domain/entities/data";
+import { Economy, Movement } from "domain/entities/data";
 import { AppNavigationProp } from "domain/entities/navigation";
 import FullFilterDate, {
   DateType,
@@ -78,6 +78,7 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
   const salesCompleted = useAppSelector(selectCompletedSales);
   const kitchen = useAppSelector(selectCompletedKitchen);
   const economies = useAppSelector((state) => state.economies);
+  const movements = useAppSelector((state) => state.movements);
 
   const [date, setDate] = useState<DateType>(resetDate);
 
@@ -97,25 +98,32 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
 
   const economiesFiltered = useMemo(() => filtered<Economy>(economies), [economies, date]);
   const kitchenFiltered = useMemo(() => filtered<Kitchen>(kitchen), [kitchen, date]);
+  const movementsFiltered = useMemo(() => filtered<Movement>(movements), [movements, date]);
 
-  const totalCostOfSale = useMemo(
-    () => economiesFiltered.reduce((a, b) => a + b.quantity * b.value, 0),
-    [economiesFiltered],
-  );
-
-  const calculateTotal = (orders: Order[]) =>
-    orders.reduce(
+  // Calcular el monto total (ingresos - egresos)
+  const calculateTotal = (orders: Order[], ecomomies: Economy[], movements: Movement[]) => {
+    const ordersTotal = orders.reduce(
       (acc, order) => acc + order.paymentMethods.reduce((sum, method) => sum + method.amount, 0),
       0,
     );
 
-  const calculateRevenue = (orders: Order[]) => orders.reduce((acc, order) => acc + order.total, 0);
+    const ecomomiesTotal = ecomomies.reduce((acc, e) => acc + e.value, 0);
+    const movementsTotal = movements.reduce((acc, m) => acc + m.currentValue * m.quantity, 0);
 
-  const calculateAverageTicket = (orders: Order[]) => {
-    const total = calculateTotal(orders);
-    return orders.length ? total / orders.length : 0;
+    return ordersTotal + ecomomiesTotal + movementsTotal;
   };
 
+  // Calcular la ganacia total
+  const calculateRevenue = (orders: Order[]) => orders.reduce((acc, order) => acc + order.total, 0);
+
+  // Calcular el promedio de las ganancias
+  const calculateAverageTicket = (orders: Order[], ecomomies: Economy[], movements: Movement[]) => {
+    const totalQuantity = orders.length + ecomomies.length + movements.length;
+    const totalValue = calculateTotal(orders, ecomomies, movements);
+    return totalQuantity ? totalValue / totalQuantity : 0;
+  };
+
+  // Calcular los metodos de pagos mas utilizados
   const calculatePaymentMethods = (orders: Order[]) => {
     const paymentMethods = orders.flatMap((o) => o.paymentMethods);
     const calculated = paymentMethods.reduce<PaymentMethodSummary[]>((acc, b) => {
@@ -138,26 +146,38 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
     return calculated.map((c, i) => ({ ...c, color: palette[i] }));
   };
 
+  // Calcular la cantidad venvida
   const calculateQuantitySold = (orders: Order[]) => {
     const selection = orders.flatMap((o) => o.selection);
     return selection.reduce((a, b) => a + b.quantity, 0);
   };
 
+  // Memoriza el valor total de facturación
   const totalBill = useMemo(
-    () => calculateTotal([...OFCompleted, ...SFCompleted]),
-    [OFCompleted, SFCompleted],
+    () => calculateTotal([...OFCompleted, ...SFCompleted], economiesFiltered, movementsFiltered),
+    [OFCompleted, SFCompleted, economiesFiltered, movementsFiltered],
   );
 
+  // Memoriza el valor promedio de los ingresos/egresos
   const avgTicket = useMemo(
-    () => calculateAverageTicket([...OFCompleted, ...SFCompleted]),
-    [OFCompleted, SFCompleted],
+    () =>
+      calculateAverageTicket(
+        [...OFCompleted, ...SFCompleted],
+        economiesFiltered,
+        movementsFiltered,
+      ),
+    [OFCompleted, SFCompleted, economiesFiltered, movementsFiltered],
   );
 
+  // Memoriza el valor total de ganancias
   const totalRevenue = useMemo(
-    () => calculateRevenue([...OFCompleted, ...SFCompleted]),
-    [OFCompleted, SFCompleted],
+    () =>
+      calculateRevenue([...OFCompleted, ...SFCompleted]) +
+      calculateTotal([], economiesFiltered, movementsFiltered),
+    [OFCompleted, SFCompleted, economiesFiltered, movementsFiltered],
   );
 
+  // Memoriza los metodos de pago mas utilizados
   const { bestMethod, paymentMethods } = useMemo(() => {
     const paymentMethods = calculatePaymentMethods([...OFCompleted, ...SFCompleted]);
     const bestMethod = paymentMethods.reduce<PaymentMethodSummary>(
@@ -168,9 +188,16 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
     return { bestMethod: !paymentMethods.length ? null : bestMethod, paymentMethods: sorted };
   }, [OFCompleted, SFCompleted]);
 
+  // Memorizar la cantidad vendida
   const quantitySold = useMemo(
     () => calculateQuantitySold([...OFCompleted, ...SFCompleted]),
     [OFCompleted, SFCompleted],
+  );
+
+  // Memoriza el valor de Costos/Ventas
+  const totalCostOfSale = useMemo(
+    () => economiesFiltered.reduce((a, b) => a + b.quantity * b.value, 0),
+    [economiesFiltered],
   );
 
   return (
@@ -203,14 +230,19 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
               })
             }
           />
-          <Card name="Ticket Medio" value={thousandsSystem(avgTicket)} />
+          <Card name="Ingreso/Egreso Medio" value={thousandsSystem(avgTicket)} />
           <Card
             name="Ganancia total"
             value={thousandsSystem(totalRevenue)}
             onPress={() =>
               navigation.navigate("StatisticsRoutes", {
                 screen: "TotalGain",
-                params: { orders: OFCompleted, sales: SFCompleted },
+                params: {
+                  orders: OFCompleted,
+                  sales: SFCompleted,
+                  movements: movementsFiltered,
+                  economies: economiesFiltered,
+                },
               })
             }
           />
@@ -267,7 +299,13 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
             onPress={() =>
               navigation.navigate("StatisticsRoutes", {
                 screen: "Report",
-                params: { orders: OFCompleted, sales: SFCompleted, date: resetDate },
+                params: {
+                  orders: OFCompleted,
+                  sales: SFCompleted,
+                  date: resetDate,
+                  movements: movementsFiltered,
+                  economies: economiesFiltered,
+                },
               })
             }
           >

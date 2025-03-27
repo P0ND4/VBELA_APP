@@ -1,2 +1,2 @@
 export * from "./supplier.entity";
-export * from "./economy.entity";
+export * from "../economies/economy.entity";

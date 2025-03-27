@@ -2,15 +2,22 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RouteProp } from "@react-navigation/native";
 import { Order } from "../data/common";
 import { Kitchen } from "../data/kitchens";
-import { DateType, PaymentMethodSummary } from "presentation/screens/statistic/Statistic";
-import { Economy } from "../data";
+import { PaymentMethodSummary } from "presentation/screens/statistic/Statistic";
+import { Economy, Movement } from "../data";
+import { DateType } from "presentation/components/layout/FullFilterDate";
 
 export type RootStatistics = {
   Sale: { orders: Order[]; sales: Order[]; title: string };
   Production: { orders: Kitchen[] };
-  Report: { orders: Order[]; sales: Order[]; date: DateType };
+  Report: {
+    orders: Order[];
+    sales: Order[];
+    date: DateType;
+    movements: Movement[];
+    economies: Economy[];
+  };
   PaymentMethod: { data: PaymentMethodSummary[] };
-  TotalGain: { orders: Order[]; sales: Order[] };
+  TotalGain: { orders: Order[]; sales: Order[]; movements: Movement[]; economies: Economy[] };
   Indicators: { economies: Economy[] };
 };
 

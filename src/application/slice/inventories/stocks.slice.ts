@@ -1,25 +1,10 @@
-import type { Movement, Stock } from "domain/entities/data/inventories/stock.entity";
+import type { Stock, Group } from "domain/entities/data";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
 const stocks = (collection: Collection) => collection.stocks;
 const initialState: Stock[] = [];
-
-const updateStockMovements = (
-  state: Stock[],
-  movements: Movement[],
-  updateFn: (stock: Stock, movement: Movement) => Stock,
-) => {
-  const movementMap = new Map(movements.map((m) => [m.stockID, m]));
-  return state.map((stock) => {
-    const movement = movementMap.get(stock.id);
-    return movement ? updateFn(stock, movement) : stock;
-  });
-};
-
-const calculateQuantity = (movements: Movement[]) =>
-  movements.reduce((acc, m) => acc + m.quantity, 0);
 
 export const informationSlice = createSlice({
   name: "stocks",
@@ -42,34 +27,22 @@ export const informationSlice = createSlice({
       const { inventoryID } = action.payload;
       return state.filter((s) => s.inventoryID !== inventoryID);
     },
-    addMovement: (state, action: PayloadAction<Movement[]>) =>
-      updateStockMovements(state, action.payload, (stock, movement) => {
-        const movements = [...stock.movements, movement];
-        return {
-          ...stock,
-          quantity: calculateQuantity(movements),
-          currentValue: movement.currentValue,
-          movements,
-        };
-      }),
-    editMovement: (state, action: PayloadAction<Movement[]>) =>
-      updateStockMovements(state, action.payload, (stock, movement) => {
-        const movements = stock.movements.map((m) => (m.id === movement.id ? movement : m));
-        return {
-          ...stock,
-          quantity: calculateQuantity(movements),
-          movements,
-        };
-      }),
-    removeMovement: (state, action: PayloadAction<Movement[]>) =>
-      updateStockMovements(state, action.payload, (stock, movement) => {
-        const movements = stock.movements.filter((m) => m.id !== movement.id);
-        return {
-          ...stock,
-          quantity: calculateQuantity(movements),
-          movements,
-        };
-      }),
+    updateSubcategories: (state, action: PayloadAction<Group>) => {
+      const group = action.payload;
+      state.forEach((product) => {
+        product.subcategories = product.subcategories.filter(
+          (sub) =>
+            sub.category !== group.id || group.subcategories.some((s) => s.id === sub.subcategory),
+        );
+      });
+    },
+    removeCategory: (state, action: PayloadAction<{ id: string }>) => {
+      const { id } = action.payload;
+      state.forEach((product) => {
+        product.categories = product.categories.filter((c) => c !== id);
+        product.subcategories = product.subcategories.filter((s) => s.category !== id);
+      });
+    },
     clean: () => [],
   },
   extraReducers: (builder) => {
@@ -82,11 +55,10 @@ export const {
   add,
   edit,
   remove,
-  addMovement,
-  editMovement,
-  removeMovement,
   clean,
   change,
   removeByInventoryID,
+  updateSubcategories,
+  removeCategory,
 } = informationSlice.actions;
 export default informationSlice.reducer;

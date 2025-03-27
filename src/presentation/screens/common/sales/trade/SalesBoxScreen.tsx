@@ -12,13 +12,7 @@ import {
 import { useTheme } from "@react-navigation/native";
 import { thousandsSystem } from "shared/utils";
 import { useOrder } from "application/context/OrderContext";
-import {
-  Save,
-  Element,
-  Order,
-  Group as GroupType,
-  GroupSubCategory,
-} from "domain/entities/data/common";
+import { Save, Element, Order, Group, GroupSubCategory } from "domain/entities/data/common";
 import { Pad } from "presentation/screens/common/NumericPad";
 import { send } from "../utils/transform.element";
 import Layout from "presentation/components/layout/Layout";
@@ -30,6 +24,7 @@ import SalesButtonBottom from "../components/SalesButtonBottom";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import ScreenModal from "presentation/components/modal/ScreenModal";
 import SalesCard from "../components/SalesCard";
+import GroupSection from "presentation/components/layout/GroupSection";
 
 type UnregisteredModalProps = {
   visible: boolean;
@@ -151,12 +146,12 @@ const UnregisteredModal: React.FC<UnregisteredModalProps> = ({
 
 type SalesBoxScreenProps = {
   defaultValue?: Order;
-  groups: GroupType[];
+  groups: Group[];
   elements: Element[];
   sendButton: () => void;
   addElement: (data: Element) => void;
   onPressEdit: (data: Element) => void;
-  onPressGroup: (group?: GroupType) => void;
+  onPressGroup: (group?: Group) => void;
   locationID: string;
   tableID?: string;
   buttonsEvent: {
@@ -191,7 +186,7 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
   const [data, setData] = useState<Element[]>([]);
   const [search, setSearch] = useState<string>("");
 
-  const [categorySelected, setCategorySelected] = useState<GroupType | null>(null);
+  const [categorySelected, setCategorySelected] = useState<Group | null>(null);
   const [subcategorySelected, setSubcategorySelected] = useState<GroupSubCategory | null>(null);
 
   useEffect(() => {
@@ -238,44 +233,6 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
     [count, addSelection],
   );
 
-  const renderItemCategory: ListRenderItem<GroupType> = useCallback(
-    ({ item }) => (
-      <StyledButton
-        style={styles.group}
-        backgroundColor={categorySelected?.id === item.id ? colors.primary : colors.card}
-        onLongPress={() => onPressGroup(item)}
-        onPress={() => {
-          setSubcategorySelected(null);
-          if (categorySelected?.id === item.id) setCategorySelected(null);
-          else setCategorySelected(item);
-        }}
-      >
-        <StyledText verySmall color={categorySelected?.id === item.id ? "#FFFFFF" : colors.text}>
-          {item.category}
-        </StyledText>
-      </StyledButton>
-    ),
-    [categorySelected],
-  );
-
-  const renderItemSubCategory: ListRenderItem<GroupSubCategory> = useCallback(
-    ({ item }) => (
-      <StyledButton
-        style={styles.group}
-        backgroundColor={subcategorySelected?.id === item.id ? colors.primary : colors.card}
-        onPress={() => {
-          if (subcategorySelected?.id === item.id) setSubcategorySelected(null);
-          else setSubcategorySelected(item);
-        }}
-      >
-        <StyledText verySmall color={subcategorySelected?.id === item.id ? "#FFFFFF" : colors.text}>
-          {item.name}
-        </StyledText>
-      </StyledButton>
-    ),
-    [subcategorySelected],
-  );
-
   return (
     <>
       <Layout>
@@ -301,37 +258,21 @@ const SalesBoxScreen: React.FC<SalesBoxScreenProps> = ({
                 </StyledButton>
               </View>
             </View>
-            <View>
-              <View style={styles.row}>
-                <FlatList
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ flexGrow: 1 }}
-                  data={groups}
-                  horizontal
-                  keyExtractor={(group) => group.id}
-                  renderItem={renderItemCategory}
-                />
-                <StyledButton
-                  style={[styles.group, { marginLeft: 5 }]}
-                  backgroundColor={colors.primary}
-                  onPress={() => onPressGroup()}
-                >
-                  <StyledText verySmall color="#FFFFFF">
-                    + Categoría
-                  </StyledText>
-                </StyledButton>
-              </View>
-              {categorySelected && (
-                <FlatList
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ flexGrow: 1 }}
-                  data={categorySelected.subcategories}
-                  horizontal
-                  keyExtractor={(group) => group.id}
-                  renderItem={renderItemSubCategory}
-                />
-              )}
-            </View>
+            <GroupSection
+              groups={groups}
+              group={categorySelected}
+              subGroup={subcategorySelected}
+              onPressCreateGroup={onPressGroup}
+              onPressGroup={(item) => {
+                setSubcategorySelected(null);
+                if (categorySelected?.id === item.id) setCategorySelected(null);
+                else setCategorySelected(item);
+              }}
+              onPressSubGroup={(item) => {
+                if (subcategorySelected?.id === item.id) setSubcategorySelected(null);
+                else setSubcategorySelected(item);
+              }}
+            />
             {!data.length && (
               <StyledText color={colors.primary} style={{ marginTop: 8 }}>
                 NO SE ENCONTRARON RESULTADOS
@@ -406,14 +347,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 18,
     borderBottomWidth: 2,
-  },
-  group: {
-    width: "auto",
-    marginRight: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    minWidth: 80,
-    alignItems: "center",
   },
 });
 

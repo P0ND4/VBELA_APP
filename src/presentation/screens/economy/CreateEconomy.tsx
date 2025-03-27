@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 import { useTheme } from "@react-navigation/native";
 import { changeDate, random, thousandsSystem } from "shared/utils";
-import { Economy } from "domain/entities/data/suppliers/economy.entity";
+import { Economy } from "domain/entities/data/economies/economy.entity";
 import { unitOptions } from "shared/constants/unit";
 import { Type } from "domain/enums/data/economy/economy.enums";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
@@ -11,6 +11,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RootEconomy, EconomyRouteProp } from "domain/entities/navigation/root.economy.entity";
 import { add, edit } from "application/slice/economies/economies.slice";
 import apiClient, { endpoints } from "infrastructure/api/server";
+import { EconomicGroup } from "domain/entities/data";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
@@ -35,12 +36,13 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
   const defaultValue = route.params?.economy;
   const type = route.params?.type;
 
-  const { control, watch, handleSubmit, formState } = useForm<Economy>({
+  const { control, watch, handleSubmit, setValue, formState } = useForm<Economy>({
     defaultValues: {
       id: defaultValue?.id || random(10),
       supplier: defaultValue?.supplier || null,
       type,
       category: defaultValue?.category || undefined,
+      subcategory: defaultValue?.subcategory || null,
       value: defaultValue?.value || 0,
       quantity: defaultValue?.quantity || 0,
       unit: defaultValue?.unit || "",
@@ -55,7 +57,8 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
 
   const { colors } = useTheme();
 
-  const [economicGroupData, setEconomicGroupData] = useState<PickerType>([]);
+  const [economicCategoryData, setEconomicCategoryData] = useState<PickerType>([]);
+  const [economicSubCategoryData, setEconomicSubCategoryData] = useState<PickerType>([]);
   const [supplierData, setSupplierData] = useState<PickerType>([]);
 
   const [optional, setOptional] = useState<boolean>(false);
@@ -66,17 +69,34 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
   const [quantityModal, setQuantityModal] = useState<boolean>(false);
   const [economicModal, setEconomicModal] = useState<boolean>(false);
+  const [economicSubCategoryModal, setEconomicSubCategoryModal] = useState<boolean>(false);
 
-  const { supplier, unit, value, date, description, category, quantity } = watch();
+  const { supplier, unit, value, date, description, category, quantity, subcategory } = watch();
 
   const dispatch = useAppDispatch();
+
+  const changeSubcategoryData = useCallback((economic: EconomicGroup | undefined) => {
+    setEconomicSubCategoryData(
+      economic?.subcategories?.map((subcategory) => ({
+        label: subcategory.name,
+        value: subcategory.id,
+      })) ?? [],
+    );
+  }, []);
 
   useEffect(() => {
     const data = economicGroup
       .filter((e) => e.visible === type || e.visible === Type.Both)
-      .map((e) => ({ label: e.name, value: e.id }));
-    setEconomicGroupData(data);
+      .map((e) => ({ label: e.category, value: e.id }));
+    setEconomicCategoryData(data);
   }, [type]);
+
+  useEffect(() => {
+    if (defaultValue && category?.id) {
+      const economic = economicGroup.find((s) => s.id === category.id);
+      changeSubcategoryData(economic);
+    }
+  }, [defaultValue, category?.id, changeSubcategoryData]);
 
   useEffect(() => {
     const data = suppliers.map((s) => ({ label: s.name, value: s.id }));
@@ -121,7 +141,7 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
               contentContainerStyle={{ flexGrow: 1 }}
             >
               <StyledButton style={styles.row} onPress={() => setEconomicModal(true)}>
-                <StyledText>
+                <StyledText numberOfLines={1} ellipsizeMode="tail">
                   {category ? `Categoría (${category.name})` : "Seleccione la categoría"}
                 </StyledText>
                 <Ionicons name="chevron-forward" color={colors.text} size={19} />
@@ -164,6 +184,17 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
               </StyledButton>
               {optional && (
                 <>
+                  <StyledButton
+                    style={styles.row}
+                    onPress={() => setEconomicSubCategoryModal(true)}
+                  >
+                    <StyledText numberOfLines={1} ellipsizeMode="tail">
+                      {subcategory
+                        ? `Sub-Categoría (${subcategory.name})`
+                        : "Seleccione la subcategoría"}
+                    </StyledText>
+                    <Ionicons name="chevron-forward" color={colors.text} size={19} />
+                  </StyledButton>
                   <StyledButton style={styles.row} onPress={() => setSupplierModal(true)}>
                     <StyledText>{supplier ? supplier.name : "Proveedor"}</StyledText>
                     <Ionicons name="chevron-forward" color={colors.text} size={19} />
@@ -321,14 +352,35 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
         render={({ field: { onChange } }) => (
           <PickerFloorModal
             title="SELECCIONE LA CATEGORÍA"
-            remove="Remover unidad"
+            remove="Remover categoría"
             noData="NO HAY CATEGORÍAS CREADAS"
             visible={economicModal}
             onClose={() => setEconomicModal(false)}
-            data={economicGroupData}
-            onSubmit={(economicID) => {
-              const economic = economicGroup.find((s) => s.id === economicID);
-              onChange(economic ? { id: economic.id, name: economic.name } : null);
+            data={economicCategoryData}
+            onSubmit={(categoryID) => {
+              const economic = economicGroup.find((s) => s.id === categoryID);
+              changeSubcategoryData(economic);
+              setValue("subcategory", null);
+              onChange(economic ? { id: economic.id, name: economic.category } : undefined);
+            }}
+          />
+        )}
+      />
+      <Controller
+        name="subcategory"
+        control={control}
+        render={({ field: { onChange } }) => (
+          <PickerFloorModal
+            title="SELECCIONE LA SUBCATEGORÍA"
+            remove="Remover subcategoría"
+            noData="NO HAY SUBCATEGORÍAS"
+            visible={economicSubCategoryModal}
+            onClose={() => setEconomicSubCategoryModal(false)}
+            data={economicSubCategoryData}
+            onSubmit={(subcategoryID) => {
+              const economic = economicGroup.find((s) => s.id === category.id);
+              const subcategory = economic?.subcategories.find((sub) => sub.id === subcategoryID);
+              onChange(subcategory ? { id: subcategory.id, name: subcategory.name } : null);
             }}
           />
         )}

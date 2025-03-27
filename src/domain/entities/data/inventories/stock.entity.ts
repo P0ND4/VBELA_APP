@@ -1,24 +1,15 @@
-import { Type } from "domain/enums/data/inventory/movement.enums";
 import { UnitValue } from "shared/constants/unit";
 
-export type Movement = {
-  id: string;
-  inventoryID: string;
-  stockID: string;
-  supplier: { id: string; name: string } | null;
-  supplierValue: number;
-  type: Type;
-  quantity: number;
-  currentValue: number;
-  date: number;
-  paymentMethod?: string;
-  creationDate: number;
-  modificationDate: number;
+export type StockSubCategory = {
+  category: string;
+  subcategory: string;
 };
 
 export interface Stock {
   id: string;
   inventoryID: string;
+  categories: string[];
+  subcategories: StockSubCategory[];
   name: string;
   unit: UnitValue;
   visible: boolean;
@@ -26,8 +17,6 @@ export interface Stock {
   reference: string;
   brand: string;
   currentValue: number;
-  quantity: number;
-  movements: Movement[];
   creationDate: number;
   modificationDate: number;
 }

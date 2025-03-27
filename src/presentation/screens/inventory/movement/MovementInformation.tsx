@@ -2,23 +2,22 @@ import React, { useEffect, useState } from "react";
 import { View, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import { changeDate, thousandsSystem } from "shared/utils";
-import { removeMovement } from "application/slice/inventories/stocks.slice";
-import { useDispatch } from "react-redux";
 import { StackNavigationProp } from "@react-navigation/stack";
 import {
   InventoryRouteProp,
   RootInventory,
 } from "domain/entities/navigation/root.inventory.entity";
 import { Movement } from "domain/entities/data/inventories";
+import { Type } from "domain/enums/data/inventory/movement.enums";
+import { useAppDispatch, useAppSelector } from "application/store/hook";
+import apiClient, { endpoints } from "infrastructure/api/server";
+import { remove as removeMovement } from "application/slice/inventories/movements.slice";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledTextInformation from "presentation/components/text/StyledTextInformation";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import InformationModal from "presentation/components/modal/InformationModal";
-import { Type } from "domain/enums/data/inventory/movement.enums";
-import { useAppSelector } from "application/store/hook";
-import apiClient, { endpoints } from "infrastructure/api/server";
 
 type NavigationProps = StackNavigationProp<RootInventory>;
 
@@ -27,13 +26,13 @@ const MovementCard: React.FC<{ movement: Movement }> = ({ movement }) => {
 
   const [informationModal, setInformationModal] = useState<boolean>(false);
 
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const navigation = useNavigation<NavigationProps>();
 
   const removeItem = async () => {
-    dispatch(removeMovement([movement]));
+    dispatch(removeMovement({ id: movement.id }));
     await apiClient({
-      url: endpoints.stock.deleteMovement(movement.id),
+      url: endpoints.movement.delete(movement.id),
       method: "DELETE",
     });
   };
@@ -42,13 +41,14 @@ const MovementCard: React.FC<{ movement: Movement }> = ({ movement }) => {
     <>
       <TouchableOpacity
         style={[styles.card, { borderColor: colors.border }]}
-        onPress={() =>
+        disabled={!movement.inventory}
+        onPress={() => {
           navigation.navigate("CreateMovement", {
             movement,
-            inventoryID: movement.inventoryID,
+            inventoryID: movement.inventory.id,
             type: movement.type,
-          })
-        }
+          });
+        }}
         onLongPress={() => setInformationModal(true)}
       >
         <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -124,7 +124,7 @@ type MovementInformationProps = {
 const MovementInformation: React.FC<MovementInformationProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
-  const stocks = useAppSelector((state) => state.stocks);
+  const movements = useAppSelector((state) => state.movements);
 
   const stockID = route.params.stockID;
 
@@ -132,11 +132,11 @@ const MovementInformation: React.FC<MovementInformationProps> = ({ navigation, r
   const [type, setType] = useState<Type | null>(null);
 
   useEffect(() => {
-    const found = stocks.find((s) => s.id === stockID);
-    if (!found || !found.movements.length) return navigation.pop();
-    const movements = found.movements.filter((m) => !type || m.type === type);
-    setData(movements);
-  }, [stocks, type]);
+    const found = movements.filter((s) => s.stock.id === stockID);
+    if (!found.length) return navigation.pop();
+    const data = found.filter((m) => !type || m.type === type);
+    setData(data);
+  }, [movements, type]);
 
   const quantity = data.reduce((a, b) => a + b.quantity, 0);
 

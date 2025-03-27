@@ -2,7 +2,7 @@ export type GroupSubCategory = { id: string; name: string };
 
 export interface Group {
   id: string;
-  locationID: string;
+  ownerID: string;
   category: string;
   subcategories: GroupSubCategory[];
   creationDate: number;

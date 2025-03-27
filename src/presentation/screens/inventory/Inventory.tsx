@@ -26,6 +26,8 @@ import {
   removeRecipe as removeRecipeMenu,
   removeStock as removeStockMenu,
 } from "application/slice/restaurants/menu.slice";
+import { removeByInventoryID as removeByInventoryIDStockGroup } from "application/slice/inventories/stock.group.slice";
+import { removeByInventoryID as removeByInventoryIDRecipeGroup } from "application/slice/inventories/recipe.group.slice";
 
 type CardInformationProps = {
   visible: boolean;
@@ -120,6 +122,8 @@ const Card: React.FC<{ item: InventoryType }> = ({ item }) => {
       dispatch(removeStockMenu({ ids: stockIDS }));
       dispatch(removeRecipeProduct({ ids: recipeIDS }));
       dispatch(removeRecipeMenu({ ids: recipeIDS }));
+      dispatch(removeByInventoryIDStockGroup({ inventoryID: item.id }));
+      dispatch(removeByInventoryIDRecipeGroup({ inventoryID: item.id }));
     });
 
     await apiClient({

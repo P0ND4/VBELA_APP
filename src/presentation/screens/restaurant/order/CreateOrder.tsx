@@ -56,7 +56,7 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
   }, [restaurantID, menu]);
 
   useEffect(() => {
-    setGroups([...menuGroup].filter((m) => m.locationID === restaurantID));
+    setGroups([...menuGroup].filter((m) => m.ownerID === restaurantID));
   }, [restaurantID, menuGroup]);
 
   const next = ({ order }: CallbackProps) => {

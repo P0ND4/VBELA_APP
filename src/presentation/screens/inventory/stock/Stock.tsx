@@ -8,23 +8,29 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
 import type { Recipe, Stock as StockType } from "domain/entities/data/inventories";
 import { Type } from "domain/enums/data/inventory/movement.enums";
+import { Group, GroupSubCategory } from "domain/entities/data";
+import { useMovementsMap } from "../hooks/useMovementsMap";
 import StyledInput from "presentation/components/input/StyledInput";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 import Table from "presentation/components/layout/Table";
+import GroupSection from "presentation/components/layout/GroupSection";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
-const calculatePortion = (stock: StockType, recipes: Recipe[]): number => {
+const calculatePortion = (
+  { id, quantity }: { id: string; quantity: number },
+  recipes: Recipe[],
+): number => {
   const totalQuantityRequired = recipes.reduce((acc, recipe) => {
-    const ingredient = recipe.ingredients.find((i) => i.id === stock.id);
+    const ingredient = recipe.ingredients.find((i) => i.id === id);
     return acc + (ingredient ? ingredient.quantity : 0);
   }, 0);
 
   if (totalQuantityRequired === 0) return 0;
-  return Math.floor(stock.quantity / totalQuantityRequired);
+  return Math.floor(quantity / totalQuantityRequired);
 };
 
 type CardProps = {
@@ -38,6 +44,9 @@ const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
 
   const recipes = useAppSelector((state) => state.recipes);
 
+  const movementsMap = useMovementsMap();
+  const quantity = useMemo(() => movementsMap.get(stock.id) || 0, [movementsMap, stock]);
+
   return (
     <StyledButton
       style={styles.row}
@@ -46,7 +55,7 @@ const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
     >
       <View>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {stock.quantity < stock.reorder && (
+          {quantity < stock.reorder && (
             <Ionicons name="warning-outline" size={22} color={colors.primary} />
           )}
           <StyledText>
@@ -54,15 +63,15 @@ const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
           </StyledText>
         </View>
         <StyledText color={colors.text} verySmall>
-          {thousandsSystem(calculatePortion(stock, recipes))} Porciones
+          {thousandsSystem(calculatePortion({ id: stock.id, quantity }, recipes))} Porciones
         </StyledText>
       </View>
       <View style={{ alignItems: "flex-end" }}>
-        <StyledText bold color={stock.quantity >= stock.reorder ? colors.text : colors.primary}>
-          {thousandsSystem(stock.quantity)}
+        <StyledText bold color={quantity >= stock.reorder ? colors.text : colors.primary}>
+          {thousandsSystem(quantity)}
         </StyledText>
         <StyledText verySmall color={colors.primary}>
-          {thousandsSystem(stock.currentValue * stock.quantity)}
+          {thousandsSystem(stock.currentValue * quantity)}
         </StyledText>
       </View>
     </StyledButton>
@@ -76,31 +85,61 @@ type StockProps = {
 
 const Stock: React.FC<StockProps> = ({ inventoryID, visualization }) => {
   const stocks = useAppSelector((state) => state.stocks);
+  const stockGroup = useAppSelector((state) => state.stockGroup);
 
   const found = useMemo(() => stocks.filter((s) => s.inventoryID === inventoryID), [stocks]);
 
+  const [groups, setGroups] = useState<Group[]>([]);
   const [data, setData] = useState<StockType[]>([]);
   const [search, setSearch] = useState<string>("");
 
-  const total = useMemo(() => {
-    return data.reduce((acc, stock) => {
-      const total = stock.quantity * stock.currentValue;
-      return acc + total;
-    }, 0);
-  }, [data]);
+  const [categorySelected, setCategorySelected] = useState<Group | null>(null);
+  const [subcategorySelected, setSubcategorySelected] = useState<GroupSubCategory | null>(null);
+
+  const quantities = useMovementsMap();
 
   useEffect(() => {
-    if (!search) return setData(found);
-    const searchTerm = search.toLowerCase();
-    const filtered = found.filter(
-      (s) =>
-        s.name.toLowerCase().includes(searchTerm) ||
-        s.reference.toLowerCase().includes(searchTerm) ||
-        s.unit.toLowerCase().includes(searchTerm) ||
-        s.brand.toLowerCase().includes(searchTerm),
-    );
+    setCategorySelected(null);
+    setSubcategorySelected(null);
+  }, [stockGroup]);
+
+  const total = useMemo(() => {
+    return data.reduce((acc, stock) => {
+      const quantity = quantities.get(stock.id) || 0;
+      const total = quantity * stock.currentValue;
+      return acc + total;
+    }, 0);
+  }, [data, quantities]);
+
+  useEffect(() => {
+    let filtered = found;
+
+    if (search) {
+      const searchTerm = search.toLowerCase();
+      filtered = filtered.filter(
+        (s) =>
+          s.name.toLowerCase().includes(searchTerm) ||
+          s.reference.toLowerCase().includes(searchTerm) ||
+          s.unit.toLowerCase().includes(searchTerm) ||
+          s.brand.toLowerCase().includes(searchTerm),
+      );
+    }
+
+    if (categorySelected)
+      filtered = filtered.filter((stock) => stock.categories.includes(categorySelected.id));
+
+    if (subcategorySelected)
+      filtered = filtered.filter((stock) =>
+        stock.subcategories.some((s) => s.subcategory === subcategorySelected.id),
+      );
+
     setData(filtered);
-  }, [search, stocks]);
+  }, [search, stocks, categorySelected, subcategorySelected]);
+
+  useEffect(() => {
+    const data = stockGroup.filter((group) => group.ownerID === inventoryID);
+    setGroups(data);
+  }, [stockGroup, inventoryID]);
 
   const { colors } = useTheme();
 
@@ -192,8 +231,8 @@ const Stock: React.FC<StockProps> = ({ inventoryID, visualization }) => {
                             onPressCompleteData={true}
                             data={[
                               { text: data.name, style: { width: 150 } },
-                              thousandsSystem(data.quantity),
-                              thousandsSystem(data.quantity * data.currentValue),
+                              thousandsSystem(quantities.get(data.id)),
+                              thousandsSystem(quantities.get(data.id) * data.currentValue),
                             ]}
                           />
                         ))}
@@ -205,6 +244,28 @@ const Stock: React.FC<StockProps> = ({ inventoryID, visualization }) => {
             </>
           )}
         </View>
+        {!!found.length && (
+          <GroupSection
+            groups={groups}
+            group={categorySelected}
+            subGroup={subcategorySelected}
+            onPressCreateGroup={(group) =>
+              navigation.navigate("InventoryRoutes", {
+                screen: "CreateStockGroup",
+                params: { group, inventoryID },
+              })
+            }
+            onPressGroup={(item) => {
+              setSubcategorySelected(null);
+              if (categorySelected?.id === item.id) setCategorySelected(null);
+              else setCategorySelected(item);
+            }}
+            onPressSubGroup={(item) => {
+              if (subcategorySelected?.id === item.id) setSubcategorySelected(null);
+              else setSubcategorySelected(item);
+            }}
+          />
+        )}
         <StyledText style={{ marginVertical: 10 }}>
           Valor total: <StyledText color={colors.primary}>{thousandsSystem(total)}</StyledText>
         </StyledText>

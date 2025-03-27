@@ -1,25 +1,30 @@
 import React, { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
+import { changeDate, random, thousandsSystem } from "shared/utils";
+import { useTheme } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import {
+  add as addMovement,
+  edit as editMovement,
+} from "application/slice/inventories/movements.slice";
+import { edit as editStock } from "application/slice/inventories/stocks.slice";
+import { useAppDispatch, useAppSelector } from "application/store/hook";
+import { Movement } from "domain/entities/data/inventories";
 import {
   InventoryRouteProp,
   RootInventory,
 } from "domain/entities/navigation/root.inventory.entity";
-import { changeDate, random, thousandsSystem } from "shared/utils";
-import { useTheme } from "@react-navigation/native";
-import { useAppDispatch, useAppSelector } from "application/store/hook";
-import { Controller, useForm } from "react-hook-form";
-import { Movement, Stock } from "domain/entities/data/inventories";
-import { addMovement, editMovement } from "application/slice/inventories/stocks.slice";
 import { Type as TypeMovement } from "domain/enums/data/inventory/movement.enums";
 import apiClient, { endpoints } from "infrastructure/api/server";
-import Layout from "presentation/components/layout/Layout";
-import StyledText from "presentation/components/text/StyledText";
+import { batch } from "react-redux";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledButton from "presentation/components/button/StyledButton";
+import Layout from "presentation/components/layout/Layout";
+import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import SimpleCalendarModal from "presentation/components/modal/SimpleCalendarModal";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import CountScreenModal from "presentation/components/modal/CountScreenModal";
+import StyledText from "presentation/components/text/StyledText";
 
 type CreateEntryProps = {
   navigation: StackNavigationProp<RootInventory>;
@@ -28,15 +33,20 @@ type CreateEntryProps = {
 
 type PickerFloorModalData = { label: string; value: string }[];
 
+export const calculateQuantity = (movements: Movement[], stockID: string) => {
+  const found = movements.filter((movement) => movement.stock.id === stockID);
+  return found.reduce((acc, movement) => acc + movement.quantity, 0);
+};
+
 const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
+  const inventories = useAppSelector((state) => state.inventories);
   const suppliers = useAppSelector((state) => state.suppliers);
   const stocks = useAppSelector((state) => state.stocks);
 
   const [supplierData, setSupplierData] = useState<PickerFloorModalData>([]);
   const [stockData, setStockData] = useState<PickerFloorModalData>([]);
-  const [stock, setStock] = useState<Stock | null>(null);
 
   const [supplierValueModal, setSupplierValueModal] = useState<boolean>(false);
   const [supplierModal, setSupplierModal] = useState<boolean>(false);
@@ -54,10 +64,10 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
     defaultValues: {
       id: defaultValue?.id || random(10),
       type,
-      inventoryID,
+      inventory: defaultValue?.inventory || undefined,
+      stock: defaultValue?.stock || undefined,
       supplier: defaultValue?.supplier || null,
       supplierValue: defaultValue?.supplierValue || 0,
-      stockID: defaultValue?.stockID || "",
       quantity: defaultValue?.quantity || 0,
       currentValue: defaultValue?.currentValue || 0,
       date: defaultValue?.date || new Date().getTime(),
@@ -67,7 +77,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
     },
   });
 
-  const { supplier, supplierValue, stockID, quantity, currentValue, date } = watch();
+  const { supplier, supplierValue, stock, quantity, currentValue, date } = watch();
 
   const dispatch = useAppDispatch();
 
@@ -83,34 +93,45 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
   }, [stocks, inventoryID]);
 
   useEffect(() => {
-    const foundStock = stocks.find((s) => s.id === stockID);
-    if (foundStock) {
-      setValue("currentValue", foundStock.currentValue);
-      setStock(foundStock);
+    if (!defaultValue) {
+      const foundInventory = inventories.find((i) => i.id === inventoryID);
+      if (!foundInventory) return navigation.pop();
+      setValue("inventory", { id: inventoryID, name: foundInventory.name });
     }
-  }, [stockID, stocks]);
+  }, [defaultValue, inventoryID, inventories]);
+
+  useEffect(() => {
+    if (stock && !defaultValue) {
+      const foundStock = stocks.find((s) => s.id === stock.id);
+      setValue("currentValue", foundStock?.currentValue ?? 0);
+    }
+  }, [stock, stocks, defaultValue]);
 
   useEffect(() => {
     navigation.setOptions({ title: `Crear ${type === TypeMovement.Entry ? "entrada" : "salida"}` });
   }, [type]);
 
-  const isRequired = (value: string | number | boolean) => !!value;
+  const isRequired = (value: unknown) => Boolean(value);
 
   const save = async (data: Movement) => {
-    dispatch(addMovement([data]));
+    const stockSelected = stocks.find((stock) => stock.id === data.stock.id)!;
+    batch(() => {
+      dispatch(editStock({ ...stockSelected, currentValue: data.currentValue }));
+      dispatch(addMovement(data));
+    });
     navigation.pop();
     await apiClient({
-      url: endpoints.stock.postMovement(),
+      url: endpoints.movement.post(),
       method: "POST",
       data,
     });
   };
 
   const update = async (data: Movement) => {
-    dispatch(editMovement([data]));
+    dispatch(editMovement(data));
     navigation.pop();
     await apiClient({
-      url: endpoints.stock.putMovement(),
+      url: endpoints.movement.put(data.id),
       method: "PUT",
       data,
     });
@@ -140,7 +161,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
                   </StyledText>
                   <Ionicons name="chevron-forward" color={colors.text} size={19} />
                 </StyledButton>
-                {formState.errors.stockID && (
+                {formState.errors.stock && (
                   <StyledText color={colors.primary} verySmall>
                     El Stock es requerido
                   </StyledText>
@@ -222,7 +243,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
       </Layout>
       {!defaultValue && (
         <Controller
-          name="stockID"
+          name="stock"
           rules={{ validate: isRequired }}
           control={control}
           render={({ field: { onChange } }) => (
@@ -232,7 +253,19 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
               visible={stockModal}
               onClose={() => setStockModal(false)}
               data={stockData}
-              onSubmit={onChange}
+              onSubmit={(stockID) => {
+                const stock = stocks.find((s) => s.id === stockID);
+                onChange(
+                  stock
+                    ? {
+                        id: stock.id,
+                        name: stock.name,
+                        unit: stock.unit,
+                        currentValue: stock.currentValue,
+                      }
+                    : null,
+                );
+              }}
             />
           )}
         />
@@ -302,6 +335,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
             onSubmit={(supplierID) => {
               const supplier = suppliers.find((s) => s.id === supplierID);
               onChange(supplier ? { id: supplier.id, name: supplier.name } : null);
+              if (!supplier) setValue("supplierValue", 0);
             }}
           />
         )}

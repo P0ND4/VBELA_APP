@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const sales = (collection: Collection) => collection.productGroup;
+const productGroup = (collection: Collection) => collection.productGroup;
 
 const initialState: Group[] = [];
 
@@ -26,13 +26,13 @@ export const productGroupSlice = createSlice({
     },
     removeByLocationID: (state, action: PayloadAction<{ locationID: string }>) => {
       const { locationID } = action.payload;
-      return state.filter((s) => s.locationID !== locationID);
+      return state.filter((s) => s.ownerID !== locationID);
     },
     clean: () => [],
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => sales(action.payload));
+    builder.addCase(changeAll, (_, action) => productGroup(action.payload));
   },
 });
 

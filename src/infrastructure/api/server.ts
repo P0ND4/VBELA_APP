@@ -86,11 +86,6 @@ export const endpoints = {
       put: (id: string) => `/api/v1/user/setting/payment-methods/${id}`,
       delete: (id: string) => `/api/v1/user/setting/payment-methods/${id}`,
     },
-    economicGroup: {
-      post: () => "/api/v1/user/setting/economic-group",
-      put: (id: string) => `/api/v1/user/setting/economic-group/${id}`,
-      delete: (id: string) => `/api/v1/user/setting/economic-group/${id}`,
-    },
   },
   kitchen: {
     post: () => "/api/v1/user/kitchen",
@@ -102,18 +97,30 @@ export const endpoints = {
     put: (id: string) => `/api/v1/user/inventory/${id}`,
     delete: (id: string) => `/api/v1/user/inventory/${id}`,
   },
+  recipeGroup: {
+    post: () => "/api/v1/user/recipe-group",
+    put: (id: string) => `/api/v1/user/recipe-group/${id}`,
+    delete: (id: string) => `/api/v1/user/recipe-group/${id}`,
+  },
   recipe: {
     post: () => "/api/v1/user/recipe",
     put: (id: string) => `/api/v1/user/recipe/${id}`,
     delete: (id: string) => `/api/v1/user/recipe/${id}`,
   },
+  stockGroup: {
+    post: () => "/api/v1/user/stock-group",
+    put: (id: string) => `/api/v1/user/stock-group/${id}`,
+    delete: (id: string) => `/api/v1/user/stock-group/${id}`,
+  },
   stock: {
     post: () => "/api/v1/user/stock",
     put: (id: string) => `/api/v1/user/stock/${id}`,
     delete: (id: string) => `/api/v1/user/stock/${id}`,
-    postMovement: () => "/api/v1/user/stock/movement",
-    putMovement: () => `/api/v1/user/stock/movement`,
-    deleteMovement: (id: string) => `/api/v1/user/stock/movement/${id}`,
+  },
+  movement: {
+    post: () => "/api/v1/user/movement",
+    put: (id: string) => `/api/v1/user/movement/${id}`,
+    delete: (id: string) => `/api/v1/user/movement/${id}`,
   },
   menuGroup: {
     post: () => "/api/v1/user/menu-group",
@@ -175,6 +182,11 @@ export const endpoints = {
     post: () => "/api/v1/user/economy",
     put: (id: string) => `/api/v1/user/economy/${id}`,
     delete: (id: string) => `/api/v1/user/economy/${id}`,
+  },
+  economicGroup: {
+    post: () => "/api/v1/user/economic-group",
+    put: (id: string) => `/api/v1/user/economic-group/${id}`,
+    delete: (id: string) => `/api/v1/user/economic-group/${id}`,
   },
 };
 

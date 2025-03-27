@@ -3,19 +3,21 @@ import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
 import { useAppSelector } from "application/store/hook";
 import { useNavigation, useTheme } from "@react-navigation/native";
-import { Economy as EconomyType, Order } from "domain/entities/data";
+import { Economy as EconomyType, Movement, Order } from "domain/entities/data";
 import { AppNavigationProp, RootApp } from "domain/entities/navigation";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { thousandsSystem } from "shared/utils";
 import { selectEgress, selectIncome } from "application/selectors/economies.selectors";
-import { Type as EconomyEnums, Type } from "domain/enums/data/economy/economy.enums";
+import { Type as EconomyEnums } from "domain/enums/data/economy/economy.enums";
+import { Type as MovementEnums } from "domain/enums/data/inventory/movement.enums";
 import FullFilterDate, {
   DateType,
   resetDate,
   Type as TypeEnums,
 } from "presentation/components/layout/FullFilterDate";
 import { selectCompletedOrders, selectCompletedSales } from "application/selectors";
+import { selectEntry, selectOutput } from "application/selectors/movements.selector";
 import moment from "moment";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
@@ -42,65 +44,81 @@ const Card: React.FC<{ economy: EconomyType; detail: boolean }> = ({ economy, de
 
   return (
     <StyledButton
-      style={styles.row}
-      disable={economy.isOrder}
+      style={[styles.row, { opacity: !economy.isSpecial ? 1 : 0.6 }]}
       onPress={() => {
         navigation.navigate("EconomyRoutes", {
           screen: "EconomyInformation",
           params: { economy },
         });
       }}
-      onLongPress={() =>
-        navigation.navigate("EconomyRoutes", {
-          screen: "CreateEconomy",
-          params: { economy, type: economy.type },
-        })
-      }
+      onLongPress={() => {
+        if (!economy.isSpecial) {
+          navigation.navigate("EconomyRoutes", {
+            screen: "CreateEconomy",
+            params: { economy, type: economy.type },
+          });
+        }
+      }}
     >
-      <View style={{ flexGrow: 1, flexBasis: 1 }}>
-        <StyledText ellipsizeMode="tail" numberOfLines={1}>
-          {detail ? path : economy.category.name}
-        </StyledText>
-        <StyledText color={colors.text} verySmall ellipsizeMode="tail" numberOfLines={1}>
-          {economy.description}
-        </StyledText>
-      </View>
-      <View style={{ alignItems: "flex-end" }}>
-        <StyledText bold>{thousandsSystem(economy.quantity)}</StyledText>
-        <StyledText
-          verySmall
-          color={economy.type === EconomyEnums.Income ? colors.primary : "#f71010"}
-        >
-          {thousandsSystem(economy.value)}
-        </StyledText>
-      </View>
+      <StyledText ellipsizeMode="tail" numberOfLines={1}>
+        {detail ? path : economy.category.name}
+      </StyledText>
+      <StyledText color={economy.type === EconomyEnums.Income ? colors.primary : "#f71010"}>
+        {thousandsSystem(economy.value)}
+      </StyledText>
     </StyledButton>
   );
 };
 
-const combineData = (economies: EconomyType[], orders: Order[]): EconomyType[] => {
-  // Convertir orders y sales a un formato similar a Economy
-  const convertedOrders = orders.map((order) => ({
-    id: order.id,
-    supplier: null,
-    type: Type.Income,
-    category: { id: "order", name: "Venta" },
-    value: order.total,
-    quantity: 1,
-    unit: "",
-    description: `Orden #${order.order}`,
-    date: order.creationDate,
-    reference: order.invoice,
-    brand: "",
-    creationDate: order.creationDate,
-    modificationDate: order.modificationDate,
-    isOrder: true, // Marcar como order para identificarlo
-  }));
+// Función para convertir un movimiento a EconomyType
+const convertMovementToEconomy = (movement: Movement): EconomyType => ({
+  id: movement.id,
+  supplier: movement.supplier,
+  type: movement.type === MovementEnums.Entry ? EconomyEnums.Income : EconomyEnums.Egress, // Ajustar según el tipo de movimiento
+  category: { id: "movement", name: movement.type },
+  value: movement.currentValue,
+  quantity: movement.quantity,
+  unit: "",
+  description: `Inventario: ${movement.inventory?.name}. Stock: ${movement.stock?.name}`,
+  date: movement.date,
+  reference: movement.type,
+  brand: "",
+  creationDate: movement.creationDate,
+  modificationDate: movement.modificationDate,
+  isSpecial: true,
+});
 
-  // Combinar economies, convertedOrders
-  let combinedData = [...economies, ...convertedOrders];
+// Función para convertir una orden a EconomyType
+const convertOrderToEconomy = (order: Order): EconomyType => ({
+  id: order.id,
+  supplier: null,
+  type: EconomyEnums.Income, // Las órdenes siempre son ingresos
+  category: { id: "order", name: "Venta" },
+  value: order.total,
+  quantity: order.selection.reduce((a, b) => a + b.quantity, 0),
+  unit: "",
+  description: `Orden #${order.order}`,
+  date: order.creationDate,
+  reference: order.invoice,
+  brand: "",
+  creationDate: order.creationDate,
+  modificationDate: order.modificationDate,
+  isSpecial: true,
+});
 
-  // Ordenar por fecha de creación
+const combineData = (
+  economies: EconomyType[],
+  orders: Order[],
+  movements: Movement[],
+): EconomyType[] => {
+  // Convertir movimientos y órdenes al formato EconomyType
+  const convertedMovements = movements.map(convertMovementToEconomy);
+  const convertedOrders = orders.map(convertOrderToEconomy);
+
+  // Combinar economies, convertedOrders y convertedMovements
+  const combinedData = economies.concat(convertedOrders, convertedMovements);
+
+  // Ordenar por fecha de creación (de más reciente a más antiguo)
   combinedData.sort((a, b) => moment(b.creationDate).diff(moment(a.creationDate)));
 
   return combinedData;
@@ -109,10 +127,10 @@ const combineData = (economies: EconomyType[], orders: Order[]): EconomyType[] =
 type EconomyScreenProps = {
   economies: EconomyType[];
   orders?: Order[];
-  sales?: Order[];
+  movements: Movement[];
 };
 
-const EconomyScreen: React.FC<EconomyScreenProps> = ({ economies, orders = [] }) => {
+const EconomyScreen: React.FC<EconomyScreenProps> = ({ economies, orders = [], movements }) => {
   const { colors } = useTheme();
 
   const [isDetail, setDetail] = useState<boolean>(false);
@@ -129,7 +147,7 @@ const EconomyScreen: React.FC<EconomyScreenProps> = ({ economies, orders = [] })
     );
   };
 
-  const sorted = useMemo(() => combineData(economies, orders), [orders, economies]);
+  const sorted = useMemo(() => combineData(economies, orders, movements), [orders, economies]);
 
   const data: EconomyType[] = useMemo(() => {
     const filteredByDate = filtered<EconomyType>(sorted);
@@ -143,11 +161,16 @@ const EconomyScreen: React.FC<EconomyScreenProps> = ({ economies, orders = [] })
     return filteredBySearch;
   }, [sorted, search, date]);
 
+  const getValue = (type: EconomyEnums) =>
+    data.filter((d) => d.type === type).reduce((a, b) => a + b.value, 0);
+
+  const icome = useMemo(() => getValue(EconomyEnums.Income), [data]);
+  const egress = useMemo(() => getValue(EconomyEnums.Egress), [data]);
   const totalValue = useMemo(() => data.reduce((a, b) => a + b.value, 0), [data]);
 
   return (
     <Layout style={{ padding: 0 }}>
-      {!economies.length ? (
+      {!sorted.length ? (
         <StyledText color={colors.primary} style={{ padding: 20 }}>
           NO HAY INFORMACIÓN EN ESTE ESTADO
         </StyledText>
@@ -172,7 +195,7 @@ const EconomyScreen: React.FC<EconomyScreenProps> = ({ economies, orders = [] })
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => <Card economy={item} detail={isDetail} />}
             />
-            <View style={{ paddingVertical: 10, flexDirection: "row", justifyContent: "flex-end" }}>
+            <View style={styles.features}>
               <StyledButton
                 style={{ width: "auto" }}
                 backgroundColor={isDetail ? colors.primary : colors.card}
@@ -184,9 +207,12 @@ const EconomyScreen: React.FC<EconomyScreenProps> = ({ economies, orders = [] })
               </StyledButton>
             </View>
           </View>
-          <View style={[styles.footer, { backgroundColor: colors.card }]}>
+          <View style={{ backgroundColor: colors.card, padding: 20 }}>
             <StyledText>
-              Ingreso/Egreso: <StyledText color={colors.primary}>{data.length}</StyledText>
+              Ingreso: <StyledText color={colors.primary}>{thousandsSystem(icome)}</StyledText>
+            </StyledText>
+            <StyledText>
+              Egreso: <StyledText color="#f71010">{thousandsSystem(egress)}</StyledText>
             </StyledText>
             <StyledText>
               Valor total:{" "}
@@ -203,6 +229,10 @@ const EconomyScreen: React.FC<EconomyScreenProps> = ({ economies, orders = [] })
 
 const Economy: React.FC<AppNavigationProp> = ({ navigation }) => {
   const { colors } = useTheme();
+
+  const movements = useAppSelector((state) => state.movements);
+  const entry = useAppSelector(selectEntry);
+  const output = useAppSelector(selectOutput);
 
   const orders = useAppSelector(selectCompletedOrders);
   const sales = useAppSelector(selectCompletedSales);
@@ -247,19 +277,31 @@ const Economy: React.FC<AppNavigationProp> = ({ navigation }) => {
   return (
     <Tab.Navigator>
       <Tab.Screen name="TODO">
-        {() => <EconomyScreen economies={economies} orders={[...sales, ...orders]} />}
+        {() => (
+          <EconomyScreen
+            economies={economies}
+            orders={[...sales, ...orders]}
+            movements={movements}
+          />
+        )}
       </Tab.Screen>
       <Tab.Screen name="INGRESO">
-        {() => <EconomyScreen economies={income} orders={[...sales, ...orders]} />}
+        {() => (
+          <EconomyScreen economies={income} orders={[...sales, ...orders]} movements={entry} />
+        )}
       </Tab.Screen>
-      <Tab.Screen name="EGRESO">{() => <EconomyScreen economies={egress} />}</Tab.Screen>
+      <Tab.Screen name="EGRESO">
+        {() => <EconomyScreen economies={egress} movements={output} />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 };
 
 const styles = StyleSheet.create({
-  footer: {
-    padding: 20,
+  features: {
+    paddingVertical: 10,
+    flexDirection: "row",
+    justifyContent: "flex-end",
   },
   economy: {
     width: 20,

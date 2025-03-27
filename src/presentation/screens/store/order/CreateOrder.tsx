@@ -62,7 +62,7 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
   }, [storeID, products]);
 
   useEffect(() => {
-    setGroups([...productGroup].filter((m) => m.locationID === storeID));
+    setGroups([...productGroup].filter((m) => m.ownerID === storeID));
   }, [storeID, productGroup]);
 
   return (

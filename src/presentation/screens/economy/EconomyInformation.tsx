@@ -46,9 +46,12 @@ const EconomyInformation: React.FC<EconomyInformationProps> = ({ navigation, rou
   }, [data]);
 
   useEffect(() => {
-    const found = economies.find((s) => s.id === economy.id);
-    if (!found) navigation.pop();
-    else setData(found);
+    if (economy.isSpecial) setData(economy);
+    else {
+      const found = economies.find((s) => s.id === economy.id);
+      if (!found) navigation.pop();
+      else setData(found);
+    }
   }, [economy, economies]);
 
   const removeData = async () => {
@@ -87,12 +90,14 @@ const EconomyInformation: React.FC<EconomyInformationProps> = ({ navigation, rou
             name="Fecha de modificación"
             value={changeDate(new Date(data.modificationDate), true)}
           />
-          <TouchableOpacity
-            style={[styles.card, { borderColor: colors.border, justifyContent: "center" }]}
-            onPress={removeData}
-          >
-            <StyledText color={colors.primary}>Eliminar</StyledText>
-          </TouchableOpacity>
+          {!data.isSpecial && (
+            <TouchableOpacity
+              style={[styles.card, { borderColor: colors.border, justifyContent: "center" }]}
+              onPress={removeData}
+            >
+              <StyledText color={colors.primary}>Eliminar</StyledText>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </Layout>
       {data.description && (

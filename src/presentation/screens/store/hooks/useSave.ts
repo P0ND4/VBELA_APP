@@ -1,6 +1,6 @@
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { Order, Save, Selection } from "domain/entities/data/common/order.entity";
-import { add, edit } from "application/slice/stores/sales.slice";
+import { add as addSale, edit as editSale } from "application/slice/stores/sales.slice";
 import { batch } from "react-redux";
 import { discount } from "application/slice/stores/products.slice";
 import {
@@ -9,8 +9,8 @@ import {
   useExtractStock,
   useOrganizeData,
 } from "presentation/screens/common/sales/hooks";
+import { add as addMovement } from "application/slice/inventories/movements.slice";
 import { Status } from "domain/enums/data/element/status.enums";
-import { addMovement } from "application/slice/inventories/stocks.slice";
 import { Movement } from "domain/entities/data/inventories";
 import apiClient, { endpoints } from "infrastructure/api/server";
 
@@ -34,7 +34,7 @@ const useSave = () => {
   };
 
   const handler = (movements: Movement[], discounts: Discount[]) => {
-    !!movements.length && dispatch(addMovement(movements));
+    !!movements.length && movements.forEach((movement) => dispatch(addMovement(movement)));
     !!discounts.length && dispatch(discount(discounts));
   };
 
@@ -50,7 +50,7 @@ const useSave = () => {
     }
 
     batch(() => {
-      dispatch(add(order));
+      dispatch(addSale(order));
       if (condition(props.status)) handler(movements, discounts);
     });
     callback && callback({ order });
@@ -77,7 +77,7 @@ const useSave = () => {
     }
 
     batch(() => {
-      dispatch(edit(order));
+      dispatch(editSale(order));
       if (condition(order.status)) handler(movements, discounts);
     });
     callback && callback({ order });

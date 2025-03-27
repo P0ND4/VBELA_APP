@@ -1,4 +1,4 @@
-import type { Economy } from "domain/entities/data/suppliers/economy.entity";
+import type { Economy } from "domain/entities/data/economies/economy.entity";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";

@@ -1,15 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StackNavigationProp } from "@react-navigation/stack";
 import {
   InventoryRouteProp,
   RootInventory,
 } from "domain/entities/navigation/root.inventory.entity";
-import { StyleSheet, Switch, View } from "react-native";
+import { ScrollView, StyleSheet, Switch, View } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import { Controller, useForm } from "react-hook-form";
 import { random, thousandsSystem } from "shared/utils";
-import { useAppDispatch } from "application/store/hook";
-import { Stock } from "domain/entities/data/inventories";
+import { useAppDispatch, useAppSelector } from "application/store/hook";
+import { Stock, StockSubCategory } from "domain/entities/data/inventories";
 import { add, edit } from "application/slice/inventories/stocks.slice";
 import { unitOptions, UnitValue } from "shared/constants/unit";
 import apiClient, { endpoints } from "infrastructure/api/server";
@@ -20,11 +20,14 @@ import Layout from "presentation/components/layout/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
+import { Group, GroupSubCategory } from "domain/entities/data";
 
 type CreateStockProps = {
   navigation: StackNavigationProp<RootInventory>;
   route: InventoryRouteProp<"CreateStock">;
 };
+
+type PickerProps = { label: string; value: string };
 
 const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
   const defaultValue = route.params?.stock;
@@ -36,17 +39,19 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
       inventoryID,
       name: defaultValue?.name || "",
       unit: (defaultValue?.unit || "") as UnitValue,
+      categories: defaultValue?.categories || [],
+      subcategories: defaultValue?.subcategories || [],
       visible: defaultValue?.visible || true,
       reorder: defaultValue?.reorder || 0,
       reference: defaultValue?.reference || "",
       brand: defaultValue?.brand || "",
       currentValue: defaultValue?.currentValue || 0,
-      quantity: defaultValue?.quantity || 0,
-      movements: defaultValue?.movements || [],
       creationDate: defaultValue?.creationDate || new Date().getTime(),
       modificationDate: new Date().getTime(),
     },
   });
+
+  const stockGroup = useAppSelector((state) => state.stockGroup);
 
   const { colors } = useTheme();
 
@@ -54,10 +59,19 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
   const [reorderModal, setReorderModal] = useState<boolean>(false);
   const [currentValueModal, setCurrentValueModal] = useState<boolean>(false);
   const [unitModal, setUnitModal] = useState<boolean>(false);
+  const [categoriesPickerModal, setCategoriesPickerModal] = useState<boolean>(false);
+  const [subcategoriesPickerModal, setSubcategoriesPickerModal] = useState<boolean>(false);
 
-  const { unit, reorder, currentValue } = watch();
+  const [categoriesPicker, setCategoriesPicker] = useState<PickerProps[]>([]);
+  const [subcategoriesPicker, setSubcategoriesPicker] = useState<PickerProps[]>([]);
+
+  const { unit, categories, subcategories, reorder, currentValue } = watch();
 
   const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    setCategoriesPicker(stockGroup.map((group) => ({ label: group.category, value: group.id })));
+  }, [stockGroup]);
 
   const save = async (data: Stock) => {
     dispatch(add(data));
@@ -84,7 +98,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
   return (
     <>
       <Layout>
-        <View style={{ flex: 1 }}>
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
           <Controller
             name="name"
             control={control}
@@ -110,6 +124,19 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
           </StyledButton>
           {optional && (
             <>
+              <StyledButton style={styles.row} onPress={() => setCategoriesPickerModal(true)}>
+                <StyledText>
+                  Categoría {!!categories.length && `(${categories.length}) seleccionado`}
+                </StyledText>
+                <Ionicons name="chevron-forward" color={colors.text} size={19} />
+              </StyledButton>
+              <StyledButton style={styles.row} onPress={() => setSubcategoriesPickerModal(true)}>
+                <StyledText>
+                  Sub - Categoría{" "}
+                  {!!subcategories.length && `(${subcategories.length}) seleccionado`}
+                </StyledText>
+                <Ionicons name="chevron-forward" color={colors.text} size={19} />
+              </StyledButton>
               <StyledButton style={styles.row} onPress={() => setUnitModal(true)}>
                 <StyledText>Unidad {unit && `(${unit})`}</StyledText>
                 <Ionicons name="chevron-forward" color={colors.text} size={19} />
@@ -168,7 +195,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
               />
             </>
           )}
-        </View>
+        </ScrollView>
         <StyledButton backgroundColor={colors.primary} onPress={handleSubmit(handleSaveOrUpdate)}>
           <StyledText center color="#FFFFFF">
             Guardar
@@ -218,6 +245,58 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
             onClose={() => setUnitModal(false)}
             data={unitOptions}
             onSubmit={onChange}
+          />
+        )}
+      />
+      <Controller
+        name="categories"
+        control={control}
+        render={({ field: { onChange, value } }) => (
+          <PickerFloorModal
+            data={categoriesPicker}
+            multiple={value}
+            title="CATEGORÍA"
+            remove="Remover"
+            noData="NO HAY CATEGORÍAS CREADAS"
+            visible={categoriesPickerModal}
+            onClose={() => setCategoriesPickerModal(false)}
+            onSubmit={(categoryIDS) => {
+              const subcategoriesPicker = stockGroup
+                .filter((g) => categoryIDS.includes(g.id))
+                .flatMap((c) => c.subcategories.map((s) => ({ label: s.name, value: s.id })));
+
+              setSubcategoriesPicker(subcategoriesPicker);
+              onChange(categoryIDS);
+            }}
+          />
+        )}
+      />
+      <Controller
+        name="subcategories"
+        control={control}
+        render={({ field: { onChange, value } }) => (
+          <PickerFloorModal
+            data={subcategoriesPicker}
+            multiple={value.map((va) => va.subcategory)}
+            title="SUB - CATEGORÍAS"
+            remove="Remover"
+            noData="NO HAY SUB - CATEGORÍAS DISPONIBLES"
+            visible={subcategoriesPickerModal}
+            onClose={() => setSubcategoriesPickerModal(false)}
+            onSubmit={(value) => {
+              const subcategoryIDS = Array.isArray(value) ? value : [value];
+
+              const categoriesMap = new Map<string, string>(
+                stockGroup.flatMap((group: Group) =>
+                  group.subcategories.map((sub: GroupSubCategory) => [sub.id, group.id]),
+                ),
+              );
+              const elementSubcategories: StockSubCategory[] = subcategoryIDS.map((id: string) => ({
+                category: categoriesMap.get(id)!,
+                subcategory: id,
+              }));
+              onChange(elementSubcategories);
+            }}
           />
         )}
       />

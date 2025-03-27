@@ -21,7 +21,7 @@ const Card: React.FC<{ item: EconomicGroupType }> = ({ item }) => {
       style={[styles.card, { borderColor: colors.border }]}
       onPress={() => navigation.navigate("CreateEconomicGroup", { defaultValue: item })}
     >
-      <StyledText>{item.name}</StyledText>
+      <StyledText>{item.category}</StyledText>
       <StyledText color={colors.primary}>({item.visible.toUpperCase()})</StyledText>
     </TouchableOpacity>
   );

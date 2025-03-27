@@ -16,6 +16,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledInput from "presentation/components/input/StyledInput";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
+import InformationModal from "presentation/components/modal/InformationModal";
 
 type CreateEconomicGroupProps = {
   navigation: StackNavigationProp<RootSetting>;
@@ -33,10 +34,11 @@ const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, r
 
   const defaultValue = route.params?.defaultValue;
 
-  const { control, handleSubmit, watch, formState } = useForm({
+  const { control, handleSubmit, setValue, watch, formState } = useForm<EconomicGroup>({
     defaultValues: {
       id: defaultValue?.id || random(10),
-      name: defaultValue?.name || "",
+      category: defaultValue?.category || "",
+      subcategories: defaultValue?.subcategories || [],
       visible: defaultValue?.visible || "",
       creationDate: defaultValue?.creationDate || new Date().getTime(),
       modificationDate: new Date().getTime(),
@@ -44,16 +46,20 @@ const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, r
   });
 
   const [visibleModal, setVisibleModal] = useState<boolean>(false);
+  const [subcategoryModal, setSubcategoryModal] = useState<boolean>(false);
+  const [subcategoryName, setSubcategoryName] = useState<string>("");
+  const [subcategoryError, setSubcategoryError] = useState<boolean>(false);
+  const [subcategoryEditing, setSubcategoryEditing] = useState<null | string>(null);
 
   const dispatch = useAppDispatch();
 
-  const { visible } = watch();
+  const { visible, subcategories } = watch();
 
   const removeItem = async (id: string) => {
     dispatch(remove({ id }));
     navigation.pop();
     await apiClient({
-      url: endpoints.setting.economicGroup.delete(id),
+      url: endpoints.economicGroup.delete(id),
       method: "DELETE",
     });
   };
@@ -76,7 +82,7 @@ const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, r
   const save = async (data: EconomicGroup) => {
     dispatch(add(data));
     await apiClient({
-      url: endpoints.setting.economicGroup.post(),
+      url: endpoints.economicGroup.post(),
       method: "POST",
       data,
     });
@@ -85,10 +91,40 @@ const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, r
   const update = async (data: EconomicGroup) => {
     dispatch(edit(data));
     await apiClient({
-      url: endpoints.setting.economicGroup.put(data.id),
+      url: endpoints.economicGroup.put(data.id),
       method: "PUT",
       data,
     });
+  };
+
+  const onClose = () => {
+    setSubcategoryModal(false);
+    setSubcategoryName("");
+    setSubcategoryError(false);
+    setSubcategoryEditing(null);
+  };
+
+  const updateSubcategory = () => {
+    if (!subcategoryName.length) return setSubcategoryError(true);
+    const subcategory = { id: subcategoryEditing as string, name: subcategoryName };
+    setValue(
+      "subcategories",
+      subcategories.map((s) => (s.id === subcategoryEditing ? subcategory : s)),
+    );
+    onClose();
+  };
+
+  const removeSubcategory = (id: string) => {
+    setValue(
+      "subcategories",
+      subcategories.filter((s) => s.id !== id),
+    );
+  };
+
+  const addSubcategory = () => {
+    if (!subcategoryName.length) return setSubcategoryError(true);
+    setValue("subcategories", [...subcategories, { id: random(10), name: subcategoryName }]);
+    onClose();
   };
 
   return (
@@ -96,12 +132,12 @@ const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, r
       <Layout>
         <View style={{ flexGrow: 1 }}>
           <Controller
-            name="name"
+            name="category"
             control={control}
             rules={{ required: true }}
             render={({ field: { onChange, onBlur, value } }) => (
               <StyledInput
-                placeholder="Nombre"
+                placeholder="Categoría"
                 maxLength={30}
                 onChangeText={onChange}
                 onBlur={onBlur}
@@ -109,9 +145,9 @@ const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, r
               />
             )}
           />
-          {formState.errors.name && (
+          {formState.errors.category && (
             <StyledText color={colors.primary} verySmall>
-              El nombre es requerido
+              La categoría es requerida
             </StyledText>
           )}
           <StyledButton style={styles.row} onPress={() => setVisibleModal(true)}>
@@ -123,6 +159,33 @@ const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, r
               La visibilidad es requerida
             </StyledText>
           )}
+          <View style={styles.subcategoryContainer}>
+            {subcategories.map((subcategory) => (
+              <TouchableOpacity
+                key={subcategory.id}
+                style={[styles.subcategory, { backgroundColor: colors.card }]}
+                onPress={() => {
+                  setSubcategoryEditing(subcategory.id);
+                  setSubcategoryName(subcategory.name);
+                  setSubcategoryModal(true);
+                }}
+                onLongPress={() => removeSubcategory(subcategory.id)}
+              >
+                <StyledText>{subcategory.name}</StyledText>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              onPress={() => setSubcategoryModal(true)}
+              style={[styles.subcategory, { backgroundColor: colors.card }]}
+            >
+              <Ionicons name="add" color={colors.primary} size={19} />
+            </TouchableOpacity>
+            {!subcategories.length && (
+              <StyledText smallParagraph color={colors.border} style={{ marginLeft: 10 }}>
+                Preciona "+" para agregar una subcategoría
+              </StyledText>
+            )}
+          </View>
         </View>
         <StyledButton
           backgroundColor={colors.primary}
@@ -152,6 +215,32 @@ const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, r
           />
         )}
       />
+      <InformationModal
+        title="Subcategoría"
+        animationType="fade"
+        visible={subcategoryModal}
+        onClose={onClose}
+      >
+        <StyledInput
+          placeholder="Nombre"
+          value={subcategoryName}
+          onChangeText={setSubcategoryName}
+          maxLength={30}
+        />
+        {subcategoryError && (
+          <StyledText color={colors.primary} verySmall>
+            El nombre de la subcategoría es obligatorio
+          </StyledText>
+        )}
+        <StyledButton
+          backgroundColor={colors.primary}
+          onPress={subcategoryEditing ? updateSubcategory : addSubcategory}
+        >
+          <StyledText center color="#FFFFFF">
+            Agregar
+          </StyledText>
+        </StyledButton>
+      </InformationModal>
     </>
   );
 };
@@ -161,6 +250,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  subcategoryContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+  subcategory: {
+    marginBottom: 4,
+    marginRight: 4,
+    paddingVertical: 2,
+    paddingHorizontal: 12,
+    minWidth: 80,
+    borderRadius: 4,
+    alignItems: "center",
   },
 });
 

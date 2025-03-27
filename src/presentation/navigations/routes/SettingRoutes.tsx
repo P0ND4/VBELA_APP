@@ -24,7 +24,7 @@ const SettingRoutes: React.FC = () => {
         <Stack.Screen
           name="CreateEconomicGroup"
           component={CreateEconomicGroup}
-          options={{ title: "Crear Categoría de ingreso/egreso" }}
+          options={{ title: "Crear categoría de ingreso/egreso" }}
         />
       </Stack.Group>
 

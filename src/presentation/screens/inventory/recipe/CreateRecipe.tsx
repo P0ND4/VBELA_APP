@@ -1,8 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FlatList, StyleSheet, Switch, View } from "react-native";
+import { FlatList, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
-import { Ingredients, Inventory, Recipe, Stock } from "domain/entities/data/inventories";
+import {
+  Ingredients,
+  Inventory,
+  Recipe,
+  Stock,
+  StockSubCategory,
+} from "domain/entities/data/inventories";
 import { add, edit } from "application/slice/inventories/recipes.slice";
 import { useTheme } from "@react-navigation/native";
 import { random, thousandsSystem } from "shared/utils";
@@ -21,6 +27,8 @@ import ScreenModal from "presentation/components/modal/ScreenModal";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import apiClient, { endpoints } from "infrastructure/api/server";
+import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
+import { Group, GroupSubCategory } from "domain/entities/data";
 
 const GET_TAB_NAME = {
   [Visible.Both]: "RECETAS/PAQUETES",
@@ -28,6 +36,8 @@ const GET_TAB_NAME = {
   [Visible.Store]: "PAQUETES",
   [Visible.None]: "",
 };
+
+type PickerProps = { label: string; value: string };
 
 type onChage = { id: string; quantity: number };
 
@@ -146,7 +156,7 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
   const defaultValue = route.params?.recipe;
   const inventory = route.params.inventory;
 
-  const { control, handleSubmit, watch, formState } = useForm({
+  const { control, handleSubmit, watch, formState } = useForm<Recipe>({
     defaultValues: {
       id: defaultValue?.id || random(10),
       inventoryID: inventory.id,
@@ -155,6 +165,8 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
       name: defaultValue?.name || "",
       description: defaultValue?.description || "",
       visible: defaultValue?.visible || true,
+      categories: defaultValue?.categories || [],
+      subcategories: defaultValue?.subcategories || [],
       creationDate: defaultValue?.creationDate || new Date().getTime(),
       modificationDate: new Date().getTime(),
     },
@@ -163,19 +175,25 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
   const stocks = useAppSelector((state) => state.stocks);
+  const recipeGroup = useAppSelector((state) => state.recipeGroup);
 
   const [optional, setOptional] = useState<boolean>(false);
   const [ingredientsModal, setIngredientsModal] = useState<boolean>(false);
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
   const [valueModal, setValueModal] = useState<boolean>(false);
+  const [categoriesPickerModal, setCategoriesPickerModal] = useState<boolean>(false);
+  const [subcategoriesPickerModal, setSubcategoriesPickerModal] = useState<boolean>(false);
 
-  const { description, ingredients, value } = watch();
+  const [categoriesPicker, setCategoriesPicker] = useState<PickerProps[]>([]);
+  const [subcategoriesPicker, setSubcategoriesPicker] = useState<PickerProps[]>([]);
+
+  const { description, categories, subcategories, ingredients, value } = watch();
 
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    navigation.setOptions({ title: `Crear ${GET_TAB_NAME[inventory.visible]}` });
-  }, [inventory]);
+    setCategoriesPicker(recipeGroup.map((group) => ({ label: group.category, value: group.id })));
+  }, [recipeGroup]);
 
   const save = async (data: Recipe) => {
     dispatch(add(data));
@@ -196,6 +214,30 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
       data,
     });
   };
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: `Crear ${GET_TAB_NAME[inventory.visible]}`,
+      ...(defaultValue
+        ? {
+            headerRight: () => (
+              <TouchableOpacity
+                style={{ marginRight: 15 }}
+                onPress={() => {
+                  save({
+                    ...defaultValue,
+                    id: random(10),
+                    name: `${defaultValue.name.slice(0, 26)} (1)`,
+                  });
+                }}
+              >
+                <Ionicons name="duplicate-outline" color={colors.text} size={25} />
+              </TouchableOpacity>
+            ),
+          }
+        : {}),
+    });
+  }, [inventory]);
 
   const cost = useMemo(
     () =>
@@ -257,6 +299,19 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
           </StyledButton>
           {optional && (
             <>
+              <StyledButton style={styles.row} onPress={() => setCategoriesPickerModal(true)}>
+                <StyledText>
+                  Categoría {!!categories.length && `(${categories.length}) seleccionado`}
+                </StyledText>
+                <Ionicons name="chevron-forward" color={colors.text} size={19} />
+              </StyledButton>
+              <StyledButton style={styles.row} onPress={() => setSubcategoriesPickerModal(true)}>
+                <StyledText>
+                  Sub - Categoría{" "}
+                  {!!subcategories.length && `(${subcategories.length}) seleccionado`}
+                </StyledText>
+                <Ionicons name="chevron-forward" color={colors.text} size={19} />
+              </StyledButton>
               <StyledButton style={styles.row} onPress={() => setDescriptionModal(true)}>
                 <StyledText>
                   {description
@@ -353,6 +408,58 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
             maxValue={999999999}
             onClose={() => setValueModal(false)}
             onSave={onChange}
+          />
+        )}
+      />
+      <Controller
+        name="categories"
+        control={control}
+        render={({ field: { onChange, value } }) => (
+          <PickerFloorModal
+            data={categoriesPicker}
+            multiple={value}
+            title="CATEGORÍA"
+            remove="Remover"
+            noData="NO HAY CATEGORÍAS CREADAS"
+            visible={categoriesPickerModal}
+            onClose={() => setCategoriesPickerModal(false)}
+            onSubmit={(categoryIDS) => {
+              const subcategoriesPicker = recipeGroup
+                .filter((g) => categoryIDS.includes(g.id))
+                .flatMap((c) => c.subcategories.map((s) => ({ label: s.name, value: s.id })));
+
+              setSubcategoriesPicker(subcategoriesPicker);
+              onChange(categoryIDS);
+            }}
+          />
+        )}
+      />
+      <Controller
+        name="subcategories"
+        control={control}
+        render={({ field: { onChange, value } }) => (
+          <PickerFloorModal
+            data={subcategoriesPicker}
+            multiple={value.map((va) => va.subcategory)}
+            title="SUB - CATEGORÍAS"
+            remove="Remover"
+            noData="NO HAY SUB - CATEGORÍAS DISPONIBLES"
+            visible={subcategoriesPickerModal}
+            onClose={() => setSubcategoriesPickerModal(false)}
+            onSubmit={(value) => {
+              const subcategoryIDS = Array.isArray(value) ? value : [value];
+
+              const categoriesMap = new Map<string, string>(
+                recipeGroup.flatMap((group: Group) =>
+                  group.subcategories.map((sub: GroupSubCategory) => [sub.id, group.id]),
+                ),
+              );
+              const elementSubcategories: StockSubCategory[] = subcategoryIDS.map((id: string) => ({
+                category: categoriesMap.get(id)!,
+                subcategory: id,
+              }));
+              onChange(elementSubcategories);
+            }}
           />
         )}
       />

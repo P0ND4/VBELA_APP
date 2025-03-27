@@ -12,17 +12,17 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import InformationModal from "presentation/components/modal/InformationModal";
 
 type GroupFormProps = {
-  locationID: string;
+  ownerID: string;
   defaultValue?: Group;
   onSave: (data: Group) => void;
   onUpdate: (data: Group) => void;
 };
 
-const GroupForm: React.FC<GroupFormProps> = ({ locationID, onSave, onUpdate, defaultValue }) => {
+const GroupForm: React.FC<GroupFormProps> = ({ ownerID, onSave, onUpdate, defaultValue }) => {
   const { control, handleSubmit, watch, setValue, formState } = useForm<Group>({
     defaultValues: {
       id: defaultValue?.id || random(10),
-      locationID,
+      ownerID,
       category: defaultValue?.category || "",
       subcategories: defaultValue?.subcategories || [],
       creationDate: defaultValue?.creationDate || new Date().getTime(),
@@ -90,7 +90,7 @@ const GroupForm: React.FC<GroupFormProps> = ({ locationID, onSave, onUpdate, def
           />
           {formState.errors.category && (
             <StyledText color={colors.primary} verySmall>
-              El nombre es requerido
+              La categoría es requerida
             </StyledText>
           )}
           <View style={styles.subcategoryContainer}>

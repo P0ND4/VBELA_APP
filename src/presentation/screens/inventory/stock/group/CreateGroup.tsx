@@ -2,25 +2,25 @@ import React, { useEffect } from "react";
 import { TouchableOpacity } from "react-native";
 import GroupForm from "presentation/screens/common/group/GroupForm";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStore, StoreRouteProp } from "domain/entities/navigation";
+import { InventoryRouteProp, RootInventory } from "domain/entities/navigation";
 import { useAppDispatch } from "application/store/hook";
-import { add, edit, remove } from "application/slice/stores/product.group.slice";
+import { add, edit, remove } from "application/slice/inventories/stock.group.slice";
 import { Group } from "domain/entities/data";
 import apiClient, { endpoints } from "infrastructure/api/server";
 import { batch } from "react-redux";
-import { removeCategory, updateSubcategories } from "application/slice/stores/products.slice";
+import { removeCategory, updateSubcategories } from "application/slice/inventories/stocks.slice";
 import { useTheme } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 type CreateGroupProps = {
-  navigation: StackNavigationProp<RootStore>;
-  route: StoreRouteProp<"CreateGroup">;
+  navigation: StackNavigationProp<RootInventory>;
+  route: InventoryRouteProp<"CreateStockGroup">;
 };
 
 const CreateGroup: React.FC<CreateGroupProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
-  const storeID = route.params.storeID;
+  const inventoryID = route.params.inventoryID;
   const group = route.params?.group;
 
   const dispatch = useAppDispatch();
@@ -32,14 +32,14 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ navigation, route }) => {
     });
     navigation.pop();
     await apiClient({
-      url: endpoints.productGroup.delete(id),
+      url: endpoints.stockGroup.delete(id),
       method: "DELETE",
     });
   };
 
   useEffect(() => {
     navigation.setOptions({
-      title: `Tienda: ${group ? "Editar" : "Crear"} grupo`,
+      title: `Stock: ${group ? "Editar" : "Crear"} grupo`,
       ...(group && {
         headerRight: () => (
           <TouchableOpacity style={{ paddingRight: 15 }} onPress={() => removeItem(group.id)}>
@@ -54,7 +54,7 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ navigation, route }) => {
     dispatch(add(data));
     navigation.pop();
     await apiClient({
-      url: endpoints.productGroup.post(),
+      url: endpoints.stockGroup.post(),
       method: "POST",
       data,
     });
@@ -67,13 +67,13 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ navigation, route }) => {
     });
     navigation.pop();
     await apiClient({
-      url: endpoints.productGroup.put(data.id),
+      url: endpoints.stockGroup.put(data.id),
       method: "PUT",
       data,
     });
   };
 
-  return <GroupForm ownerID={storeID} onSave={save} onUpdate={update} defaultValue={group} />;
+  return <GroupForm ownerID={inventoryID} onSave={save} onUpdate={update} defaultValue={group} />;
 };
 
 export default CreateGroup;

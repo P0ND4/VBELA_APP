@@ -9,6 +9,8 @@ import StockInformation from "presentation/screens/inventory/stock/StockInformat
 import RecipeInformation from "presentation/screens/inventory/recipe/RecipeInformation";
 import CreateMovement from "presentation/screens/inventory/movement/CreateMovement";
 import MovementInformation from "presentation/screens/inventory/movement/MovementInformation";
+import CreateStockGroup from "presentation/screens/inventory/stock/group/CreateGroup";
+import CreateRecipeGroup from "presentation/screens/inventory/recipe/group/CreateGroup";
 
 const Stack = createStackNavigator<RootInventory>();
 
@@ -21,8 +23,10 @@ const InventoryRoutes: React.FC = () => {
         options={{ title: "Crear inventario" }}
       />
       <Stack.Screen name="StockTab" component={StockTab} />
+      <Stack.Screen name="CreateStockGroup" component={CreateStockGroup} />
       <Stack.Screen name="CreateStock" component={CreateStock} options={{ title: "Crear stock" }} />
       <Stack.Screen name="CreateRecipe" component={CreateRecipe} />
+      <Stack.Screen name="CreateRecipeGroup" component={CreateRecipeGroup} />
       <Stack.Screen name="CreateMovement" component={CreateMovement} />
       <Stack.Screen
         name="MovementInformation"

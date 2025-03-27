@@ -3,12 +3,12 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const menuGroup = (collection: Collection) => collection.menuGroup;
+const stockGroup = (collection: Collection) => collection.stockGroup;
 
 const initialState: Group[] = [];
 
-export const menuGroupSlice = createSlice({
-  name: "menu-group",
+export const stockGroupSlice = createSlice({
+  name: "stock-group",
   initialState,
   reducers: {
     change: (_, action: PayloadAction<Group[]>) => action.payload,
@@ -24,17 +24,17 @@ export const menuGroupSlice = createSlice({
       const { id } = action.payload;
       return state.filter((s) => s.id !== id);
     },
-    removeByLocationID: (state, action: PayloadAction<{ locationID: string }>) => {
-      const { locationID } = action.payload;
-      return state.filter((s) => s.ownerID !== locationID);
+    removeByInventoryID: (state, action: PayloadAction<{ inventoryID: string }>) => {
+      const { inventoryID } = action.payload;
+      return state.filter((s) => s.ownerID !== inventoryID);
     },
     clean: () => [],
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => []);
-    builder.addCase(changeAll, (_, action) => menuGroup(action.payload));
+    builder.addCase(changeAll, (_, action) => stockGroup(action.payload));
   },
 });
 
-export const { add, edit, remove, removeByLocationID, clean, change } = menuGroupSlice.actions;
-export default menuGroupSlice.reducer;
+export const { add, edit, remove, removeByInventoryID, clean, change } = stockGroupSlice.actions;
+export default stockGroupSlice.reducer;

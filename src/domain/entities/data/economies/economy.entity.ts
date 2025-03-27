@@ -10,6 +10,7 @@ export interface Economy {
   supplier: DetailsType | null;
   type: Type;
   category: DetailsType;
+  subcategory: DetailsType | null;
   value: number;
   quantity: number;
   unit: string;
@@ -19,5 +20,5 @@ export interface Economy {
   brand: string;
   creationDate: number;
   modificationDate: number;
-  isOrder?: boolean;
+  isSpecial?: boolean;
 }

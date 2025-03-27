@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import React, { ComponentType, useMemo } from "react";
+import { View, ScrollView, TouchableOpacity, StyleSheet, FlatList } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
@@ -9,19 +9,26 @@ import { RootApp, StatisticsRouteProp } from "domain/entities/navigation";
 import { StackNavigationProp } from "@react-navigation/stack";
 
 type CardProps = {
-  onPress: () => void;
-  order: string;
-  value: number;
+  onPress?: () => void;
+  title: string;
+  value: number | string;
+  showHash?: boolean;
 };
 
-const Card: React.FC<CardProps> = ({ order, value, onPress }) => {
+const Card: React.FC<CardProps> = ({ title, value, onPress, showHash = false }) => {
   const { colors } = useTheme();
 
+  const Container: ComponentType<any> = onPress ? TouchableOpacity : View;
+
   return (
-    <TouchableOpacity style={[styles.card, { backgroundColor: colors.card }]} onPress={onPress}>
-      <StyledText style={{ marginLeft: 5 }}>#{order}</StyledText>
+    <Container
+      style={[styles.card, { backgroundColor: colors.card }]}
+      onPress={onPress}
+      disabled={!onPress}
+    >
+      <StyledText style={{ marginLeft: 5 }}>{showHash ? `#${title}` : title}</StyledText>
       <StyledText color={colors.primary}>{thousandsSystem(value)}</StyledText>
-    </TouchableOpacity>
+    </Container>
   );
 };
 
@@ -33,90 +40,168 @@ type TotalGainProps = {
 const TotalGain: React.FC<TotalGainProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
-  const orders = route.params.orders;
-  const sales = route.params.sales;
+  const { orders, sales, movements, economies } = route.params;
 
   const OTotal = useMemo(() => orders.reduce((a, b) => a + b.total, 0), [orders]);
   const STotal = useMemo(() => sales.reduce((a, b) => a + b.total, 0), [sales]);
+  const MTotal = useMemo(
+    () => movements.reduce((a, b) => a + b.quantity * b.currentValue, 0),
+    [movements],
+  );
+  const ETotal = useMemo(() => economies.reduce((a, b) => a + b.value, 0), [economies]);
+
+  const totalQuantity = useMemo(
+    () => sales.length + orders.length + economies.length + movements.length,
+    [sales, orders, economies, movements],
+  );
+
+  const totalValue = useMemo(
+    () => OTotal + STotal + MTotal + ETotal,
+    [OTotal, STotal, MTotal, ETotal],
+  );
+
+  const renderItem = (item: any, type: "order" | "sale" | "movement" | "economy") => {
+    switch (type) {
+      case "order":
+        return (
+          <Card
+            key={item.id}
+            title={item.order}
+            value={item.total}
+            showHash={true}
+            onPress={() => {
+              navigation.navigate("OrderRoutes", {
+                screen: "MenuViewOrder",
+                params: { order: item },
+              });
+            }}
+          />
+        );
+      case "sale":
+        return (
+          <Card
+            key={item.id}
+            title={item.order}
+            value={item.total}
+            showHash={true}
+            onPress={() => {
+              navigation.navigate("OrderRoutes", {
+                screen: "ProductViewOrder",
+                params: { order: item },
+              });
+            }}
+          />
+        );
+      case "movement":
+        return <Card key={item.id} title={item.type} value={item.quantity * item.currentValue} />;
+      case "economy":
+        return <Card key={item.id} title={item.type} value={item.value} />;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <Layout>
-      <ScrollView style={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
-        <View style={{ marginTop: 10 }}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons name="pricetag-outline" color={colors.primary} size={25} />
-            <StyledText style={{ marginLeft: 6 }}>RESTAURANTE/BAR</StyledText>
-          </View>
-          <StyledText verySmall color={colors.primary}>
-            {!!orders.length
-              ? `HAY UN TOTAL DE ${thousandsSystem(orders.length)} ORDENES CON UN VALOR DE ${thousandsSystem(OTotal)}`
-              : "NO SE ENCONTRARON ORDENES"}
-          </StyledText>
-          <View style={{ marginVertical: 10 }}>
-            {orders.map((order) => (
-              <Card
-                key={order.id}
-                order={order.order}
-                value={order.total}
-                onPress={() => {
-                  navigation.navigate("OrderRoutes", {
-                    screen: "MenuViewOrder",
-                    params: { order },
-                  });
-                }}
+    <>
+      <Layout>
+        <ScrollView style={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+          <View>
+            {/* Restaurante/Bar */}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="pricetag-outline" color={colors.primary} size={25} />
+              <StyledText style={{ marginLeft: 6 }}>RESTAURANTE/BAR</StyledText>
+            </View>
+            <StyledText verySmall color={colors.primary}>
+              {orders.length
+                ? `HAY UN TOTAL DE ${thousandsSystem(orders.length)} ÓRDENES CON UN VALOR DE ${thousandsSystem(OTotal)}`
+                : "NO SE ENCONTRARON ÓRDENES"}
+            </StyledText>
+            <View style={{ marginVertical: 10 }}>
+              <FlatList
+                data={orders}
+                scrollEnabled={false}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => renderItem(item, "order")}
               />
-            ))}
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons name="storefront-outline" color={colors.primary} size={25} />
-            <StyledText style={{ marginLeft: 6 }}>TIENDA</StyledText>
-          </View>
-          <StyledText verySmall color={colors.primary}>
-            {!!sales.length
-              ? `HAY UN TOTAL DE ${thousandsSystem(sales.length)} VENTAS CON UN VALOR DE ${thousandsSystem(OTotal)}`
-              : "NO SE ENCONTRARON VENTAS"}
-          </StyledText>
-          <View style={{ marginVertical: 10 }}>
-            {sales.map((sale) => (
-              <Card
-                key={sale.id}
-                order={sale.order}
-                value={sale.total}
-                onPress={() => {
-                  navigation.navigate("OrderRoutes", {
-                    screen: "ProductViewOrder",
-                    params: { order: sale },
-                  });
-                }}
+            </View>
+
+            {/* Tienda */}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="storefront-outline" color={colors.primary} size={25} />
+              <StyledText style={{ marginLeft: 6 }}>TIENDA</StyledText>
+            </View>
+            <StyledText verySmall color={colors.primary}>
+              {sales.length
+                ? `HAY UN TOTAL DE ${thousandsSystem(sales.length)} VENTAS CON UN VALOR DE ${thousandsSystem(STotal)}`
+                : "NO SE ENCONTRARON VENTAS"}
+            </StyledText>
+            <View style={{ marginVertical: 10 }}>
+              <FlatList
+                data={sales}
+                scrollEnabled={false}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => renderItem(item, "sale")}
               />
-            ))}
+            </View>
+
+            {/* Movimientos */}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="swap-horizontal-outline" color={colors.primary} size={25} />
+              <StyledText style={{ marginLeft: 6 }}>MOVIMIENTOS</StyledText>
+            </View>
+            <StyledText verySmall color={colors.primary}>
+              {movements.length
+                ? `HAY UN TOTAL DE ${thousandsSystem(movements.length)} MOVIMIENTOS CON UN VALOR DE ${thousandsSystem(MTotal)}`
+                : "NO SE ENCONTRARON MOVIMIENTOS"}
+            </StyledText>
+            <View style={{ marginVertical: 10 }}>
+              <FlatList
+                data={movements}
+                scrollEnabled={false}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => renderItem(item, "movement")}
+              />
+            </View>
+
+            {/* Ingresos/Egresos */}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="cash-outline" color={colors.primary} size={25} />
+              <StyledText style={{ marginLeft: 6 }}>INGRESOS/EGRESOS</StyledText>
+            </View>
+            <StyledText verySmall color={colors.primary}>
+              {economies.length
+                ? `HAY UN TOTAL DE ${thousandsSystem(economies.length)} INGRESOS/EGRESOS CON UN VALOR DE ${thousandsSystem(ETotal)}`
+                : "NO SE ENCONTRARON INGRESOS/EGRESOS"}
+            </StyledText>
+            <View style={{ marginVertical: 10 }}>
+              <FlatList
+                data={economies}
+                scrollEnabled={false}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => renderItem(item, "economy")}
+              />
+            </View>
           </View>
-        </View>
-      </ScrollView>
-      {!!(sales.length + orders.length) && (
-        <View>
+        </ScrollView>
+      </Layout>
+      {/* Resumen total */}
+      {!!totalQuantity && (
+        <View style={{ padding: 20, borderTopWidth: 1, borderColor: colors.border }}>
           <StyledText>
             Pedidos totales:{" "}
-            <StyledText color={colors.primary}>
-              {thousandsSystem(orders.length + sales.length)}
-            </StyledText>
+            <StyledText color={colors.primary}>{thousandsSystem(totalQuantity)}</StyledText>
           </StyledText>
           <StyledText>
             Valor total:{" "}
-            <StyledText color={colors.primary}>{thousandsSystem(OTotal + STotal)}</StyledText>
+            <StyledText color={colors.primary}>{thousandsSystem(totalValue)}</StyledText>
           </StyledText>
         </View>
       )}
-    </Layout>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
   card: {
     flexDirection: "row",
     alignItems: "center",

@@ -11,7 +11,7 @@ interface ScreenOrder {
 }
 
 interface Create extends ScreenOrder {
-  defaultValue?: Order | null;
+  defaultValue?: Order;
 }
 
 interface Multiple extends ScreenOrder {

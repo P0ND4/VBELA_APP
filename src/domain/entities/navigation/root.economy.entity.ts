@@ -1,6 +1,6 @@
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RouteProp } from "@react-navigation/native";
-import { Economy } from "../data/suppliers/economy.entity";
+import { Economy } from "../data/economies/economy.entity";
 import { Type } from "domain/enums/data/economy/economy.enums";
 
 export type RootEconomy = {

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { TouchableOpacity } from "react-native";
-import GroupForm from "presentation/screens/common/sales/group/GroupForm";
+import GroupForm from "presentation/screens/common/group/GroupForm";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RestaurantRouteProp, RootRestaurant } from "domain/entities/navigation";
 import { useAppDispatch } from "application/store/hook";
@@ -73,9 +73,7 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ navigation, route }) => {
     });
   };
 
-  return (
-    <GroupForm locationID={restaurantID} onSave={save} onUpdate={update} defaultValue={group} />
-  );
+  return <GroupForm ownerID={restaurantID} onSave={save} onUpdate={update} defaultValue={group} />;
 };
 
 export default CreateGroup;
