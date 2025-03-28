@@ -7,6 +7,8 @@ import { Visible } from "domain/enums/data/inventory/visible.enums";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
 import { thousandsSystem } from "shared/utils";
+import { Group, GroupSubCategory } from "domain/entities/data";
+import { useMovementsMap } from "../hooks/useMovementsMap";
 import Layout from "presentation/components/layout/Layout";
 import StyledInput from "presentation/components/input/StyledInput";
 import StyledText from "presentation/components/text/StyledText";
@@ -14,21 +16,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledButton from "presentation/components/button/StyledButton";
 import Table from "presentation/components/layout/Table";
 import GroupSection from "presentation/components/layout/GroupSection";
-import { Group, GroupSubCategory } from "domain/entities/data";
 
 type NavigationProps = StackNavigationProp<RootApp>;
-
-// Helper function to calculate available portions for a recipe
-const calculatePortion = (recipe: RecipeType, stocks: Stock[]): number => {
-  const stocksMap = new Map(stocks.map((stock) => [stock.id, stock.quantity]));
-
-  const minPortions = recipe.ingredients.map((ingredient) => {
-    const stockQuantity = stocksMap.get(ingredient.id) || 0;
-    return Math.floor(stockQuantity / ingredient.quantity);
-  });
-
-  return Math.min(...minPortions);
-};
 
 // Helper function to calculate the cost of a recipe
 const calculateCost = (recipe: RecipeType, stocks: Stock[]): number => {
@@ -47,7 +36,16 @@ const Card: React.FC<{ recipe: RecipeType; onPress: () => void; onLongPress: () 
   const { colors } = useTheme();
   const stocks = useAppSelector((state) => state.stocks);
 
-  const portions = useMemo(() => calculatePortion(recipe, stocks), [recipe, stocks]);
+  const movementsMap = useMovementsMap();
+
+  const portions = useMemo(() => {
+    const minPortions = recipe.ingredients.map((ingredient) => {
+      const stockQuantity = movementsMap.get(ingredient.id) || 0;
+      return Math.floor(stockQuantity / ingredient.quantity);
+    });
+
+    return Math.min(...minPortions);
+  }, [recipe, stocks]);
   const cost = useMemo(() => calculateCost(recipe, stocks), [recipe, stocks]);
 
   return (
@@ -149,7 +147,7 @@ const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
         />
       )}
       <View style={{ paddingHorizontal: 20, paddingVertical: 15, flex: 1 }}>
-        <View style={{ flexGrow: 1 }}>
+        <View style={{ flex: 1 }}>
           {!found.length && (
             <StyledText color={colors.primary}>NO HAY {NAME} REGISTRADOS</StyledText>
           )}

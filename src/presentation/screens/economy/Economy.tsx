@@ -76,6 +76,7 @@ const convertMovementToEconomy = (movement: Movement): EconomyType => ({
   supplier: movement.supplier,
   type: movement.type === MovementEnums.Entry ? EconomyEnums.Income : EconomyEnums.Egress, // Ajustar según el tipo de movimiento
   category: { id: "movement", name: movement.type },
+  subcategory: null,
   value: movement.currentValue,
   quantity: movement.quantity,
   unit: "",
@@ -94,6 +95,7 @@ const convertOrderToEconomy = (order: Order): EconomyType => ({
   supplier: null,
   type: EconomyEnums.Income, // Las órdenes siempre son ingresos
   category: { id: "order", name: "Venta" },
+  subcategory: null,
   value: order.total,
   quantity: order.selection.reduce((a, b) => a + b.quantity, 0),
   unit: "",

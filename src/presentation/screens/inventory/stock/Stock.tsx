@@ -157,7 +157,7 @@ const Stock: React.FC<StockProps> = ({ inventoryID, visualization }) => {
         />
       )}
       <View style={{ paddingHorizontal: 20, paddingVertical: 15, flex: 1 }}>
-        <View style={{ flexGrow: 1 }}>
+        <View style={{ flex: 1 }}>
           {!found.length && (
             <StyledText color={colors.primary}>NO HAY ÍTEMS REGISTRADOS</StyledText>
           )}
@@ -231,8 +231,8 @@ const Stock: React.FC<StockProps> = ({ inventoryID, visualization }) => {
                             onPressCompleteData={true}
                             data={[
                               { text: data.name, style: { width: 150 } },
-                              thousandsSystem(quantities.get(data.id)),
-                              thousandsSystem(quantities.get(data.id) * data.currentValue),
+                              thousandsSystem(quantities.get(data.id) || 0),
+                              thousandsSystem((quantities.get(data.id) || 0) * data.currentValue),
                             ]}
                           />
                         ))}
