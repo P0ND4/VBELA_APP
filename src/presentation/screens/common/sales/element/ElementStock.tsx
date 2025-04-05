@@ -39,7 +39,7 @@ const ElementStock: React.FC<ElementStockProps> = ({ inventories, visible, contr
   const [stocksData, setStocksData] = useState<{ label: string; value: string }[]>([]);
   const [recipesData, setRecipesData] = useState<{ label: string; value: string }[]>([]);
 
-  const { stock, minStock, stockIDS, packageIDS, activeStock } = watch();
+  const { stock, minStock, stockIDS, packageIDS, activeStock, unit } = watch();
 
   useEffect(() => {
     const found = stocks.filter((s) => inventories.includes(s.inventoryID) && s.visible);
@@ -133,6 +133,7 @@ const ElementStock: React.FC<ElementStockProps> = ({ inventories, visible, contr
         render={({ field: { onChange, value } }) => (
           <CountScreenModal
             title="Stock"
+            decimal={unit === "UND" ? false : true}
             description={() => "Maneja el stock"}
             isRemove={!!value}
             maxValue={9999999}
@@ -149,6 +150,7 @@ const ElementStock: React.FC<ElementStockProps> = ({ inventories, visible, contr
         render={({ field: { onChange, value } }) => (
           <CountScreenModal
             title="Stock mínimo"
+            decimal={unit === "UND" ? false : true}
             description={() => "Maneja el stock mínimo o punto de reorden"}
             maxValue={9999999}
             isRemove={!!value}

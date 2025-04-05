@@ -3,6 +3,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { RootStackParamList } from "domain/entities/navigation/root.stack.param.list.entity";
 import { useAppSelector } from "application/store/hook";
 import { useBackgroundSync } from "infrastructure/offline/useBackgroundSync";
+import { useUser } from "./hooks/useUser";
 import AuthRoutes from "./routes/AuthRoutes";
 import ProviderStoreRoutes from "./routes/ProviderStoreRoutes";
 import ReservationRoutes from "./routes/ReservationRoutes";
@@ -24,7 +25,11 @@ const Stack = createStackNavigator<RootStackParamList>();
 const Main: React.FC = () => {
   const session = useAppSelector((state) => state.session);
 
+  // Processes offline synchronization
   useBackgroundSync();
+
+  // Processes information about the user
+  useUser();
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

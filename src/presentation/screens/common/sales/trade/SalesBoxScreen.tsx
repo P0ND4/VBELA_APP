@@ -13,7 +13,6 @@ import { useTheme } from "@react-navigation/native";
 import { thousandsSystem } from "shared/utils";
 import { useOrder } from "application/context/OrderContext";
 import { Save, Element, Order, Group, GroupSubCategory } from "domain/entities/data/common";
-import { Pad } from "presentation/screens/common/NumericPad";
 import { send } from "../utils/transform.element";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
@@ -54,43 +53,40 @@ const UnregisteredModal: React.FC<UnregisteredModalProps> = ({
 
   return (
     <>
-      <ScreenModal
+      <CountScreenModal
         title="Vender ítem no registrado"
+        description={(count) => `Valor de ítem: ${thousandsSystem(count)}`}
+        buttonText="Enviar al carrito"
         visible={visible}
+        decimal={true}
+        increasers={false}
+        condition={(count) => Number(count) >= 0}
+        numericComponent={(value) => (
+          <TouchableOpacity
+            onPress={() => {
+              setValue(Number(value));
+              setDescriptionModal(true);
+            }}
+            style={{ opacity: !value ? 0.6 : 1 }}
+            disabled={!value}
+          >
+            <StyledText color={colors.primary} smallSubtitle style={{ marginTop: 15 }}>
+              Añadir nombre
+            </StyledText>
+          </TouchableOpacity>
+        )}
         onClose={() => {
           onClose();
           clean();
         }}
-      >
-        <View style={{ flex: 1 }}>
-          <View style={[styles.center, { flex: 2 }]}>
-            <StyledText bigTitle>{thousandsSystem(value)}</StyledText>
-            <TouchableOpacity
-              onPress={() => setDescriptionModal(true)}
-              style={{ opacity: !value ? 0.6 : 1 }}
-              disabled={!value}
-            >
-              <StyledText color={colors.primary} smallSubtitle style={{ marginTop: 15 }}>
-                Añadir nombre
-              </StyledText>
-            </TouchableOpacity>
-          </View>
-          <View style={{ flex: 4 }}>
-            <Pad
-              buttonText="Enviar al carrito"
-              value={value}
-              onChange={(value: number) => setValue(value)}
-              maxValue={9999999999}
-              condition={value > 0}
-              onSave={() => {
-                onSave(send({ name, value, locationID }), register);
-                onClose();
-                clean();
-              }}
-            />
-          </View>
-        </View>
-      </ScreenModal>
+        defaultValue={value}
+        maxValue={9999999999}
+        onSave={(value) => {
+          onSave(send({ name, value, locationID }), register);
+          onClose();
+          clean();
+        }}
+      />
       <ScreenModal
         title="Descripción"
         visible={descriptionModal}

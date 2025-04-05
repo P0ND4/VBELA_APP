@@ -2,7 +2,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import { View, FlatList, StyleSheet, Alert } from "react-native";
 import { useAppSelector } from "application/store/hook";
 import { useNavigation, useTheme } from "@react-navigation/native";
-import type { Inventory, Recipe as RecipeType, Stock } from "domain/entities/data/inventories";
+import type {
+  Inventory,
+  Portion,
+  Recipe as RecipeType,
+  Stock,
+} from "domain/entities/data/inventories";
 import { Visible } from "domain/enums/data/inventory/visible.enums";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
@@ -16,8 +21,38 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledButton from "presentation/components/button/StyledButton";
 import Table from "presentation/components/layout/Table";
 import GroupSection from "presentation/components/layout/GroupSection";
+import FullFilterDate, {
+  DateType,
+  filterByDate,
+  Type as TypeEnums,
+} from "presentation/components/layout/FullFilterDate";
 
 type NavigationProps = StackNavigationProp<RootApp>;
+
+const calculatePortion = (
+  recipe: RecipeType,
+  portions: Portion[],
+  movementsMap: Map<string, number>,
+) => {
+  const portionsMap = new Map(portions.map((p) => [p.id, p]));
+
+  const minPortions = recipe.ingredients.map((ingredient) => {
+    if (!portionsMap.has(ingredient.id)) {
+      const stockQuantity = movementsMap.get(ingredient.id) || 0;
+      return Math.floor(stockQuantity / ingredient.quantity);
+    }
+
+    const portion = portionsMap.get(ingredient.id)!;
+    const portionIngredientsWithStock = portion.ingredients.map((pIng) => {
+      const stockQuantity = movementsMap.get(pIng.id) || 0;
+      return Math.floor(stockQuantity / (pIng.quantity * ingredient.quantity));
+    });
+
+    return Math.min(...portionIngredientsWithStock);
+  });
+
+  return Math.min(...(minPortions.length > 0 ? minPortions : [0]));
+};
 
 // Helper function to calculate the cost of a recipe
 const calculateCost = (recipe: RecipeType, stocks: Stock[]): number => {
@@ -34,25 +69,21 @@ const Card: React.FC<{ recipe: RecipeType; onPress: () => void; onLongPress: () 
   onLongPress,
 }) => {
   const { colors } = useTheme();
+
+  const portions = useAppSelector((state) => state.portions);
   const stocks = useAppSelector((state) => state.stocks);
 
   const movementsMap = useMovementsMap();
 
-  const portions = useMemo(() => {
-    const minPortions = recipe.ingredients.map((ingredient) => {
-      const stockQuantity = movementsMap.get(ingredient.id) || 0;
-      return Math.floor(stockQuantity / ingredient.quantity);
-    });
-
-    return Math.min(...minPortions);
-  }, [recipe, stocks]);
   const cost = useMemo(() => calculateCost(recipe, stocks), [recipe, stocks]);
 
   return (
     <StyledButton style={styles.row} onPress={onPress} onLongPress={onLongPress}>
       <View>
         <StyledText>{recipe.name}</StyledText>
-        <StyledText verySmall>{thousandsSystem(portions)} Porciones</StyledText>
+        <StyledText verySmall>
+          {thousandsSystem(calculatePortion(recipe, portions, movementsMap))} Porciones
+        </StyledText>
       </View>
       <View>
         <StyledText color={colors.primary} right bold>
@@ -100,17 +131,24 @@ const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
   const [categorySelected, setCategorySelected] = useState<Group | null>(null);
   const [subcategorySelected, setSubcategorySelected] = useState<GroupSubCategory | null>(null);
 
+  const [date, setDate] = useState<DateType>({
+    type: TypeEnums.All,
+    start: null,
+    end: null,
+    id: "All",
+  });
+
   useEffect(() => {
     setCategorySelected(null);
     setSubcategorySelected(null);
   }, [recipeGroup]);
 
   useEffect(() => {
-    let filtered = found;
+    let filteredByDate = filterByDate<RecipeType>(found, date);
 
     if (search) {
       const searchTerm = search.toLowerCase();
-      filtered = filtered.filter(
+      filteredByDate = filteredByDate.filter(
         (recipe) =>
           recipe.name.toLowerCase().includes(searchTerm) ||
           recipe.description.toLowerCase().includes(searchTerm),
@@ -118,15 +156,17 @@ const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
     }
 
     if (categorySelected)
-      filtered = filtered.filter((stock) => stock.categories.includes(categorySelected.id));
+      filteredByDate = filteredByDate.filter((stock) =>
+        stock.categories.includes(categorySelected.id),
+      );
 
     if (subcategorySelected)
-      filtered = filtered.filter((stock) =>
+      filteredByDate = filteredByDate.filter((stock) =>
         stock.subcategories.some((s) => s.subcategory === subcategorySelected.id),
       );
 
-    setData(filtered);
-  }, [search, found, categorySelected, subcategorySelected]);
+    setData(filteredByDate);
+  }, [search, found, categorySelected, subcategorySelected, date]);
 
   useEffect(() => {
     const data = recipeGroup.filter((group) => group.ownerID === inventory.id);
@@ -153,6 +193,7 @@ const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
           )}
           {!!found.length && (
             <>
+              <FullFilterDate date={date} setDate={setDate} />
               <GroupSection
                 groups={groups}
                 group={categorySelected}

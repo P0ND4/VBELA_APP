@@ -290,6 +290,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
         render={({ field: { onChange, value } }) => (
           <CountScreenModal
             title="Cantidad"
+            decimal={stock?.unit === "UND" ? false : true}
             negativeNumber={type === TypeMovement.Output}
             description={() =>
               `Defina la cantidad de ${type === TypeMovement.Entry ? "entrada" : "salida"}`
@@ -311,6 +312,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
           render={({ field: { onChange, value } }) => (
             <CountScreenModal
               title="Precio por unidad"
+              decimal={true}
               description={() => "Defina el precio del producto"}
               visible={valueModal}
               defaultValue={value}
@@ -349,6 +351,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
             <CountScreenModal
               title={`Valor del ${type === TypeMovement.Entry ? "ingreso" : "egreso"}`}
               description={() => "Defina el valor por el proveedor asociado"}
+              decimal={true}
               visible={supplierValueModal}
               defaultValue={value}
               isRemove={!!value}

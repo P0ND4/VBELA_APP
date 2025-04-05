@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
 import { useAppSelector } from "application/store/hook";
-import { Numeric, Pad } from "../../NumericPad";
 import { random, thousandsSystem } from "shared/utils";
 import { PaymentMethod } from "domain/entities/data/common/order.entity";
-import ScreenModal from "presentation/components/modal/ScreenModal";
+import CountScreenModal from "presentation/components/modal/CountScreenModal";
 
 type PaymentScreenProps = {
   method: string;
@@ -30,46 +28,30 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({
   }, [visible]);
 
   return (
-    <ScreenModal title="Monto a pagar" visible={visible} onClose={onClose}>
-      <View style={{ flex: 1 }}>
-        <View style={[styles.center, { flex: 2 }]}>
-          <Numeric
-            title="Editar monto a pagar"
-            inputStyle={{ minWidth: 240 }}
-            value={thousandsSystem(value)}
-          />
-        </View>
-        <View style={{ flex: 4 }}>
-          <Pad
-            description={value !== total ? `Monto: ${thousandsSystem(total)}` : undefined}
-            value={value}
-            onChange={(value: number) => setValue(value)}
-            buttonText="Guardar"
-            maxValue={9999999999}
-            condition={value > 0}
-            onSave={() => {
-              onClose();
-              const found = paymentMethods.find((p) => p.id === method);
-              const paymentMethod: PaymentMethod = {
-                id: found?.id || random(10),
-                method: found?.name || "ELIMINADO",
-                amount: value,
-                icon: found?.icon || "image-outline",
-              };
-              onSave(paymentMethod);
-            }}
-          />
-        </View>
-      </View>
-    </ScreenModal>
+    <CountScreenModal
+      title="Monto a pagar"
+      increasers={false}
+      decimal={true}
+      description={() => "Editar monto a pagar"}
+      padDescription={(value) => (value !== total ? `Monto: ${thousandsSystem(total)}` : "")}
+      visible={visible}
+      defaultValue={value}
+      maxValue={9999999999}
+      condition={(value) => Number(value) >= 0.01}
+      onClose={onClose}
+      onSave={(value) => {
+        onClose();
+        const found = paymentMethods.find((p) => p.id === method);
+        const paymentMethod: PaymentMethod = {
+          id: found?.id || random(10),
+          method: found?.name || "ELIMINADO",
+          amount: value,
+          icon: found?.icon || "image-outline",
+        };
+        onSave(paymentMethod);
+      }}
+    />
   );
 };
-
-const styles = StyleSheet.create({
-  center: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
 
 export default PaymentScreen;

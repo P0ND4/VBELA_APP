@@ -1,6 +1,13 @@
 export const thousandsSystem = (number: number | string): string => {
   const num = String(number);
   const parts = num.split(".");
+  let isNegative = false;
+
+  // Verificar si el número es negativo
+  if (parts[0].startsWith("-")) {
+    isNegative = true;
+    parts[0] = parts[0].substring(1); // Eliminar el signo negativo
+  }
 
   // Formatear la parte entera con separadores de miles
   parts[0] = parts[0]
@@ -12,6 +19,9 @@ export const thousandsSystem = (number: number | string): string => {
     .reverse()
     .join("")
     .replace(/^\./, "");
+
+  // Volver a agregar el signo negativo si era negativo
+  if (isNegative) parts[0] = "-" + parts[0];
 
   // Limitar la parte decimal a 2 dígitos
   if (parts[1]) parts[1] = parts[1].slice(0, 2);

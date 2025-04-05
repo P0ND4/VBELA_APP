@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { View, FlatList, StyleSheet, TouchableOpacity, Switch, TextInput } from "react-native";
-import { Numeric, Pad } from "../../NumericPad";
 import { useTheme } from "@react-navigation/native";
 import { useOrder } from "application/context/OrderContext";
 import { formatDecimals, thousandsSystem } from "shared/utils";
@@ -14,49 +13,6 @@ import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import DiscountScreen from "../components/DiscountScreen";
 import ScreenModal from "presentation/components/modal/ScreenModal";
 import { send } from "../utils/transform.element";
-
-type ValueModalProps = {
-  visible: boolean;
-  onClose: () => void;
-  defaultValue: number;
-  onSave: (value: number) => void;
-};
-
-const ValueModal: React.FC<ValueModalProps> = ({ visible, onClose, onSave, defaultValue }) => {
-  const [value, setValue] = useState<number>(defaultValue);
-
-  return (
-    <ScreenModal title="Precio unitario" visible={visible} onClose={onClose}>
-      <View style={{ flex: 1 }}>
-        <View style={[styles.center, { flex: 2 }]}>
-          <Numeric
-            title="Editar precio unitario"
-            inputStyle={{ minWidth: 240 }}
-            value={thousandsSystem(value)}
-            description={() => (
-              <StyledText smallParagraph center style={{ marginTop: 30, paddingHorizontal: 30 }}>
-                El precio unitario de este menú o pedido será cambiado por solo esta venta.
-              </StyledText>
-            )}
-          />
-        </View>
-        <View style={{ flex: 4 }}>
-          <Pad
-            value={value}
-            onChange={(value: number) => setValue(value)}
-            buttonText="Guardar"
-            maxValue={9999999999}
-            condition={value > 0}
-            onSave={() => {
-              onSave(value);
-              onClose();
-            }}
-          />
-        </View>
-      </View>
-    </ScreenModal>
-  );
-};
 
 type DescriptionModalProps = {
   visible: boolean;
@@ -262,11 +218,24 @@ const Card: React.FC<CardProps> = ({ item, addElement, locationID, goBack = () =
           }}
         />
       )}
-      <ValueModal
+      <CountScreenModal
+        title="Precio unitario"
         visible={valueModal}
+        increasers={false}
+        decimal={true}
+        condition={(count) => Number(count) >= 0}
+        numericComponent={() => (
+          <StyledText smallParagraph center style={{ marginTop: 30, paddingHorizontal: 30 }}>
+            El precio unitario de este menú o pedido será cambiado por solo esta venta.
+          </StyledText>
+        )}
         onClose={() => setValueModal(false)}
         defaultValue={item.value}
-        onSave={(value) => updateSelection({ ...item, value, total: item.quantity * value })}
+        maxValue={9999999999}
+        onSave={(value) => {
+          updateSelection({ ...item, value, total: item.quantity * value });
+          setValueModal(false);
+        }}
       />
     </>
   );

@@ -13,6 +13,18 @@ import SimpleCalendarModal from "../modal/SimpleCalendarModal";
 import MultipleCalendarModal from "../modal/MultipleCalendarModal";
 import { Handler } from "domain/entities/data";
 
+export const filterByDate = <T extends { creationDate: number }>(
+  items: T[],
+  date: DateType,
+): T[] => {
+  return items.filter(
+    (item) =>
+      date.type === Type.All ||
+      (moment(item.creationDate).isSameOrAfter(date.start) &&
+        moment(item.creationDate).isSameOrBefore(date.end)),
+  );
+};
+
 export enum Type {
   All = "Todos",
   Date = "Fecha",
@@ -50,7 +62,7 @@ export type DateType = {
 };
 
 export const resetDate = {
-  id: null,
+  id: "Day",
   type: Type.Date,
   start: moment(Date.now()).startOf("day").valueOf(),
   end: moment(Date.now()).endOf("day").valueOf(),

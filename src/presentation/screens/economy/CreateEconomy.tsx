@@ -273,10 +273,10 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
         render={({ field: { onChange, value } }) => (
           <CountScreenModal
             title="Cantidad"
-            negativeNumber={type === Type.Egress}
             description={() =>
               `Defina la cantidad de ${type === Type.Income ? "ingreso" : "egreso"}`
             }
+            decimal={true}
             visible={quantityModal}
             defaultValue={value}
             isRemove={!!value}
@@ -321,6 +321,7 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
         render={({ field: { onChange, value } }) => (
           <CountScreenModal
             title="Valor"
+            negativeNumber={type === Type.Egress}
             description={() => "Defina valor actual por unidad"}
             visible={currentValueModal}
             defaultValue={value}

@@ -14,11 +14,14 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({ route }) => {
 
   const check = async (code: string) => {
     try {
-      const res = await apiClient({
-        url: endpoints.check.phone(),
-        method: "POST",
-        data: { to: phone, code },
-      });
+      const res = await apiClient(
+        {
+          url: endpoints.check.phone(),
+          method: "POST",
+          data: { to: phone, code },
+        },
+        { synchronization: false },
+      );
 
       return res?.status === "success";
     } catch (error) {

@@ -7,7 +7,7 @@ const recipes = (collection: Collection) => collection.recipes;
 
 const initialState: Recipe[] = [];
 
-export const informationSlice = createSlice({
+export const recipesSlice = createSlice({
   name: "recipes",
   initialState,
   reducers: {
@@ -68,5 +68,5 @@ export const {
   removeByInventoryID,
   updateSubcategories,
   removeCategory,
-} = informationSlice.actions;
-export default informationSlice.reducer;
+} = recipesSlice.actions;
+export default recipesSlice.reducer;

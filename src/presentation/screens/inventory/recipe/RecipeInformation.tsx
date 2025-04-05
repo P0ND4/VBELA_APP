@@ -8,7 +8,7 @@ import {
   RootInventory,
 } from "domain/entities/navigation/root.inventory.entity";
 import { changeDate, thousandsSystem } from "shared/utils";
-import { Recipe, Stock } from "domain/entities/data/inventories";
+import { Portion, Recipe, RecipeIngredients, Stock } from "domain/entities/data/inventories";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -19,6 +19,7 @@ import { remove } from "application/slice/inventories/recipes.slice";
 import { removeRecipe as removeRecipeProduct } from "application/slice/stores/products.slice";
 import { removeRecipe as removeRecipeMenu } from "application/slice/restaurants/menu.slice";
 import apiClient, { endpoints } from "infrastructure/api/server";
+import { Type } from "domain/enums/data/inventory/ingredient.enums";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   const { colors } = useTheme();
@@ -31,26 +32,49 @@ const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   );
 };
 
-type Ingredient = { id: string; quantity: number };
-
-const IngredientCard: React.FC<{ ingredient: Ingredient }> = ({ ingredient }) => {
+const IngredientCard: React.FC<{ ingredient: RecipeIngredients }> = ({ ingredient }) => {
   const { colors } = useTheme();
 
+  const portions = useAppSelector((state) => state.portions);
   const stocks = useAppSelector((state) => state.stocks);
 
-  const [stock, setStock] = useState<Stock | null>(null);
+  const [found, setFound] = useState<{ name: string; currentValue?: number } | null>(null);
+
+  const portionsMap = useMemo(() => new Map(portions.map((p) => [p.id, p])), [portions]);
+  const stocksMap = useMemo(() => new Map(stocks.map((s) => [s.id, s])), [stocks]);
+
+  const calculatePortionCurrentValue = (
+    portion: Portion,
+    stocksMap: Map<string, Stock>,
+  ): number => {
+    return portion.ingredients.reduce((total, ingredient) => {
+      const stock = stocksMap.get(ingredient.id);
+      if (!stock) return total;
+      return total + stock.currentValue * ingredient.quantity;
+    }, 0);
+  };
 
   useEffect(() => {
-    const found = stocks.find((s) => s.id === ingredient.id);
-    setStock(found ?? null);
-  }, [stocks]);
-
+    let found = null;
+    if (ingredient.type === Type.Portion) {
+      const portion = portionsMap.get(ingredient.id);
+      if (portion) {
+        const currentValue = calculatePortionCurrentValue(portion, stocksMap);
+        found = { ...portion, currentValue };
+      }
+    } else {
+      const stock = stocksMap.get(ingredient.id);
+      if (stock) found = stock;
+    }
+    setFound(found ?? null);
+  }, [ingredient, stocksMap, portionsMap]);
   return (
     <View style={[styles.card, { borderColor: colors.border }]}>
       <StyledText color={colors.primary}>
-        {ingredient.quantity}x <StyledText>{stock ? `${stock.name}` : "Eliminado"}</StyledText>
+        {thousandsSystem(ingredient.quantity)}x{" "}
+        <StyledText>{found ? `${found.name}` : "Eliminado"}</StyledText>
       </StyledText>
-      <StyledText>{thousandsSystem((stock?.currentValue ?? 1) * ingredient.quantity)}</StyledText>
+      <StyledText>{thousandsSystem((found?.currentValue ?? 1) * ingredient.quantity)}</StyledText>
     </View>
   );
 };
@@ -145,13 +169,15 @@ const RecipeInformation: React.FC<CreateStockProps> = ({ navigation, route }) =>
           {data.description && <Card name="Descripción" value={data.description} />}
           <Card name="Visible" value={data.visible ? "Si" : "No"} />
           <Card name="Valor" value={thousandsSystem(data.value)} />
-          <TouchableOpacity
-            style={[styles.card, { borderColor: colors.border }]}
-            onPress={() => setIngredientsModal(true)}
-          >
-            <StyledText>Ingredientes</StyledText>
-            <Ionicons name="chevron-forward" color={colors.text} size={19} />
-          </TouchableOpacity>
+          {data.ingredients.length > 0 && (
+            <TouchableOpacity
+              style={[styles.card, { borderColor: colors.border }]}
+              onPress={() => setIngredientsModal(true)}
+            >
+              <StyledText>Ingredientes</StyledText>
+              <Ionicons name="chevron-forward" color={colors.text} size={19} />
+            </TouchableOpacity>
+          )}
           <Card name="Fecha de creación" value={changeDate(new Date(data.creationDate), true)} />
           <Card
             name="Fecha de modificación"

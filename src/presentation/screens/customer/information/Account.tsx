@@ -4,16 +4,15 @@ import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { useTheme } from "@react-navigation/native";
 import { random, thousandsSystem } from "shared/utils";
 import { Customer } from "domain/entities/data/customers";
-import { Numeric, Pad } from "presentation/screens/common/NumericPad";
+import { edit } from "application/slice/customers/customers.slice";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
 import FloorModal from "presentation/components/modal/FloorModal";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import PaymentButtons from "presentation/components/button/PaymentButtons";
-import ScreenModal from "presentation/components/modal/ScreenModal";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
-import { edit } from "application/slice/customers/customers.slice";
+import CountScreenModal from "presentation/components/modal/CountScreenModal";
 
 enum Type {
   Empty = "",
@@ -51,33 +50,23 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
   return (
     <>
-      <ScreenModal title="Monto a pagar" visible={visible} onClose={onClose}>
-        <View style={{ flex: 1 }}>
-          <View style={[styles.center, { flex: 2 }]}>
-            <Numeric
-              title="Editar monto a pagar"
-              inputStyle={{ minWidth: 240 }}
-              value={thousandsSystem(value)}
-            />
-          </View>
-          <View style={{ flex: 4 }}>
-            <Pad
-              value={value}
-              onChange={(value: number) => setValue(value)}
-              buttonText="Guardar"
-              maxValue={9999999999}
-              condition={value > 0}
-              onSave={() => {
-                if (!isObservation) {
-                  onClose();
-                  return onSave({ value, observation: "" });
-                }
-                setObservationModal(true);
-              }}
-            />
-          </View>
-        </View>
-      </ScreenModal>
+      <CountScreenModal
+        title="Monto a pagar"
+        visible={visible}
+        onClose={onClose}
+        defaultValue={value}
+        decimal={true}
+        condition={(value) => Number(value) >= 0.01}
+        description={() => "Editar monto a pagar"}
+        maxValue={9999999999}
+        onSave={(value) => {
+          if (!isObservation) {
+            onClose();
+            return onSave({ value, observation: "" });
+          }
+          setObservationModal(true);
+        }}
+      />
       {isObservation && (
         <InputScreenModal
           title="Observación"

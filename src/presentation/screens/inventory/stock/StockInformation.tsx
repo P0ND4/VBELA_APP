@@ -13,7 +13,8 @@ import { useAppDispatch, useAppSelector } from "application/store/hook";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { remove } from "application/slice/inventories/stocks.slice";
-import { removeIngredient } from "application/slice/inventories/recipes.slice";
+import { removeIngredient as removeRecipeIngredient } from "application/slice/inventories/recipes.slice";
+import { removeIngredient as removePortionIngredient } from "application/slice/inventories/portions.slice";
 import { batch } from "react-redux";
 import { removeStock as removeStockProduct } from "application/slice/stores/products.slice";
 import { removeStock as removeStockMenu } from "application/slice/restaurants/menu.slice";
@@ -65,7 +66,8 @@ const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }
   const removeData = async () => {
     batch(() => {
       dispatch(remove({ id: stock.id }));
-      dispatch(removeIngredient({ id: stock.id }));
+      dispatch(removePortionIngredient({ id: stock.id }));
+      dispatch(removeRecipeIngredient({ id: stock.id }));
       dispatch(removeStockProduct({ ids: [stock.id] }));
       dispatch(removeStockMenu({ ids: [stock.id] }));
     });

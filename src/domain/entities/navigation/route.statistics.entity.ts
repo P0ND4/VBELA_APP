@@ -3,7 +3,7 @@ import { RouteProp } from "@react-navigation/native";
 import { Order } from "../data/common";
 import { Kitchen } from "../data/kitchens";
 import { PaymentMethodSummary } from "presentation/screens/statistic/Statistic";
-import { Economy, Movement } from "../data";
+import { Economy } from "../data";
 import { DateType } from "presentation/components/layout/FullFilterDate";
 
 export type RootStatistics = {
@@ -13,11 +13,10 @@ export type RootStatistics = {
     orders: Order[];
     sales: Order[];
     date: DateType;
-    movements: Movement[];
     economies: Economy[];
   };
   PaymentMethod: { data: PaymentMethodSummary[] };
-  TotalGain: { orders: Order[]; sales: Order[]; movements: Movement[]; economies: Economy[] };
+  TotalGain: { orders: Order[]; sales: Order[]; economies: Economy[] };
   Indicators: { economies: Economy[] };
 };
 

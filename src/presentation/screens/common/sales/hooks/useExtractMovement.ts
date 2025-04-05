@@ -1,6 +1,6 @@
 import { useAppSelector } from "application/store/hook";
 import { Selection } from "domain/entities/data/common";
-import { Inventory, Movement, Stock } from "domain/entities/data/inventories";
+import { Inventory, Movement, Portion, Stock } from "domain/entities/data/inventories";
 import { Type } from "domain/enums/data/inventory/movement.enums";
 import { random } from "shared/utils";
 
@@ -37,6 +37,10 @@ export const useExtractMovement = () => {
   const inventories = useAppSelector((state) => state.inventories);
   const recipes = useAppSelector((state) => state.recipes);
   const stocks = useAppSelector((state) => state.stocks);
+  const portions = useAppSelector((state) => state.portions);
+
+  const portionsMap = new Map(portions.map((p) => [p.id, p]));
+  const stocksMap = new Map(stocks.map((s) => [s.id, s]));
 
   const extractMovement = (selection: Selection[]): Movement[] => {
     const data = selection.filter((s) => s.activeStock);
@@ -45,6 +49,7 @@ export const useExtractMovement = () => {
       const recipesPart = recipes
         .filter(({ id }) => packageIDS?.includes(id))
         .flatMap((f) => f.ingredients)
+        .filter((i) => !portionsMap.has(i.id))
         .map((i) => ({ ...i, quantity: i.quantity * quantity }));
 
       const stocksPart = (stockIDS || []).flatMap((id) => ({ id, quantity }));
@@ -60,9 +65,9 @@ export const useExtractMovement = () => {
     const date = new Date().getTime();
 
     const movements = discount
-      .filter(({ id }) => stocks.some((s) => s.id === id))
+      .filter(({ id }) => stocksMap.has(id))
       .map(({ id, quantity }) => {
-        const stock = stocks.find((s) => s.id === id)!;
+        const stock = stocksMap.get(id)!;
         const inventory = inventories.find((i) => i.id === stock.inventoryID)!;
         return createMovement(stock, inventory, quantity, date);
       });
@@ -71,4 +76,32 @@ export const useExtractMovement = () => {
   };
 
   return extractMovement;
+};
+
+export const extractMovementsFromPortion = (
+  portion: Portion,
+  quantity: number,
+  stocksMap: Map<string, Stock>,
+  inventories: Inventory[],
+): Movement[] => {
+  const inventory = inventories.find((i) => i.id === portion.inventoryID)!;
+
+  const mapped = portion.ingredients.map((ingredient) => ({
+    id: ingredient.id,
+    quantity: ingredient.quantity * quantity,
+  }));
+
+  const discount: Discount[] = Array.from(
+    mapped.reduce(addQuantity, new Map()),
+    ([id, quantity]) => ({ id, quantity }),
+  );
+
+  const date = new Date().getTime();
+
+  return discount
+    .filter(({ id }) => stocksMap.get(id))
+    .map(({ id, quantity }) => {
+      const stock = stocksMap.get(id)!;
+      return createMovement(stock, inventory, quantity, date);
+    });
 };

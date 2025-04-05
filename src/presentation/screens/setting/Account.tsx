@@ -55,10 +55,13 @@ const Account = () => {
                   text: "Si",
                   onPress: () => {
                     const callback = async () => {
-                      await apiClient({
-                        url: endpoints.user.delete(),
-                        method: "DELETE",
-                      });
+                      await apiClient(
+                        {
+                          url: endpoints.user.delete(),
+                          method: "DELETE",
+                        },
+                        { synchronization: false },
+                      );
                     };
                     logOut(callback);
                   },
@@ -81,10 +84,13 @@ const Account = () => {
           backgroundColor={colors.primary}
           onPress={() => {
             const callback = async () => {
-              await apiClient({
-                url: endpoints.auth.logout(),
-                method: "POST",
-              });
+              await apiClient(
+                {
+                  url: endpoints.auth.logout(),
+                  method: "POST",
+                },
+                { synchronization: false },
+              );
             };
             logOut(callback);
           }}

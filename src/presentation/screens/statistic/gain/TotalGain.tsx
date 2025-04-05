@@ -40,25 +40,18 @@ type TotalGainProps = {
 const TotalGain: React.FC<TotalGainProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
-  const { orders, sales, movements, economies } = route.params;
+  const { orders, sales, economies } = route.params;
 
   const OTotal = useMemo(() => orders.reduce((a, b) => a + b.total, 0), [orders]);
   const STotal = useMemo(() => sales.reduce((a, b) => a + b.total, 0), [sales]);
-  const MTotal = useMemo(
-    () => movements.reduce((a, b) => a + b.quantity * b.currentValue, 0),
-    [movements],
-  );
   const ETotal = useMemo(() => economies.reduce((a, b) => a + b.value, 0), [economies]);
 
   const totalQuantity = useMemo(
-    () => sales.length + orders.length + economies.length + movements.length,
-    [sales, orders, economies, movements],
+    () => sales.length + orders.length + economies.length,
+    [sales, orders, economies],
   );
 
-  const totalValue = useMemo(
-    () => OTotal + STotal + MTotal + ETotal,
-    [OTotal, STotal, MTotal, ETotal],
-  );
+  const totalValue = useMemo(() => OTotal + STotal + ETotal, [OTotal, STotal, ETotal]);
 
   const renderItem = (item: any, type: "order" | "sale" | "movement" | "economy") => {
     switch (type) {
@@ -141,25 +134,6 @@ const TotalGain: React.FC<TotalGainProps> = ({ navigation, route }) => {
                 scrollEnabled={false}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => renderItem(item, "sale")}
-              />
-            </View>
-
-            {/* Movimientos */}
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons name="swap-horizontal-outline" color={colors.primary} size={25} />
-              <StyledText style={{ marginLeft: 6 }}>MOVIMIENTOS</StyledText>
-            </View>
-            <StyledText verySmall color={colors.primary}>
-              {movements.length
-                ? `HAY UN TOTAL DE ${thousandsSystem(movements.length)} MOVIMIENTOS CON UN VALOR DE ${thousandsSystem(MTotal)}`
-                : "NO SE ENCONTRARON MOVIMIENTOS"}
-            </StyledText>
-            <View style={{ marginVertical: 10 }}>
-              <FlatList
-                data={movements}
-                scrollEnabled={false}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => renderItem(item, "movement")}
               />
             </View>
 

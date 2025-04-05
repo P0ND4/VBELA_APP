@@ -20,6 +20,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 // import SalesCard from "presentation/screens/common/sales/components/SalesCard";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
+import CountScreenModal from "presentation/components/modal/CountScreenModal";
 
 type PickerProps = { label: string; value: string };
 
@@ -45,6 +46,7 @@ const ElementForm: React.FC<ElementFormProps> = ({
   const [optional, setOptional] = useState<boolean>(false);
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
   const [unitModal, setUnitModal] = useState<boolean>(false);
+  const [priceModal, setPriceModal] = useState<boolean>(false);
 
   const [categoriesPickerModal, setCategoriesPickerModal] = useState<boolean>(false);
   const [subcategoriesPickerModal, setSubcategoriesPickerModal] = useState<boolean>(false);
@@ -52,7 +54,7 @@ const ElementForm: React.FC<ElementFormProps> = ({
   const [categoriesPicker, setCategoriesPicker] = useState<PickerProps[]>([]);
   const [subcategoriesPicker, setSubcategoriesPicker] = useState<PickerProps[]>([]);
 
-  const { description, unit, categories, subcategories } = watch();
+  const { description, unit, categories, subcategories, price } = watch();
 
   useEffect(() => {
     setCategoriesPicker(groups.map((group) => ({ label: group.category, value: group.id })));
@@ -62,10 +64,6 @@ const ElementForm: React.FC<ElementFormProps> = ({
     <>
       <Layout style={{ justifyContent: "space-between" }}>
         <View style={{ flex: 1 }}>
-          {/* <SalesCard
-            data={watch()}
-            onPress={() => alert("Para la cuarta actualización la agregación de imagenes")}
-          /> */}
           <KeyboardAvoidingView style={{ flex: 1 }} keyboardVerticalOffset={80}>
             <ScrollView
               showsVerticalScrollIndicator={false}
@@ -91,25 +89,12 @@ const ElementForm: React.FC<ElementFormProps> = ({
                     El nombre es requerido
                   </StyledText>
                 )}
-                <Controller
-                  name="price"
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <StyledInput
-                      placeholder="Precio de venta"
-                      keyboardType="numeric"
-                      maxLength={13}
-                      onChangeText={(num) => {
-                        if (num === "") return onChange("");
-                        const numeric = num.replace(/[^0-9]/g, "");
-                        onChange(numeric ? parseFloat(numeric) : "");
-                      }}
-                      onBlur={onBlur}
-                      value={thousandsSystem(value || "")}
-                    />
-                  )}
-                />
+                <StyledButton style={styles.row} onPress={() => setPriceModal(true)}>
+                  <StyledText>
+                    Precio de venta {!!price && `(${thousandsSystem(price)})`}
+                  </StyledText>
+                  <Ionicons name="chevron-forward" color={colors.text} size={19} />
+                </StyledButton>
                 {formState.errors.price && (
                   <StyledText color={colors.primary} verySmall>
                     El precio de venta es requerido
@@ -307,6 +292,25 @@ const ElementForm: React.FC<ElementFormProps> = ({
               );
               onChange(elementSubcategories);
             }}
+          />
+        )}
+      />
+      <Controller
+        name="price"
+        control={control}
+        rules={{ required: true }}
+        render={({ field: { onChange, value } }) => (
+          <CountScreenModal
+            title="Precio de venta"
+            description={() => `Defina el valor del ítem`}
+            isRemove={!!value}
+            increasers={false}
+            decimal={true}
+            maxValue={9999999999}
+            visible={priceModal}
+            defaultValue={value}
+            onClose={() => setPriceModal(false)}
+            onSave={onChange}
           />
         )}
       />

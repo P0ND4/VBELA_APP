@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FlatList, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
+import { FlatList, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import {
-  Ingredients,
+  RecipeIngredients,
   Inventory,
+  Portion,
   Recipe,
   Stock,
   StockSubCategory,
@@ -29,6 +30,7 @@ import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import apiClient, { endpoints } from "infrastructure/api/server";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import { Group, GroupSubCategory } from "domain/entities/data";
+import { Type } from "domain/enums/data/inventory/ingredient.enums";
 
 const GET_TAB_NAME = {
   [Visible.Both]: "RECETAS/PAQUETES",
@@ -39,15 +41,18 @@ const GET_TAB_NAME = {
 
 type PickerProps = { label: string; value: string };
 
-type onChage = { id: string; quantity: number };
+type onChage = { id: string; quantity: number; type: Type };
 
 type CardProps = {
   defaultValue: number;
-  stock: Stock;
+  id: string;
+  name: string;
+  unit?: string;
+  type: Type;
   onChange: (props: onChage) => void;
 };
 
-const Card: React.FC<CardProps> = ({ defaultValue, stock, onChange }) => {
+const Card: React.FC<CardProps> = ({ defaultValue, id, name, unit, onChange, type }) => {
   const { colors } = useTheme();
 
   const [quantity, setQuantity] = useState<number>(defaultValue);
@@ -57,16 +62,17 @@ const Card: React.FC<CardProps> = ({ defaultValue, stock, onChange }) => {
     <>
       <StyledButton style={styles.row} onPress={() => setVisible(true)}>
         <StyledText>
-          {stock.name} {stock.unit && `(${stock.unit})`}
+          {name} {unit && `(${unit})`}
         </StyledText>
         <StyledText color={colors.primary}>{thousandsSystem(quantity)}</StyledText>
       </StyledButton>
       <CountScreenModal
         title="Cantidad"
+        decimal={unit === "UND" || type === Type.Portion ? false : true}
         defaultValue={quantity}
         description={(quantity) =>
           quantity
-            ? `Agregar ${thousandsSystem(quantity)} ${stock.unit && `(${stock.unit})`}`
+            ? `Agregar ${thousandsSystem(quantity)} ${unit && `(${unit})`}`
             : "Agrega la cantidad a utilizar"
         }
         isRemove={!!quantity}
@@ -74,7 +80,7 @@ const Card: React.FC<CardProps> = ({ defaultValue, stock, onChange }) => {
         maxValue={999999}
         onClose={() => setVisible(false)}
         onSave={(quantity) => {
-          onChange({ id: stock.id, quantity });
+          onChange({ id, quantity, type });
           setQuantity(quantity);
         }}
       />
@@ -83,11 +89,11 @@ const Card: React.FC<CardProps> = ({ defaultValue, stock, onChange }) => {
 };
 
 type IngredientsScreenProps = {
-  defaultValue: Ingredients[];
+  defaultValue: RecipeIngredients[];
   inventory: Inventory;
   visible: boolean;
   onClose: () => void;
-  onSave: (ingredients: Ingredients[]) => void;
+  onSave: (ingredients: RecipeIngredients[]) => void;
 };
 
 const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
@@ -97,41 +103,94 @@ const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
   onClose,
   onSave,
 }) => {
+  const portions = useAppSelector((state) => state.portions);
   const stocks = useAppSelector((state) => state.stocks);
 
   const { colors } = useTheme();
 
-  const [data, setData] = useState<Stock[]>([]);
-  const [ingredients, setIngredients] = useState<Ingredients[]>(defaultValue);
+  const [stockData, setStockData] = useState<Stock[]>([]);
+  const [portionData, setPortionData] = useState<Portion[]>([]);
+  const [ingredients, setIngredients] = useState<RecipeIngredients[]>(defaultValue);
 
   useEffect(() => {
     const found = stocks.filter((s) => s.inventoryID === inventory.id && s.visible);
-    setData(found);
+    setStockData(found);
   }, [stocks]);
 
-  const onChange = ({ id, quantity }: onChage) => {
+  useEffect(() => {
+    const found = portions.filter((s) => s.inventoryID === inventory.id && s.visible);
+    setPortionData(found);
+  }, [portions]);
+
+  const onChange = ({ id, quantity, type }: onChage) => {
     const found = ingredients.find((i) => i.id === id);
 
     const changed = found
       ? quantity === 0
         ? ingredients.filter((i) => i.id !== id)
-        : ingredients.map((i) => (i.id === id ? { id, quantity } : i))
-      : [...ingredients, { id, quantity }];
+        : ingredients.map((i) => (i.id === id ? { id, quantity, type } : i))
+      : [...ingredients, { id, quantity, type }];
 
     setIngredients(changed);
   };
 
   return (
     <ScreenModal title="STOCK" style={{ padding: 20 }} visible={visible} onClose={onClose}>
-      <FlatList
-        data={data}
-        style={{ flexGrow: 1 }}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => {
-          const { quantity = 0 } = ingredients.find((i) => i.id === item.id) ?? {};
-          return <Card stock={item} onChange={onChange} defaultValue={quantity} />;
-        }}
-      />
+      <ScrollView style={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+        <View>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons name="albums-outline" color={colors.primary} size={25} />
+            <StyledText style={{ marginLeft: 6 }}>STOCKS</StyledText>
+          </View>
+          {!!stockData.length ? (
+            <FlatList
+              data={stockData}
+              scrollEnabled={false}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => {
+                const { quantity = 0 } = ingredients.find((i) => i.id === item.id) ?? {};
+                return (
+                  <Card
+                    id={item.name}
+                    name={item.name}
+                    unit={item.unit}
+                    onChange={onChange}
+                    defaultValue={quantity}
+                    type={Type.Stock}
+                  />
+                );
+              }}
+            />
+          ) : (
+            <StyledText color={colors.primary}>NO SE ENCONTRARON PRODUCTOS EN STOCKS</StyledText>
+          )}
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons name="cube-outline" color={colors.primary} size={25} />
+            <StyledText style={{ marginLeft: 6 }}>PORCIONES</StyledText>
+          </View>
+          {!!portionData.length ? (
+            <FlatList
+              data={portionData}
+              scrollEnabled={false}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => {
+                const { quantity = 0 } = ingredients.find((i) => i.id === item.id) ?? {};
+                return (
+                  <Card
+                    id={item.id}
+                    name={item.name}
+                    onChange={onChange}
+                    defaultValue={quantity}
+                    type={Type.Portion}
+                  />
+                );
+              }}
+            />
+          ) : (
+            <StyledText color={colors.primary}>NO SE ENCONTRARON PORCIONES</StyledText>
+          )}
+        </View>
+      </ScrollView>
       <StyledButton
         backgroundColor={colors.primary}
         onPress={() => {
@@ -174,6 +233,7 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
 
   const { colors } = useTheme();
 
+  const portions = useAppSelector((state) => state.portions);
   const stocks = useAppSelector((state) => state.stocks);
   const recipeGroup = useAppSelector((state) => state.recipeGroup);
 
@@ -239,14 +299,28 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
     });
   }, [inventory]);
 
-  const cost = useMemo(
-    () =>
-      ingredients.reduce((a, b) => {
-        const { currentValue = 0 } = stocks.find((s) => s.id === b.id) ?? {};
-        return a + currentValue * b.quantity;
-      }, 0),
-    [ingredients, stocks],
-  );
+  const cost = useMemo(() => {
+    const stocksMap = new Map(stocks.map((s) => [s.id, s]));
+    const portionsMap = new Map(portions.map((p) => [p.id, p]));
+
+    return ingredients.reduce((ai, bi) => {
+      const portionFound = portionsMap.get(bi.id);
+
+      if (portionFound) {
+        return (
+          ai +
+          portionFound.ingredients.reduce((a, b) => {
+            const currentValueFound = stocksMap.get(b.id)?.currentValue || 0;
+            return a + currentValueFound * b.quantity;
+          }, 0) *
+            bi.quantity
+        );
+      } else {
+        const currentValueFound = stocksMap.get(bi.id)?.currentValue || 0;
+        return ai + currentValueFound * bi.quantity;
+      }
+    }, 0);
+  }, [ingredients, stocks, portions]);
 
   const handleSaveOrUpdate = (data: Recipe) => (defaultValue ? update(data) : save(data));
 
@@ -364,7 +438,7 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
         name="ingredients"
         rules={{
           validate: (array) => {
-            if (!array.length) return "La capacidad es requerida";
+            if (!array.length) return "Los ingredientes son requeridos";
             return true;
           },
         }}
@@ -401,6 +475,7 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
         render={({ field: { onChange, value } }) => (
           <CountScreenModal
             title="Valor"
+            decimal={true}
             description={() => "Escribe el valor de la receta"}
             defaultValue={value}
             isRemove={!!value}

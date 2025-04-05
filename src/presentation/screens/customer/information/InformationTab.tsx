@@ -72,7 +72,7 @@ const InformationTab: React.FC<InformationTabProps> = ({ navigation, route }) =>
           <OrdersScreen
             {...props}
             orders={[]}
-            navigateToInformation={(id: string) => {
+            navigateToInformation={() => {
               // navigation.navigate("OrderRoutes", {
               //   screen: "MenuViewOrder",
               //   params: { id },
@@ -86,7 +86,7 @@ const InformationTab: React.FC<InformationTabProps> = ({ navigation, route }) =>
           <OrdersScreen
             {...props}
             orders={[]}
-            navigateToInformation={(id: string) => {
+            navigateToInformation={() => {
               // navigation.navigate("OrderRoutes", {
               //   screen: "MenuViewOrder",
               //   params: { id },
@@ -95,9 +95,7 @@ const InformationTab: React.FC<InformationTabProps> = ({ navigation, route }) =>
           />
         )}
       </Tab.Screen>
-      <Tab.Screen name="CUENTA">
-        {(props) => <Account {...props} customer={data} />}
-      </Tab.Screen>
+      <Tab.Screen name="CUENTA">{(props) => <Account {...props} customer={data} />}</Tab.Screen>
     </Tab.Navigator>
   );
 };

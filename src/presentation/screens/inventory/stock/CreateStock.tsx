@@ -208,6 +208,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
         render={({ field: { onChange, value } }) => (
           <CountScreenModal
             title="Punto de reorden"
+            decimal={true}
             description={() => "Defina el punto de reorden"}
             visible={reorderModal}
             defaultValue={value}
@@ -225,6 +226,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
           <CountScreenModal
             title="Valor actual"
             description={() => "Defina valor actual"}
+            decimal={true}
             visible={currentValueModal}
             defaultValue={value}
             isRemove={!!value}

@@ -7,12 +7,11 @@ import StyledText from "presentation/components/text/StyledText";
 import { useTheme } from "@react-navigation/native";
 import { generateExcel, generatePDF, printPDF } from "infrastructure/services";
 import moment from "moment";
-import { Order, Movement, Economy } from "domain/entities/data";
+import { Order, Economy } from "domain/entities/data";
 import { changeDate, thousandsSystem } from "shared/utils";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStatistics, StatisticsRouteProp } from "domain/entities/navigation";
 import { DateType, startEndTextHandler } from "presentation/components/layout/FullFilterDate";
-import { Type } from "domain/enums/data/economy/economy.enums";
 
 type Icons = keyof typeof Ionicons.glyphMap;
 
@@ -91,7 +90,6 @@ const dataConverter = (quantities: ReportSelection[], Pertenece: "Restaurante" |
 const generateReportHTML = (
   OQuantity: ReportSelection[],
   SQuantity: ReportSelection[],
-  movements: Movement[],
   economies: Economy[],
   quantity: number,
   total: number,
@@ -102,7 +100,6 @@ const generateReportHTML = (
 ) => {
   const hasRestaurant = OQuantity.length > 0;
   const hasStore = SQuantity.length > 0;
-  const hasMovements = movements.length > 0;
   const hasEconomies = economies.length > 0;
 
   return `
@@ -212,27 +209,7 @@ const generateReportHTML = (
           `
               : ""
           }
-          ${
-            hasMovements
-              ? `
-            <div class="space">
-              <p class="text">MOVIMIENTOS</p>
-            </div>
-            <div class="space">
-              ${movements
-                .map(
-                  (movement) => `
-                <div class="row">
-                  <span class="text">${movement.type}</span>
-                  <span class="text">${thousandsSystem(movement.quantity * movement.currentValue)}</span>
-                </div>
-              `,
-                )
-                .join("")}
-            </div>
-          `
-              : ""
-          }
+          
           ${
             hasEconomies
               ? `
@@ -278,7 +255,7 @@ type ReportProps = {
 const Report: React.FC<ReportProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
-  const { date, orders, sales, movements, economies } = route.params;
+  const { date, orders, sales, economies } = route.params;
   const [details, setDetails] = useState<boolean>(false);
 
   const OQuantity = useMemo(() => calculateQuantity(orders), [orders]);
@@ -289,22 +266,20 @@ const Report: React.FC<ReportProps> = ({ navigation, route }) => {
   const quantity = useMemo(
     () =>
       [...OQuantity, ...SQuantity].reduce((a, b) => a + b.quantity, 0) +
-      movements.reduce((a, b) => a + b.quantity, 0) +
       economies.reduce((a, b) => a + b.quantity, 0),
-    [OQuantity, SQuantity, movements, economies],
+    [OQuantity, SQuantity, economies],
   );
 
   const total = useMemo(
     () =>
       [...orders, ...sales].reduce((a, b) => a + b.total, 0) +
-      movements.reduce((a, b) => a + b.quantity * b.currentValue, 0) +
       economies.reduce((a, b) => a + b.value, 0),
-    [orders, sales, movements, economies],
+    [orders, sales, economies],
   );
 
   const groupTotal = useMemo(
-    () => sales.length + orders.length + movements.length + economies.length,
-    [sales, orders, movements, economies],
+    () => sales.length + orders.length + economies.length,
+    [sales, orders, economies],
   );
 
   const excelData = [
@@ -316,12 +291,6 @@ const Report: React.FC<ReportProps> = ({ navigation, route }) => {
     [], // Espacio en blanco para separar
     ...dataConverter(OQuantity, "Restaurante"),
     ...dataConverter(SQuantity, "Tienda"),
-    ...movements.map((movement) => ({
-      Nombre: movement.type,
-      Cantidad: movement.quantity,
-      Valor: movement.quantity * movement.currentValue,
-      Pertenece: "Movimiento",
-    })),
     ...economies.map((economy) => ({
       Nombre: economy.type,
       Cantidad: economy.quantity,
@@ -333,7 +302,6 @@ const Report: React.FC<ReportProps> = ({ navigation, route }) => {
   const html = generateReportHTML(
     OQuantity,
     SQuantity,
-    movements,
     economies,
     quantity,
     total,
@@ -347,12 +315,8 @@ const Report: React.FC<ReportProps> = ({ navigation, route }) => {
     <Card title={`${item.quantity}x ${item.name}`} value={item.value} />
   );
 
-  const renderMovementItem = ({ item }: { item: Movement }) => (
-    <Card title={item.type} value={item.quantity * item.currentValue} />
-  );
-
   const renderEconomyItem = ({ item }: { item: Economy }) => (
-    <Card title={item.type} value={item.type === Type.Egress ? -item.value : item.value} />
+    <Card title={item.type} value={item.value} />
   );
 
   return (
@@ -432,23 +396,6 @@ const Report: React.FC<ReportProps> = ({ navigation, route }) => {
                     data={SQuantity}
                     keyExtractor={(item) => item.id}
                     renderItem={renderOrderItem}
-                    scrollEnabled={false}
-                  />
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Ionicons name="swap-horizontal-outline" color={colors.primary} size={25} />
-                  <StyledText style={{ marginLeft: 6 }}>MOVIMIENTOS</StyledText>
-                </View>
-                {!movements.length && (
-                  <StyledText verySmall color={colors.primary}>
-                    NO SE ENCONTRARON MOVIMIENTOS
-                  </StyledText>
-                )}
-                <View style={{ marginVertical: 10 }}>
-                  <FlatList
-                    data={movements}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderMovementItem}
                     scrollEnabled={false}
                   />
                 </View>

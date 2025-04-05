@@ -1,3 +1,4 @@
+import { Element } from "domain/entities/data";
 import { random } from "shared/utils";
 
 type SendProps = {
@@ -6,7 +7,7 @@ type SendProps = {
   locationID: string;
 };
 
-export const send = ({ name = "Sin nombre", value = 0, locationID }: SendProps) => ({
+export const send = ({ name = "Sin nombre", value = 0, locationID }: SendProps): Element => ({
   id: random(10),
   name,
   price: value,

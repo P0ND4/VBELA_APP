@@ -33,15 +33,20 @@ export const baseURL = process.env.EXPO_PUBLIC_API_URL;
 //   await saveQueueOperation(queueItem);
 // };
 
-const apiClient = async <T>(config: AxiosRequestConfig): Promise<ApiResponse<T>> => {
+const apiClient = async <T>(
+  config: AxiosRequestConfig,
+  options: { synchronization?: boolean } = { synchronization: true },
+): Promise<ApiResponse<T>> => {
   const token = await AsyncStorage.getItem("access_token");
 
-  // const currentQueue = await readQueueOperation();
-  // if (currentQueue.length > 0) {
-  //   const message = `Queued request due to pending transactions: ${thousandsSystem(currentQueue.length)}`;
-  //   console.warn(message);
-  //   await addQueue(config);
-  //   throw new Error(message);
+  // if (options.synchronization) {
+  //   const currentQueue = await readQueueOperation();
+  //   if (currentQueue.length > 0) {
+  //     const message = `Queued request due to pending transactions: ${thousandsSystem(currentQueue.length)}`;
+  //     console.warn(message);
+  //     await addQueue(config);
+  //     throw new Error(message);
+  //   }
   // }
 
   try {
@@ -52,8 +57,8 @@ const apiClient = async <T>(config: AxiosRequestConfig): Promise<ApiResponse<T>>
     });
     return response.data;
   } catch (error) {
-    console.error("API Error:", error);
-    // await addQueue(config);
+    console.warn("API Error:", error);
+    // if (options.synchronization) await addQueue(config);
     throw error;
   }
 };
@@ -116,6 +121,17 @@ export const endpoints = {
     post: () => "/api/v1/user/stock",
     put: (id: string) => `/api/v1/user/stock/${id}`,
     delete: (id: string) => `/api/v1/user/stock/${id}`,
+  },
+  portionGroup: {
+    post: () => "/api/v1/user/portion-group",
+    put: (id: string) => `/api/v1/user/portion-group/${id}`,
+    delete: (id: string) => `/api/v1/user/portion-group/${id}`,
+  },
+  portion: {
+    postActivity: () => "/api/v1/user/portion/activity",
+    post: () => "/api/v1/user/portion",
+    put: (id: string) => `/api/v1/user/portion/${id}`,
+    delete: (id: string) => `/api/v1/user/portion/${id}`,
   },
   movement: {
     post: () => "/api/v1/user/movement",

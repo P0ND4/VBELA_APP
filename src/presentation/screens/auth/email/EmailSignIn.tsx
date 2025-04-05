@@ -61,11 +61,14 @@ const EmailSignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
             setLoading(true);
 
             try {
-              await apiClient({
-                url: endpoints.verify.email(),
-                method: "POST",
-                data: { email },
-              });
+              await apiClient(
+                {
+                  url: endpoints.verify.email(),
+                  method: "POST",
+                  data: { email },
+                },
+                { synchronization: false },
+              );
 
               navigation.navigate("EmailVerification", { email });
             } catch (error) {

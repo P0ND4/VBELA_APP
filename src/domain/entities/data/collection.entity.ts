@@ -1,6 +1,6 @@
 import type { Collaborator, Payroll } from "./collaborators";
 import type { Customer, Invoice } from "./customers";
-import type { Inventory, Movement, Recipe, Stock } from "./inventories";
+import type { Inventory, Movement, Portion, Recipe, Stock } from "./inventories";
 import type { Nomenclature, Reservation, Room, Zone } from "./reservations";
 import type { Table } from "./restaurants";
 import type { Economy, Supplier } from "./suppliers";
@@ -48,4 +48,6 @@ export interface Collection {
   handlers: Handler[];
   paymentMethods: PaymentMethods[];
   movements: Movement[];
+  portions: Portion[];
+  portionGroup: Group[];
 }

@@ -13,6 +13,8 @@ import Recipe from "./recipe/Recipe";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTheme } from "@react-navigation/native";
+import Portion from "./portion/Portion";
+import Shortage from "./shortage/Shortage";
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -72,8 +74,16 @@ const StockTab: React.FC<StockTabProps> = ({ navigation, route }) => {
       <Tab.Screen name="STOCK">
         {(props) => <Stock {...props} inventoryID={inventory.id} visualization={visualization} />}
       </Tab.Screen>
+      <Tab.Screen name="PORCIONES">
+        {(props) => <Portion {...props} inventoryID={inventory.id} visualization={visualization} />}
+      </Tab.Screen>
       <Tab.Screen name={GET_TAB_NAME[data.visible]}>
         {(props) => <Recipe {...props} inventory={data} visualization={visualization} />}
+      </Tab.Screen>
+      <Tab.Screen name="PEDIDOS">
+        {(props) => (
+          <Shortage {...props} inventoryID={inventory.id} visualization={visualization} />
+        )}
       </Tab.Screen>
     </Tab.Navigator>
   );

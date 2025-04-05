@@ -6,7 +6,7 @@ import { thousandsSystem } from "shared/utils";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
-import type { Recipe, Stock as StockType } from "domain/entities/data/inventories";
+import type { Portion, Recipe, Stock as StockType } from "domain/entities/data/inventories";
 import { Type } from "domain/enums/data/inventory/movement.enums";
 import { Group, GroupSubCategory } from "domain/entities/data";
 import { useMovementsMap } from "../hooks/useMovementsMap";
@@ -17,20 +17,41 @@ import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 import Table from "presentation/components/layout/Table";
 import GroupSection from "presentation/components/layout/GroupSection";
+import FullFilterDate, {
+  DateType,
+  filterByDate,
+  Type as TypeEnums,
+} from "presentation/components/layout/FullFilterDate";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
-const calculatePortion = (
-  { id, quantity }: { id: string; quantity: number },
+export const calculatePortion = (
+  { id: stockId, quantity: availableQuantity }: { id: string; quantity: number },
   recipes: Recipe[],
+  portions: Portion[],
 ): number => {
-  const totalQuantityRequired = recipes.reduce((acc, recipe) => {
-    const ingredient = recipe.ingredients.find((i) => i.id === id);
-    return acc + (ingredient ? ingredient.quantity : 0);
+  const portionsMap = new Map(portions.map((p) => [p.id, p]));
+
+  const totalQuantityRequired = recipes.reduce((total, recipe) => {
+    return (
+      total +
+      recipe.ingredients.reduce((recipeTotal, ingredient) => {
+        if (ingredient.id === stockId) return recipeTotal + ingredient.quantity;
+
+        const portion = portionsMap.get(ingredient.id);
+        if (portion) {
+          const portionIngredient = portion.ingredients.find((pIng) => pIng.id === stockId);
+          if (portionIngredient) {
+            return recipeTotal + portionIngredient.quantity * ingredient.quantity;
+          }
+        }
+
+        return recipeTotal;
+      }, 0)
+    );
   }, 0);
 
-  if (totalQuantityRequired === 0) return 0;
-  return Math.floor(quantity / totalQuantityRequired);
+  return totalQuantityRequired > 0 ? Math.floor(availableQuantity / totalQuantityRequired) : 0;
 };
 
 type CardProps = {
@@ -42,6 +63,7 @@ type CardProps = {
 const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
   const { colors } = useTheme();
 
+  const portions = useAppSelector((state) => state.portions);
   const recipes = useAppSelector((state) => state.recipes);
 
   const movementsMap = useMovementsMap();
@@ -63,7 +85,8 @@ const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
           </StyledText>
         </View>
         <StyledText color={colors.text} verySmall>
-          {thousandsSystem(calculatePortion({ id: stock.id, quantity }, recipes))} Porciones
+          {thousandsSystem(calculatePortion({ id: stock.id, quantity }, recipes, portions))}{" "}
+          Porciones
         </StyledText>
       </View>
       <View style={{ alignItems: "flex-end" }}>
@@ -98,6 +121,13 @@ const Stock: React.FC<StockProps> = ({ inventoryID, visualization }) => {
 
   const quantities = useMovementsMap();
 
+  const [date, setDate] = useState<DateType>({
+    type: TypeEnums.All,
+    start: null,
+    end: null,
+    id: "All",
+  });
+
   useEffect(() => {
     setCategorySelected(null);
     setSubcategorySelected(null);
@@ -112,11 +142,11 @@ const Stock: React.FC<StockProps> = ({ inventoryID, visualization }) => {
   }, [data, quantities]);
 
   useEffect(() => {
-    let filtered = found;
+    let filteredByDate = filterByDate<StockType>(found, date);
 
     if (search) {
       const searchTerm = search.toLowerCase();
-      filtered = filtered.filter(
+      filteredByDate = filteredByDate.filter(
         (s) =>
           s.name.toLowerCase().includes(searchTerm) ||
           s.reference.toLowerCase().includes(searchTerm) ||
@@ -126,15 +156,17 @@ const Stock: React.FC<StockProps> = ({ inventoryID, visualization }) => {
     }
 
     if (categorySelected)
-      filtered = filtered.filter((stock) => stock.categories.includes(categorySelected.id));
+      filteredByDate = filteredByDate.filter((stock) =>
+        stock.categories.includes(categorySelected.id),
+      );
 
     if (subcategorySelected)
-      filtered = filtered.filter((stock) =>
+      filteredByDate = filteredByDate.filter((stock) =>
         stock.subcategories.some((s) => s.subcategory === subcategorySelected.id),
       );
 
-    setData(filtered);
-  }, [search, stocks, categorySelected, subcategorySelected]);
+    setData(filteredByDate);
+  }, [search, stocks, categorySelected, subcategorySelected, date]);
 
   useEffect(() => {
     const data = stockGroup.filter((group) => group.ownerID === inventoryID);
@@ -163,7 +195,7 @@ const Stock: React.FC<StockProps> = ({ inventoryID, visualization }) => {
           )}
           {!!found.length && (
             <>
-              <View style={[styles.evenly, { marginBottom: 5 }]}>
+              <View style={styles.row}>
                 <StyledButton
                   style={styles.movement}
                   onPress={() =>
@@ -190,6 +222,7 @@ const Stock: React.FC<StockProps> = ({ inventoryID, visualization }) => {
                   </StyledText>
                 </StyledButton>
               </View>
+              <FullFilterDate date={date} setDate={setDate} style={{ paddingVertical: 5 }} />
               {!data.length && (
                 <StyledText color={colors.primary} style={{ marginVertical: 10 }}>
                   NO HAY ÍTEMS PARA LA BUSQUEDA
@@ -292,11 +325,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  evenly: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
   },
   movement: {
     width: "auto",

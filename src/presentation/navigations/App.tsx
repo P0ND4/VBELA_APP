@@ -22,11 +22,11 @@ import Setting from "presentation/screens/setting/Setting";
 import Kitchen from "presentation/screens/kitchen/Kitchen";
 import Delivery from "presentation/screens/delivery/Delivery";
 import Home from "presentation/screens/Home";
-import Statistic from "presentation/screens/statistic/Statistic";
 import Collaborator from "presentation/screens/collaborator/Collaborator";
 import Supplier from "presentation/screens/supplier/Supplier";
 import Payroll from "presentation/screens/payroll/Payroll";
 import Economy from "presentation/screens/economy/Economy";
+import StatisticTab from "presentation/screens/statistic/StatisticTab";
 
 const Drawer = createDrawerNavigator<RootApp>();
 
@@ -70,7 +70,7 @@ function App() {
       /> */}
       <Drawer.Screen
         name="Statistic"
-        component={Statistic}
+        component={StatisticTab}
         options={{
           title: "Estadística",
           unmountOnBlur: true,

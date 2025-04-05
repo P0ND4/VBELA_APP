@@ -4,10 +4,13 @@ import apiClient, { endpoints } from "infrastructure/api/server";
 import CryptoJS from "crypto-js";
 
 const getServerTime = async () => {
-  const response = await apiClient<{ timestamp: number }>({
-    url: endpoints.auth.serverTime(),
-    method: "GET",
-  });
+  const response = await apiClient<{ timestamp: number }>(
+    {
+      url: endpoints.auth.serverTime(),
+      method: "GET",
+    },
+    { synchronization: false },
+  );
   return response.data.timestamp;
 };
 
@@ -18,11 +21,14 @@ export const login = async (identifier: string, collaborator: string | null = nu
     const hash = CryptoJS.HmacSHA256(`${identifier}:${serverTimestamp}`, secret!).toString();
 
     // Realizar login
-    const loginResponse = await apiClient<{ access_token: string }>({
-      url: endpoints.auth.login(),
-      method: "POST",
-      data: { identifier, collaborator, expoID: null, hash, timestamp: serverTimestamp },
-    });
+    const loginResponse = await apiClient<{ access_token: string }>(
+      {
+        url: endpoints.auth.login(),
+        method: "POST",
+        data: { identifier, collaborator, expoID: null, hash, timestamp: serverTimestamp },
+      },
+      { synchronization: false },
+    );
 
     // Verificar si la respuesta es exitosa
     if (loginResponse?.status !== "success") return;
@@ -33,11 +39,14 @@ export const login = async (identifier: string, collaborator: string | null = nu
     await AsyncStorage.setItem("access_token", token);
 
     // Obtener usuario después de login
-    const userResponse = await apiClient<Collection[]>({
-      url: endpoints.user.get(),
-      method: "GET",
-      data: { identifier, expoID: null },
-    });
+    const userResponse = await apiClient<Collection[]>(
+      {
+        url: endpoints.user.get(),
+        method: "GET",
+        data: { identifier, expoID: null },
+      },
+      { synchronization: false },
+    );
 
     // Si la petición de usuario es exitosa, ejecutar finished
     if (userResponse?.data) return userResponse.data;

@@ -14,11 +14,14 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ route }) => {
 
   const check = async (code: string) => {
     try {
-      const res = await apiClient({
-        url: endpoints.check.email(),
-        method: "POST",
-        data: { email, code },
-      });
+      const res = await apiClient(
+        {
+          url: endpoints.check.email(),
+          method: "POST",
+          data: { email, code },
+        },
+        { synchronization: false },
+      );
       return res?.status === "success";
     } catch (error) {
       Alert.alert("Error", `Hubo un error al comparar el código: ${error}`);

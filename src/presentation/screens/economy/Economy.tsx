@@ -13,8 +13,8 @@ import { Type as EconomyEnums } from "domain/enums/data/economy/economy.enums";
 import { Type as MovementEnums } from "domain/enums/data/inventory/movement.enums";
 import FullFilterDate, {
   DateType,
+  filterByDate,
   resetDate,
-  Type as TypeEnums,
 } from "presentation/components/layout/FullFilterDate";
 import { selectCompletedOrders, selectCompletedSales } from "application/selectors";
 import { selectEntry, selectOutput } from "application/selectors/movements.selector";
@@ -140,19 +140,10 @@ const EconomyScreen: React.FC<EconomyScreenProps> = ({ economies, orders = [], m
 
   const [date, setDate] = useState<DateType>(resetDate);
 
-  const filtered = <T extends { creationDate: number }>(items: T[]): T[] => {
-    return items.filter(
-      (item) =>
-        date.type === TypeEnums.All ||
-        (moment(item.creationDate).isSameOrAfter(date.start) &&
-          moment(item.creationDate).isSameOrBefore(date.end)),
-    );
-  };
-
   const sorted = useMemo(() => combineData(economies, orders, movements), [orders, economies]);
 
   const data: EconomyType[] = useMemo(() => {
-    const filteredByDate = filtered<EconomyType>(sorted);
+    const filteredByDate = filterByDate<EconomyType>(sorted, date);
     if (!search) return filteredByDate;
     const searchTerm = search.toLowerCase();
     const filteredBySearch = filteredByDate.filter(

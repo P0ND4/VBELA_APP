@@ -95,14 +95,17 @@ const PhoneSignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
       setDisable(true);
 
       try {
-        await apiClient({
-          url: endpoints.verify.phone(),
-          method: "POST",
-          data: {
-            to: phoneNumber,
-            channel,
+        await apiClient(
+          {
+            url: endpoints.verify.phone(),
+            method: "POST",
+            data: {
+              to: phoneNumber,
+              channel,
+            },
           },
-        });
+          { synchronization: false },
+        );
 
         navigation.navigate("PhoneVerification", { phone: phoneNumber });
       } catch (error) {

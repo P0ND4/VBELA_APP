@@ -12,9 +12,11 @@ import { Status } from "domain/enums/data/element/status.enums";
 import { batch } from "react-redux";
 import { discount } from "application/slice/restaurants/menu.slice";
 import { Kitchen } from "domain/entities/data/kitchens";
-import { Movement } from "domain/entities/data/inventories";
+import { Movement, Portion } from "domain/entities/data/inventories";
 import apiClient, { endpoints } from "infrastructure/api/server";
 import { add as addMovement } from "application/slice/inventories/movements.slice";
+import { edit as editPortion } from "application/slice/inventories/portions.slice";
+import { useExtractPortion } from "presentation/screens/common/sales/hooks/useExtractPortion";
 
 export type CallbackProps = { order: Order; kitchen: Kitchen | null };
 
@@ -24,6 +26,7 @@ const useSave = () => {
   const { organizeOrder, organizeKitchen } = useOrganizeData();
   const extractStock = useExtractStock();
   const extractMovement = useExtractMovement();
+  const extractPortion = useExtractPortion();
 
   const dispatch = useAppDispatch();
 
@@ -32,12 +35,14 @@ const useSave = () => {
   const getInformation = (selection: Selection[]) => {
     const movements = extractMovement(selection);
     const discounts = extractStock(selection, menu);
-    return { movements, discounts };
+    const portions = extractPortion(selection);
+    return { movements, discounts, portions };
   };
 
-  const handler = (movements: Movement[], discounts: Discount[]) => {
+  const handler = (movements: Movement[], discounts: Discount[], portions: Portion[]) => {
     !!movements.length && movements.forEach((movement) => dispatch(addMovement(movement)));
     !!discounts.length && dispatch(discount(discounts));
+    !!portions.length && portions.forEach((portion) => dispatch(editPortion(portion)));
   };
 
   const save = async (props: Save, callback?: (props: CallbackProps) => void) => {
@@ -45,16 +50,18 @@ const useSave = () => {
 
     let movements: Movement[] = [];
     let discounts: Discount[] = [];
+    let portions: Portion[] = [];
 
     if (condition(props.status)) {
       const information = getInformation(props.selection);
       movements = information.movements;
       discounts = information.discounts;
+      portions = information.portions;
     }
 
     batch(() => {
       dispatch(addOrder(order));
-      if (condition(props.status)) handler(movements, discounts);
+      if (condition(props.status)) handler(movements, discounts, portions);
     });
 
     callback && callback({ order, kitchen: null });
@@ -66,6 +73,7 @@ const useSave = () => {
         movements,
         discounts,
         order,
+        portions,
       },
     });
   };
@@ -73,16 +81,18 @@ const useSave = () => {
   const update = async (order: Order, callback?: (props: CallbackProps) => void) => {
     let movements: Movement[] = [];
     let discounts: Discount[] = [];
+    let portions: Portion[] = [];
 
     if (condition(order.status)) {
       const information = getInformation(order.selection);
       movements = information.movements;
       discounts = information.discounts;
+      portions = information.portions;
     }
 
     batch(() => {
       dispatch(editOrder(order));
-      if (condition(order.status)) handler(movements, discounts);
+      if (condition(order.status)) handler(movements, discounts, portions);
     });
 
     callback && callback({ order, kitchen: null });
@@ -94,6 +104,7 @@ const useSave = () => {
         movements,
         discounts,
         order,
+        portions,
       },
     });
   };
