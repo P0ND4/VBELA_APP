@@ -45,10 +45,10 @@ const PhoneNumberPicker: React.FC<PickerPhoneNumberProps> = ({
 }) => {
   const { colors } = useTheme();
   const [data, setData] = useState<Country[]>([]);
-  const [filter, setFilter] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
 
   useEffect(() => {
-    const keyword = filter.toLocaleLowerCase().replace("+", "");
+    const keyword = search.toLocaleLowerCase().replace("+", "");
 
     setData(
       keyword.length === 0
@@ -59,13 +59,13 @@ const PhoneNumberPicker: React.FC<PickerPhoneNumberProps> = ({
             ),
           ),
     );
-  }, [filter]);
+  }, [search]);
 
   const handleCountryPress = useCallback(
     (country: Country) => {
       onChange(country);
       setModalVisible(false);
-      setFilter("");
+      setSearch("");
     },
     [onChange, setModalVisible],
   );
@@ -78,14 +78,14 @@ const PhoneNumberPicker: React.FC<PickerPhoneNumberProps> = ({
       visible={modalVisible}
       onClose={() => {
         setModalVisible(false);
-        setFilter("");
+        setSearch("");
       }}
     >
       <StyledInput
         left={() => <Ionicons name="search" color={colors.text} size={22} />}
         placeholder="Buscar"
-        value={filter}
-        onChangeText={setFilter}
+        value={search}
+        onChangeText={setSearch}
         stylesContainer={{ marginTop: 20, marginBottom: 15 }}
       />
       <FlatList

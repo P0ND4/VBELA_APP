@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
     width: "100%",
-    flexShrink: 1,
+    flexShrink: 0,
   },
   iconContainer: {
     marginHorizontal: 10,

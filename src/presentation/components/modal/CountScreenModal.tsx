@@ -209,7 +209,7 @@ const CountScreenModal: React.FC<CountScreenProps> = ({
             onChange={(count: number | string) => setCount(count)}
             buttonText={buttonText}
             maxValue={maxValue}
-            condition={condition ? condition(count) : Number(count) >= 1} // VALIDAR CONDICIONES
+            condition={condition ? condition(count) : Number(count) >= 1}
             decimal={decimal}
             onSave={() => {
               onSave(Number(count) * (negativeNumber ? -1 : 1));

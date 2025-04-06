@@ -5,6 +5,7 @@ import FloorModal from "./FloorModal";
 import StyledText from "../text/StyledText";
 import StyledButton from "../button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import StyledInput from "../input/StyledInput";
 
 type Icons = keyof typeof Ionicons.glyphMap;
 
@@ -41,7 +42,18 @@ const PickerFloorModal: React.FC<PickerFloorModalProps> = ({
 }) => {
   const { colors } = useTheme();
 
+  const [search, setSearch] = useState("");
+  const [found, setFound] = useState<Data[]>(data);
   const [selected, setSelected] = useState<string[]>([]);
+
+  useEffect(() => {
+    let found = data;
+    if (search) {
+      found = found.filter((element) => element.label.toLowerCase().includes(search.toLowerCase()));
+    }
+
+    setFound(found);
+  }, [search]);
 
   useEffect(() => {
     visible && multiple && setSelected(multiple);
@@ -50,76 +62,85 @@ const PickerFloorModal: React.FC<PickerFloorModalProps> = ({
   const isDataAvailable = !!data.length;
 
   return (
-    <FloorModal style={{ maxHeight: 350 }} title={title} visible={visible} onClose={onClose}>
+    <FloorModal style={{ maxHeight: 500 }} title={title} visible={visible} onClose={onClose}>
       {!data.length && <StyledText color={colors.primary}>{noData}</StyledText>}
       {isDataAvailable && (
-        <FlatList
-          data={data}
-          keyExtractor={(item) => item.value}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[{ paddingVertical: 14 }, styles.row]}
-              onPress={() => {
-                if (multiple) {
-                  setSelected((prev) =>
-                    prev.includes(item.value)
-                      ? prev.filter((i) => i !== item.value)
-                      : [...prev, item.value],
-                  );
-                } else {
-                  onSubmit(item.value);
-                  onClose();
-                }
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <StyledText color={item.textColor || colors.text}>{item.label}</StyledText>
-                {item.icon && (
-                  <Ionicons
-                    name={item.icon}
-                    color={item.iconColor || colors.text}
-                    size={24}
-                    style={{ marginRight: 15 }}
-                  />
+        <>
+          <StyledInput
+            left={() => <Ionicons name="search" color={colors.text} size={22} />}
+            placeholder="Buscar"
+            value={search}
+            onChangeText={setSearch}
+          />
+          {!found.length && (
+            <StyledText color={colors.primary}>NO HAY DATOS PARA LA BÚSQUEDA</StyledText>
+          )}
+          <FlatList
+            data={found}
+            keyExtractor={(item) => item.value}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[{ paddingVertical: 14 }, styles.row]}
+                onPress={() => {
+                  if (multiple) {
+                    setSelected((prev) =>
+                      prev.includes(item.value)
+                        ? prev.filter((i) => i !== item.value)
+                        : [...prev, item.value],
+                    );
+                  } else {
+                    onSubmit(item.value);
+                    onClose();
+                  }
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <StyledText color={item.textColor || colors.text}>{item.label}</StyledText>
+                  {item.icon && (
+                    <Ionicons
+                      name={item.icon}
+                      color={item.iconColor || colors.text}
+                      size={24}
+                      style={{ marginRight: 15 }}
+                    />
+                  )}
+                </View>
+                {selected.includes(item.value) && (
+                  <Ionicons name="checkmark" color={colors.primary} size={19} />
                 )}
-              </View>
-              {selected.includes(item.value) && (
-                <Ionicons name="checkmark" color={colors.primary} size={19} />
-              )}
-            </TouchableOpacity>
-          )}
-          style={{ flexGrow: 1, marginVertical: 5 }}
-          ItemSeparatorComponent={() => (
-            <View style={{ borderBottomWidth: 1, borderColor: colors.border }} />
-          )}
-        />
-      )}
-      {isDataAvailable && (
-        <View>
-          {isRemove && (
-            <StyledButton
-              onPress={() => {
-                onSubmit(multiple ? [] : "");
-                onClose();
-              }}
-            >
-              <StyledText center>{remove}</StyledText>
-            </StyledButton>
-          )}
-          {multiple && (
-            <StyledButton
-              backgroundColor={colors.primary}
-              onPress={() => {
-                onSubmit(selected);
-                onClose();
-              }}
-            >
-              <StyledText color="#FFFFFF" center>
-                Guardar
-              </StyledText>
-            </StyledButton>
-          )}
-        </View>
+              </TouchableOpacity>
+            )}
+            style={{ flexGrow: 1, marginVertical: 5 }}
+            ItemSeparatorComponent={() => (
+              <View style={{ borderBottomWidth: 1, borderColor: colors.border }} />
+            )}
+          />
+          <View>
+            {isRemove && (
+              <StyledButton
+                onPress={() => {
+                  onSubmit(multiple ? [] : "");
+                  onClose();
+                }}
+              >
+                <StyledText center>{remove}</StyledText>
+              </StyledButton>
+            )}
+            {multiple && (
+              <StyledButton
+                backgroundColor={colors.primary}
+                onPress={() => {
+                  onSubmit(selected);
+                  onClose();
+                }}
+              >
+                <StyledText color="#FFFFFF" center>
+                  Guardar
+                </StyledText>
+              </StyledButton>
+            )}
+          </View>
+        </>
       )}
     </FloorModal>
   );

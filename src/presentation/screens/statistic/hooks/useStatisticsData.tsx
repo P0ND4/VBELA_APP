@@ -28,7 +28,7 @@ export type PaymentMethodSummary = {
 const calculateTotal = (orders: Order[], economies: Economy[]) => {
   const ordersTotal = orders.reduce((acc, o) => acc + o.total, 0);
   const economiesTotal = economies
-    .filter((e) => e.type === TypeEconomy.Income)
+    .filter((e) => e.type === TypeEconomy.Income && e.operative)
     .reduce((acc, e) => acc + e.value, 0);
   return ordersTotal + economiesTotal;
 };

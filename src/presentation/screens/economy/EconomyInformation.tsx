@@ -73,6 +73,7 @@ const EconomyInformation: React.FC<EconomyInformationProps> = ({ navigation, rou
           <Card name="Valor" value={thousandsSystem(data.value)} />
           <Card name="Cantidad" value={thousandsSystem(data.quantity)} />
           <Card name="Fecha" value={changeDate(new Date(data.date))} />
+          <Card name="Operativo" value={data.operative ? "SI" : "NO"} />
           {data.unit && <Card name="Unidad" value={data.unit} />}
           {data.description && (
             <TouchableOpacity

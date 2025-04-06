@@ -151,7 +151,7 @@ const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
                 const { quantity = 0 } = ingredients.find((i) => i.id === item.id) ?? {};
                 return (
                   <Card
-                    id={item.name}
+                    id={item.id}
                     name={item.name}
                     unit={item.unit}
                     onChange={onChange}

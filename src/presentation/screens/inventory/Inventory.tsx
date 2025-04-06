@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { View, TouchableOpacity, StyleSheet, FlatList, ListRenderItem } from "react-native";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { AppNavigationProp, RootApp } from "domain/entities/navigation";
@@ -10,7 +10,7 @@ import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import InformationModal from "presentation/components/modal/InformationModal";
-import { changeDate } from "shared/utils";
+import { changeDate, thousandsSystem } from "shared/utils";
 import { remove } from "application/slice/inventories/inventories.slice";
 import { batch } from "react-redux";
 import { removeInventory as removeInventoryRestaurant } from "application/slice/restaurants/restaurants.slices";
@@ -30,6 +30,7 @@ import { removeByInventoryID as removeByInventoryIDStockGroup } from "applicatio
 import { removeByInventoryID as removeByInventoryIDRecipeGroup } from "application/slice/inventories/recipe.group.slice";
 import { removeByInventoryID as removeByInventoryIDPortion } from "application/slice/inventories/portions.slice";
 import { removeByInventoryID as removeByInventoryIDPortionGroup } from "application/slice/inventories/portion.group.slice";
+import { useMovementsMap } from "./hooks/useMovementsMap";
 
 type CardInformationProps = {
   visible: boolean;
@@ -103,8 +104,18 @@ const Card: React.FC<{ item: InventoryType }> = ({ item }) => {
 
   const [showInformation, setShowInformation] = useState<boolean>(false);
 
+  const quantities = useMovementsMap();
   const navigation = useNavigation<NavigationProps>();
   const dispatch = useAppDispatch();
+
+  const total = useMemo(() => {
+    const data = stocks.filter((stock) => stock.inventoryID === item.id);
+    return data.reduce((acc, stock) => {
+      const quantity = quantities.get(stock.id) || 0;
+      const total = quantity * stock.currentValue;
+      return acc + total;
+    }, 0);
+  }, [stocks, quantities]);
 
   const removeData = useCallback(async () => {
     const stockIDS = stocks
@@ -146,12 +157,15 @@ const Card: React.FC<{ item: InventoryType }> = ({ item }) => {
           });
         }}
         onLongPress={() => setShowInformation(true)}
-        style={styles.card}
+        style={styles.row}
       >
-        {item.highlight && (
-          <Ionicons name="star" color={colors.primary} size={18} style={{ marginRight: 6 }} />
-        )}
-        <StyledText>{item.name}</StyledText>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {item.highlight && (
+            <Ionicons name="star" color={colors.primary} size={18} style={{ marginRight: 6 }} />
+          )}
+          <StyledText>{item.name}</StyledText>
+        </View>
+        <StyledText color={colors.primary}>{thousandsSystem(total)}</StyledText>
       </StyledButton>
       <CardInformation
         visible={showInformation}
@@ -223,11 +237,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  card: {
+  row: {
     flexDirection: "row",
     alignItems: "center",
-    flexGrow: 1,
-    width: "auto",
+    justifyContent: "space-between",
   },
   icon: { marginHorizontal: 4 },
 });

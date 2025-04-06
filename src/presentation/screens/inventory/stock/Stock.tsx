@@ -6,7 +6,7 @@ import { thousandsSystem } from "shared/utils";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
-import type { Portion, Recipe, Stock as StockType } from "domain/entities/data/inventories";
+import type { Stock as StockType } from "domain/entities/data/inventories";
 import { Type } from "domain/enums/data/inventory/movement.enums";
 import { Group, GroupSubCategory } from "domain/entities/data";
 import { useMovementsMap } from "../hooks/useMovementsMap";
@@ -25,35 +25,6 @@ import FullFilterDate, {
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
-export const calculatePortion = (
-  { id: stockId, quantity: availableQuantity }: { id: string; quantity: number },
-  recipes: Recipe[],
-  portions: Portion[],
-): number => {
-  const portionsMap = new Map(portions.map((p) => [p.id, p]));
-
-  const totalQuantityRequired = recipes.reduce((total, recipe) => {
-    return (
-      total +
-      recipe.ingredients.reduce((recipeTotal, ingredient) => {
-        if (ingredient.id === stockId) return recipeTotal + ingredient.quantity;
-
-        const portion = portionsMap.get(ingredient.id);
-        if (portion) {
-          const portionIngredient = portion.ingredients.find((pIng) => pIng.id === stockId);
-          if (portionIngredient) {
-            return recipeTotal + portionIngredient.quantity * ingredient.quantity;
-          }
-        }
-
-        return recipeTotal;
-      }, 0)
-    );
-  }, 0);
-
-  return totalQuantityRequired > 0 ? Math.floor(availableQuantity / totalQuantityRequired) : 0;
-};
-
 type CardProps = {
   stock: StockType;
   onPress: (stockID: StockType) => void;
@@ -62,9 +33,6 @@ type CardProps = {
 
 const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
   const { colors } = useTheme();
-
-  const portions = useAppSelector((state) => state.portions);
-  const recipes = useAppSelector((state) => state.recipes);
 
   const movementsMap = useMovementsMap();
   const quantity = useMemo(() => movementsMap.get(stock.id) || 0, [movementsMap, stock]);
@@ -75,18 +43,12 @@ const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
       onPress={() => onPress(stock)}
       onLongPress={() => onLongPress(stock)}
     >
-      <View>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {quantity < stock.reorder && (
-            <Ionicons name="warning-outline" size={22} color={colors.primary} />
-          )}
-          <StyledText>
-            {stock.name} {stock.unit && `(${stock.unit})`}
-          </StyledText>
-        </View>
-        <StyledText color={colors.text} verySmall>
-          {thousandsSystem(calculatePortion({ id: stock.id, quantity }, recipes, portions))}{" "}
-          Porciones
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {quantity < stock.reorder && (
+          <Ionicons name="warning-outline" size={22} color={colors.primary} />
+        )}
+        <StyledText>
+          {stock.name} {stock.unit && `(${stock.unit})`}
         </StyledText>
       </View>
       <View style={{ alignItems: "flex-end" }}>

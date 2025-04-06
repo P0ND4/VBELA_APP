@@ -60,9 +60,13 @@ const SalesBalancing = () => {
   };
 
   const incomes = (economies: Economy[]) =>
-    economies.filter((e) => e.type === TypeEconomy.Income).reduce((acc, e) => acc + e.value, 0);
+    economies
+      .filter((e) => e.type === TypeEconomy.Income && e.operative)
+      .reduce((acc, e) => acc + e.value, 0);
   const egress = (economies: Economy[]) =>
-    economies.filter((e) => e.type === TypeEconomy.Egress).reduce((acc, e) => acc + e.value, 0);
+    economies
+      .filter((e) => e.type === TypeEconomy.Egress && e.operative)
+      .reduce((acc, e) => acc + e.value, 0);
 
   const calculateOrdersTotal = (orders: Order[]) => {
     return orders.reduce(

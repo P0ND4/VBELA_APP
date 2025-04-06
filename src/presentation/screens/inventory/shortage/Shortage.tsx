@@ -14,7 +14,6 @@ import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 import Table from "presentation/components/layout/Table";
-import { calculatePortion } from "../stock/Stock";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
@@ -27,9 +26,6 @@ type CardProps = {
 const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
   const { colors } = useTheme();
 
-  const portions = useAppSelector((state) => state.portions);
-  const recipes = useAppSelector((state) => state.recipes);
-
   const movementsMap = useMovementsMap();
   const quantity = useMemo(() => movementsMap.get(stock.id) || 0, [movementsMap, stock]);
 
@@ -39,18 +35,12 @@ const Card: React.FC<CardProps> = ({ stock, onPress, onLongPress }) => {
       onPress={() => onPress(stock)}
       onLongPress={() => onLongPress(stock)}
     >
-      <View>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {quantity < stock.reorder && (
-            <Ionicons name="warning-outline" size={22} color={colors.primary} />
-          )}
-          <StyledText>
-            {stock.name} {stock.unit && `(${stock.unit})`}
-          </StyledText>
-        </View>
-        <StyledText color={colors.text} verySmall>
-          {thousandsSystem(calculatePortion({ id: stock.id, quantity }, recipes, portions))}{" "}
-          Porciones
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {quantity < stock.reorder && (
+          <Ionicons name="warning-outline" size={22} color={colors.primary} />
+        )}
+        <StyledText>
+          {stock.name} {stock.unit && `(${stock.unit})`}
         </StyledText>
       </View>
       <View style={{ alignItems: "flex-end" }}>

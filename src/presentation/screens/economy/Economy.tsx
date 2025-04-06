@@ -34,9 +34,7 @@ const Card: React.FC<{ economy: EconomyType; detail: boolean }> = ({ economy, de
 
   const path = useMemo(
     () =>
-      [economy.type, economy.category.name, economy.unit, economy.reference, economy.brand]
-        .filter(Boolean)
-        .join("/"),
+      [economy.type, economy.category.name, economy.subcategory?.name].filter(Boolean).join("/"),
     [economy],
   );
 
@@ -64,7 +62,7 @@ const Card: React.FC<{ economy: EconomyType; detail: boolean }> = ({ economy, de
         {detail ? path : economy.category.name}
       </StyledText>
       <StyledText color={economy.type === EconomyEnums.Income ? colors.primary : "#f71010"}>
-        {thousandsSystem(economy.value)}
+        ({thousandsSystem(economy.quantity)}) {thousandsSystem(economy.value)}
       </StyledText>
     </StyledButton>
   );
@@ -86,6 +84,7 @@ const convertMovementToEconomy = (movement: Movement): EconomyType => ({
   brand: "",
   creationDate: movement.creationDate,
   modificationDate: movement.modificationDate,
+  operative: false,
   isSpecial: true,
 });
 
@@ -105,6 +104,7 @@ const convertOrderToEconomy = (order: Order): EconomyType => ({
   brand: "",
   creationDate: order.creationDate,
   modificationDate: order.modificationDate,
+  operative: true,
   isSpecial: true,
 });
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, ScrollView, StyleSheet, Switch, View } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 import { useTheme } from "@react-navigation/native";
 import { changeDate, random, thousandsSystem } from "shared/utils";
@@ -50,6 +50,7 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
       date: defaultValue?.date || new Date().getTime(),
       reference: defaultValue?.reference || "",
       brand: defaultValue?.brand || "",
+      operative: defaultValue?.operative || true,
       creationDate: defaultValue?.creationDate || new Date().getTime(),
       modificationDate: new Date().getTime(),
     },
@@ -235,6 +236,20 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
                         onBlur={onBlur}
                         value={value}
                       />
+                    )}
+                  />
+                  <Controller
+                    name="operative"
+                    control={control}
+                    render={({ field: { onChange, value } }) => (
+                      <View style={[styles.row, { marginTop: 12 }]}>
+                        <StyledText>{type} operativo</StyledText>
+                        <Switch
+                          value={value}
+                          onValueChange={onChange}
+                          thumbColor={value ? colors.primary : colors.card}
+                        />
+                      </View>
                     )}
                   />
                 </>
