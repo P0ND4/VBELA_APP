@@ -53,7 +53,7 @@ const PickerFloorModal: React.FC<PickerFloorModalProps> = ({
     }
 
     setFound(found);
-  }, [search]);
+  }, [data, search]);
 
   useEffect(() => {
     visible && multiple && setSelected(multiple);
@@ -62,7 +62,7 @@ const PickerFloorModal: React.FC<PickerFloorModalProps> = ({
   const isDataAvailable = !!data.length;
 
   return (
-    <FloorModal style={{ maxHeight: 500 }} title={title} visible={visible} onClose={onClose}>
+    <FloorModal style={{ height: "90%" }} title={title} visible={visible} onClose={onClose}>
       {!data.length && <StyledText color={colors.primary}>{noData}</StyledText>}
       {isDataAvailable && (
         <>
