@@ -47,16 +47,24 @@ const Indicators: React.FC<IndicatorsProps> = ({ route }) => {
   const egress = useMemo(() => economies.filter((e) => e.type === Type.Egress), [economies]);
 
   const percentageIncome = useMemo(
-    () => Math.round((income.length / economies.length) * 100),
+    () => Math.round((income.length / economies.length || 0) * 100),
     [economies],
   );
   const percentageEgress = useMemo(
-    () => Math.round((egress.length / economies.length) * 100),
+    () => Math.round((egress.length / economies.length || 0) * 100),
     [economies],
   );
 
-  const averageIncome = useMemo(() => Math.round(calculateTotal(income) / income.length), [income]);
-  const averageEgress = useMemo(() => Math.round(calculateTotal(egress) / egress.length), [egress]);
+  console.log(income);
+
+  const averageIncome = useMemo(
+    () => Math.round(calculateTotal(income) / income.length || 0),
+    [income],
+  );
+  const averageEgress = useMemo(
+    () => Math.round(calculateTotal(egress) / egress.length || 0),
+    [egress],
+  );
 
   return (
     <Layout>

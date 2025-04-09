@@ -3,7 +3,6 @@ import {
   DrawerContentComponentProps,
   DrawerContentScrollView,
   DrawerItemList,
-  DrawerItem,
 } from "@react-navigation/drawer";
 import { useAppSelector } from "application/store/hook";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
@@ -11,6 +10,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import { Status } from "application/appState/state/state.controller.slice";
+import { useSyncCheck } from "presentation/hooks/useSyncCheck";
 import StyledText from "../text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledButton from "../button/StyledButton";
@@ -19,6 +19,7 @@ type NavigationProps = StackNavigationProp<RootApp>;
 
 const CustomDrawer: React.FC<DrawerContentComponentProps> = (props) => {
   const { colors } = useTheme();
+  const { isSynchronized } = useSyncCheck();
 
   const user = useAppSelector((state) => state.user);
   const stateController = useAppSelector((state) => state.stateController);
@@ -47,7 +48,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = (props) => {
             <StyledText bigParagraph>{user?.identifier.slice(0, 18)}</StyledText>
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
           </TouchableOpacity>
-          <StyledText verySmall>Sincronizado</StyledText>
+          <StyledText verySmall>{isSynchronized ? "Sincronizado" : "No Sincronizado"}</StyledText>
           <View style={{ flexDirection: "row" }}>
             <StyledButton
               style={styles.planButton}

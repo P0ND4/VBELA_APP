@@ -31,6 +31,8 @@ const Button: React.FC<ButtonProps> = React.memo(({ item, selected, onPress }) =
   );
 });
 
+Button.displayName = "Button";
+
 type NavigationProps = StackNavigationProp<RootApp>;
 
 type PaymentButtonsProps = {

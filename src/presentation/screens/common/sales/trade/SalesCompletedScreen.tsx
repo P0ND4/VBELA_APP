@@ -32,7 +32,7 @@ const SalesCompletedScreen: React.FC<SalesCompletedScreenProps> = ({
           </StyledText>
           {trade.status === Status.Completed && (
             <StyledText color={colors.primary} center>
-              Pagado {thousandsSystem(trade.paid)}
+              {!trade.paid ? "GRATIS" : `Pagado: ${thousandsSystem(trade.paid)}`}
             </StyledText>
           )}
           {!!trade.change && (
@@ -44,9 +44,11 @@ const SalesCompletedScreen: React.FC<SalesCompletedScreenProps> = ({
         </View>
       </View>
       <View>
-        <StyledButton onPress={goInvoice}>
-          <StyledText center>Ver factura</StyledText>
-        </StyledButton>
+        {!!trade.paid && (
+          <StyledButton onPress={goInvoice}>
+            <StyledText center>Ver factura</StyledText>
+          </StyledButton>
+        )}
         <StyledButton backgroundColor={colors.primary} onPress={goBack}>
           <StyledText color="#FFFFFF" center>
             Regresar

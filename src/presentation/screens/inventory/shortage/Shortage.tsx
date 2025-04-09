@@ -87,6 +87,7 @@ const Shortage: React.FC<StockProps> = ({ inventoryID, visualization }) => {
 
   useEffect(() => {
     let filtered = found;
+    filtered = filtered.sort((a, b) => a.name.localeCompare(b.name));
 
     if (search) {
       const searchTerm = search.toLowerCase();

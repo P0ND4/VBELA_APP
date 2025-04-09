@@ -15,7 +15,7 @@ const initialState: StateController = {
   start: null,
 };
 
-export const stateController = createSlice({
+export const stateControllerSlice = createSlice({
   name: "state-controller",
   initialState,
   reducers: {
@@ -27,5 +27,5 @@ export const stateController = createSlice({
   },
 });
 
-export const { active, clean } = stateController.actions;
-export default stateController.reducer;
+export const { active, clean } = stateControllerSlice.actions;
+export default stateControllerSlice.reducer;

@@ -2,18 +2,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import { View, FlatList, StyleSheet, Alert } from "react-native";
 import { useAppSelector } from "application/store/hook";
 import { useNavigation, useTheme } from "@react-navigation/native";
-import type {
-  Inventory,
-  Portion,
-  Recipe as RecipeType,
-  Stock,
-} from "domain/entities/data/inventories";
+import type { Inventory, Recipe as RecipeType } from "domain/entities/data/inventories";
 import { Visible } from "domain/enums/data/inventory/visible.enums";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
 import { thousandsSystem } from "shared/utils";
 import { Group, GroupSubCategory } from "domain/entities/data";
-import { useMovementsMap } from "../hooks/useMovementsMap";
 import Layout from "presentation/components/layout/Layout";
 import StyledInput from "presentation/components/input/StyledInput";
 import StyledText from "presentation/components/text/StyledText";
@@ -26,41 +20,9 @@ import FullFilterDate, {
   filterByDate,
   Type as TypeEnums,
 } from "presentation/components/layout/FullFilterDate";
+import { useRecipeCost } from "../hooks/useRecipeCost";
 
 type NavigationProps = StackNavigationProp<RootApp>;
-
-const calculatePortion = (
-  recipe: RecipeType,
-  portions: Portion[],
-  movementsMap: Map<string, number>,
-) => {
-  const portionsMap = new Map(portions.map((p) => [p.id, p]));
-
-  const minPortions = recipe.ingredients.map((ingredient) => {
-    if (!portionsMap.has(ingredient.id)) {
-      const stockQuantity = movementsMap.get(ingredient.id) || 0;
-      return Math.floor(stockQuantity / ingredient.quantity);
-    }
-
-    const portion = portionsMap.get(ingredient.id)!;
-    const portionIngredientsWithStock = portion.ingredients.map((pIng) => {
-      const stockQuantity = movementsMap.get(pIng.id) || 0;
-      return Math.floor(stockQuantity / (pIng.quantity * ingredient.quantity));
-    });
-
-    return Math.min(...portionIngredientsWithStock);
-  });
-
-  return Math.min(...(minPortions.length > 0 ? minPortions : [0]));
-};
-
-// Helper function to calculate the cost of a recipe
-const calculateCost = (recipe: RecipeType, stocks: Stock[]): number => {
-  return recipe.ingredients.reduce((total, ingredient) => {
-    const stock = stocks.find((s) => s.id === ingredient.id);
-    return total + (stock?.currentValue || 0) * ingredient.quantity;
-  }, 0);
-};
 
 // Card component to display recipe information
 const Card: React.FC<{ recipe: RecipeType; onPress: () => void; onLongPress: () => void }> = ({
@@ -70,21 +32,11 @@ const Card: React.FC<{ recipe: RecipeType; onPress: () => void; onLongPress: () 
 }) => {
   const { colors } = useTheme();
 
-  const portions = useAppSelector((state) => state.portions);
-  const stocks = useAppSelector((state) => state.stocks);
-
-  const movementsMap = useMovementsMap();
-
-  const cost = useMemo(() => calculateCost(recipe, stocks), [recipe, stocks]);
+  const cost = useRecipeCost(recipe.ingredients);
 
   return (
     <StyledButton style={styles.row} onPress={onPress} onLongPress={onLongPress}>
-      <View>
-        <StyledText>{recipe.name}</StyledText>
-        <StyledText verySmall>
-          {thousandsSystem(calculatePortion(recipe, portions, movementsMap))} Porciones
-        </StyledText>
-      </View>
+      <StyledText>{recipe.name}</StyledText>
       <View>
         <StyledText color={colors.primary} right bold>
           {thousandsSystem(recipe.value)}
@@ -145,6 +97,7 @@ const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
 
   useEffect(() => {
     let filteredByDate = filterByDate<RecipeType>(found, date);
+    filteredByDate = filteredByDate.sort((a, b) => a.name.localeCompare(b.name));
 
     if (search) {
       const searchTerm = search.toLowerCase();

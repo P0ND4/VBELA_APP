@@ -105,6 +105,7 @@ const Stock: React.FC<StockProps> = ({ inventoryID, visualization }) => {
 
   useEffect(() => {
     let filteredByDate = filterByDate<StockType>(found, date);
+    filteredByDate = filteredByDate.sort((a, b) => a.name.localeCompare(b.name));
 
     if (search) {
       const searchTerm = search.toLowerCase();

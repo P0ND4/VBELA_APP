@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import { thousandsSystem } from "shared/utils";
 import { PieChart } from "react-native-gifted-charts";
@@ -70,7 +70,7 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ navigation, route }) => {
                   <StyledText smallSubtitle bold>
                     {thousandsSystem((data[0].times / totalTimes) * 100)}%
                   </StyledText>
-                  <StyledText>{data[0].text}</StyledText>
+                  <StyledText>{data[0].name}</StyledText>
                 </View>
               );
             }}
@@ -84,7 +84,7 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ navigation, route }) => {
           {!data.length && <NotFound />}
           <View style={{ marginVertical: 10 }}>
             {bestValue.map((d) => (
-              <Card key={d.id} method={d.text} color={d.color} icon={d.icon} value={d.value} />
+              <Card key={d.id} method={d.name} color={d.color} icon={d.icon} value={d.value} />
             ))}
           </View>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -94,7 +94,7 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ navigation, route }) => {
           {!data.length && <NotFound />}
           <View style={{ marginVertical: 10 }}>
             {data.map((d) => (
-              <Card key={d.id} method={d.text} color={d.color} icon={d.icon} value={d.times} />
+              <Card key={d.id} method={d.name} color={d.color} icon={d.icon} value={d.times} />
             ))}
           </View>
         </View>

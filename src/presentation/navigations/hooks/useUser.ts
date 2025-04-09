@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { Collection } from "domain/entities/data";
 import { changeAll, cleanAll } from "application/store/actions";
 import { signOutWithGoogle } from "infrastructure/auth/google.auth";
+import { readQueueOperation } from "infrastructure/offline/operation.queue";
 
 export const useUser = () => {
   const user = useAppSelector((state) => state.user);
@@ -11,19 +12,23 @@ export const useUser = () => {
 
   const dispatch = useAppDispatch();
 
-  //TODO SI useUser tiene datos pendiente por subir que no sincronice los datos
   // Update user information
   useEffect(() => {
     (async () => {
-      if (!session) return;
-      try {
-        const userResponse = await apiClient<Collection[]>({
-          url: endpoints.user.get(),
-          method: "GET",
-          data: { identifier: user.identifier, expoID: null },
-        });
+      const currentQueue = await readQueueOperation();
 
-        if (userResponse?.data) dispatch(changeAll(userResponse.data[0]));
+      if (!session || currentQueue.length > 0) return;
+      try {
+        const userResponse = await apiClient<Collection[]>(
+          {
+            url: endpoints.user.get(),
+            method: "GET",
+            data: { identifier: user.identifier, expoID: null },
+          },
+          { synchronization: false },
+        );
+
+        if (userResponse?.data[0]) dispatch(changeAll(userResponse.data[0]));
         else {
           await signOutWithGoogle();
           dispatch(cleanAll());

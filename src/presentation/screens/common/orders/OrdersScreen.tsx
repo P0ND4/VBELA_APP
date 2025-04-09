@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { View, StyleSheet, TouchableOpacity, FlatList } from "react-native";
 import moment from "moment";
-import { useAppSelector } from "application/store/hook";
 import { useTheme } from "@react-navigation/native";
 import type { Order as OrderType } from "domain/entities/data/common";
 import { addDays, beautifulChangeDate, thousandsSystem } from "shared/utils";
@@ -36,7 +35,7 @@ const Order: React.FC<OrderProps> = ({ order, navigateToInformation }) => {
         <View style={styles.alignHorizontally}>
           <Ionicons name={icon} size={25} color={color} />
           <StyledText style={{ marginHorizontal: 4 }} lineThrough={lineThrough}>
-            {thousandsSystem(order.total)}
+            {!order.total ? "GRATIS" : thousandsSystem(order.total)}
           </StyledText>
           {/* <StyledText verySmall lineThrough={lineThrough}>
             por NOMBRE
@@ -77,7 +76,7 @@ const Card: React.FC<CardProps> = ({ group, navigateToInformation }) => {
     <View style={[styles.card, { borderColor: colors.border }]}>
       <StyledText smallSubtitle>{beautifulChangeDate(addDays(new Date(group.date), 1))}</StyledText>
       <StyledText color={colors.primary}>
-        {thousandsSystem(group.orders.length)} pedidos, {thousandsSystem(total)}
+        {thousandsSystem(group.orders.length)} pedidos, {!total ? "GRATIS" : thousandsSystem(total)}
       </StyledText>
       <View style={{ marginTop: 15 }}>
         {group.orders.map((order) => (
@@ -217,7 +216,8 @@ const OrdersScreen: React.FC<OrdersScreenProps> = ({
                 Total en pedidos
               </StyledText>
               <StyledText>
-                {thousandsSystem(total)} de {thousandsSystem(allOrders.length)} pedidos
+                {!total ? "GRATIS" : thousandsSystem(total)} de {thousandsSystem(allOrders.length)}{" "}
+                pedidos
               </StyledText>
             </View>
           </>

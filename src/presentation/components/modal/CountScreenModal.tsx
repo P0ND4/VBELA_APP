@@ -159,7 +159,7 @@ const CountScreenModal: React.FC<CountScreenProps> = ({
 
   useEffect(() => {
     visible && setCount(Math.abs(defaultValue));
-  }, [visible]);
+  }, [visible, defaultValue]);
 
   return (
     <ScreenModal title={title} visible={visible} onClose={onClose} headerRight={headerRight}>

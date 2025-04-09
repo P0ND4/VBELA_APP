@@ -1,6 +1,11 @@
 import * as FileSystem from "expo-file-system";
 
 const QUEUE_FILE = `${FileSystem.documentDirectory}queue.json`;
+const listeners = new Set<() => void>();
+
+const notifyListeners = () => {
+  listeners.forEach((listener) => listener());
+};
 
 const ensureQueueFileExists = async () => {
   const fileInfo = await FileSystem.getInfoAsync(QUEUE_FILE);
@@ -22,6 +27,7 @@ export const saveQueueOperation = async (props: Queue) => {
   let operations: Queue[] = await readQueueOperation();
   operations.push(props);
   await FileSystem.writeAsStringAsync(QUEUE_FILE, JSON.stringify(operations));
+  notifyListeners();
 };
 
 export const readQueueOperation = async () => {
@@ -40,4 +46,12 @@ export const deleteQueueOperation = async (id: string) => {
   const operations: Queue[] = await readQueueOperation();
   const updatedOperations = operations.filter((operation: Queue) => operation.id !== id);
   await FileSystem.writeAsStringAsync(QUEUE_FILE, JSON.stringify(updatedOperations));
+  notifyListeners();
+};
+
+export const onQueueChange = (callback: () => void) => {
+  listeners.add(callback);
+  return () => {
+    listeners.delete(callback);
+  };
 };

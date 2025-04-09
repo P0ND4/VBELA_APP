@@ -1,90 +1,103 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { readQueueOperation, deleteQueueOperation, Queue } from "./operation.queue";
+import { useAppDispatch } from "application/store/hook";
 import { baseURL } from "../api/server";
+import { change, Status } from "application/appState/internet/status.slice";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import NetInfo from "@react-native-community/netinfo";
+import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
 
-const MAX_RETRIES = 3;
+const SYNC_DELAY = 2000;
+const NETWORK_CHECK_DELAY = 1000;
 
 export const useSync = () => {
   const abortControllerRef = useRef(new AbortController());
-  const isMountedRef = useRef(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const dispatch = useAppDispatch();
 
-  const processQueue = async (queue: Queue): Promise<void> => {
-    for (let retries = 0; retries < MAX_RETRIES; retries++) {
-      try {
-        const state = await NetInfo.fetch();
-        if (!state.isConnected) throw new Error("NO_INTERNET");
+  const processQueueItem = async (queueItem: Queue) => {
+    const state = await NetInfo.fetch();
+    if (!state.isConnected) throw new Error("NO_INTERNET");
 
-        const token = await AsyncStorage.getItem("access_token");
-        if (!token) throw new Error("UNAUTHORIZED");
+    const token = await AsyncStorage.getItem("access_token");
+    if (!token) throw new Error("UNAUTHORIZED");
 
-        await axios({
-          baseURL,
-          url: queue.endpoint,
-          method: queue.method,
-          data: queue.data,
-          headers: { Authorization: `Bearer ${token}` },
-          signal: abortControllerRef.current.signal,
-        });
+    await axios({
+      baseURL,
+      url: queueItem.endpoint,
+      method: queueItem.method,
+      data: queueItem.data,
+      headers: { Authorization: `Bearer ${token}` },
+      signal: abortControllerRef.current.signal,
+    });
 
-        await deleteQueueOperation(queue.id);
-        return;
-      } catch (error) {
-        if (retries === MAX_RETRIES - 1) throw error;
-        await new Promise((r) => setTimeout(r, 2000));
-      }
-    }
+    await deleteQueueOperation(queueItem.id);
   };
 
-  const sync = async (): Promise<void> => {
-    if (!isMountedRef.current || isSyncing) return;
+  const sync = useCallback(async (): Promise<void> => {
+    const queues = await readQueueOperation();
+    if (isSyncing || queues.length === 0) {
+      dispatch(change(Status.Online));
+      return;
+    }
+
+    dispatch(change(Status.Syncing));
+    setIsSyncing(true);
 
     try {
-      setIsSyncing(true);
-      abortControllerRef.current = new AbortController();
-
-      while (true) {
+      while (!abortControllerRef.current.signal.aborted) {
         const queues = await readQueueOperation();
         if (queues.length === 0) break;
 
-        const queue = queues[0];
         try {
-          await processQueue(queue);
+          await processQueueItem(queues[0]);
         } catch (error) {
-          throw error;
+          console.warn("Error processing queue item:", error);
+          await new Promise((r) => setTimeout(r, SYNC_DELAY));
+          continue;
         }
       }
-    } catch (error) {
-      console.error(
-        "Error durante sincronización:",
-        error instanceof Error ? error.message : error,
-      );
     } finally {
       setIsSyncing(false);
+      dispatch(change(Status.Online));
     }
-  };
-
-  let syncTimeout: NodeJS.Timeout;
+  }, [isSyncing, dispatch]);
 
   useEffect(() => {
-    const unsubscribeNetInfo = NetInfo.addEventListener((state) => {
+    let syncTimeout: NodeJS.Timeout;
+    let isMounted = true;
+    let lastState: boolean | null = null;
+
+    const handleNetworkChange = (state: NetInfoState) => {
+      if (!isMounted) return;
+
+      if (lastState === state.isConnected) return;
+      lastState = state.isConnected;
+
       clearTimeout(syncTimeout);
+
       syncTimeout = setTimeout(() => {
-        if (state.isConnected && !isSyncing) sync();
-      }, 1000);
-    });
+        if (!isMounted) return;
+
+        if (state.isConnected) {
+          if (!isSyncing) sync();
+        } else dispatch(change(Status.Offline));
+      }, NETWORK_CHECK_DELAY);
+    };
+
+    const unsubscribeNetInfo = NetInfo.addEventListener(handleNetworkChange);
+    NetInfo.fetch().then(handleNetworkChange);
 
     return () => {
-      isMountedRef.current = false;
+      isMounted = false;
+      clearTimeout(syncTimeout);
       unsubscribeNetInfo();
       abortControllerRef.current.abort();
+      abortControllerRef.current = new AbortController();
     };
-  }, []);
+  }, [isSyncing, sync, dispatch]);
 
-  return { sync };
+  return { sync, isSyncing };
 };
 
 export default useSync;

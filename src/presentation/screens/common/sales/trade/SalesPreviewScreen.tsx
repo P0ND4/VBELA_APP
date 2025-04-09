@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, FlatList, StyleSheet, TouchableOpacity, Switch, TextInput } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import { useOrder } from "application/context/OrderContext";
@@ -148,12 +148,12 @@ const Card: React.FC<CardProps> = ({ item, addElement, locationID, goBack = () =
               onPress={() => setCountModal(true)}
             />
             <OptionButton
-              title={thousandsSystem(item.value)}
+              title={!item.value ? "GRATIS" : thousandsSystem(item.value)}
               paragraph={item.unit}
               icon="cash-outline"
               onPress={() => setValueModal(true)}
             />
-            {item?.registered && (
+            {item?.registered && !!item.value && (
               <OptionButton
                 title="Descuento"
                 paragraph={item.discount ? `${formatDecimals(item.discount * 100, 2)}%` : undefined}
@@ -199,7 +199,7 @@ const Card: React.FC<CardProps> = ({ item, addElement, locationID, goBack = () =
       />
       <DiscountScreen
         visible={discountModal}
-        maxLength={item.quantity * item.value}
+        maxValue={item.quantity * item.value}
         defaultDiscount={item.discount}
         onClose={() => setDiscountModal(false)}
         onSave={(discount) => {
@@ -233,7 +233,12 @@ const Card: React.FC<CardProps> = ({ item, addElement, locationID, goBack = () =
         defaultValue={item.value}
         maxValue={9999999999}
         onSave={(value) => {
-          updateSelection({ ...item, value, total: item.quantity * value });
+          updateSelection({
+            ...item,
+            value,
+            total: item.quantity * value,
+            discount: !!value ? item.discount : 0,
+          });
           setValueModal(false);
         }}
       />
@@ -272,9 +277,13 @@ const SalesPreviewScreen: React.FC<SalesPreviewScreenProps> = ({
 
   const [discountModal, setDiscountModal] = useState<boolean>(false);
 
-  const value = selection.reduce((a, b) => a + b.total, 0);
-  const total = value - value * info.discount;
-  const quantity = selection.reduce((a, b) => a + b.quantity, 0);
+  const value = useMemo(() => selection.reduce((a, b) => a + b.total, 0), [selection]);
+  const total = useMemo(() => value - value * info.discount, [value, info.discount]);
+  const quantity = useMemo(() => selection.reduce((a, b) => a + b.quantity, 0), [selection]);
+
+  useEffect(() => {
+    !value && updateInfo({ discount: 0 });
+  }, [value]);
 
   return (
     <>
@@ -288,11 +297,14 @@ const SalesPreviewScreen: React.FC<SalesPreviewScreenProps> = ({
             )}
           />
           <View style={{ marginTop: 20 }}>
-            <TouchableOpacity onPress={() => setDiscountModal(true)}>
-              <StyledText right color={colors.primary}>
-                {info.discount ? `(${formatDecimals(info.discount * 100, 2)}%)` : ""} Dar descuento
-              </StyledText>
-            </TouchableOpacity>
+            {!!value && (
+              <TouchableOpacity onPress={() => setDiscountModal(true)}>
+                <StyledText right color={colors.primary}>
+                  {info.discount ? `(${formatDecimals(info.discount * 100, 2)}%)` : ""} Dar
+                  descuento
+                </StyledText>
+              </TouchableOpacity>
+            )}
             {/* <TouchableOpacity onPress={() => alert("Para la segunda actualización")}>
               <StyledText right color={colors.primary}>
                 Destino de entrega
@@ -307,7 +319,7 @@ const SalesPreviewScreen: React.FC<SalesPreviewScreenProps> = ({
         <SalesButtonBottom
           locationID={locationID}
           tableID={tableID}
-          name={`${thousandsSystem(quantity)} pedidos = ${thousandsSystem(total)}`}
+          name={`${thousandsSystem(quantity)} pedidos = ${!total ? "GRATIS" : thousandsSystem(total)}`}
           onPress={() => sendButton()}
           buttonsEvent={{
             ...buttonsEvent,
@@ -317,7 +329,7 @@ const SalesPreviewScreen: React.FC<SalesPreviewScreenProps> = ({
       </Layout>
       <DiscountScreen
         visible={discountModal}
-        maxLength={total}
+        maxValue={value}
         defaultDiscount={info.discount || 0}
         onClose={() => setDiscountModal(false)}
         onSave={(discount) => updateInfo({ discount })}

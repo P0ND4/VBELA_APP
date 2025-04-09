@@ -94,6 +94,7 @@ const Portion: React.FC<PortionProps> = ({ inventoryID, visualization }) => {
 
   useEffect(() => {
     let filteredByDate = filterByDate<PortionType>(found, date);
+    filteredByDate = filteredByDate.sort((a, b) => a.name.localeCompare(b.name));
 
     if (search) {
       const searchTerm = search.toLowerCase();

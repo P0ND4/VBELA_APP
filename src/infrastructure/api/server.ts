@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios, { AxiosRequestConfig } from "axios";
-// import { Queue, readQueueOperation, saveQueueOperation } from "../offline/operation.queue";
-// import { thousandsSystem } from "shared/utils";
+import { Queue, readQueueOperation, saveQueueOperation } from "../offline/operation.queue";
+import { thousandsSystem } from "shared/utils";
 
 enum Status {
   Success = "success",
@@ -22,16 +22,16 @@ interface ApiResponse<T> {
 
 export const baseURL = process.env.EXPO_PUBLIC_API_URL;
 
-// const addQueue = async (config: AxiosRequestConfig) => {
-//   const queueItem: Queue = {
-//     id: `req_${Date.now()}`,
-//     endpoint: config.url!,
-//     method: config.method as "POST" | "PUT" | "DELETE",
-//     data: config.data,
-//   };
+const addQueue = async (config: AxiosRequestConfig) => {
+  const queueItem: Queue = {
+    id: `req_${Date.now()}`,
+    endpoint: config.url!,
+    method: config.method as "POST" | "PUT" | "DELETE",
+    data: config.data,
+  };
 
-//   await saveQueueOperation(queueItem);
-// };
+  await saveQueueOperation(queueItem);
+};
 
 const apiClient = async <T>(
   config: AxiosRequestConfig,
@@ -39,15 +39,15 @@ const apiClient = async <T>(
 ): Promise<ApiResponse<T>> => {
   const token = await AsyncStorage.getItem("access_token");
 
-  // if (options.synchronization) {
-  //   const currentQueue = await readQueueOperation();
-  //   if (currentQueue.length > 0) {
-  //     const message = `Queued request due to pending transactions: ${thousandsSystem(currentQueue.length)}`;
-  //     console.warn(message);
-  //     await addQueue(config);
-  //     throw new Error(message);
-  //   }
-  // }
+  if (options.synchronization) {
+    const currentQueue = await readQueueOperation();
+    if (currentQueue.length > 0) {
+      const message = `Queued request due to pending transactions: ${thousandsSystem(currentQueue.length)}`;
+      console.warn(message);
+      await addQueue(config);
+      throw new Error(message);
+    }
+  }
 
   try {
     const response = await axios({
@@ -58,7 +58,7 @@ const apiClient = async <T>(
     return response.data;
   } catch (error) {
     console.warn("API Error:", error);
-    // if (options.synchronization) await addQueue(config);
+    if (options.synchronization) await addQueue(config);
     throw error;
   }
 };

@@ -86,7 +86,7 @@ const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({
         <View style={styles.information}>
           <View style={styles.row}>
             <StyledText bigTitle center>
-              {thousandsSystem(total)}
+              {thousandsSystem(!total ? "GRATIS" : total)}
             </StyledText>
           </View>
           <View style={styles.buttonContainer}>
@@ -102,13 +102,17 @@ const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({
             </StyledButton> */}
           </View>
         </View>
-
         <View style={{ flex: 2 }}>
           <PaymentButtons onPress={(id) => setMethod(id === method ? "" : id)} selected={method} />
           <StyledButton
             backgroundColor={colors.primary}
-            disable={!method}
-            onPress={() => setPaymentVisible(true)}
+            disable={!method && !!total}
+            onPress={() => {
+              if (!method) {
+                onSave(data(Status.Completed, []));
+                clean();
+              } else setPaymentVisible(true);
+            }}
           >
             <StyledText center color="#FFFFFF">
               Avanzar

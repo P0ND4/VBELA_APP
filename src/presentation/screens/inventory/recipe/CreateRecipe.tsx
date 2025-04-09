@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FlatList, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
@@ -31,6 +31,7 @@ import apiClient, { endpoints } from "infrastructure/api/server";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import { Group, GroupSubCategory } from "domain/entities/data";
 import { Type } from "domain/enums/data/inventory/ingredient.enums";
+import { useRecipeCost } from "../hooks/useRecipeCost";
 
 const GET_TAB_NAME = {
   [Visible.Both]: "RECETAS/PAQUETES",
@@ -233,8 +234,6 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
 
   const { colors } = useTheme();
 
-  const portions = useAppSelector((state) => state.portions);
-  const stocks = useAppSelector((state) => state.stocks);
   const recipeGroup = useAppSelector((state) => state.recipeGroup);
 
   const [optional, setOptional] = useState<boolean>(false);
@@ -299,35 +298,14 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
     });
   }, [inventory]);
 
-  const cost = useMemo(() => {
-    const stocksMap = new Map(stocks.map((s) => [s.id, s]));
-    const portionsMap = new Map(portions.map((p) => [p.id, p]));
-
-    return ingredients.reduce((ai, bi) => {
-      const portionFound = portionsMap.get(bi.id);
-
-      if (portionFound) {
-        return (
-          ai +
-          portionFound.ingredients.reduce((a, b) => {
-            const currentValueFound = stocksMap.get(b.id)?.currentValue || 0;
-            return a + currentValueFound * b.quantity;
-          }, 0) *
-            bi.quantity
-        );
-      } else {
-        const currentValueFound = stocksMap.get(bi.id)?.currentValue || 0;
-        return ai + currentValueFound * bi.quantity;
-      }
-    }, 0);
-  }, [ingredients, stocks, portions]);
+  const cost = useRecipeCost(ingredients);
 
   const handleSaveOrUpdate = (data: Recipe) => (defaultValue ? update(data) : save(data));
 
   return (
     <>
       <Layout>
-        <View style={{ flex: 1 }}>
+        <ScrollView style={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
           <Controller
             name="name"
             control={control}
@@ -410,7 +388,7 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
               />
             </>
           )}
-        </View>
+        </ScrollView>
         {!!ingredients.length && (
           <View style={{ marginVertical: 15 }}>
             <StyledText>
@@ -470,7 +448,6 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
       />
       <Controller
         name="value"
-        rules={{ validate: (num) => !!num }}
         control={control}
         render={({ field: { onChange, value } }) => (
           <CountScreenModal

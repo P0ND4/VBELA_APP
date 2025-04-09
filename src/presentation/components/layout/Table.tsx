@@ -74,7 +74,7 @@ const Table: TableComponent = ({
           bodyStyle,
         }}
       >
-        <View style={containerStyle}>
+        <View style={[containerStyle, { flex: 1 }]}>
           <ScrollView
             horizontal
             contentContainerStyle={{ flexGrow: 1 }}

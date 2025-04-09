@@ -163,7 +163,7 @@ const ViewOrder: React.FC<ViewOrderProps> = ({ onEditOrder, order, onChange }) =
         <View style={styles.header}>
           <View style={styles.row}>
             <StyledText subtitle lineThrough={order.status === Status.Canceled}>
-              {thousandsSystem(order.total)}{" "}
+              {!order.total ? "GRATIS" : thousandsSystem(order.total)}{" "}
               {!!order.discount && (
                 <StyledText
                   color={colors.primary}

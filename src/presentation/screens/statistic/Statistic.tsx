@@ -63,7 +63,7 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
     calculatePaymentMethods,
   } = useStatisticsData();
 
-  const { bestMethod, paymentMethods } = useMemo(
+  const paymentMethods = useMemo(
     () => calculatePaymentMethods([...OFCompleted, ...SFCompleted], colors.primary),
     [OFCompleted, SFCompleted, colors.primary],
   );
@@ -115,10 +115,10 @@ const Statistic: React.FC<AppNavigationProp> = ({ navigation }) => {
           />
           <Card
             name="Medios de pago"
-            value={bestMethod && bestMethod?.text}
+            value={paymentMethods[0] && paymentMethods[0].name}
             description={
-              bestMethod
-                ? `El ${bestMethod.text} es método de pago con más valor usado`
+              paymentMethods[0]
+                ? `El ${paymentMethods[0].name} es método de pago con más valor usado`
                 : "No se ha utilizado método de pagos"
             }
             right={

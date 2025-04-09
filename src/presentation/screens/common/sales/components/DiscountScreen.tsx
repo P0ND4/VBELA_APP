@@ -9,7 +9,7 @@ type DiscountScreenProps = {
   visible: boolean;
   onClose: () => void;
   defaultDiscount: number;
-  maxLength: number;
+  maxValue: number;
   onSave: (discount: number) => void;
 };
 
@@ -17,7 +17,7 @@ const DiscountScreen: React.FC<DiscountScreenProps> = ({
   visible,
   onClose,
   defaultDiscount,
-  maxLength,
+  maxValue,
   onSave,
 }) => {
   const { colors } = useTheme();
@@ -25,7 +25,7 @@ const DiscountScreen: React.FC<DiscountScreenProps> = ({
   const [discount, setDiscount] = useState<number>(0);
 
   useEffect(() => {
-    visible && setDiscount(maxLength * defaultDiscount);
+    visible && setDiscount(maxValue * defaultDiscount);
   }, [visible]);
 
   return (
@@ -49,13 +49,13 @@ const DiscountScreen: React.FC<DiscountScreenProps> = ({
             El descuento de este menú o producto será cambiado a porcentaje una vez guardado
           </StyledText>
         )}
-        padDescription={() => `Valor máximo: ${thousandsSystem(maxLength)}`}
+        padDescription={() => `Valor máximo: ${thousandsSystem(maxValue)}`}
         visible={visible}
         onClose={onClose}
         defaultValue={discount}
-        maxValue={maxLength}
+        maxValue={maxValue}
         onSave={(discount) => {
-          onSave(discount / maxLength);
+          onSave(discount / maxValue);
           onClose();
         }}
       />

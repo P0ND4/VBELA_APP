@@ -20,6 +20,7 @@ import { removeRecipe as removeRecipeProduct } from "application/slice/stores/pr
 import { removeRecipe as removeRecipeMenu } from "application/slice/restaurants/menu.slice";
 import apiClient, { endpoints } from "infrastructure/api/server";
 import { Type } from "domain/enums/data/inventory/ingredient.enums";
+import { useRecipeCost } from "../hooks/useRecipeCost";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   const { colors } = useTheme();
@@ -86,16 +87,7 @@ type IngredientsModalProps = {
 };
 
 const IngredientsModal: React.FC<IngredientsModalProps> = ({ recipe, visible, onClose }) => {
-  const stocks = useAppSelector((state) => state.stocks);
-
-  const cost = useMemo(
-    () =>
-      recipe.ingredients.reduce((a, b) => {
-        const { currentValue = 0 } = stocks.find((s) => s.id === b.id) ?? {};
-        return a + currentValue * b.quantity;
-      }, 0),
-    [recipe.ingredients, stocks],
-  );
+  const cost = useRecipeCost(recipe.ingredients);
 
   return (
     <ScreenModal title="Ingredientes" visible={visible} onClose={onClose}>

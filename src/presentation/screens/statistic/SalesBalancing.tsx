@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { FlatList, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import { changeDate, thousandsSystem } from "shared/utils";
 import React, { useMemo, useState } from "react";
@@ -10,6 +10,7 @@ import { Type as TypeEconomy } from "domain/enums/data/economy/economy.enums";
 import { useAppSelector } from "application/store/hook";
 import { selectCompletedOrders, selectCompletedSales } from "application/selectors";
 import { Economy, Order } from "domain/entities/data";
+import { calculatePaymentMethods } from "./hooks/useStatisticsData";
 
 type DotSeparatorTextProps = {
   bold?: boolean;
@@ -79,6 +80,11 @@ const SalesBalancing = () => {
   const SFCompleted = useMemo(() => filtered<Order>(salesCompleted), [salesCompleted, date]);
   const allOrders = useMemo(() => [...OFCompleted, ...SFCompleted], [OFCompleted, SFCompleted]);
 
+  const paymentMethods = useMemo(
+    () => calculatePaymentMethods(allOrders, colors.primary),
+    [allOrders, colors.primary],
+  );
+
   const economiesFiltered = useMemo(() => filtered<Economy>(economies), [economies, date]);
 
   const totalSales = useMemo(
@@ -87,6 +93,7 @@ const SalesBalancing = () => {
   );
 
   const totalFromOrders = useMemo(() => {
+    console.log(allOrders.reduce((acc, order) => acc + order.total, 0));
     return allOrders.reduce((acc, order) => acc + order.total, 0);
   }, [allOrders]);
 
@@ -107,7 +114,7 @@ const SalesBalancing = () => {
             </StyledText>
           </TouchableOpacity>
         </View>
-        <View style={{ marginTop: 16 }}>
+        <ScrollView style={{ marginTop: 16, flexGrow: 1 }}>
           <View style={[styles.separator, { borderColor: colors.border }]}>
             <DotSeparatorText
               leftText="VENTA TOTAL"
@@ -149,6 +156,14 @@ const SalesBalancing = () => {
               dotColor={colors.primary}
               bold
             />
+            <FlatList
+              data={paymentMethods}
+              scrollEnabled={false}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <DotSeparatorText leftText={item.name} rightText={thousandsSystem(item.value)} />
+              )}
+            />
             {/* <DotSeparatorText leftText="(-) Efectivo" rightText="0.00" />
             <DotSeparatorText leftText="(-) Nequi" rightText="0.00" />
             <DotSeparatorText leftText="(-) Otros" rightText="0.00" /> */}
@@ -161,7 +176,7 @@ const SalesBalancing = () => {
               bold
             />
           </View> */}
-        </View>
+        </ScrollView>
       </Layout>
       <SimpleCalendarModal
         defaultValue={date}

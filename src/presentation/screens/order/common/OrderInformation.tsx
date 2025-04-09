@@ -16,7 +16,7 @@ const Card: React.FC<{ item: Selection }> = ({ item }) => {
         <StyledText>{item.name}</StyledText>
       </View>
       <StyledText>
-        {thousandsSystem(item.total)}{" "}
+        {!item.total ? "GRATIS" : thousandsSystem(item.total)}{" "}
         {!!item.discount && (
           <StyledText color={colors.primary}>
             {`(-${thousandsSystem(item.quantity * item.value * item.discount)})`}

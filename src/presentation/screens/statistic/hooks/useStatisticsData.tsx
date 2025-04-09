@@ -18,7 +18,7 @@ type Icons = keyof typeof Ionicons.glyphMap;
 
 export type PaymentMethodSummary = {
   id: string;
-  text: string;
+  name: string;
   color?: string;
   value: number;
   icon: Icons | null;
@@ -43,38 +43,27 @@ const calculateRevenue = (orders: Order[], economies: Economy[]) => {
   return orders.reduce((acc, o) => acc + o.total, 0) + calculateTotal([], economies);
 };
 
-const calculatePaymentMethods = (
-  orders: Order[],
-  primaryColor: string,
-): {
-  bestMethod: PaymentMethodSummary | null;
-  paymentMethods: PaymentMethodSummary[];
-} => {
-  const paymentMethods = orders.flatMap((o) => o.paymentMethods);
-  const summary = paymentMethods.reduce<PaymentMethodSummary[]>((acc, b) => {
-    const found = acc.find((a) => a.id === b.id);
-    if (found) {
-      found.value += b.amount;
-      found.times += 1;
-    } else {
-      acc.push({
-        id: b.id,
-        text: b.method,
-        value: b.amount,
-        icon: b.icon,
-        times: 1,
-      });
-    }
-    return acc;
-  }, []);
+export const calculatePaymentMethods = (orders: Order[], primaryColor: string) => {
+  const map = new Map<string, PaymentMethodSummary>();
 
-  const palette = generatePalette(primaryColor, summary.length);
-  const withColor = summary.map((item, i) => ({ ...item, color: palette[i] }));
-  const sorted = withColor.sort((a, b) => b.times - a.times);
-  return {
-    bestMethod: sorted[0] || null,
-    paymentMethods: sorted,
-  };
+  orders
+    .flatMap((o) => o.paymentMethods)
+    .forEach(({ id, method, amount, icon }) => {
+      const entry = map.get(id);
+      if (entry) {
+        entry.value += amount;
+        entry.times++;
+      } else {
+        map.set(id, { id, name: method, value: amount, icon, times: 1 });
+      }
+    });
+
+  return [...map.values()]
+    .map((item, i) => ({
+      ...item,
+      color: generatePalette(primaryColor, map.size)[i],
+    }))
+    .sort((a, b) => b.times - a.times);
 };
 
 const calculateQuantitySold = (orders: Order[]) => {

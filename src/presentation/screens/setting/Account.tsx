@@ -5,6 +5,7 @@ import { useTheme } from "@react-navigation/native";
 import { cleanAll } from "application/store/actions";
 import { signOutWithGoogle } from "infrastructure/auth/google.auth";
 import apiClient, { endpoints } from "infrastructure/api/server";
+import { useSyncCheck } from "presentation/hooks/useSyncCheck";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
@@ -12,6 +13,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 
 const Account = () => {
   const { colors } = useTheme();
+  const { isSynchronized } = useSyncCheck();
 
   const dispatch = useAppDispatch();
 
@@ -33,7 +35,7 @@ const Account = () => {
         <View style={{ marginVertical: 15 }}>
           <StyledText>melvincolmenares.m@gmail.com</StyledText>
           <StyledText center color={colors.primary}>
-            Sincronizado
+            {isSynchronized ? "Sincronizado" : "No Sincronizado"}
           </StyledText>
         </View>
         <StyledButton style={styles.planButton} backgroundColor={colors.primary} onPress={() => {}}>

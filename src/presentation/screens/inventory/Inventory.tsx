@@ -186,7 +186,10 @@ const Card: React.FC<{ item: InventoryType }> = ({ item }) => {
 const Inventory: React.FC<AppNavigationProp> = ({ navigation }) => {
   const { colors } = useTheme();
 
+  const stocks = useAppSelector((state) => state.stocks);
   const inventories = useAppSelector((state) => state.inventories);
+
+  const quantities = useMovementsMap();
 
   const [data, setData] = useState<InventoryType[]>([]);
 
@@ -207,6 +210,20 @@ const Inventory: React.FC<AppNavigationProp> = ({ navigation }) => {
     setData([...inventories].sort((a, b) => (b.highlight ? 1 : 0) - (a.highlight ? 1 : 0)));
   }, [inventories]);
 
+  const total = useMemo(() => {
+    return inventories.reduce((acc, { id }) => {
+      const data = stocks.filter((stock) => stock.inventoryID === id);
+      return (
+        acc +
+        data.reduce((acc, stock) => {
+          const quantity = quantities.get(stock.id) || 0;
+          const total = quantity * stock.currentValue;
+          return acc + total;
+        }, 0)
+      );
+    }, 0);
+  }, [inventories, quantities]);
+
   const renderItem: ListRenderItem<InventoryType> = useCallback(
     ({ item }) => <Card item={item} />,
     [],
@@ -217,15 +234,21 @@ const Inventory: React.FC<AppNavigationProp> = ({ navigation }) => {
       {!inventories.length ? (
         <StyledText color={colors.primary}>NO HAY INVENTARIOS REGISTRADOS</StyledText>
       ) : (
-        <FlatList
-          data={data}
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          initialNumToRender={5}
-          maxToRenderPerBatch={5}
-          windowSize={5}
-        />
+        <>
+          <FlatList
+            data={data}
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            initialNumToRender={5}
+            maxToRenderPerBatch={5}
+            windowSize={5}
+          />
+          <StyledText>
+            Total inventario:{" "}
+            <StyledText color={colors.primary}>{thousandsSystem(total)}</StyledText>
+          </StyledText>
+        </>
       )}
     </Layout>
   );
