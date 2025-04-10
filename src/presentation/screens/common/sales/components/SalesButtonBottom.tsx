@@ -86,7 +86,8 @@ const OptionsModal: React.FC<OptionsModalProps> = ({
             <Option
               name="Enviar a cocina"
               onPress={() => {
-                if (!buttonsEvent.kitchen) return;
+                if (!selection.length)
+                  return Alert.alert("OOPS!", "No hay elementos seleccionados");
 
                 const modificationDate = new Date().getTime();
                 const orderData: Pick<Save, "selection" | "status"> = {
@@ -96,7 +97,7 @@ const OptionsModal: React.FC<OptionsModalProps> = ({
 
                 const data = order ? { ...order, ...orderData, modificationDate } : null;
 
-                buttonsEvent.kitchen(
+                buttonsEvent.kitchen!(
                   {
                     ...orderData,
                     paymentMethods: [],
@@ -158,7 +159,7 @@ const OptionsModal: React.FC<OptionsModalProps> = ({
       <DiscountScreen
         visible={discountModal}
         defaultDiscount={info.discount}
-        maxLength={selection.reduce((a, b) => a + b.quantity * b.value, 0)}
+        maxValue={selection.reduce((a, b) => a + b.quantity * b.value, 0)}
         onClose={() => setDiscountModal(false)}
         onSave={(discount) => updateInfo({ discount })}
       />

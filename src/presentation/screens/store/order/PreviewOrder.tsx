@@ -4,8 +4,17 @@ import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.stor
 import { add } from "application/slice/stores/products.slice";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Element } from "domain/entities/data/common/element.entity";
-import SalesPreviewScreen from "presentation/screens/common/sales/trade/SalesPreviewScreen";
 import apiClient, { endpoints } from "infrastructure/api/server";
+import { StyleSheet, TouchableOpacity } from "react-native";
+import { useTheme } from "@react-navigation/native";
+import SalesPreviewScreen from "presentation/screens/common/sales/trade/SalesPreviewScreen";
+import StyledText from "presentation/components/text/StyledText";
+import { useOrganizeData } from "presentation/screens/common/sales/hooks";
+import { useOrder } from "application/context/OrderContext";
+import { Status } from "domain/enums/data/element/status.enums";
+import { useInvoiceHtml } from "presentation/screens/common/sales/hooks/useInvoiceHtml";
+import { printPDF } from "infrastructure/services";
+// import { useInvoiceHtml } from "presentation/screens/common/sales/hooks/useInvoiceHtml";
 
 type PreviewOrderProps = {
   navigation: StackNavigationProp<RootStore>;
@@ -13,14 +22,41 @@ type PreviewOrderProps = {
 };
 
 const PreviewOrder: React.FC<PreviewOrderProps> = ({ navigation, route }) => {
+  const { colors } = useTheme();
+  const { organizeOrder } = useOrganizeData();
+  const { info, selection } = useOrder();
+  const { getHtml } = useInvoiceHtml();
+
   const storeID = route.params.storeID;
   const defaultValue = route.params?.defaultValue;
 
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    navigation.setOptions({ title: "Previsualizar orden" });
-  }, []);
+    navigation.setOptions({
+      title: "Previsualizar",
+      headerRight: () => (
+        <TouchableOpacity
+          style={[styles.print, { borderColor: colors.border }]}
+          onPress={() => {
+            const order = organizeOrder({
+              selection,
+              status: Status.Pending,
+              paymentMethods: [],
+              locationID: storeID,
+              info,
+            });
+
+            printPDF({ html: getHtml(order) });
+          }}
+        >
+          <StyledText verySmall style={{ marginLeft: 2 }}>
+            imprimir
+          </StyledText>
+        </TouchableOpacity>
+      ),
+    });
+  }, [selection, storeID, info]);
 
   const addElement = async (data: Element) => {
     dispatch(add(data));
@@ -46,5 +82,16 @@ const PreviewOrder: React.FC<PreviewOrderProps> = ({ navigation, route }) => {
     />
   );
 };
+
+const styles = StyleSheet.create({
+  print: {
+    marginRight: 20,
+    borderWidth: 1,
+    marginHorizontal: 2,
+    paddingHorizontal: 5,
+    paddingVertical: 5,
+    borderRadius: 4,
+  },
+});
 
 export default PreviewOrder;

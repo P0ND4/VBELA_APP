@@ -44,11 +44,9 @@ const SalesCompletedScreen: React.FC<SalesCompletedScreenProps> = ({
         </View>
       </View>
       <View>
-        {!!trade.paid && (
-          <StyledButton onPress={goInvoice}>
-            <StyledText center>Ver factura</StyledText>
-          </StyledButton>
-        )}
+        <StyledButton onPress={goInvoice}>
+          <StyledText center>Ver factura</StyledText>
+        </StyledButton>
         <StyledButton backgroundColor={colors.primary} onPress={goBack}>
           <StyledText color="#FFFFFF" center>
             Regresar

@@ -157,13 +157,15 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
               <>
                 <StyledButton style={styles.row} onPress={() => setStockModal(true)}>
                   <StyledText>
-                    {stock ? `${stock.name} ${stock.unit && `(${stock.unit})`}` : "Stock"}
+                    {stock
+                      ? `${stock.name} ${stock.unit && `(${stock.unit})`}`
+                      : "Seleccionar producto"}
                   </StyledText>
                   <Ionicons name="chevron-forward" color={colors.text} size={19} />
                 </StyledButton>
                 {formState.errors.stock && (
                   <StyledText color={colors.primary} verySmall>
-                    El Stock es requerido
+                    El producto es requerido
                   </StyledText>
                 )}
               </>

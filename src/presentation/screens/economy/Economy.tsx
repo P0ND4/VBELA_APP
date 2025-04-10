@@ -295,6 +295,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginHorizontal: 2,
     paddingHorizontal: 5,
+    paddingVertical: 2,
     borderRadius: 4,
   },
 });
