@@ -14,6 +14,7 @@ export interface Stock {
   unit: UnitValue;
   visible: boolean;
   reorder: number;
+  upperLimit: number;
   reference: string;
   brand: string;
   currentValue: number;

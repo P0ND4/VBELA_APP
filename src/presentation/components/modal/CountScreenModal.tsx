@@ -165,7 +165,9 @@ const CountScreenModal: React.FC<CountScreenProps> = ({
     <ScreenModal title={title} visible={visible} onClose={onClose} headerRight={headerRight}>
       <View style={{ flex: 1 }}>
         <View style={[styles.center, { flex: 2 }]}>
-          {description && <StyledText>{description(count)}</StyledText>}
+          {description && (
+            <StyledText style={{ paddingHorizontal: 25 }}>{description(count)}</StyledText>
+          )}
           <View style={styles.valueContainer}>
             {increasers && (
               <TouchableOpacity

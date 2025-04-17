@@ -4,15 +4,16 @@ import { useTheme } from "@react-navigation/native";
 import { useOrder } from "application/context/OrderContext";
 import { formatDecimals, thousandsSystem } from "shared/utils";
 import { Element, Order, Save, Selection } from "domain/entities/data/common";
+import { send } from "../utils/transform.element";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import SalesButtonBottom from "../components/SalesButtonBottom";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
-import DiscountScreen from "../components/DiscountScreen";
+import PercentageScreen from "../components/PercentageScreen";
 import ScreenModal from "presentation/components/modal/ScreenModal";
-import { send } from "../utils/transform.element";
+import { useAppSelector } from "application/store/hook";
 
 type DescriptionModalProps = {
   visible: boolean;
@@ -197,10 +198,17 @@ const Card: React.FC<CardProps> = ({ item, addElement, locationID, goBack = () =
           } else updateSelection({ ...item, quantity, total: quantity * item.value });
         }}
       />
-      <DiscountScreen
+      <PercentageScreen
+        title="Descuento"
+        numericComponent={() => (
+          <StyledText smallParagraph center style={{ marginTop: 30, paddingHorizontal: 30 }}>
+            El descuento de este menú o producto será cambiado a porcentaje una vez guardado
+          </StyledText>
+        )}
+        padDescription={() => `Valor máximo: ${thousandsSystem(item.quantity * item.value)}`}
         visible={discountModal}
         maxValue={item.quantity * item.value}
-        defaultDiscount={item.discount}
+        defaultValue={item.discount}
         onClose={() => setDiscountModal(false)}
         onSave={(discount) => {
           const total = item.quantity * item.value;
@@ -271,19 +279,34 @@ const SalesPreviewScreen: React.FC<SalesPreviewScreenProps> = ({
   const { colors } = useTheme();
   const { info, updateInfo, selection, change } = useOrder();
 
-  useEffect(() => {
-    defaultValue && change(defaultValue);
-  }, []);
+  const tip = useAppSelector((state) => state.tip);
+  const tax = useAppSelector((state) => state.tax);
 
   const [discountModal, setDiscountModal] = useState<boolean>(false);
+  const [taxModal, setTaxModal] = useState<boolean>(false);
+  const [tipModal, setTipModal] = useState<boolean>(false);
 
   const value = useMemo(() => selection.reduce((a, b) => a + b.total, 0), [selection]);
-  const total = useMemo(() => value - value * info.discount, [value, info.discount]);
+  const totalWithoutTaxTip = useMemo(() => value - value * info.discount, [value, info.discount]);
+  const total = useMemo(
+    () => totalWithoutTaxTip + info.tip + totalWithoutTaxTip * info.tax,
+    [totalWithoutTaxTip, info.discount, info.tax, info.tip],
+  );
   const quantity = useMemo(() => selection.reduce((a, b) => a + b.quantity, 0), [selection]);
 
   useEffect(() => {
-    !value && updateInfo({ discount: 0 });
-  }, [value]);
+    if (defaultValue) return change(defaultValue);
+
+    const newDiscount = !value ? 0 : info.discount;
+    const newTip = !totalWithoutTaxTip ? info.tip : totalWithoutTaxTip * tip;
+    const newTax = !totalWithoutTaxTip ? 0 : info.tax;
+
+    updateInfo({
+      discount: newDiscount,
+      tip: newTip,
+      tax: newTax,
+    });
+  }, [value, totalWithoutTaxTip, tip, tax, defaultValue]);
 
   return (
     <>
@@ -305,6 +328,18 @@ const SalesPreviewScreen: React.FC<SalesPreviewScreenProps> = ({
                 </StyledText>
               </TouchableOpacity>
             )}
+            {!!totalWithoutTaxTip && (
+              <TouchableOpacity onPress={() => setTaxModal(true)}>
+                <StyledText right color={colors.primary}>
+                  {info.tax ? `(${formatDecimals(info.tax * 100, 2)}%)` : ""} Impuesto
+                </StyledText>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={() => setTipModal(true)}>
+              <StyledText right color={colors.primary}>
+                {info.tip ? `(${thousandsSystem(info.tip)})` : ""} Propina
+              </StyledText>
+            </TouchableOpacity>
             {/* <TouchableOpacity onPress={() => alert("Para la segunda actualización")}>
               <StyledText right color={colors.primary}>
                 Destino de entrega
@@ -327,11 +362,43 @@ const SalesPreviewScreen: React.FC<SalesPreviewScreenProps> = ({
           }}
         />
       </Layout>
-      <DiscountScreen
+      <CountScreenModal
+        title="Propina"
+        description={() => `Defina la propina de la venta`}
+        isRemove={!!info.tip}
+        increasers={false}
+        maxValue={9999999999}
+        visible={tipModal}
+        defaultValue={info.tip || 0}
+        onClose={() => setTipModal(false)}
+        onSave={(tip) => updateInfo({ tip })}
+      />
+      <PercentageScreen
+        title="Impuesto"
+        numericComponent={() => (
+          <StyledText smallParagraph center style={{ marginTop: 30, paddingHorizontal: 30 }}>
+            El impuesto de este menú o producto será cambiado a porcentaje una vez guardado
+          </StyledText>
+        )}
+        padDescription={() => `Valor máximo: ${thousandsSystem(totalWithoutTaxTip)}`}
+        visible={taxModal}
+        onClose={() => setTaxModal(false)}
+        defaultValue={info.tax || 0}
+        maxValue={totalWithoutTaxTip}
+        onSave={(tax) => updateInfo({ tax })}
+      />
+      <PercentageScreen
+        title="Descuento"
+        numericComponent={() => (
+          <StyledText smallParagraph center style={{ marginTop: 30, paddingHorizontal: 30 }}>
+            El descuento de este menú o producto será cambiado a porcentaje una vez guardado
+          </StyledText>
+        )}
+        padDescription={() => `Valor máximo: ${thousandsSystem(value)}`}
         visible={discountModal}
-        maxValue={value}
-        defaultDiscount={info.discount || 0}
         onClose={() => setDiscountModal(false)}
+        defaultValue={info.discount || 0}
+        maxValue={value}
         onSave={(discount) => updateInfo({ discount })}
       />
     </>

@@ -33,7 +33,11 @@ const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({
   const [paymentVisible, setPaymentVisible] = useState<boolean>(false);
 
   const value = useMemo(() => selection.reduce((a, b) => a + b.total, 0), [selection]);
-  const total = useMemo(() => value - value * info.discount, [value, info.discount]);
+  const totalWithoutTaxTip = useMemo(() => value - value * info.discount, [value, info.discount]);
+  const total = useMemo(
+    () => totalWithoutTaxTip + info.tip + totalWithoutTaxTip * info.tax,
+    [totalWithoutTaxTip, info.discount, info.tax, info.tip],
+  );
 
   const data = (status: Status, paymentMethods: PaymentMethod[]): Save => ({
     selection,
@@ -52,6 +56,8 @@ const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({
       selection,
       status: status || order!.status,
       paymentMethods,
+      tip: info.tip,
+      tax: info.tax,
       paid,
       total,
       discount: info.discount,

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { StyleSheet, View, ScrollView, TextInput } from "react-native";
 import { Order } from "domain/entities/data/common/order.entity";
 import { useAppSelector } from "application/store/hook";
@@ -87,14 +87,20 @@ const Button: React.FC<ButtonProps> = ({ icon, name, onPress }) => {
 
 const SalesInvoiceScreen: React.FC<{ trade: Order; goEdit: () => void }> = ({ trade, goEdit }) => {
   const information = useAppSelector((state) => state.invoiceInformation);
+  const tables = useAppSelector((state) => state.tables);
 
   const { colors } = useTheme();
   const { getHtml } = useInvoiceHtml();
 
   const [emailModal, setEmailModal] = useState<boolean>(false);
+  const table = useMemo(() => tables.find((t) => t.id === trade.tableID), [tables, trade.tableID]);
 
-  const phoneNumber = `+${information.countryCode}${information.phoneNumber}`;
-  const totalNoDiscount = trade.selection.reduce((a, b) => a + b.total, 0);
+  const phoneNumber = useMemo(
+    () => `+${information.countryCode}${information.phoneNumber}`,
+    [information],
+  );
+  const value = useMemo(() => trade.selection.reduce((a, b) => a + b.total, 0), [trade.selection]);
+  const totalWithoutTaxTip = useMemo(() => value - value * trade.discount, [value, trade.discount]);
 
   const viewShotRef = useRef<ViewShot>(null);
 
@@ -131,6 +137,11 @@ const SalesInvoiceScreen: React.FC<{ trade: Order; goEdit: () => void }> = ({ tr
               {information.address && <StyledText center>{information.address}</StyledText>}
               {information.phoneNumber && <StyledText center>{phoneNumber}</StyledText>}
               {information.complement && <StyledText center>{information.complement}</StyledText>}
+              {table && (
+                <StyledText center bigTitle>
+                  Mesa: {table.name}
+                </StyledText>
+              )}
               <View style={{ width: "100%" }}>
                 <View style={[styles.space, { borderColor: colors.border }]}>
                   <Division left="FACTURA #" right={trade.invoice} />
@@ -165,9 +176,16 @@ const SalesInvoiceScreen: React.FC<{ trade: Order; goEdit: () => void }> = ({ tr
                   {!!trade.discount && (
                     <Division
                       left={`DESCUENTO (${formatDecimals(trade.discount * 100, 2)}%)`}
-                      right={thousandsSystem(totalNoDiscount * trade.discount)}
+                      right={thousandsSystem(value * trade.discount)}
                     />
                   )}
+                  {!!trade.tax && (
+                    <Division
+                      left={`IMPUESTO (${formatDecimals(trade.tax * 100, 2)}%)`}
+                      right={thousandsSystem(totalWithoutTaxTip * trade.tax)}
+                    />
+                  )}
+                  {!!trade.tip && <Division left="PROPINA" right={thousandsSystem(trade.tip)} />}
                   <Division
                     left="TOTAL:"
                     right={!trade.total ? "GRATIS" : thousandsSystem(trade.total)}

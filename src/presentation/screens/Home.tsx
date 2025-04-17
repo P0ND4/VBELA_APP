@@ -1,6 +1,6 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import moment from "moment";
-import { Alert, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { useTheme } from "@react-navigation/native";
 import { changeDate, random, thousandsSystem } from "shared/utils";
@@ -14,6 +14,7 @@ import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import AlertModal from "presentation/components/modal/AlertModal";
 
 const Home: React.FC = () => {
   const { colors } = useTheme();
@@ -21,6 +22,8 @@ const Home: React.FC = () => {
   const orders = useAppSelector(selectCompletedOrders);
   const sales = useAppSelector(selectCompletedSales);
   const stateController = useAppSelector((state) => state.stateController);
+
+  const [sureModal, setSureModal] = useState<boolean>(false);
 
   const dispatch = useAppDispatch();
 
@@ -79,26 +82,26 @@ const Home: React.FC = () => {
         backgroundColor={colors.primary}
         onPress={() => {
           if (condition) dispatch(active({ start: Date.now() }));
-          else {
-            Alert.alert(
-              "EY!",
-              "¿Estás seguro que desea cerrar la caja?",
-              [
-                { text: "No estoy seguro", style: "cancel" },
-                {
-                  text: "Estoy seguro",
-                  onPress: save,
-                },
-              ],
-              { cancelable: true },
-            );
-          }
+          else setSureModal(true);
         }}
       >
         <StyledText color="#FFFFFF" center>
           {condition ? "APERTURAR" : "CERRAR"} CAJA
         </StyledText>
       </StyledButton>
+      <AlertModal
+        visible={sureModal}
+        onClose={() => setSureModal(false)}
+        title="EY!"
+        description="¿Estás seguro que desea cerrar la caja?"
+        buttons={[
+          { text: "No estoy seguro" },
+          {
+            text: "Estoy seguro",
+            onPress: save,
+          },
+        ]}
+      />
     </Layout>
   );
 };

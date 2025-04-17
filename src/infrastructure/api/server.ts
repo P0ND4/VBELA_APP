@@ -84,6 +84,9 @@ export const endpoints = {
   setting: {
     darkMode: () => "/api/v1/user/setting/dark-mode",
     coin: () => "/api/v1/user/setting/coin",
+    tip: () => "/api/v1/user/setting/tip",
+    tax: () => "/api/v1/user/setting/tax",
+    initialBasis: () => "/api/v1/user/setting/initial-basis",
     color: () => "/api/v1/user/setting/color",
     invoiceInformation: () => "/api/v1/user/setting/invoice-information",
     paymentMethods: {
@@ -137,6 +140,7 @@ export const endpoints = {
     post: () => "/api/v1/user/movement",
     put: (id: string) => `/api/v1/user/movement/${id}`,
     delete: (id: string) => `/api/v1/user/movement/${id}`,
+    deleteMultiple: (stockID: string) => `/api/v1/user/movement/multiple/${stockID}`,
   },
   menuGroup: {
     post: () => "/api/v1/user/menu-group",

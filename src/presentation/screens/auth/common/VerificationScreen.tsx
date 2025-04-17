@@ -100,7 +100,7 @@ const VerificationScreen: React.FC<VerificationScreenProps> = ({
 
       if (user) {
         batch(() => {
-          dispatch(changeAll(user));
+          dispatch(changeAll(user[0]));
           dispatch(change({ identifier }));
           dispatch(active());
         });

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import { formatDecimals, thousandsSystem } from "shared/utils";
@@ -10,7 +10,7 @@ import StyledButton from "presentation/components/button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import FloorModal from "presentation/components/modal/FloorModal";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
-import DiscountScreen from "./DiscountScreen";
+import PercentageScreen from "./PercentageScreen";
 
 type ButtonsEvent = {
   delivery?: () => void;
@@ -69,6 +69,8 @@ const OptionsModal: React.FC<OptionsModalProps> = ({
 
   const [observationModal, setObservationModal] = useState<boolean>(false);
   const [discountModal, setDiscountModal] = useState<boolean>(false);
+
+  const value = useMemo(() => selection.reduce((a, b) => a + b.quantity * b.value, 0), [selection]);
 
   return (
     <>
@@ -156,10 +158,17 @@ const OptionsModal: React.FC<OptionsModalProps> = ({
         onClose={() => setObservationModal(false)}
         onSubmit={(observation) => updateInfo({ observation })}
       />
-      <DiscountScreen
+      <PercentageScreen
+        title="Descuento"
+        numericComponent={() => (
+          <StyledText smallParagraph center style={{ marginTop: 30, paddingHorizontal: 30 }}>
+            El descuento de este menú o producto será cambiado a porcentaje una vez guardado
+          </StyledText>
+        )}
+        padDescription={() => `Valor máximo: ${thousandsSystem(value)}`}
         visible={discountModal}
-        defaultDiscount={info.discount}
-        maxValue={selection.reduce((a, b) => a + b.quantity * b.value, 0)}
+        defaultValue={info.discount}
+        maxValue={value}
         onClose={() => setDiscountModal(false)}
         onSave={(discount) => updateInfo({ discount })}
       />

@@ -12,6 +12,9 @@ import {
   change,
   SalesNavigation,
 } from "application/appState/navigation/sales.navigation.method.slice";
+import { TouchableOpacity } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useTheme } from "@react-navigation/native";
 
 type ProductOrderProps = {
   navigation: StackNavigationProp<RootStore>;
@@ -19,6 +22,8 @@ type ProductOrderProps = {
 };
 
 const ProductViewOrder: React.FC<ProductOrderProps> = ({ navigation, route }) => {
+  const { colors } = useTheme();
+
   const { update } = useSave();
 
   const order = route.params.order;
@@ -33,6 +38,16 @@ const ProductViewOrder: React.FC<ProductOrderProps> = ({ navigation, route }) =>
     data &&
       navigation.setOptions({
         title: `${changeDate(new Date(data.creationDate))} a las ${moment(new Date(data.creationDate)).format("HH:mm")}`,
+        headerRight: () => (
+          <TouchableOpacity
+            style={{ paddingRight: 20 }}
+            onPress={() =>
+              navigation.navigate("StoreRoutes", { screen: "Invoice", params: { sale: data } })
+            }
+          >
+            <Ionicons name="receipt-outline" color={colors.primary} size={25} />
+          </TouchableOpacity>
+        ),
       });
   }, [data]);
 

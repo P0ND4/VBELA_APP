@@ -10,6 +10,8 @@ export type RootSetting = {
   CreatePaymentMethod?: { defaultValue: PaymentMethods };
   Theme: undefined;
   Invoice: undefined;
+  Statistic: undefined;
+  TipTax: undefined;
 };
 
 export type SettingNavigationProp = { navigation: StackNavigationProp<RootSetting> };

@@ -4,9 +4,12 @@ import { changeDate, formatDecimals, thousandsSystem } from "shared/utils";
 
 export const useInvoiceHtml = () => {
   const information = useAppSelector((state) => state.invoiceInformation);
+  const tables = useAppSelector((state) => state.tables);
 
   const getHtml = (order: Order) => {
-    const totalNoDiscount = order.selection.reduce((a, b) => a + b.total, 0);
+    const value = order.selection.reduce((a, b) => a + b.total, 0);
+    const totalWithoutTaxTip = value - value * order.discount;
+    const table = tables.find((t) => t.id === order.tableID);
 
     return `
       <html lang="en">
@@ -52,6 +55,7 @@ export const useInvoiceHtml = () => {
             ${information.address ? `<p class="title text">${information.address}</p>` : ""}
             ${information.phoneNumber ? `<p class="title text">${information.phoneNumber}</p>` : ""}
             ${information.complement ? `<p class="title text">${information.complement}</p>` : ""}
+            ${table ? `<p class="title text" style="font-size: 50px;">Mesa: ${table.name}</p>` : ""}
           </div>
           <div style="margin-top: 10px;">
             <div class="space">
@@ -97,7 +101,27 @@ export const useInvoiceHtml = () => {
                   ? `
                 <div class="row">
                   <span class="text">DESCUENTO (${formatDecimals(order.discount * 100, 2)}%)</span>
-                  <span class="text">${thousandsSystem(totalNoDiscount * order.discount)}</span>
+                  <span class="text">${thousandsSystem(value * order.discount)}</span>
+                </div>
+              `
+                  : ""
+              }
+              ${
+                !!order.tax
+                  ? `
+                <div class="row">
+                  <span class="text">IMPUESTO (${formatDecimals(order.tax * 100, 2)}%)</span>
+                  <span class="text">${thousandsSystem(totalWithoutTaxTip * order.tax)}</span>
+                </div>
+              `
+                  : ""
+              }   
+              ${
+                !!order.tip
+                  ? `
+                <div class="row">
+                  <span class="text">PROPINA</span>
+                  <span class="text">${thousandsSystem(order.tip)}</span>
                 </div>
               `
                   : ""

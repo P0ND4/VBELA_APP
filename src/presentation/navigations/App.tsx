@@ -9,22 +9,22 @@ import {
   selectPendingOrders,
   selectPendingSales,
 } from "application/selectors";
-import Accommodation from "presentation/screens/reservation/Accommodation";
+// import Accommodation from "presentation/screens/reservation/Accommodation";
 import Restaurant from "presentation/screens/restaurant/Restaurant";
 import Store from "presentation/screens/store/Store";
 import CustomDrawer from "presentation/components/layout/CustomDrawer";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Inventory from "presentation/screens/inventory/Inventory";
 import StyledText from "presentation/components/text/StyledText";
-import Customer from "presentation/screens/customer/Customer";
+// import Customer from "presentation/screens/customer/Customer";
 import Order from "presentation/screens/order/Order";
 import Setting from "presentation/screens/setting/Setting";
 import Kitchen from "presentation/screens/kitchen/Kitchen";
-import Delivery from "presentation/screens/delivery/Delivery";
+// import Delivery from "presentation/screens/delivery/Delivery";
 import Home from "presentation/screens/Home";
-import Collaborator from "presentation/screens/collaborator/Collaborator";
+// import Collaborator from "presentation/screens/collaborator/Collaborator";
 import Supplier from "presentation/screens/supplier/Supplier";
-import Payroll from "presentation/screens/payroll/Payroll";
+// import Payroll from "presentation/screens/payroll/Payroll";
 import Economy from "presentation/screens/economy/Economy";
 import StatisticTab from "presentation/screens/statistic/StatisticTab";
 
@@ -137,14 +137,14 @@ function App() {
           drawerIcon: ({ color }) => <Ionicons name="people-outline" size={22} color={color} />,
         }}
       /> */}
-      <Drawer.Screen
+      {/* <Drawer.Screen
         name="Payroll"
         component={Payroll}
         options={{
           title: "Nómina",
           drawerIcon: ({ color }) => <Ionicons name="newspaper-outline" size={22} color={color} />,
         }}
-      />
+      /> */}
       <Drawer.Screen
         name="Economy"
         component={Economy}

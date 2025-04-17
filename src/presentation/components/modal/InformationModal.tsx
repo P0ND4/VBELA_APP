@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   ModalProps,
+  ViewStyle,
+  StyleProp,
 } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -16,6 +18,7 @@ interface InformationModalProps extends ModalProps {
   visible: boolean;
   children?: React.ReactNode;
   onClose: () => void;
+  styleCard?: StyleProp<ViewStyle>;
   headerRight?: () => React.ReactNode;
   downCard?: () => React.ReactNode;
 }
@@ -25,6 +28,7 @@ const InformationModal: React.FC<InformationModalProps> = ({
   visible,
   children,
   onClose,
+  styleCard,
   headerRight = () => <></>,
   downCard = () => <></>,
   ...rest
@@ -37,9 +41,11 @@ const InformationModal: React.FC<InformationModalProps> = ({
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#0005" }]} />
       </TouchableWithoutFeedback>
       <View style={styles.container}>
-        <View style={[styles.card, { backgroundColor: colors.background }]}>
+        <View style={[styles.card, { backgroundColor: colors.background }, styleCard]}>
           <View style={styles.row}>
-            <StyledText bigParagraph>{title}</StyledText>
+            <StyledText bigParagraph bold>
+              {title}
+            </StyledText>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               {headerRight()}
               <TouchableOpacity onPress={onClose}>

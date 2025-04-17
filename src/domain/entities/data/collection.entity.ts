@@ -19,6 +19,9 @@ export interface Collection {
   invoiceInformation: InvoiceInformation;
   coin: string;
   color: number;
+  tip: number;
+  tax: number;
+  initialBasis: number;
   collaborators: Collaborator[];
   payroll: Payroll[];
   customers: Customer[];

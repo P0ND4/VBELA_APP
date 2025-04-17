@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
 import Layout from "presentation/components/layout/Layout";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useTheme } from "@react-navigation/native";
@@ -7,8 +7,8 @@ import {
   InventoryRouteProp,
   RootInventory,
 } from "domain/entities/navigation/root.inventory.entity";
-import { changeDate, thousandsSystem } from "shared/utils";
-import { Stock } from "domain/entities/data/inventories";
+import { changeDate, random, thousandsSystem } from "shared/utils";
+import { Movement, Stock } from "domain/entities/data/inventories";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -19,6 +19,9 @@ import { batch } from "react-redux";
 import { removeStock as removeStockProduct } from "application/slice/stores/products.slice";
 import { removeStock as removeStockMenu } from "application/slice/restaurants/menu.slice";
 import apiClient, { endpoints } from "infrastructure/api/server";
+import { add, removeByStockID } from "application/slice/inventories/movements.slice";
+import { Type } from "domain/enums/data/inventory/movement.enums";
+import { useMovementsMap } from "../hooks/useMovementsMap";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   const { colors } = useTheme();
@@ -39,14 +42,85 @@ type StockInformationProps = {
 const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
 
+  const inventories = useAppSelector((state) => state.inventories);
   const stocks = useAppSelector((state) => state.stocks);
   const movements = useAppSelector((state) => state.movements);
 
+  const inventoriesMap = new Map(inventories.map((i) => [i.id, i]));
+
   const stock = route.params.stock;
+
+  const movementsMap = useMovementsMap();
+  const quantity = useMemo(() => movementsMap.get(stock.id) || 0, [movementsMap, stock.id]);
 
   const [data, setData] = useState<Stock>(stock);
 
   const dispatch = useAppDispatch();
+
+  const supplyStock = () => {
+    Alert.alert(
+      "Oye!",
+      "¿Estás seguro que deseas abastecer el stock? Se agregara un movimiento de entrada",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "Si",
+          onPress: async () => {
+            const inventory = inventoriesMap.get(stock.inventoryID);
+
+            const movement: Movement = {
+              id: random(10),
+              type: Type.Entry,
+              inventory: { id: inventory!.id, name: inventory!.name },
+              stock: {
+                id: stock.id,
+                name: stock.name,
+                unit: stock.unit,
+                currentValue: stock.currentValue,
+              },
+              supplier: null,
+              supplierValue: 0,
+              quantity: stock.upperLimit - quantity,
+              currentValue: stock.currentValue,
+              date: new Date().getTime(),
+              paymentMethod: "",
+              creationDate: new Date().getTime(),
+              modificationDate: new Date().getTime(),
+            };
+
+            dispatch(add(movement));
+            await apiClient({
+              url: endpoints.movement.post(),
+              method: "POST",
+              data: movement,
+            });
+          },
+        },
+      ],
+      { cancelable: true },
+    );
+  };
+
+  const deleteMovements = () => {
+    Alert.alert(
+      "Oye!",
+      "¿Estás seguro que deseas restaurar el stock? Se eliminarán todos los movimientos",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "Si",
+          onPress: async () => {
+            dispatch(removeByStockID({ id: stock.id }));
+            await apiClient({
+              url: endpoints.movement.deleteMultiple(stock.id),
+              method: "DELETE",
+            });
+          },
+        },
+      ],
+      { cancelable: true },
+    );
+  };
 
   useEffect(() => {
     navigation.setOptions({ title: `Información: ${data.name}` });
@@ -86,7 +160,9 @@ const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }
           <Card name="Nombre" value={data.name} />
           {data.unit && <Card name="Unidad" value={data.unit} />}
           <Card name="Visible" value={data.visible ? "Si" : "No"} />
+          <Card name="Cantidad" value={thousandsSystem(quantity)} />
           <Card name="Punto de reorden" value={thousandsSystem(data.reorder)} />
+          <Card name="Límite superior" value={thousandsSystem(data.upperLimit)} />
           {data.reference && <Card name="Referencia" value={data.reference} />}
           {data.brand && <Card name="Marca" value={data.brand} />}
           {movement && (
@@ -104,6 +180,24 @@ const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }
             name="Fecha de modificación"
             value={changeDate(new Date(data.modificationDate), true)}
           />
+          <View style={[styles.card, styles.containerEventButtons, { borderColor: colors.border }]}>
+            {!!data.upperLimit && quantity < data.upperLimit && (
+              <TouchableOpacity
+                style={[styles.eventButtons, { borderColor: colors.border }]}
+                onPress={supplyStock}
+              >
+                <StyledText color={colors.primary}>Abastecer</StyledText>
+              </TouchableOpacity>
+            )}
+            {movement && (
+              <TouchableOpacity
+                style={[styles.eventButtons, { borderColor: colors.border }]}
+                onPress={deleteMovements}
+              >
+                <StyledText color={colors.primary}>Restaurar Stock</StyledText>
+              </TouchableOpacity>
+            )}
+          </View>
           <TouchableOpacity
             style={[styles.card, { borderColor: colors.border, justifyContent: "center" }]}
             onPress={removeData}
@@ -129,6 +223,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  containerEventButtons: { paddingVertical: 0, paddingHorizontal: 0 },
+  eventButtons: {
+    borderRightWidth: 0.5,
+    borderLeftWidth: 0.5,
+    paddingVertical: 20,
+    flexBasis: 1,
+    flexGrow: 1,
+    alignItems: "center",
   },
 });
 

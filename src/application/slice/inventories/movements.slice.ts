@@ -23,6 +23,10 @@ export const movementsSlice = createSlice({
       const { id } = action.payload;
       return state.filter((s) => s.id !== id);
     },
+    removeByStockID: (state, action: PayloadAction<{ id: string }>) => {
+      const { id } = action.payload;
+      return state.filter((s) => s.stock.id !== id);
+    },
     clean: () => [],
   },
   extraReducers: (builder) => {
@@ -31,5 +35,5 @@ export const movementsSlice = createSlice({
   },
 });
 
-export const { add, edit, remove, clean, change } = movementsSlice.actions;
+export const { add, edit, remove, removeByStockID, clean, change } = movementsSlice.actions;
 export default movementsSlice.reducer;

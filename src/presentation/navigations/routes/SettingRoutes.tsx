@@ -8,6 +8,8 @@ import Theme from "presentation/screens/setting/Theme";
 import Invoice from "presentation/screens/setting/Invoice";
 import EconomicGroup from "presentation/screens/setting/economicGroup/EconomicGroup";
 import CreateEconomicGroup from "presentation/screens/setting/economicGroup/CreateEconomicGroup";
+import TipTax from "presentation/screens/setting/TipTax";
+import Statistic from "presentation/screens/setting/Statistic";
 
 const Stack = createStackNavigator<RootSetting>();
 
@@ -45,6 +47,16 @@ const SettingRoutes: React.FC = () => {
         name="Invoice"
         component={Invoice}
         options={{ title: "Información de factura" }}
+      />
+      <Stack.Screen
+        name="TipTax"
+        component={TipTax}
+        options={{ title: "Propina/Impuestos de pedidos" }}
+      />
+      <Stack.Screen
+        name="Statistic"
+        component={Statistic}
+        options={{ title: "Configuración de estadística" }}
       />
     </Stack.Navigator>
   );

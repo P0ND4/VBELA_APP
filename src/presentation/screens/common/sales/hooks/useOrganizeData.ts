@@ -9,10 +9,11 @@ export const useOrganizeData = () => {
   const tables = useAppSelector((state) => state.tables);
 
   const organizeOrder = (props: Save): Order => {
-    const { discount, observation } = props.info;
+    const { discount, observation, tip, tax } = props.info;
     const value = props.selection.reduce((a, b) => a + b.total, 0);
     const paid = props.paymentMethods.reduce((a, b) => a + b.amount, 0);
-    const total = value - value * discount;
+    const totalWithoutTaxTip = value - value * discount;
+    const total = totalWithoutTaxTip + tip + totalWithoutTaxTip * tax;
 
     return {
       id: random(10),
@@ -20,6 +21,8 @@ export const useOrganizeData = () => {
       tableID: props.tableID ?? null,
       invoice: `000${random(5, { number: true })}`,
       order: random(4, { number: true }),
+      tip,
+      tax,
       paid,
       selection: props.selection,
       status: props.status,

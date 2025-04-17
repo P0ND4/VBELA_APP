@@ -1,22 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { TouchableOpacity } from "react-native";
 import { useTheme } from "@react-navigation/native";
-import { thousandsSystem } from "shared/utils";
 import StyledText from "presentation/components/text/StyledText";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
 
-type DiscountScreenProps = {
+type PercentageScreenProps = {
+  title: string;
   visible: boolean;
+  padDescription?: (count: number | string) => string;
+  numericComponent?: (count: number | string) => React.ReactNode;
   onClose: () => void;
-  defaultDiscount: number;
+  defaultValue: number;
   maxValue: number;
   onSave: (discount: number) => void;
 };
 
-const DiscountScreen: React.FC<DiscountScreenProps> = ({
+const PercentageScreen: React.FC<PercentageScreenProps> = ({
+  title,
+  padDescription,
+  numericComponent,
   visible,
   onClose,
-  defaultDiscount,
+  defaultValue,
   maxValue,
   onSave,
 }) => {
@@ -25,13 +30,13 @@ const DiscountScreen: React.FC<DiscountScreenProps> = ({
   const [discount, setDiscount] = useState<number>(0);
 
   useEffect(() => {
-    visible && setDiscount(maxValue * defaultDiscount);
+    visible && setDiscount(maxValue * defaultValue);
   }, [visible]);
 
   return (
     <>
       <CountScreenModal
-        title="Descuento"
+        title={title}
         increasers={false}
         headerRight={() => (
           <TouchableOpacity
@@ -44,12 +49,8 @@ const DiscountScreen: React.FC<DiscountScreenProps> = ({
             <StyledText color={colors.primary}>Limpiar</StyledText>
           </TouchableOpacity>
         )}
-        numericComponent={() => (
-          <StyledText smallParagraph center style={{ marginTop: 30, paddingHorizontal: 30 }}>
-            El descuento de este menú o producto será cambiado a porcentaje una vez guardado
-          </StyledText>
-        )}
-        padDescription={() => `Valor máximo: ${thousandsSystem(maxValue)}`}
+        numericComponent={numericComponent}
+        padDescription={padDescription}
         visible={visible}
         onClose={onClose}
         defaultValue={discount}
@@ -63,4 +64,4 @@ const DiscountScreen: React.FC<DiscountScreenProps> = ({
   );
 };
 
-export default DiscountScreen;
+export default PercentageScreen;

@@ -11,95 +11,84 @@ import { useAppSelector } from "application/store/hook";
 import { selectCompletedOrders, selectCompletedSales } from "application/selectors";
 import { Economy, Order } from "domain/entities/data";
 import { calculatePaymentMethods } from "./hooks/useStatisticsData";
+import { AppNavigationProp } from "domain/entities/navigation";
+import StyledButton from "presentation/components/button/StyledButton";
 
-type DotSeparatorTextProps = {
-  bold?: boolean;
-  leftText: string;
-  rightText: string;
-  dotColor?: string;
-};
-
-const DotSeparatorText: React.FC<DotSeparatorTextProps> = ({
+const DotSeparatorText = ({
   bold = false,
   leftText,
   rightText,
   dotColor = "#999",
-}) => {
-  return (
-    <View style={styles.container}>
-      <StyledText style={styles.leftText} numberOfLines={1} ellipsizeMode="clip" bold={bold}>
-        {leftText}
-      </StyledText>
-      <View style={styles.dotsContainer}>
-        <StyledText style={[styles.dots, { color: dotColor }]} numberOfLines={1} bold={bold}>
-          {Array(100).fill(".").join("")}
-        </StyledText>
-      </View>
-      <StyledText style={styles.rightText} bold={bold}>
-        {rightText}
+}: {
+  bold?: boolean;
+  leftText: string;
+  rightText: string;
+  dotColor?: string;
+}) => (
+  <View style={styles.container}>
+    <StyledText style={styles.leftText} numberOfLines={1} ellipsizeMode="clip" bold={bold}>
+      {leftText}
+    </StyledText>
+    <View style={styles.dotsContainer}>
+      <StyledText style={[styles.dots, { color: dotColor }]} numberOfLines={1} bold={bold}>
+        {Array(100).fill(".").join("")}
       </StyledText>
     </View>
-  );
-};
+    <StyledText style={styles.rightText} bold={bold}>
+      {rightText}
+    </StyledText>
+  </View>
+);
 
-const SalesBalancing = () => {
+const SalesBalancing: React.FC<AppNavigationProp> = ({ navigation }) => {
   const { colors } = useTheme();
+  const [date, setDate] = useState(Date.now());
+  const [calendarModal, setCalendarModal] = useState(false);
+
+  const filterByDate = <T extends { creationDate: number }>(items: T[]) =>
+    items.filter((item) => moment(item.creationDate).isSame(moment(date), "day"));
 
   const ordersCompleted = useAppSelector(selectCompletedOrders);
   const salesCompleted = useAppSelector(selectCompletedSales);
   const economies = useAppSelector((state) => state.economies);
+  const initialBasis = useAppSelector((state) => state.initialBasis);
 
-  const [date, setDate] = useState(Date.now());
-  const [calendarModal, setCalendarModal] = useState<boolean>(false);
+  const OFCompleted = useMemo(() => filterByDate(ordersCompleted), [ordersCompleted, date]);
+  const SFCompleted = useMemo(() => filterByDate(salesCompleted), [salesCompleted, date]);
+  const allOrders = [...OFCompleted, ...SFCompleted];
+  const economiesFiltered = useMemo(() => filterByDate(economies), [economies, date]);
 
-  const filtered = <T extends { creationDate: number }>(items: T[]): T[] => {
-    return items.filter(
-      (item) =>
-        moment(item.creationDate).isSameOrAfter(moment(date).startOf("day").valueOf()) &&
-        moment(item.creationDate).isSameOrBefore(moment(date).endOf("day").valueOf()),
-    );
-  };
+  const sumValues = (items: Economy[], type: TypeEconomy) =>
+    items.filter((e) => e.type === type && e.operative).reduce((acc, e) => acc + e.value, 0);
 
-  const incomes = (economies: Economy[]) =>
-    economies
-      .filter((e) => e.type === TypeEconomy.Income && e.operative)
-      .reduce((acc, e) => acc + e.value, 0);
-  const egress = (economies: Economy[]) =>
-    economies
-      .filter((e) => e.type === TypeEconomy.Egress && e.operative)
-      .reduce((acc, e) => acc + e.value, 0);
+  const incomes = sumValues(economiesFiltered, TypeEconomy.Income);
+  const egress = sumValues(economiesFiltered, TypeEconomy.Egress);
+  const tip = allOrders.reduce((acc, order) => acc + order.tip, 0);
 
-  const calculateOrdersTotal = (orders: Order[]) => {
-    return orders.reduce(
-      (acc, order) => acc + order.selection.reduce((a, b) => a + b.value * b.quantity, 0),
-      0,
-    );
-  };
+  const calculateOrderTax = (orders: Order[]) =>
+    orders.reduce((acc, order) => {
+      const value = order.selection.reduce((a, b) => a + b.total, 0);
+      return acc + order.tax * (value - value * order.discount);
+    }, 0);
 
-  const OFCompleted = useMemo(() => filtered<Order>(ordersCompleted), [ordersCompleted, date]);
-  const SFCompleted = useMemo(() => filtered<Order>(salesCompleted), [salesCompleted, date]);
-  const allOrders = useMemo(() => [...OFCompleted, ...SFCompleted], [OFCompleted, SFCompleted]);
+  const tax = calculateOrderTax(allOrders);
+  const totalFromOrders = allOrders.reduce((acc, order) => acc + order.total, 0);
+  const totalSales = allOrders.reduce(
+    (acc, order) => acc + order.selection.reduce((a, b) => a + b.value * b.quantity, 0),
+    0,
+  );
 
+  const discounts = totalSales - totalFromOrders;
   const paymentMethods = useMemo(
     () => calculatePaymentMethods(allOrders, colors.primary),
     [allOrders, colors.primary],
   );
 
-  const economiesFiltered = useMemo(() => filtered<Economy>(economies), [economies, date]);
-
-  const totalSales = useMemo(
-    () => calculateOrdersTotal(allOrders) + incomes(economiesFiltered),
-    [allOrders, economiesFiltered],
-  );
-
-  const totalFromOrders = useMemo(() => {
-    console.log(allOrders.reduce((acc, order) => acc + order.total, 0));
-    return allOrders.reduce((acc, order) => acc + order.total, 0);
-  }, [allOrders]);
-
-  const discounts = useMemo(() => {
-    return totalSales - totalFromOrders + incomes(economiesFiltered);
-  }, [totalSales, totalFromOrders, economiesFiltered]);
+  const totalSale = totalSales + incomes;
+  const netSale = totalSale - discounts;
+  const currentIncome = netSale - tax - tip;
+  const netCash = currentIncome - egress + initialBasis;
+  const cash = netCash - paymentMethods.reduce((a, b) => a + b.value, 0);
 
   return (
     <>
@@ -114,47 +103,46 @@ const SalesBalancing = () => {
             </StyledText>
           </TouchableOpacity>
         </View>
+
         <ScrollView style={{ marginTop: 16, flexGrow: 1 }}>
           <View style={[styles.separator, { borderColor: colors.border }]}>
             <DotSeparatorText
               leftText="VENTA TOTAL"
-              rightText={thousandsSystem(totalSales)}
-              dotColor={colors.primary}
+              rightText={thousandsSystem(totalSale)}
               bold
+              dotColor={colors.primary}
             />
             <DotSeparatorText leftText="(-) Descuentos" rightText={thousandsSystem(discounts)} />
           </View>
           <View style={[styles.separator, { borderColor: colors.border }]}>
             <DotSeparatorText
               leftText="VENTA NETA"
-              rightText={thousandsSystem(totalSales - discounts)}
-              dotColor={colors.primary}
+              rightText={thousandsSystem(netSale)}
               bold
+              dotColor={colors.primary}
             />
-            {/* <DotSeparatorText leftText="(-) Impuestos" rightText="0.00" />
-            <DotSeparatorText leftText="(-) Propinas" rightText="0.00" /> */}
+            <DotSeparatorText leftText="(-) Impuestos" rightText={thousandsSystem(tax)} />
+            <DotSeparatorText leftText="(-) Propinas" rightText={thousandsSystem(tip)} />
           </View>
           <View style={[styles.separator, { borderColor: colors.border }]}>
-            {/* <DotSeparatorText
-              leftText="INGRESO REAL"
-              rightText="0.00"
-              dotColor={colors.primary}
-              bold
-            /> */}
             <DotSeparatorText
-              leftText="(-) Gastos"
-              rightText={thousandsSystem(egress(economiesFiltered))}
+              leftText="INGRESO REAL"
+              rightText={thousandsSystem(currentIncome)}
+              bold
+              dotColor={colors.primary}
             />
-            {/* <DotSeparatorText leftText="(+) Base inicial" rightText="0.00" /> */}
+            <DotSeparatorText leftText="(-) Gastos" rightText={thousandsSystem(egress)} />
+            <DotSeparatorText
+              leftText="(+) Base inicial"
+              rightText={thousandsSystem(initialBasis)}
+            />
           </View>
           <View style={[styles.separator, { borderColor: colors.border }]}>
             <DotSeparatorText
               leftText="NETO DE CAJA"
-              rightText={thousandsSystem(
-                totalFromOrders + incomes(economiesFiltered) + egress(economiesFiltered),
-              )}
-              dotColor={colors.primary}
+              rightText={thousandsSystem(netCash)}
               bold
+              dotColor={colors.primary}
             />
             <FlatList
               data={paymentMethods}
@@ -164,20 +152,29 @@ const SalesBalancing = () => {
                 <DotSeparatorText leftText={item.name} rightText={thousandsSystem(item.value)} />
               )}
             />
-            {/* <DotSeparatorText leftText="(-) Efectivo" rightText="0.00" />
-            <DotSeparatorText leftText="(-) Nequi" rightText="0.00" />
-            <DotSeparatorText leftText="(-) Otros" rightText="0.00" /> */}
           </View>
-          {/* <View style={[styles.separator, { borderColor: colors.border }]}>
+          <View style={[styles.separator, { borderColor: colors.border }]}>
             <DotSeparatorText
               leftText="EFECTIVO TOTAL"
-              rightText="0.00"
-              dotColor={colors.primary}
+              rightText={thousandsSystem(cash)}
               bold
+              dotColor={colors.primary}
             />
-          </View> */}
+          </View>
         </ScrollView>
+        <View style={styles.features}>
+          <StyledButton
+            onPress={() => navigation.navigate("SettingRoutes", { screen: "Statistic" })}
+            auto
+            backgroundColor={colors.primary}
+          >
+            <StyledText verySmall color="#FFFFFF">
+              Configuración
+            </StyledText>
+          </StyledButton>
+        </View>
       </Layout>
+
       <SimpleCalendarModal
         defaultValue={date}
         visible={calendarModal}
@@ -190,6 +187,11 @@ const SalesBalancing = () => {
 };
 
 const styles = StyleSheet.create({
+  features: {
+    paddingVertical: 10,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
   container: {
     flexDirection: "row",
     alignItems: "center",

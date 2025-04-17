@@ -43,6 +43,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
       subcategories: defaultValue?.subcategories || [],
       visible: defaultValue?.visible || true,
       reorder: defaultValue?.reorder || 0,
+      upperLimit: defaultValue?.upperLimit || 0,
       reference: defaultValue?.reference || "",
       brand: defaultValue?.brand || "",
       currentValue: defaultValue?.currentValue || 0,
@@ -57,6 +58,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
 
   const [optional, setOptional] = useState<boolean>(false);
   const [reorderModal, setReorderModal] = useState<boolean>(false);
+  const [upperLimitModal, setUpperLimitModal] = useState<boolean>(false);
   const [currentValueModal, setCurrentValueModal] = useState<boolean>(false);
   const [unitModal, setUnitModal] = useState<boolean>(false);
   const [categoriesPickerModal, setCategoriesPickerModal] = useState<boolean>(false);
@@ -65,7 +67,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
   const [categoriesPicker, setCategoriesPicker] = useState<PickerProps[]>([]);
   const [subcategoriesPicker, setSubcategoriesPicker] = useState<PickerProps[]>([]);
 
-  const { unit, categories, subcategories, reorder, currentValue } = watch();
+  const { unit, categories, subcategories, reorder, upperLimit, currentValue } = watch();
 
   const dispatch = useAppDispatch();
 
@@ -147,6 +149,12 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
                 </StyledText>
                 <Ionicons name="chevron-forward" color={colors.text} size={19} />
               </StyledButton>
+              <StyledButton style={styles.row} onPress={() => setUpperLimitModal(true)}>
+                <StyledText>
+                  Límite superior {!!upperLimit && `(${thousandsSystem(upperLimit)})`}
+                </StyledText>
+                <Ionicons name="chevron-forward" color={colors.text} size={19} />
+              </StyledButton>
               <Controller
                 name="reference"
                 control={control}
@@ -213,8 +221,25 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
             visible={reorderModal}
             defaultValue={value}
             isRemove={!!value}
-            maxValue={999999}
+            maxValue={99999999}
             onClose={() => setReorderModal(false)}
+            onSave={onChange}
+          />
+        )}
+      />
+      <Controller
+        name="upperLimit"
+        control={control}
+        render={({ field: { onChange, value } }) => (
+          <CountScreenModal
+            title="Límite superior"
+            decimal={true}
+            description={() => "Defina el límite superior"}
+            visible={upperLimitModal}
+            defaultValue={value}
+            isRemove={!!value}
+            maxValue={99999999}
+            onClose={() => setUpperLimitModal(false)}
             onSave={onChange}
           />
         )}

@@ -126,12 +126,13 @@ const TableCell: React.FC<TableCellProps> = ({
   return onPress || onPressCompleteData ? (
     <>
       <TouchableOpacity
+        style={[defaultStyle, style]}
         onPress={() => {
           if (onPress) onPress();
           else setShowDataModal(true);
         }}
       >
-        {renderContent(text, [defaultStyle, style], color)}
+        {renderContent(text, [], color)}
       </TouchableOpacity>
       <InformationModal
         title="INFORMACIÓN"

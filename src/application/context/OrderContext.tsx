@@ -5,6 +5,8 @@ import { Element } from "domain/entities/data/common/element.entity";
 type InfoType = {
   discount: number;
   observation: string;
+  tip: number;
+  tax: number;
 };
 
 interface OrderContextType {
@@ -14,7 +16,7 @@ interface OrderContextType {
   addSelection: (data: Element, registered: boolean, count: number) => void;
   updateSelection: (data: Selection) => void;
   removeSelection: (id: string) => void;
-  updateInfo: (data: { discount?: number; observation?: string }) => void;
+  updateInfo: (data: Partial<InfoType>) => void;
   change: (data: Order) => void;
   clean: () => void;
 }
@@ -22,13 +24,22 @@ interface OrderContextType {
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [info, setInfo] = useState<InfoType>({ discount: 0, observation: "" });
+  const [info, setInfo] = useState<InfoType>({ discount: 0, tip: 0, tax: 0, observation: "" });
   const [order, setOrder] = useState<Order | null>(null);
   const [selection, setSelection] = useState<Selection[]>([]);
 
+  const updateInfo = (data: Partial<InfoType>) => {
+    setInfo({ ...info, ...data });
+  };
+
   const change = (data: Order) => {
     setOrder(data);
-    setInfo({ discount: data.discount, observation: data.observation });
+    setInfo({
+      discount: data.discount,
+      observation: data.observation,
+      tip: data.tip,
+      tax: data.tax,
+    });
     setSelection(data.selection);
   };
 
@@ -62,17 +73,13 @@ const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setSelection(changed);
   };
 
-  const updateInfo = (data: { discount?: number; observation?: string }) => {
-    setInfo({ ...info, ...data });
-  };
-
   const removeSelection = (id: string) => {
     const changed = selection.filter((s) => s.id !== id);
     setSelection(changed);
   };
 
   const clean = () => {
-    setInfo({ discount: 0, observation: "" });
+    setInfo({ discount: 0, observation: "", tip: 0, tax: 0 });
     setSelection([]);
   };
 

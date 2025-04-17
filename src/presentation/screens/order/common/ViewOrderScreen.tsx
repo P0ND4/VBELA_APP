@@ -18,6 +18,7 @@ import FloorModal from "presentation/components/modal/FloorModal";
 import PaymentScreen from "presentation/screens/common/sales/components/PaymentScreen";
 import PaymentButtons from "presentation/components/button/PaymentButtons";
 import OrderPayment from "./OrderPayment";
+import InformationModal from "presentation/components/modal/InformationModal";
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -128,6 +129,7 @@ const ViewOrder: React.FC<ViewOrderProps> = ({ onEditOrder, order, onChange }) =
   const [observationModal, setObservationModal] = useState<boolean>(false);
   const [optionsModal, setOptionsModal] = useState<boolean>(false);
   const [statusModal, setStatusModal] = useState<boolean>(false);
+  const [informationModal, setInformationModal] = useState<boolean>(false);
   const [paymentVisible, setPaymentVisible] = useState<boolean>(false);
   const [paymentMethodsVisible, setPaymentMethodsVisible] = useState<boolean>(false);
 
@@ -138,6 +140,10 @@ const ViewOrder: React.FC<ViewOrderProps> = ({ onEditOrder, order, onChange }) =
   const value = useMemo(
     () => order?.selection?.reduce((a, b) => a + b.total, 0) ?? 0,
     [order?.selection],
+  );
+  const totalWithoutTaxTip = useMemo(
+    () => value - value * order?.discount!,
+    [value, order?.discount],
   );
   const paid = useMemo(
     () => order?.paymentMethods?.reduce((a, b) => a + b.amount, 0) ?? 0,
@@ -162,14 +168,19 @@ const ViewOrder: React.FC<ViewOrderProps> = ({ onEditOrder, order, onChange }) =
       <Layout style={{ padding: 0 }}>
         <View style={styles.header}>
           <View style={styles.row}>
-            <StyledText subtitle lineThrough={order.status === Status.Canceled}>
-              {!order.total ? "GRATIS" : thousandsSystem(order.total)}{" "}
-              {!!order.discount && (
-                <StyledText
-                  color={colors.primary}
-                >{`(-${thousandsSystem(value * order.discount)})`}</StyledText>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <StyledText subtitle lineThrough={order.status === Status.Canceled}>
+                {!order.total ? "GRATIS" : thousandsSystem(order.total)}
+              </StyledText>
+              {(!!order.discount || !!order.tip || !!order.tax) && (
+                <TouchableOpacity
+                  style={{ marginLeft: 5 }}
+                  onPress={() => setInformationModal(true)}
+                >
+                  <Ionicons name="information-circle-outline" color={colors.primary} size={25} />
+                </TouchableOpacity>
               )}
-            </StyledText>
+            </View>
             <View>
               <StyledText smallParagraph right>
                 #{order.order}
@@ -330,6 +341,30 @@ const ViewOrder: React.FC<ViewOrderProps> = ({ onEditOrder, order, onChange }) =
         }}
         total={order.total - paid}
       />
+      {(!!order.discount || !!order.tip || !!order.tax) && (
+        <InformationModal
+          title="INFORMACIÓN ADICIONAL"
+          animationType="fade"
+          visible={informationModal}
+          onClose={() => setInformationModal(false)}
+        >
+          {!!order.discount && (
+            <StyledText
+              color={colors.primary}
+            >{`Descuento: (-${thousandsSystem(value * order.discount)})`}</StyledText>
+          )}
+          {!!order.tip && (
+            <StyledText
+              color={colors.primary}
+            >{`Propina: (+${thousandsSystem(order.tip)})`}</StyledText>
+          )}
+          {!!order.tip && (
+            <StyledText
+              color={colors.primary}
+            >{`Impuesto: (+${thousandsSystem(totalWithoutTaxTip * order.tax)})`}</StyledText>
+          )}
+        </InformationModal>
+      )}
     </>
   );
 };

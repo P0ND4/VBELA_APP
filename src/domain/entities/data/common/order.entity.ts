@@ -29,6 +29,8 @@ export interface Order {
   invoice: string;
   locationID: string;
   tableID: string | null;
+  tip: number;
+  tax: number;
   order: string;
   status: Status;
   selection: Selection[];
@@ -48,5 +50,5 @@ export type Save = {
   status: Status;
   locationID: string;
   tableID?: string;
-  info: { observation: string; discount: number };
+  info: { observation: string; discount: number; tip: number; tax: number };
 };

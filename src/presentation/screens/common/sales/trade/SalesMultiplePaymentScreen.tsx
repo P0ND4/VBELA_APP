@@ -98,7 +98,11 @@ const SalesMultiplePaymentScreen: React.FC<SalesMultiplePaymentScreenProps> = ({
 
   const value = useMemo(() => selection.reduce((a, b) => a + b.total, 0), [selection]);
   const paid = useMemo(() => paymentMethods.reduce((a, b) => a + b.amount, 0), [paymentMethods]);
-  const total = useMemo(() => value - value * info.discount, [value, info.discount]);
+  const totalWithoutTaxTip = useMemo(() => value - value * info.discount, [value, info.discount]);
+  const total = useMemo(
+    () => totalWithoutTaxTip + info.tip + totalWithoutTaxTip * info.tax,
+    [totalWithoutTaxTip, info.discount, info.tax, info.tip],
+  );
 
   const update = (paymentMethods: PaymentMethod[]): void => {
     onUpdate({
@@ -106,6 +110,8 @@ const SalesMultiplePaymentScreen: React.FC<SalesMultiplePaymentScreenProps> = ({
       selection,
       status: Status.Completed,
       paymentMethods,
+      tip: info.tip,
+      tax: info.tax,
       paid,
       total,
       discount: info.discount,

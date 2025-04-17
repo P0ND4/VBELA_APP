@@ -66,6 +66,16 @@ const Setting: React.FC<AppNavigationProp> = ({ navigation }) => {
         onPress={() => navigation.navigate("SettingRoutes", { screen: "EconomicGroup" })}
       />
       <Card
+        icon="logo-usd"
+        left="Propina/Impuestos de pedidos"
+        onPress={() => navigation.navigate("SettingRoutes", { screen: "TipTax" })}
+      />
+      <Card
+        icon="bar-chart-outline"
+        left="Estadísticas"
+        onPress={() => navigation.navigate("SettingRoutes", { screen: "Statistic" })}
+      />
+      <Card
         icon="logo-whatsapp"
         left="whatsapp"
         paragraph="Ingresa a nuestro grupo de whatsapp"

@@ -205,9 +205,13 @@ const Portion: React.FC<PortionProps> = ({ inventoryID, visualization }) => {
                       containerStyle={{ marginVertical: 4 }}
                       scrollHorizontalEnable={false}
                     >
-                      <Table.Header data={["Porción"]}>
+                      <Table.Header data={["Nombre", "Porción"]}>
                         {data.map((data) => (
-                          <Table.Body key={data.id} data={[data.name]} />
+                          <Table.Body
+                            key={data.id}
+                            onPressCompleteData={true}
+                            data={[data.name, thousandsSystem(data.quantity)]}
+                          />
                         ))}
                       </Table.Header>
                     </Table>
