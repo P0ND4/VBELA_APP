@@ -38,8 +38,7 @@ const Indicators: React.FC<IndicatorsProps> = ({ route }) => {
 
   const economies = route.params.economies;
 
-  const calculateTotal = (economies: Economy[]) =>
-    economies.reduce((a, b) => a + b.value * b.quantity, 0);
+  const calculateTotal = (economies: Economy[]) => economies.reduce((a, b) => a + b.value, 0);
 
   const total = useMemo(() => calculateTotal(economies), [economies]);
 
@@ -54,8 +53,6 @@ const Indicators: React.FC<IndicatorsProps> = ({ route }) => {
     () => Math.round((egress.length / economies.length || 0) * 100),
     [economies],
   );
-
-  console.log(income);
 
   const averageIncome = useMemo(
     () => Math.round(calculateTotal(income) / income.length || 0),
@@ -81,7 +78,7 @@ const Indicators: React.FC<IndicatorsProps> = ({ route }) => {
           )}
           <View style={{ marginVertical: 10 }}>
             {economies.map((e) => (
-              <Card key={e.id} name={e.category.name} value={e.value * e.quantity} />
+              <Card key={e.id} name={e.category.name} value={e.value} />
             ))}
           </View>
           {economies.length > 0 && (

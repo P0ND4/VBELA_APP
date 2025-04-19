@@ -24,7 +24,7 @@ import FullFilterDate, {
 type NavigationProps = StackNavigationProp<RootApp>;
 
 // Helper function to calculate the cost of a portion
-const calculateCost = (portion: PortionType, stocks: Stock[]): number => {
+export const calculateCost = (portion: PortionType, stocks: Stock[]): number => {
   return portion.ingredients.reduce((total, ingredient) => {
     const stock = stocks.find((s) => s.id === ingredient.id);
     return total + (stock?.currentValue || 0) * ingredient.quantity;
@@ -37,6 +37,8 @@ const Card: React.FC<{ portion: PortionType; onPress: () => void; onLongPress: (
   onPress,
   onLongPress,
 }) => {
+  const { colors } = useTheme();
+
   const stocks = useAppSelector((state) => state.stocks);
 
   const cost = useMemo(() => calculateCost(portion, stocks), [portion, stocks]);
@@ -47,9 +49,14 @@ const Card: React.FC<{ portion: PortionType; onPress: () => void; onLongPress: (
         <StyledText>{portion.name}</StyledText>
         <StyledText verySmall>{thousandsSystem(portion.quantity)} Porciones</StyledText>
       </View>
-      <StyledText color="#f71010" right verySmall>
-        {thousandsSystem(cost)}
-      </StyledText>
+      <View style={{ alignItems: "flex-end" }}>
+        <StyledText bold color={colors.primary}>
+          {thousandsSystem(cost * portion.quantity)}
+        </StyledText>
+        <StyledText color="#f71010" verySmall>
+          {thousandsSystem(cost)}
+        </StyledText>
+      </View>
     </StyledButton>
   );
 };
@@ -69,7 +76,7 @@ const Portion: React.FC<PortionProps> = ({ inventoryID, visualization }) => {
   const navigation = useNavigation<NavigationProps>();
 
   const found = useMemo(
-    () => portions.filter((recipe) => recipe.inventoryID === inventoryID),
+    () => portions.filter((portion) => portion.inventoryID === inventoryID),
     [portions, inventoryID],
   );
 
@@ -122,6 +129,11 @@ const Portion: React.FC<PortionProps> = ({ inventoryID, visualization }) => {
     const data = portionGroup.filter((group) => group.ownerID === inventoryID);
     setGroups(data);
   }, [portionGroup, inventoryID]);
+
+  const total = useMemo(
+    () => data.reduce((a, portion) => a + calculateCost(portion, stocks) * portion.quantity, 0),
+    [data, stocks],
+  );
 
   return (
     <Layout style={{ padding: 0 }}>
@@ -243,6 +255,9 @@ const Portion: React.FC<PortionProps> = ({ inventoryID, visualization }) => {
             }}
           />
         )}
+        <StyledText style={{ marginVertical: 10 }}>
+          Valor total: <StyledText color={colors.primary}>{thousandsSystem(total)}</StyledText>
+        </StyledText>
         <StyledButton
           backgroundColor={colors.primary}
           onPress={() => {

@@ -61,31 +61,35 @@ const SalesBalancing: React.FC<AppNavigationProp> = ({ navigation }) => {
   const sumValues = (items: Economy[], type: TypeEconomy) =>
     items.filter((e) => e.type === type && e.operative).reduce((acc, e) => acc + e.value, 0);
 
-  const incomes = sumValues(economiesFiltered, TypeEconomy.Income);
-  const egress = sumValues(economiesFiltered, TypeEconomy.Egress);
-  const tip = allOrders.reduce((acc, order) => acc + order.tip, 0);
-
   const calculateOrderTax = (orders: Order[]) =>
     orders.reduce((acc, order) => {
       const value = order.selection.reduce((a, b) => a + b.total, 0);
       return acc + order.tax * (value - value * order.discount);
     }, 0);
 
-  const tax = calculateOrderTax(allOrders);
-  const totalFromOrders = allOrders.reduce((acc, order) => acc + order.total, 0);
-  const totalSales = allOrders.reduce(
-    (acc, order) => acc + order.selection.reduce((a, b) => a + b.value * b.quantity, 0),
-    0,
-  );
+  const calculateDiscounts = (orders: Order[]) =>
+    orders.reduce((acc, order) => {
+      const individual = order.selection.reduce((a, b) => a + b.value * b.quantity * b.discount, 0);
+      const total = order.selection.reduce((a, b) => a + b.total, 0) * order.discount;
+      return acc + individual + total;
+    }, 0);
 
-  const discounts = totalSales - totalFromOrders;
+  const tip = allOrders.reduce((acc, order) => acc + order.tip, 0);
+  const tax = calculateOrderTax(allOrders);
+
+  const incomes = sumValues(economiesFiltered, TypeEconomy.Income);
+  const egress = sumValues(economiesFiltered, TypeEconomy.Egress);
+
+  const totalFromOrders = allOrders.reduce((acc, order) => acc + order.total, 0);
+
+  const discounts = calculateDiscounts(allOrders);
   const paymentMethods = useMemo(
     () => calculatePaymentMethods(allOrders, colors.primary),
     [allOrders, colors.primary],
   );
 
-  const totalSale = totalSales + incomes;
-  const netSale = totalSale - discounts;
+  const total = totalFromOrders + incomes;
+  const netSale = total - discounts;
   const currentIncome = netSale - tax - tip;
   const netCash = currentIncome - egress + initialBasis;
   const cash = netCash - paymentMethods.reduce((a, b) => a + b.value, 0);
@@ -108,7 +112,7 @@ const SalesBalancing: React.FC<AppNavigationProp> = ({ navigation }) => {
           <View style={[styles.separator, { borderColor: colors.border }]}>
             <DotSeparatorText
               leftText="VENTA TOTAL"
-              rightText={thousandsSystem(totalSale)}
+              rightText={thousandsSystem(total)}
               bold
               dotColor={colors.primary}
             />

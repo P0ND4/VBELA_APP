@@ -113,7 +113,7 @@ const useStatisticsData = () => {
   );
 
   const totalCostOfSale = useMemo(
-    () => economiesFiltered.reduce((a, b) => a + b.quantity * b.value, 0),
+    () => economiesFiltered.reduce((a, b) => a + b.value, 0),
     [economiesFiltered],
   );
 

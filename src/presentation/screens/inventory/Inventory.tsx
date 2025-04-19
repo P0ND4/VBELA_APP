@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { View, TouchableOpacity, StyleSheet, FlatList, ListRenderItem } from "react-native";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { AppNavigationProp, RootApp } from "domain/entities/navigation";
-import type { Inventory as InventoryType } from "domain/entities/data/inventories";
+import type { Inventory as InventoryType, Portion, Stock } from "domain/entities/data/inventories";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import Layout from "presentation/components/layout/Layout";
@@ -31,6 +31,7 @@ import { removeByInventoryID as removeByInventoryIDRecipeGroup } from "applicati
 import { removeByInventoryID as removeByInventoryIDPortion } from "application/slice/inventories/portions.slice";
 import { removeByInventoryID as removeByInventoryIDPortionGroup } from "application/slice/inventories/portion.group.slice";
 import { useMovementsMap } from "./hooks/useMovementsMap";
+import { calculateCost } from "./portion/Portion";
 
 type CardInformationProps = {
   visible: boolean;
@@ -92,12 +93,30 @@ const CardInformation: React.FC<CardInformationProps> = ({
   );
 };
 
+const calculateInventoryTotal = (
+  inventoryId: string,
+  portions: Portion[],
+  stocks: Stock[],
+  quantities: Map<string, number>,
+) => {
+  const portionValue = portions
+    .filter((p) => p.inventoryID === inventoryId)
+    .reduce((acc, p) => acc + calculateCost(p, stocks) * p.quantity, 0);
+
+  const stockValue = stocks
+    .filter((s) => s.inventoryID === inventoryId)
+    .reduce((acc, s) => acc + (quantities.get(s.id) || 0) * s.currentValue, 0);
+
+  return portionValue + stockValue;
+};
+
 //TODO LA INFORMACIÓN DE LOCATIONINFORMATION ES MUY PARECIDA A ESTE, REFACTORIZAR
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
 const Card: React.FC<{ item: InventoryType }> = ({ item }) => {
   const stocks = useAppSelector((state) => state.stocks);
+  const portions = useAppSelector((state) => state.portions);
   const recipes = useAppSelector((state) => state.recipes);
 
   const { colors } = useTheme();
@@ -109,13 +128,8 @@ const Card: React.FC<{ item: InventoryType }> = ({ item }) => {
   const dispatch = useAppDispatch();
 
   const total = useMemo(() => {
-    const data = stocks.filter((stock) => stock.inventoryID === item.id);
-    return data.reduce((acc, stock) => {
-      const quantity = quantities.get(stock.id) || 0;
-      const total = quantity * stock.currentValue;
-      return acc + total;
-    }, 0);
-  }, [stocks, quantities]);
+    return calculateInventoryTotal(item.id, portions, stocks, quantities);
+  }, [item.id, portions, stocks, quantities]);
 
   const removeData = useCallback(async () => {
     const stockIDS = stocks
@@ -187,6 +201,7 @@ const Inventory: React.FC<AppNavigationProp> = ({ navigation }) => {
   const { colors } = useTheme();
 
   const stocks = useAppSelector((state) => state.stocks);
+  const portions = useAppSelector((state) => state.portions);
   const inventories = useAppSelector((state) => state.inventories);
 
   const quantities = useMovementsMap();
@@ -211,18 +226,11 @@ const Inventory: React.FC<AppNavigationProp> = ({ navigation }) => {
   }, [inventories]);
 
   const total = useMemo(() => {
-    return inventories.reduce((acc, { id }) => {
-      const data = stocks.filter((stock) => stock.inventoryID === id);
-      return (
-        acc +
-        data.reduce((acc, stock) => {
-          const quantity = quantities.get(stock.id) || 0;
-          const total = quantity * stock.currentValue;
-          return acc + total;
-        }, 0)
-      );
-    }, 0);
-  }, [inventories, quantities]);
+    return inventories.reduce(
+      (acc, { id }) => acc + calculateInventoryTotal(id, portions, stocks, quantities),
+      0,
+    );
+  }, [inventories, portions, stocks, quantities]);
 
   const renderItem: ListRenderItem<InventoryType> = useCallback(
     ({ item }) => <Card item={item} />,
