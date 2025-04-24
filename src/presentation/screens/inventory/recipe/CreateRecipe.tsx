@@ -236,6 +236,7 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
 
   const recipeGroup = useAppSelector((state) => state.recipeGroup);
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [optional, setOptional] = useState<boolean>(false);
   const [ingredientsModal, setIngredientsModal] = useState<boolean>(false);
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
@@ -300,7 +301,11 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
 
   const cost = useRecipeCost(ingredients);
 
-  const handleSaveOrUpdate = (data: Recipe) => (defaultValue ? update(data) : save(data));
+  const handleSaveOrUpdate = (data: Recipe) => {
+    setLoading(true);
+    if (defaultValue) update(data);
+    else save(data);
+  };
 
   return (
     <>
@@ -406,7 +411,11 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
             </StyledText>
           </View>
         )}
-        <StyledButton backgroundColor={colors.primary} onPress={handleSubmit(handleSaveOrUpdate)}>
+        <StyledButton
+          backgroundColor={colors.primary}
+          loading={loading}
+          onPress={handleSubmit(handleSaveOrUpdate)}
+        >
           <StyledText center color="#FFFFFF">
             Guardar
           </StyledText>

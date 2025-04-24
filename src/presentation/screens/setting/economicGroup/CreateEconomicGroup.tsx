@@ -45,6 +45,7 @@ const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, r
     },
   });
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [visibleModal, setVisibleModal] = useState<boolean>(false);
   const [subcategoryModal, setSubcategoryModal] = useState<boolean>(false);
   const [subcategoryName, setSubcategoryName] = useState<string>("");
@@ -189,7 +190,9 @@ const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, r
         </View>
         <StyledButton
           backgroundColor={colors.primary}
+          loading={loading}
           onPress={handleSubmit((data) => {
+            setLoading(true);
             if (!defaultValue) save(data);
             else update(data);
             navigation.pop();

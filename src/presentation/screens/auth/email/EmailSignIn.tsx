@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Keyboard, View, ActivityIndicator, StyleSheet, Alert } from "react-native";
+import { Keyboard, View, StyleSheet, Alert } from "react-native";
 import { AuthNavigationProp } from "domain/entities/navigation";
 import { useTheme } from "@react-navigation/native";
 import apiClient, { endpoints } from "infrastructure/api/server";
@@ -79,11 +79,11 @@ const EmailSignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
           }
         }}
         style={styles.center}
+        loading={loading}
         disable={!EMAIL_EXPRESSION.test(email) || loading}
       >
-        {loading && <ActivityIndicator size="small" color="#FFFFFF" />}
-        {!loading && <StyledText color="#FFFFFF">Verificar</StyledText>}
-        {!loading && <Ionicons name="mail" color="#FFFFFF" size={20} style={{ marginLeft: 10 }} />}
+        <StyledText color="#FFFFFF">Verificar</StyledText>
+        <Ionicons name="mail" color="#FFFFFF" size={20} style={{ marginLeft: 10 }} />
       </StyledButton>
     </Layout>
   );

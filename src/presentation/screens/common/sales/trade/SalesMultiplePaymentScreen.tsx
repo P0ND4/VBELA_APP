@@ -76,6 +76,7 @@ const SalesMultiplePaymentScreen: React.FC<SalesMultiplePaymentScreenProps> = ({
   const { colors } = useTheme();
   const { selection, info, order, clean } = useOrder();
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [method, setMethod] = useState<string>("");
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(() => [paymentMethod]);
   const [paymentMethodsVisible, setPaymentMethodsVisible] = useState<boolean>(false);
@@ -134,8 +135,10 @@ const SalesMultiplePaymentScreen: React.FC<SalesMultiplePaymentScreenProps> = ({
         <View style={{ padding: 20 }}>
           <StyledButton
             backgroundColor={colors.primary}
+            loading={loading}
             onPress={() => {
               if (paid < total) return setPaymentMethodsVisible(true);
+              setLoading(true);
               if (order) return update(paymentMethods);
               onSave(data(paymentMethods));
               clean();

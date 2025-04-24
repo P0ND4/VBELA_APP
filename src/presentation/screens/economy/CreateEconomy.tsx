@@ -62,6 +62,7 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
   const [economicSubCategoryData, setEconomicSubCategoryData] = useState<PickerType>([]);
   const [supplierData, setSupplierData] = useState<PickerType>([]);
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [optional, setOptional] = useState<boolean>(false);
   const [supplierModal, setSupplierModal] = useState<boolean>(false);
   const [currentValueModal, setCurrentValueModal] = useState<boolean>(false);
@@ -130,7 +131,11 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
     });
   };
 
-  const handleSaveOrUpdate = (data: Economy) => (defaultValue ? update(data) : save(data));
+  const handleSaveOrUpdate = (data: Economy) => {
+    setLoading(true);
+    if (defaultValue) update(data);
+    else save(data);
+  };
 
   return (
     <>
@@ -257,7 +262,11 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
             </ScrollView>
           </KeyboardAvoidingView>
         </View>
-        <StyledButton backgroundColor={colors.primary} onPress={handleSubmit(handleSaveOrUpdate)}>
+        <StyledButton
+          backgroundColor={colors.primary}
+          loading={loading}
+          onPress={handleSubmit(handleSaveOrUpdate)}
+        >
           <StyledText center color="#FFFFFF">
             Guardar
           </StyledText>

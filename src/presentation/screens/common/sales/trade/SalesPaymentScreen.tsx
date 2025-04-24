@@ -31,6 +31,7 @@ const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({
 
   const [method, setMethod] = useState<string>("");
   const [paymentVisible, setPaymentVisible] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const value = useMemo(() => selection.reduce((a, b) => a + b.total, 0), [selection]);
   const totalWithoutTaxTip = useMemo(() => value - value * info.discount, [value, info.discount]);
@@ -70,6 +71,7 @@ const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({
   };
 
   const handleSave = useCallback(() => {
+    setLoading(true);
     if (order) return update();
     onSave(data(Status.Pending, []));
     clean();
@@ -79,6 +81,7 @@ const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({
     (paymentMethod: PaymentMethod) => {
       const { amount } = paymentMethod;
       if (amount < total) return onMultiplePayment(paymentMethod);
+      setLoading(true);
       if (order) return update(Status.Completed, [paymentMethod]);
       onSave(data(Status.Completed, [paymentMethod]));
       clean();
@@ -113,9 +116,12 @@ const SalesPaymentScreen: React.FC<SalesPaymentScreenProps> = ({
           <StyledButton
             backgroundColor={colors.primary}
             disable={!method && !!total}
+            loading={loading}
             onPress={() => {
               if (!method) {
-                onSave(data(Status.Completed, []));
+                setLoading(true);
+                if (order) return update(Status.Completed, []);
+                else onSave(data(Status.Completed, []));
                 clean();
               } else setPaymentVisible(true);
             }}

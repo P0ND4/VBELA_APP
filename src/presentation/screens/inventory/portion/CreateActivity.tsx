@@ -60,6 +60,7 @@ const CreateActivity: React.FC<CreateEntryProps> = ({ navigation, route }) => {
     },
   });
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [portionModal, setPortionModal] = useState<boolean>(false);
   const [quantityModal, setQuantityModal] = useState<boolean>(false);
 
@@ -82,6 +83,8 @@ const CreateActivity: React.FC<CreateEntryProps> = ({ navigation, route }) => {
   const isRequired = (value: unknown) => Boolean(value);
 
   const save = async ({ quantity, portion }: FormProps) => {
+    setLoading(true);
+
     const movements =
       type === TypePortion.Entry
         ? extractMovementsFromPortion(portion!, quantity, stocksMap, inventories)
@@ -132,7 +135,11 @@ const CreateActivity: React.FC<CreateEntryProps> = ({ navigation, route }) => {
             )}
           </View>
         </View>
-        <StyledButton backgroundColor={colors.primary} onPress={handleSubmit(save)}>
+        <StyledButton
+          backgroundColor={colors.primary}
+          loading={loading}
+          onPress={handleSubmit(save)}
+        >
           <StyledText color="#FFFFFF" center>
             Guardar
           </StyledText>

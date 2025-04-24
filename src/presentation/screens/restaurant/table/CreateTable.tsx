@@ -41,6 +41,7 @@ const CreateTable: React.FC<CreateTableProps> = ({ navigation, route }) => {
 
   const { colors } = useTheme();
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [optional, setOptional] = useState<boolean>(false);
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
   const [repeat, setRepeat] = useState<string>("");
@@ -72,7 +73,6 @@ const CreateTable: React.FC<CreateTableProps> = ({ navigation, route }) => {
   };
 
   const update = async (data: Table) => {
-    console.log(data);
     dispatch(edit(data));
     navigation.pop();
     await apiClient({
@@ -83,6 +83,7 @@ const CreateTable: React.FC<CreateTableProps> = ({ navigation, route }) => {
   };
 
   const handleSaveOrUpdate = (data: Table) => {
+    setLoading(true);
     if (defaultValue) update(data);
     else save(data);
   };
@@ -154,7 +155,11 @@ const CreateTable: React.FC<CreateTableProps> = ({ navigation, route }) => {
             </>
           )}
         </View>
-        <StyledButton backgroundColor={colors.primary} onPress={handleSubmit(handleSaveOrUpdate)}>
+        <StyledButton
+          backgroundColor={colors.primary}
+          loading={loading}
+          onPress={handleSubmit(handleSaveOrUpdate)}
+        >
           <StyledText center color="#FFFFFF">
             Guardar
           </StyledText>

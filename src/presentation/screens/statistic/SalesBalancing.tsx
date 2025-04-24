@@ -59,7 +59,7 @@ const SalesBalancing: React.FC<AppNavigationProp> = ({ navigation }) => {
   const economiesFiltered = useMemo(() => filterByDate(economies), [economies, date]);
 
   const sumValues = (items: Economy[], type: TypeEconomy) =>
-    items.filter((e) => e.type === type && e.operative).reduce((acc, e) => acc + e.value, 0);
+    items.filter((e) => e.type === type && e.operative).reduce((acc, e) => acc + e.value * -1, 0);
 
   const calculateOrderTax = (orders: Order[]) =>
     orders.reduce((acc, order) => {

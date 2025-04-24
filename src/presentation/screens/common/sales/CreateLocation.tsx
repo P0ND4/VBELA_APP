@@ -43,6 +43,7 @@ const CreateLocation: React.FC<CreateLocationProps> = ({
 
   const { colors } = useTheme();
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [optional, setOptional] = useState<boolean>(false);
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
   const [inventoryModal, setInventoryModal] = useState<boolean>(false);
@@ -51,7 +52,11 @@ const CreateLocation: React.FC<CreateLocationProps> = ({
 
   const { description, inventories: inv } = watch();
 
-  const handleSaveOrUpdate = (data: Location) => (defaultValue ? onUpdate(data) : onSave(data));
+  const handleSaveOrUpdate = (data: Location) => {
+    setLoading(true);
+    if (defaultValue) onUpdate(data);
+    else onSave(data);
+  };
 
   useEffect(() => {
     const found = inventories.filter((i) => [Visible.Both, visible].includes(i.visible));
@@ -121,7 +126,11 @@ const CreateLocation: React.FC<CreateLocationProps> = ({
             </>
           )}
         </View>
-        <StyledButton backgroundColor={colors.primary} onPress={handleSubmit(handleSaveOrUpdate)}>
+        <StyledButton
+          backgroundColor={colors.primary}
+          loading={loading}
+          onPress={handleSubmit(handleSaveOrUpdate)}
+        >
           <StyledText center color="#FFFFFF">
             Guardar
           </StyledText>

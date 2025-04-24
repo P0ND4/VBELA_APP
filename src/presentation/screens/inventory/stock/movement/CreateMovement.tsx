@@ -48,6 +48,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
   const [supplierData, setSupplierData] = useState<PickerFloorModalData>([]);
   const [stockData, setStockData] = useState<PickerFloorModalData>([]);
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [supplierValueModal, setSupplierValueModal] = useState<boolean>(false);
   const [supplierModal, setSupplierModal] = useState<boolean>(false);
   const [stockModal, setStockModal] = useState<boolean>(false);
@@ -138,6 +139,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
   };
 
   const handleSaveOrUpdate = async (data: Movement) => {
+    setLoading(true);
     const action = defaultValue ? update : save;
     await action(data);
   };
@@ -237,7 +239,11 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
             </StyledButton> */}
           </View>
         </View>
-        <StyledButton backgroundColor={colors.primary} onPress={handleSubmit(handleSaveOrUpdate)}>
+        <StyledButton
+          backgroundColor={colors.primary}
+          loading={loading}
+          onPress={handleSubmit(handleSaveOrUpdate)}
+        >
           <StyledText color="#FFFFFF" center>
             Guardar
           </StyledText>

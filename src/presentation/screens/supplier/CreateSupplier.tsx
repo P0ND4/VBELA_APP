@@ -38,6 +38,7 @@ const CreateSupplier: React.FC<CreateSupplierProps> = ({ navigation, route }) =>
 
   const { colors } = useTheme();
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [optional, setOptional] = useState<boolean>(false);
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
 
@@ -46,6 +47,7 @@ const CreateSupplier: React.FC<CreateSupplierProps> = ({ navigation, route }) =>
   const dispatch = useAppDispatch();
 
   const save = async (data: Supplier) => {
+    setLoading(true);
     dispatch(add(data));
     navigation.pop();
     await apiClient({
@@ -56,6 +58,7 @@ const CreateSupplier: React.FC<CreateSupplierProps> = ({ navigation, route }) =>
   };
 
   const update = async (data: Supplier) => {
+    setLoading(true);
     dispatch(edit(data));
     navigation.pop();
     await apiClient({
@@ -134,7 +137,11 @@ const CreateSupplier: React.FC<CreateSupplierProps> = ({ navigation, route }) =>
             </>
           )}
         </View>
-        <StyledButton backgroundColor={colors.primary} onPress={handleSubmit(handleSaveOrUpdate)}>
+        <StyledButton
+          loading={loading}
+          backgroundColor={colors.primary}
+          onPress={handleSubmit(handleSaveOrUpdate)}
+        >
           <StyledText center color="#FFFFFF">
             Guardar
           </StyledText>

@@ -33,12 +33,17 @@ const GroupForm: React.FC<GroupFormProps> = ({ ownerID, onSave, onUpdate, defaul
   const { colors } = useTheme();
   const { subcategories } = watch();
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [subcategoryModal, setSubcategoryModal] = useState<boolean>(false);
   const [subcategoryName, setSubcategoryName] = useState<string>("");
   const [subcategoryError, setSubcategoryError] = useState<boolean>(false);
   const [subcategoryEditing, setSubcategoryEditing] = useState<null | string>(null);
 
-  const handleSaveOrUpdate = (data: any) => (defaultValue ? onUpdate(data) : onSave(data));
+  const handleSaveOrUpdate = (data: any) => {
+    setLoading(true);
+    if (defaultValue) onUpdate(data);
+    else onSave(data);
+  };
 
   const onClose = () => {
     setSubcategoryModal(false);
@@ -121,7 +126,11 @@ const GroupForm: React.FC<GroupFormProps> = ({ ownerID, onSave, onUpdate, defaul
             )}
           </View>
         </View>
-        <StyledButton backgroundColor={colors.primary} onPress={handleSubmit(handleSaveOrUpdate)}>
+        <StyledButton
+          loading={loading}
+          backgroundColor={colors.primary}
+          onPress={handleSubmit(handleSaveOrUpdate)}
+        >
           <StyledText center color="#FFFFFF">
             Guardar
           </StyledText>

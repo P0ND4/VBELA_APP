@@ -52,6 +52,7 @@ const CreatePaymentMethod: React.FC<CreatePaymentMethodProps> = ({ navigation, r
     },
   });
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [visible, setVisible] = useState<boolean>(false);
 
   const dispatch = useAppDispatch();
@@ -184,7 +185,9 @@ const CreatePaymentMethod: React.FC<CreatePaymentMethodProps> = ({ navigation, r
       </View>
       <StyledButton
         backgroundColor={colors.primary}
+        loading={loading}
         onPress={handleSubmit((data) => {
+          setLoading(true);
           if (!defaultValue) save(data);
           else update(data);
           navigation.pop();

@@ -1,5 +1,11 @@
 import React from "react";
-import { TouchableOpacity, StyleSheet, StyleProp, ViewStyle } from "react-native";
+import {
+  TouchableOpacity,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+  ActivityIndicator,
+} from "react-native";
 import { useTheme } from "@react-navigation/native";
 
 const styles = StyleSheet.create({
@@ -24,6 +30,8 @@ type StyledButtonProps = {
   noBorderRadius?: boolean;
   grow?: number;
   basis?: number;
+  loading?: boolean;
+  loadingColor?: string;
   backgroundColor?: string;
   onPress?: () => void;
   onLongPress?: () => void;
@@ -43,6 +51,8 @@ const StyledButton: React.FC<StyledButtonProps> = ({
   basis,
   onPress,
   onLongPress,
+  loading,
+  loadingColor = "#FFFFFF",
   disable = false,
   children,
   style,
@@ -52,8 +62,8 @@ const StyledButton: React.FC<StyledButtonProps> = ({
     styles.default,
     {
       backgroundColor: backgroundColor || colors.card,
-      opacity: !disable ? 1 : 0.6,
-      elevation: !disable ? 1 : 0,
+      opacity: !disable || loading ? 1 : 0.6,
+      elevation: !disable || loading ? 1 : 0,
       flexGrow: grow,
       flexBasis: basis,
     },
@@ -66,12 +76,12 @@ const StyledButton: React.FC<StyledButtonProps> = ({
 
   return (
     <TouchableOpacity
-      disabled={disable}
+      disabled={disable || loading}
       style={buttonStyles}
       onPress={onPress}
       onLongPress={onLongPress}
     >
-      {children && children}
+      {loading ? <ActivityIndicator size="small" color={loadingColor} /> : children && children}
     </TouchableOpacity>
   );
 };

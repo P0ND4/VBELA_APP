@@ -50,6 +50,7 @@ const CreateInventory: React.FC<CreateInventoryProps> = ({ navigation, route }) 
 
   const { colors } = useTheme();
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [optional, setOptional] = useState<boolean>(false);
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
   const [visibleModal, setVisibleModal] = useState<boolean>(false);
@@ -78,7 +79,11 @@ const CreateInventory: React.FC<CreateInventoryProps> = ({ navigation, route }) 
     });
   };
 
-  const handleSaveOrUpdate = (data: Inventory) => (defaultValue ? update(data) : save(data));
+  const handleSaveOrUpdate = (data: Inventory) => {
+    setLoading(true);
+    if (defaultValue) update(data);
+    else save(data);
+  };
 
   return (
     <>
@@ -138,7 +143,11 @@ const CreateInventory: React.FC<CreateInventoryProps> = ({ navigation, route }) 
             </>
           )}
         </View>
-        <StyledButton backgroundColor={colors.primary} onPress={handleSubmit(handleSaveOrUpdate)}>
+        <StyledButton
+          backgroundColor={colors.primary}
+          loading={loading}
+          onPress={handleSubmit(handleSaveOrUpdate)}
+        >
           <StyledText center color="#FFFFFF">
             Guardar
           </StyledText>

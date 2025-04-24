@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Keyboard, View, ActivityIndicator, StyleSheet, Alert } from "react-native";
+import { Keyboard, View, StyleSheet, Alert } from "react-native";
 import { AuthNavigationProp } from "domain/entities/navigation";
 import { useTheme } from "@react-navigation/native";
 import StyledText from "presentation/components/text/StyledText";
@@ -52,6 +52,8 @@ const PhoneButton: React.FC<PhoneButtonProps> = ({
   return (
     <StyledButton
       backgroundColor={cardStyles.backgroundColor}
+      loading={loading}
+      loadingColor={cardStyles.textColor}
       onPress={async () => {
         Keyboard.dismiss();
         setLoading(true);
@@ -61,11 +63,8 @@ const PhoneButton: React.FC<PhoneButtonProps> = ({
       disable={disable}
       style={styles.center}
     >
-      {loading && <ActivityIndicator size="small" color={cardStyles.textColor} />}
-      {!loading && <StyledText color={cardStyles.textColor}>{name}</StyledText>}
-      {!loading && (
-        <Ionicons name={icon} color={cardStyles.textColor} size={20} style={{ marginLeft: 10 }} />
-      )}
+      <StyledText color={cardStyles.textColor}>{name}</StyledText>
+      <Ionicons name={icon} color={cardStyles.textColor} size={20} style={{ marginLeft: 10 }} />
     </StyledButton>
   );
 };

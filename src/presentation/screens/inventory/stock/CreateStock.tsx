@@ -56,6 +56,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
 
   const { colors } = useTheme();
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [optional, setOptional] = useState<boolean>(false);
   const [reorderModal, setReorderModal] = useState<boolean>(false);
   const [upperLimitModal, setUpperLimitModal] = useState<boolean>(false);
@@ -95,7 +96,11 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
     });
   };
 
-  const handleSaveOrUpdate = (data: Stock) => (defaultValue ? update(data) : save(data));
+  const handleSaveOrUpdate = (data: Stock) => {
+    setLoading(true);
+    if (defaultValue) update(data);
+    else save(data);
+  };
 
   return (
     <>
@@ -204,7 +209,11 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
             </>
           )}
         </ScrollView>
-        <StyledButton backgroundColor={colors.primary} onPress={handleSubmit(handleSaveOrUpdate)}>
+        <StyledButton
+          backgroundColor={colors.primary}
+          loading={loading}
+          onPress={handleSubmit(handleSaveOrUpdate)}
+        >
           <StyledText center color="#FFFFFF">
             Guardar
           </StyledText>

@@ -43,6 +43,7 @@ const ElementForm: React.FC<ElementFormProps> = ({
 }) => {
   const { colors } = useTheme();
 
+  const [loading, setLoading] = useState<boolean>(false);
   const [optional, setOptional] = useState<boolean>(false);
   const [descriptionModal, setDescriptionModal] = useState<boolean>(false);
   const [unitModal, setUnitModal] = useState<boolean>(false);
@@ -206,7 +207,11 @@ const ElementForm: React.FC<ElementFormProps> = ({
         <StyledButton
           backgroundColor={colors.primary}
           style={{ marginTop: 20 }}
-          onPress={handleSubmit(onSubmit)}
+          loading={loading}
+          onPress={handleSubmit((data) => {
+            setLoading(true);
+            onSubmit(data);
+          })}
         >
           <StyledText center color="#FFFFFF">
             Guardar producto
