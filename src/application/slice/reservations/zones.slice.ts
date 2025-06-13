@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const zones = (collection: Collection) => collection.zones;
+const zones = (collection: Partial<Collection>) => collection?.zones ?? [];
 
 const initialState: Zone[] = [];
 

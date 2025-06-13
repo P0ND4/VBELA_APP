@@ -12,7 +12,7 @@ export interface Theme {
   colors: Colors;
 }
 
-const colors: string[] = ["#1E90FF", "#E38B00", "#30AA21", "#AD32B2", "#BD0900"];
+const colors: string[] = ["#890e73", "#1E90FF", "#E38B00", "#30AA21", "#AD32B2", "#BD0900"];
 
 type ThemeConfig = { color?: number; darkMode?: boolean };
 

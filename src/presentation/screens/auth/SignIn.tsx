@@ -1,13 +1,9 @@
 import React from "react";
 import { View, StyleSheet, Image, Alert } from "react-native";
-import { useAppDispatch } from "application/store/hook";
-import { changeAll } from "application/store/actions";
 import { AuthNavigationProp } from "domain/entities/navigation";
 import { GoogleAuthentication } from "infrastructure/auth/google.auth";
 import { useTheme } from "@react-navigation/native";
-import { active } from "application/slice/user/session.slice";
-import { login } from "infrastructure/auth/login";
-import { batch } from "react-redux";
+import { sessions as getSessions } from "infrastructure/auth/sessions";
 import StyledText from "presentation/components/text/StyledText";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
@@ -16,19 +12,13 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 const SignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
   const { colors } = useTheme();
 
-  const dispatch = useAppDispatch();
-
   const onPressGoogle = async () => {
     const res = await GoogleAuthentication();
     if (res?.type === "success") {
       try {
-        const user = await login(res.data.user.email);
-        if (user) {
-          batch(() => {
-            dispatch(changeAll(user[0]));
-            dispatch(active());
-          });
-        }
+        const identifier = res.data.user.email;
+        const { sessions, token } = await getSessions(identifier);
+        navigation.navigate("Session", { identifier, sessions, token });
       } catch (error) {
         Alert.alert("Error", `Hubo un error: ${error}`);
       }
@@ -38,7 +28,7 @@ const SignIn: React.FC<AuthNavigationProp> = ({ navigation }) => {
   return (
     <Layout style={styles.container}>
       <StyledText color={colors.primary} bigTitle>
-        VBELA
+        Fappture
       </StyledText>
       <View style={{ marginTop: 5, width: "80%" }}>
         <StyledText center style={{ marginBottom: 8 }}>

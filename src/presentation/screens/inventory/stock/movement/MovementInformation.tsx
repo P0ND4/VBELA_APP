@@ -10,19 +10,22 @@ import {
 import { Movement } from "domain/entities/data/inventories";
 import { Type } from "domain/enums/data/inventory/movement.enums";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { remove as removeMovement } from "application/slice/inventories/movements.slice";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledTextInformation from "presentation/components/text/StyledTextInformation";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import InformationModal from "presentation/components/modal/InformationModal";
+import endpoints from "config/constants/api.endpoints";
 
 type NavigationProps = StackNavigationProp<RootInventory>;
 
 const MovementCard: React.FC<{ movement: Movement }> = ({ movement }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const [informationModal, setInformationModal] = useState<boolean>(false);
 
@@ -35,6 +38,7 @@ const MovementCard: React.FC<{ movement: Movement }> = ({ movement }) => {
       url: endpoints.movement.delete(movement.id),
       method: "DELETE",
     });
+    emit("accessToInventory");
   };
 
   return (

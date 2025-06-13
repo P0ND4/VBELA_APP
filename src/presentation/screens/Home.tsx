@@ -6,18 +6,21 @@ import { useTheme } from "@react-navigation/native";
 import { changeDate, random, thousandsSystem } from "shared/utils";
 import { selectCompletedOrders, selectCompletedSales } from "application/selectors";
 import { active, clean, Status } from "application/appState/state/state.controller.slice";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import { batch } from "react-redux";
 import { Order } from "domain/entities/data/common";
 import { add } from "application/slice/handlers/handlers.slice";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AlertModal from "presentation/components/modal/AlertModal";
+import endpoints from "config/constants/api.endpoints";
 
 const Home: React.FC = () => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const orders = useAppSelector(selectCompletedOrders);
   const sales = useAppSelector(selectCompletedSales);
@@ -57,6 +60,7 @@ const Home: React.FC = () => {
       method: "POST",
       data,
     });
+    emit("accessToStatistics");
   };
 
   return (

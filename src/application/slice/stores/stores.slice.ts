@@ -3,7 +3,7 @@ import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 import { Location } from "domain/entities/data/common";
 
-const stores = (collection: Collection) => collection.stores;
+const stores = (collection: Partial<Collection>) => collection?.stores ?? [];
 
 const initialState: Location[] = [];
 

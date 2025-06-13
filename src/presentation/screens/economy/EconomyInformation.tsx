@@ -4,14 +4,16 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { useTheme } from "@react-navigation/native";
 import { changeDate, thousandsSystem } from "shared/utils";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { EconomyRouteProp, RootEconomy } from "domain/entities/navigation/root.economy.entity";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import { Economy } from "domain/entities/data";
 import { remove } from "application/slice/economies/economies.slice";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import InformationModal from "presentation/components/modal/InformationModal";
+import endpoints from "config/constants/api.endpoints";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   const { colors } = useTheme();
@@ -30,6 +32,7 @@ type EconomyInformationProps = {
 };
 
 const EconomyInformation: React.FC<EconomyInformationProps> = ({ navigation, route }) => {
+  const { emit } = useWebSocketContext();
   const { colors } = useTheme();
 
   const economies = useAppSelector((state) => state.economies);
@@ -60,6 +63,7 @@ const EconomyInformation: React.FC<EconomyInformationProps> = ({ navigation, rou
       url: endpoints.economy.delete(economy.id),
       method: "DELETE",
     });
+    emit("accessToEconomy");
   };
 
   return (

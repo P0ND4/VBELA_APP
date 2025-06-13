@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const nomenclatures = (collection: Collection) => collection.nomenclatures;
+const nomenclatures = (collection: Partial<Collection>) => collection?.nomenclatures ?? [];
 
 const initialState: Nomenclature[] = [];
 

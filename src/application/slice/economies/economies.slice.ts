@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const economies = (collection: Collection) => collection.economies;
+const economies = (collection: Partial<Collection>) => collection?.economies ?? [];
 
 const initialState: Economy[] = [];
 

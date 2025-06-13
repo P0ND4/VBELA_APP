@@ -8,9 +8,11 @@ import { add, edit, remove } from "application/slice/inventories/portion.group.s
 import { Group } from "domain/entities/data";
 import { batch } from "react-redux";
 import { removeCategory, updateSubcategories } from "application/slice/inventories/portions.slice";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import { useTheme } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
+import endpoints from "config/constants/api.endpoints";
 
 type CreateGroupProps = {
   navigation: StackNavigationProp<RootInventory>;
@@ -18,6 +20,7 @@ type CreateGroupProps = {
 };
 
 const CreateGroup: React.FC<CreateGroupProps> = ({ navigation, route }) => {
+  const { emit } = useWebSocketContext();
   const { colors } = useTheme();
 
   const inventoryID = route.params.inventoryID;
@@ -35,6 +38,7 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ navigation, route }) => {
       url: endpoints.portionGroup.delete(id),
       method: "DELETE",
     });
+    emit("accessToInventory");
   };
 
   useEffect(() => {

@@ -9,6 +9,7 @@ import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
 import { useNavigation, useTheme } from "@react-navigation/native";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import { Status } from "application/appState/state/state.controller.slice";
 import { useSyncCheck } from "presentation/hooks/useSyncCheck";
 import StyledText from "../text/StyledText";
@@ -20,9 +21,16 @@ type NavigationProps = StackNavigationProp<RootApp>;
 const CustomDrawer: React.FC<DrawerContentComponentProps> = (props) => {
   const { colors } = useTheme();
   const { isSynchronized } = useSyncCheck();
+  const { ping } = useWebSocketContext();
 
-  const user = useAppSelector((state) => state.user);
+  const { identifier, selected } = useAppSelector((state) => state.user);
   const stateController = useAppSelector((state) => state.stateController);
+  const collaborators = useAppSelector((state) => state.collaborators);
+
+  const validation = useMemo(
+    () => identifier !== selected || (identifier === selected && collaborators.length > 0),
+    [collaborators, identifier, selected],
+  );
 
   const navigation = useNavigation<NavigationProps>();
 
@@ -45,7 +53,7 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = (props) => {
             style={styles.row}
             onPress={() => navigation.navigate("SettingRoutes", { screen: "Account" })}
           >
-            <StyledText bigParagraph>{user?.identifier.slice(0, 18)}</StyledText>
+            <StyledText bigParagraph>{identifier.slice(0, 18)}</StyledText>
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
           </TouchableOpacity>
           <StyledText verySmall>{isSynchronized ? "Sincronizado" : "No Sincronizado"}</StyledText>
@@ -80,8 +88,28 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = (props) => {
         <DrawerItemList {...props} />
         {/* <DrawerItem {...props} label="Configuración" onPress={() => alert("Link a la ayuda")} /> */}
       </DrawerContentScrollView>
+      {validation && (
+        <View style={[styles.pingContainer, { backgroundColor: colors.background }]}>
+          <StyledText
+            verySmall
+            color={(ping ?? 0) < 200 ? colors.primary : (ping ?? 0) < 500 ? "orange" : "red"}
+          >
+            {ping ? `${ping} ms` : "Sin conexión"}
+          </StyledText>
+          <Ionicons
+            name="wifi"
+            size={15}
+            color={(ping ?? 0) < 200 ? colors.primary : (ping ?? 0) < 500 ? "orange" : "red"}
+            style={{ marginLeft: 5 }}
+          />
+        </View>
+      )}
       <TouchableOpacity
-        style={[styles.bottom, styles.row, { backgroundColor: colors.primary }]}
+        style={[
+          styles.bottom,
+          styles.row,
+          { backgroundColor: colors.primary, borderTopWidth: validation ? 0 : 1 },
+        ]}
         onPress={() => {}}
       >
         <View>
@@ -110,7 +138,6 @@ const styles = StyleSheet.create({
   bottom: {
     paddingHorizontal: 15,
     paddingVertical: 25,
-    borderTopWidth: 1,
     borderTopColor: "#CCC",
   },
   planButton: {
@@ -123,6 +150,16 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
+  },
+  pingContainer: {
+    borderTopWidth: 1,
+    borderTopColor: "#CCC",
+    width: "100%",
+    paddingHorizontal: 15,
+    paddingVertical: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 });
 

@@ -6,11 +6,13 @@ import { InventoryRouteProp, RootInventory } from "domain/entities/navigation";
 import { useAppDispatch } from "application/store/hook";
 import { add, edit, remove } from "application/slice/inventories/recipe.group.slice";
 import { Group } from "domain/entities/data";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { batch } from "react-redux";
 import { removeCategory, updateSubcategories } from "application/slice/inventories/recipes.slice";
 import { useTheme } from "@react-navigation/native";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import endpoints from "config/constants/api.endpoints";
 
 type CreateGroupProps = {
   navigation: StackNavigationProp<RootInventory>;
@@ -18,6 +20,7 @@ type CreateGroupProps = {
 };
 
 const CreateGroup: React.FC<CreateGroupProps> = ({ navigation, route }) => {
+  const { emit } = useWebSocketContext();
   const { colors } = useTheme();
 
   const inventoryID = route.params.inventoryID;
@@ -35,6 +38,7 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ navigation, route }) => {
       url: endpoints.recipeGroup.delete(id),
       method: "DELETE",
     });
+    emit("accessToInventory");
   };
 
   useEffect(() => {

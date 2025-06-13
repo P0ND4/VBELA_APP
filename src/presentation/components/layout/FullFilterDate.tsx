@@ -3,8 +3,9 @@ import { View, FlatList, Alert, StyleSheet, StyleProp, ViewStyle } from "react-n
 import { useTheme } from "@react-navigation/native";
 import { changeDate } from "shared/utils";
 import { remove } from "application/slice/handlers/handlers.slice";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import StyledButton from "../button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledText from "../text/StyledText";
@@ -12,6 +13,7 @@ import moment from "moment";
 import SimpleCalendarModal from "../modal/SimpleCalendarModal";
 import MultipleCalendarModal from "../modal/MultipleCalendarModal";
 import { Handler } from "domain/entities/data";
+import endpoints from "config/constants/api.endpoints";
 
 export const filterByDate = <T extends { creationDate: number }>(
   items: T[],
@@ -85,6 +87,7 @@ type FullFilterDateProps = {
 
 const FullFilterDate: React.FC<FullFilterDateProps> = ({ date, setDate, style }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const handlers = useAppSelector((state) => state.handlers);
 
@@ -108,6 +111,7 @@ const FullFilterDate: React.FC<FullFilterDateProps> = ({ date, setDate, style })
       url: endpoints.handler.delete(id),
       method: "DELETE",
     });
+    emit("accessToStatistics");
   };
 
   return (

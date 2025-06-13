@@ -8,7 +8,7 @@ import { useAppDispatch } from "application/store/hook";
 import { random } from "shared/utils";
 import { add, edit, remove } from "application/slice/settings/economic.group.slice";
 import { EconomicGroup } from "domain/entities/data/settings";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { Type } from "domain/enums/data/economy/economy.enums";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
@@ -17,6 +17,8 @@ import StyledButton from "presentation/components/button/StyledButton";
 import StyledInput from "presentation/components/input/StyledInput";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import InformationModal from "presentation/components/modal/InformationModal";
+import endpoints from "config/constants/api.endpoints";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 
 type CreateEconomicGroupProps = {
   navigation: StackNavigationProp<RootSetting>;
@@ -31,6 +33,7 @@ const visibleData = [
 
 const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const defaultValue = route.params?.defaultValue;
 
@@ -63,6 +66,7 @@ const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, r
       url: endpoints.economicGroup.delete(id),
       method: "DELETE",
     });
+    emit("accessToEconomy");
   };
 
   useEffect(() => {
@@ -87,6 +91,7 @@ const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, r
       method: "POST",
       data,
     });
+    emit("accessToEconomy");
   };
 
   const update = async (data: EconomicGroup) => {
@@ -96,6 +101,7 @@ const CreateEconomicGroup: React.FC<CreateEconomicGroupProps> = ({ navigation, r
       method: "PUT",
       data,
     });
+    emit("accessToEconomy");
   };
 
   const onClose = () => {

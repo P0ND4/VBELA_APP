@@ -2,10 +2,10 @@ import { ConfigContext, ExpoConfig } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "VBELA",
+  name: "Fappture",
   description:
-    "VBELA es una aplicación móvil desarrollada con React Native y Expo. Este proyecto está diseñado para proporcionar una experiencia de usuario fluida y eficiente en dispositivos Android.",
-  slug: "vbela",
+    "Fappture es una aplicación móvil desarrollada con React Native y Expo. Este proyecto está diseñado para proporcionar una experiencia de usuario fluida y eficiente en dispositivos Android.",
+  slug: "fappture",
   version: process.env.EXPO_PUBLIC_VERSION ?? "1.0.0",
   platforms: ["android"],
   orientation: "portrait",
@@ -22,7 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   assetBundlePatterns: ["**/*"],
   ios: {
     supportsTablet: true,
-    bundleIdentifier: "com.app.vbela",
+    bundleIdentifier: "com.app.fappture",
     infoPlist: {
       UIBackgroundModes: ["fetch"],
     },
@@ -31,7 +31,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
-    package: "com.app.vbela",
+    package: "com.app.fappture",
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json",
     adaptiveIcon: {
       foregroundImage: "./src/presentation/assets/adaptive-icon.png",
@@ -51,6 +51,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     "expo-localization",
+    [
+      "expo-secure-store",
+      {
+        configureAndroidBackup: true,
+        faceIDPermission: "Allow Fappture to access your Face ID biometric data.",
+      },
+    ],
   ],
   notification: {
     androidMode: "default",

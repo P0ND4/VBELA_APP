@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const sales = (collection: Collection) => collection.sales;
+const sales = (collection: Partial<Collection>) => collection?.sales ?? [];
 
 const initialState: Order[] = [];
 

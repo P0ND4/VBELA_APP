@@ -2,13 +2,16 @@ import React from "react";
 import { AppNavigationProp } from "domain/entities/navigation";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "@react-navigation/native";
+import { Permissions } from "domain/entities/data";
 import StyledText from "presentation/components/text/StyledText";
 import Layout from "presentation/components/layout/Layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import * as WebBrowser from "expo-web-browser";
+import { useAppSelector } from "application/store/hook";
 
 type Icons = keyof typeof Ionicons.glyphMap;
+type PermissionKeys = keyof Permissions;
 
 type CardProps = {
   icon: Icons;
@@ -38,6 +41,11 @@ const Card: React.FC<CardProps> = ({ icon, left, right, onPress, paragraph }) =>
 // DONACIONES/WIFI/CLIENTE-PROVEEDOR/PRIVACIDAD-Y-SEGURIDAD/IDIOMA/CONTACTO/INFORMACIÓN-DE-LA-APLICACIÓN
 
 const Setting: React.FC<AppNavigationProp> = ({ navigation }) => {
+  const { permissions } = useAppSelector((state) => state.user);
+
+  const validatePermission = (permission: PermissionKeys): boolean =>
+    permissions === null || permissions?.[permission];
+
   return (
     <Layout style={{ padding: 0 }}>
       <Card
@@ -50,31 +58,41 @@ const Setting: React.FC<AppNavigationProp> = ({ navigation }) => {
         left="Tema"
         onPress={() => navigation.navigate("SettingRoutes", { screen: "Theme" })}
       />
-      <Card
-        icon="card-outline"
-        left="Métodos de pago"
-        onPress={() => navigation.navigate("SettingRoutes", { screen: "PaymentMethods" })}
-      />
-      <Card
-        icon="receipt-outline"
-        left="Factura"
-        onPress={() => navigation.navigate("SettingRoutes", { screen: "Invoice" })}
-      />
-      <Card
-        icon="cash-outline"
-        left="Categoría de ingreso/egreso"
-        onPress={() => navigation.navigate("SettingRoutes", { screen: "EconomicGroup" })}
-      />
-      <Card
-        icon="logo-usd"
-        left="Propina/Impuestos de pedidos"
-        onPress={() => navigation.navigate("SettingRoutes", { screen: "TipTax" })}
-      />
-      <Card
-        icon="bar-chart-outline"
-        left="Estadísticas"
-        onPress={() => navigation.navigate("SettingRoutes", { screen: "Statistic" })}
-      />
+      {validatePermission("admin") && (
+        <Card
+          icon="card-outline"
+          left="Métodos de pago"
+          onPress={() => navigation.navigate("SettingRoutes", { screen: "PaymentMethods" })}
+        />
+      )}
+      {validatePermission("admin") && (
+        <Card
+          icon="receipt-outline"
+          left="Factura"
+          onPress={() => navigation.navigate("SettingRoutes", { screen: "Invoice" })}
+        />
+      )}
+      {validatePermission("admin") && (
+        <Card
+          icon="cash-outline"
+          left="Categoría de ingreso/egreso"
+          onPress={() => navigation.navigate("SettingRoutes", { screen: "EconomicGroup" })}
+        />
+      )}
+      {validatePermission("admin") && (
+        <Card
+          icon="logo-usd"
+          left="Propina/Impuestos de pedidos"
+          onPress={() => navigation.navigate("SettingRoutes", { screen: "TipTax" })}
+        />
+      )}
+      {validatePermission("accessToStatistics") && (
+        <Card
+          icon="bar-chart-outline"
+          left="Estadísticas"
+          onPress={() => navigation.navigate("SettingRoutes", { screen: "Statistic" })}
+        />
+      )}
       <Card
         icon="logo-whatsapp"
         left="whatsapp"

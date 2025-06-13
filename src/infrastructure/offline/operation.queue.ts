@@ -10,9 +10,7 @@ const notifyListeners = () => {
 const ensureQueueFileExists = async () => {
   const fileInfo = await FileSystem.getInfoAsync(QUEUE_FILE);
 
-  if (!fileInfo.exists) {
-    await FileSystem.writeAsStringAsync(QUEUE_FILE, JSON.stringify([]));
-  }
+  if (!fileInfo.exists) await FileSystem.writeAsStringAsync(QUEUE_FILE, JSON.stringify([]));
 };
 
 export interface Queue {
@@ -46,6 +44,12 @@ export const deleteQueueOperation = async (id: string) => {
   const operations: Queue[] = await readQueueOperation();
   const updatedOperations = operations.filter((operation: Queue) => operation.id !== id);
   await FileSystem.writeAsStringAsync(QUEUE_FILE, JSON.stringify(updatedOperations));
+  notifyListeners();
+};
+
+export const clearQueue = async () => {
+  await ensureQueueFileExists();
+  await FileSystem.writeAsStringAsync(QUEUE_FILE, JSON.stringify([]));
   notifyListeners();
 };
 

@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const movements = (collection: Collection) => collection.movements;
+const movements = (collection: Partial<Collection>) => collection?.movements ?? [];
 const initialState: Movement[] = [];
 
 export const movementsSlice = createSlice({

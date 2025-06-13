@@ -18,10 +18,12 @@ import { removeIngredient as removePortionIngredient } from "application/slice/i
 import { batch } from "react-redux";
 import { removeStock as removeStockProduct } from "application/slice/stores/products.slice";
 import { removeStock as removeStockMenu } from "application/slice/restaurants/menu.slice";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { add, removeByStockID } from "application/slice/inventories/movements.slice";
 import { Type } from "domain/enums/data/inventory/movement.enums";
 import { useMovementsMap } from "../hooks/useMovementsMap";
+import endpoints from "config/constants/api.endpoints";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   const { colors } = useTheme();
@@ -41,6 +43,7 @@ type StockInformationProps = {
 
 const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const inventories = useAppSelector((state) => state.inventories);
   const stocks = useAppSelector((state) => state.stocks);
@@ -94,6 +97,7 @@ const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }
               method: "POST",
               data: movement,
             });
+            emit("accessToInventory");
           },
         },
       ],
@@ -115,6 +119,7 @@ const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }
               url: endpoints.movement.deleteMultiple(stock.id),
               method: "DELETE",
             });
+            emit("accessToInventory");
           },
         },
       ],

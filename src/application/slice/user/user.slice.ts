@@ -3,9 +3,17 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const user = (collection: Collection) => collection.identifier;
+const user = (collection: Partial<Collection>) => ({
+  identifier: collection?.identifier ?? "",
+  selected: collection?.selected ?? "",
+  permissions: collection?.permissions ?? null,
+});
 
-const initialState: User = { identifier: "" };
+const initialState: User = {
+  identifier: "",
+  selected: "",
+  permissions: null,
+};
 
 export const userSlice = createSlice({
   name: "user",
@@ -16,7 +24,7 @@ export const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(cleanAll, () => initialState);
-    builder.addCase(changeAll, (_, action) => ({ identifier: user(action.payload) }));
+    builder.addCase(changeAll, (_, action) => user(action.payload));
   },
 });
 

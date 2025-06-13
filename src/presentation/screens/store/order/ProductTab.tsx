@@ -3,14 +3,16 @@ import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.store.entity";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import { useTheme } from "@react-navigation/native";
 import { Element } from "domain/entities/data/common/element.entity";
 import { add, edit, remove } from "application/slice/stores/products.slice";
 import { random } from "shared/utils";
 import { Visible } from "domain/enums/data/inventory/visible.enums";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import ElementTab from "presentation/screens/common/sales/element/ElementTab";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import endpoints from "config/constants/api.endpoints";
 
 type ProductTabProps = {
   navigation: StackNavigationProp<RootStore>;
@@ -19,6 +21,7 @@ type ProductTabProps = {
 
 const ProductTab: React.FC<ProductTabProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const productGroup = useAppSelector((state) => state.productGroup);
   const stores = useAppSelector((state) => state.stores);
@@ -38,6 +41,7 @@ const ProductTab: React.FC<ProductTabProps> = ({ navigation, route }) => {
       method: "POST",
       data,
     });
+    emit("accessToStore");
   };
 
   const update = async (data: Element) => {
@@ -48,6 +52,7 @@ const ProductTab: React.FC<ProductTabProps> = ({ navigation, route }) => {
       method: "PUT",
       data,
     });
+    emit("accessToStore");
   };
 
   const removeItem = async (id: string) => {
@@ -57,6 +62,7 @@ const ProductTab: React.FC<ProductTabProps> = ({ navigation, route }) => {
       url: endpoints.product.delete(id),
       method: "DELETE",
     });
+    emit("accessToStore");
   };
 
   useEffect(() => {

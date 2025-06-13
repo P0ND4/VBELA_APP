@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { readQueueOperation, deleteQueueOperation, Queue } from "./operation.queue";
 import { useAppDispatch } from "application/store/hook";
-import { baseURL } from "../api/server";
 import { change, Status } from "application/appState/internet/status.slice";
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios, { AxiosError } from "axios";
 import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
+import { getTokens } from "infrastructure/security/tokens";
+import { baseURL } from "infrastructure/api/route.constants";
 
 const SYNC_DELAY = 2000;
 const NETWORK_CHECK_DELAY = 1000;
@@ -19,19 +19,29 @@ export const useSync = () => {
     const state = await NetInfo.fetch();
     if (!state.isConnected) throw new Error("NO_INTERNET");
 
-    const token = await AsyncStorage.getItem("access_token");
-    if (!token) throw new Error("UNAUTHORIZED");
+    const token = (await getTokens()).accessToken;
 
-    await axios({
-      baseURL,
-      url: queueItem.endpoint,
-      method: queueItem.method,
-      data: queueItem.data,
-      headers: { Authorization: `Bearer ${token}` },
-      signal: abortControllerRef.current.signal,
-    });
+    try {
+      await axios({
+        baseURL,
+        url: queueItem.endpoint,
+        method: queueItem.method,
+        data: queueItem.data,
+        headers: { Authorization: `Bearer ${token}` },
+        signal: abortControllerRef.current.signal,
+      });
 
-    await deleteQueueOperation(queueItem.id);
+      await deleteQueueOperation(queueItem.id);
+    } catch (err) {
+      const error = err as AxiosError;
+      const status = error?.response?.status;
+
+      if ([400, 401, 404, 422].includes(status || 0)) {
+        await deleteQueueOperation(queueItem.id);
+      }
+
+      throw error;
+    }
   };
 
   const sync = useCallback(async (): Promise<void> => {

@@ -5,8 +5,10 @@ import { useAppDispatch } from "application/store/hook";
 import { Location } from "domain/entities/data/common";
 import { add, edit } from "application/slice/stores/stores.slice";
 import { Visible } from "domain/enums/data/inventory/visible.enums";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import CreateLocation from "../common/sales/CreateLocation";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
+import endpoints from "config/constants/api.endpoints";
 
 type CreateStoreProps = {
   navigation: StackNavigationProp<RootStore>;
@@ -14,6 +16,8 @@ type CreateStoreProps = {
 };
 
 const CreateStore: React.FC<CreateStoreProps> = ({ navigation, route }) => {
+  const { emit } = useWebSocketContext();
+
   const store = route.params?.store;
 
   const dispatch = useAppDispatch();
@@ -30,6 +34,7 @@ const CreateStore: React.FC<CreateStoreProps> = ({ navigation, route }) => {
       method: "POST",
       data,
     });
+    emit("accessToStore");
   };
 
   const update = async (data: Location) => {
@@ -40,6 +45,7 @@ const CreateStore: React.FC<CreateStoreProps> = ({ navigation, route }) => {
       method: "PUT",
       data,
     });
+    emit("accessToStore");
   };
 
   return (

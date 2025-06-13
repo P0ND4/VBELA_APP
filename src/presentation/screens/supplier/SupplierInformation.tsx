@@ -4,13 +4,15 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { useTheme } from "@react-navigation/native";
 import { changeDate } from "shared/utils";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { RootSupplier, SupplierRouteProp } from "domain/entities/navigation/root.supplier.entity";
 import { Supplier } from "domain/entities/data";
 import { remove } from "application/slice/suppliers/suppliers.slice";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import endpoints from "config/constants/api.endpoints";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   const { colors } = useTheme();
@@ -30,6 +32,7 @@ type SupplierInformationProps = {
 
 const SupplierInformation: React.FC<SupplierInformationProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const suppliers = useAppSelector((state) => state.suppliers);
   const economies = useAppSelector((state) => state.economies);
@@ -61,6 +64,7 @@ const SupplierInformation: React.FC<SupplierInformationProps> = ({ navigation, r
       url: endpoints.supplier.delete(supplier.id),
       method: "DELETE",
     });
+    emit("accessToSupplier");
   };
 
   return (

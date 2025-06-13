@@ -11,6 +11,7 @@ import { useTheme } from "@react-navigation/native";
 import { random, thousandsSystem } from "shared/utils";
 import { Visible } from "domain/enums/data/inventory/visible.enums";
 import { useAppDispatch } from "application/store/hook";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
@@ -19,7 +20,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
 import { add, edit } from "application/slice/inventories/inventories.slice";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
+import endpoints from "config/constants/api.endpoints";
 
 const visibleData = [
   { label: "Ambos", value: Visible.Both },
@@ -49,6 +51,7 @@ const CreateInventory: React.FC<CreateInventoryProps> = ({ navigation, route }) 
   });
 
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const [loading, setLoading] = useState<boolean>(false);
   const [optional, setOptional] = useState<boolean>(false);
@@ -67,6 +70,7 @@ const CreateInventory: React.FC<CreateInventoryProps> = ({ navigation, route }) 
       method: "POST",
       data,
     });
+    emit("accessToInventory");
   };
 
   const update = async (data: Inventory) => {
@@ -77,6 +81,7 @@ const CreateInventory: React.FC<CreateInventoryProps> = ({ navigation, route }) 
       method: "PUT",
       data,
     });
+    emit("accessToInventory");
   };
 
   const handleSaveOrUpdate = (data: Inventory) => {

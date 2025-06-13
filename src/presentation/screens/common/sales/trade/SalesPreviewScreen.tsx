@@ -255,7 +255,7 @@ const Card: React.FC<CardProps> = ({ item, addElement, locationID, goBack = () =
 };
 
 type SalesPreviewScreenProps = {
-  defaultValue?: Order;
+  defaultValue?: Order | null;
   sendButton: () => void;
   goBack: () => void;
   addElement: (data: Element) => void;

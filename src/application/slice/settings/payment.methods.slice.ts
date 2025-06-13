@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const paymentMethods = (collection: Collection) => collection.paymentMethods;
+const paymentMethods = (collection: Partial<Collection>) => collection?.paymentMethods ?? [];
 
 const initialState: PaymentMethods[] = [];
 

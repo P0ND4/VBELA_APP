@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const collaborators = (collection: Collection) => collection.collaborators;
+const collaborators = (collection: Partial<Collection>) => collection?.collaborators ?? [];
 
 const initialState: Collaborator[] = [];
 

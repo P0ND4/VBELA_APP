@@ -7,7 +7,8 @@ import { change } from "application/slice/settings/color.slice";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
+import endpoints from "config/constants/api.endpoints";
 
 type CardProps = {
   name: string;
@@ -66,11 +67,12 @@ const Theme: React.FC = () => {
           color={colors.primary}
         />
       </TouchableOpacity>
-      <Card name="AZUL" value={0} />
-      <Card name="NARANJA" value={1} />
-      <Card name="VERDE" value={2} />
-      <Card name="ROSADO" value={3} />
-      <Card name="ROJO" value={4} />
+      <Card name="MORADO" value={0} />
+      <Card name="AZUL" value={1} />
+      <Card name="NARANJA" value={2} />
+      <Card name="VERDE" value={3} />
+      <Card name="ROSADO" value={4} />
+      <Card name="ROJO" value={5} />
     </Layout>
   );
 };

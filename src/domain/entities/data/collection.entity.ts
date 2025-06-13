@@ -1,4 +1,4 @@
-import type { Collaborator, Payroll } from "./collaborators";
+import type { Collaborator, Payroll, Permissions } from "./collaborators";
 import type { Customer, Invoice } from "./customers";
 import type { Inventory, Movement, Portion, Recipe, Stock } from "./inventories";
 import type { Nomenclature, Reservation, Room, Zone } from "./reservations";
@@ -13,6 +13,7 @@ type SimpleData = string | null;
 
 export interface Collection {
   identifier: string;
+  name: string;
   type: SimpleData;
   expoID: SimpleData;
   darkMode: boolean;
@@ -53,4 +54,7 @@ export interface Collection {
   movements: Movement[];
   portions: Portion[];
   portionGroup: Group[];
+
+  permissions?: Permissions;
+  selected?: string;
 }

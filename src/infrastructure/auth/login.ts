@@ -1,57 +1,36 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Collection } from "domain/entities/data/user";
-import apiClient, { endpoints } from "infrastructure/api/server";
-import CryptoJS from "crypto-js";
+import endpoints from "config/constants/api.endpoints";
+import apiClient from "infrastructure/api/server";
+import { storeTokens } from "infrastructure/security/tokens";
 
-const getServerTime = async () => {
-  const response = await apiClient<{ timestamp: number }>(
-    {
-      url: endpoints.auth.serverTime(),
-      method: "GET",
-    },
-    { synchronization: false },
-  );
-  return response.data.timestamp;
-};
+type Response = { access_token: string; refresh_token: string };
 
-export const login = async (identifier: string, collaborator: string | null = null) => {
+export const login = async (
+  identifier: string,
+  selected: string,
+  token: string,
+): Promise<boolean> => {
   try {
-    const secret = process.env.LOGIN_SECRET;
-    const serverTimestamp = await getServerTime();
-    const hash = CryptoJS.HmacSHA256(`${identifier}:${serverTimestamp}`, secret!).toString();
-
-    // Realizar login
-    const loginResponse = await apiClient<{ access_token: string }>(
+    // Realizar el inicio de sesión para la obteción de los tokens
+    const loginResponse = await apiClient<Response>(
       {
         url: endpoints.auth.login(),
         method: "POST",
-        data: { identifier, collaborator, expoID: null, hash, timestamp: serverTimestamp },
+        data: { identifier, selected, token },
       },
-      { synchronization: false },
+      { synchronization: false, token: false },
     );
 
-    // Verificar si la respuesta es exitosa
-    if (loginResponse?.status !== "success") return;
+    // Si la petición de login es exitosa, ejecutar finished
+    if (loginResponse?.data) {
+      // Se encriptan los tokens y luego se guarda
+      const { access_token, refresh_token } = loginResponse?.data;
+      await storeTokens(access_token, refresh_token);
 
-    const token = loginResponse.data.access_token;
-
-    // Guardar el token
-    await AsyncStorage.setItem("access_token", token);
-
-    // Obtener usuario después de login
-    const userResponse = await apiClient<Collection[]>(
-      {
-        url: endpoints.user.get(),
-        method: "GET",
-        data: { identifier, expoID: null },
-      },
-      { synchronization: false },
-    );
-
-    // Si la petición de usuario es exitosa, ejecutar finished
-    if (userResponse?.data) return userResponse.data;
-    else alert("Error fetching user data");
-  } catch (error) {
-    alert(`Login process failed: ${error}`);
+      // Retornamos un booleano indicando que ya puede acceder al usuario
+      return true;
+    } else throw new Error(`Server returned ${loginResponse.status}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Login failed: ${message}`);
   }
 };

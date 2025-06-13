@@ -8,13 +8,15 @@ import { useAppDispatch } from "application/store/hook";
 import { random } from "shared/utils";
 import { add, edit, remove } from "application/slice/settings/payment.methods.slice";
 import { PaymentMethods } from "domain/entities/data/settings";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
+import apiClient from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledInput from "presentation/components/input/StyledInput";
 import ScreenModal from "presentation/components/modal/ScreenModal";
+import endpoints from "config/constants/api.endpoints";
 
 type IconNamesType = keyof typeof Ionicons.glyphMap;
 
@@ -39,6 +41,7 @@ type CreatePaymentMethodProps = {
 
 const CreatePaymentMethod: React.FC<CreatePaymentMethodProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const defaultValue = route.params?.defaultValue;
 
@@ -93,6 +96,12 @@ const CreatePaymentMethod: React.FC<CreatePaymentMethodProps> = ({ navigation, r
 
   const icon = watch("icon");
 
+  const sendSocket = () => {
+    emit("accessToRestaurant");
+    emit("accessToStore");
+    emit("accessToStatistics");
+  };
+
   const removeItem = async (id: string) => {
     dispatch(remove({ id }));
     navigation.pop();
@@ -100,6 +109,7 @@ const CreatePaymentMethod: React.FC<CreatePaymentMethodProps> = ({ navigation, r
       url: endpoints.setting.paymentMethods.delete(id),
       method: "DELETE",
     });
+    sendSocket();
   };
 
   useEffect(() => {
@@ -124,6 +134,7 @@ const CreatePaymentMethod: React.FC<CreatePaymentMethodProps> = ({ navigation, r
       method: "POST",
       data,
     });
+    sendSocket();
   };
 
   const update = async (data: PaymentMethods) => {
@@ -133,6 +144,7 @@ const CreatePaymentMethod: React.FC<CreatePaymentMethodProps> = ({ navigation, r
       method: "PUT",
       data,
     });
+    sendSocket();
   };
 
   return (

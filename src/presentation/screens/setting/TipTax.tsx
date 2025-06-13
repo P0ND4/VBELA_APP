@@ -5,15 +5,18 @@ import { thousandsSystem } from "shared/utils";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { change as changeTip } from "application/slice/settings/tip.slice";
 import { change as changeTax } from "application/slice/settings/tax.slice";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
+import apiClient from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
+import endpoints from "config/constants/api.endpoints";
 
 const TipTax = () => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const tip = useAppSelector((state) => state.tip);
   const tax = useAppSelector((state) => state.tax);
@@ -26,6 +29,12 @@ const TipTax = () => {
 
   const dispatch = useAppDispatch();
 
+  const sendSocket = () => {
+    emit("accessToRestaurant");
+    emit("accessToStore");
+    emit("accessToStatistics");
+  };
+
   const onChangeTip = async (tipValue: number) => {
     dispatch(changeTip(tipValue / 100));
     await apiClient({
@@ -33,6 +42,7 @@ const TipTax = () => {
       method: "PATCH",
       data: { tip: tipValue / 100 },
     });
+    sendSocket();
   };
 
   const onChangeTax = async (taxValue: number) => {
@@ -42,6 +52,7 @@ const TipTax = () => {
       method: "PATCH",
       data: { tax: taxValue / 100 },
     });
+    sendSocket();
   };
 
   useEffect(() => {

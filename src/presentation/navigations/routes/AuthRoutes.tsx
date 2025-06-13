@@ -8,6 +8,7 @@ import PhoneSignIn from "presentation/screens/auth/phone/PhoneSignIn";
 import EmailVerification from "presentation/screens/auth/email/EmailVerification";
 import PhoneVerification from "presentation/screens/auth/phone/PhoneVerification";
 import UserSelection from "presentation/screens/auth/UserSelection";
+import Session from "presentation/screens/auth/Session";
 
 const Stack = createStackNavigator<RootAuth>();
 
@@ -15,6 +16,7 @@ const AuthRoutes: React.FC = () => {
   return (
     <Stack.Navigator>
       <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
+      <Stack.Screen name="Session" component={Session} options={{ headerShown: false }} />
       <Stack.Screen
         name="UserSelection"
         component={UserSelection}

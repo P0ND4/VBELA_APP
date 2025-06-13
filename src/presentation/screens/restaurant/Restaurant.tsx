@@ -12,16 +12,19 @@ import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import LocationInformation from "../common/sales/LocationInformation";
 import { Swipeable } from "react-native-gesture-handler";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { batch } from "react-redux";
 import { removeByLocationID as removeMenuByLocationID } from "application/slice/restaurants/menu.slice";
 import { removeByLocationID as removeGroupByLocationID } from "application/slice/restaurants/menu.group.slice";
 import { removeByRestaurantID } from "application/slice/restaurants/tables.slice";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
+import endpoints from "config/constants/api.endpoints";
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
 const Card: React.FC<{ item: Location }> = ({ item }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const [showInformation, setShowInformation] = useState<boolean>(false);
 
@@ -55,6 +58,7 @@ const Card: React.FC<{ item: Location }> = ({ item }) => {
       url: endpoints.restaurant.delete(id),
       method: "DELETE",
     });
+    emit("accessToRestaurant");
   };
 
   return (

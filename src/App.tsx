@@ -8,6 +8,7 @@ import { PersistGate } from "redux-persist/integration/react";
 import { Buffer } from "buffer";
 import { store, persistor } from "./application/store";
 import { NavigationContainer } from "@react-navigation/native";
+import { WebSocketProvider } from "infrastructure/context/SocketContext";
 import { useAppSelector } from "application/store/hook";
 import appTheme from "config/theme/app.theme";
 import Main from "./presentation/navigations/Main";
@@ -31,7 +32,9 @@ const App: React.FC = () => {
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <Navigation />
+        <WebSocketProvider>
+          <Navigation />
+        </WebSocketProvider>
       </PersistGate>
     </Provider>
   );

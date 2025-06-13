@@ -11,16 +11,15 @@ import {
   ActivityIndicator,
   Vibration,
 } from "react-native";
-import { useTheme } from "@react-navigation/native";
+import { useNavigation, useTheme } from "@react-navigation/native";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
-import { batch } from "react-redux";
-import { changeAll } from "application/store/actions";
-import { login } from "infrastructure/auth/login";
-import { change } from "application/slice/user/user.slice";
-import { active } from "application/slice/user/session.slice";
-import { useAppDispatch } from "application/store/hook";
+import { sessions as getSessions } from "infrastructure/auth/sessions";
+import { RootAuth } from "domain/entities/navigation";
+import { StackNavigationProp } from "@react-navigation/stack";
+
+type NavigationProps = StackNavigationProp<RootAuth>;
 
 type VerificationScreenProps = {
   description: string;
@@ -39,9 +38,9 @@ const VerificationScreen: React.FC<VerificationScreenProps> = ({
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState("");
 
-  const dispatch = useAppDispatch();
-
   const textInputRef = useRef<TextInput>(null);
+
+  const navigation = useNavigation<NavigationProps>();
 
   const maxLength = 6;
   const codeDigitsArray = new Array(maxLength).fill(0);
@@ -96,15 +95,9 @@ const VerificationScreen: React.FC<VerificationScreenProps> = ({
       Vibration.vibrate();
       setCode("");
     } else {
-      const user = await login(identifier);
-
-      if (user) {
-        batch(() => {
-          dispatch(changeAll(user[0]));
-          dispatch(change({ identifier }));
-          dispatch(active());
-        });
-      }
+      const { sessions, token } = await getSessions(identifier);
+      navigation.popToTop();
+      navigation.navigate("Session", { identifier, sessions, token });
     }
 
     setLoading(false);

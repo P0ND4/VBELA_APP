@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const recipeGroup = (collection: Collection) => collection.recipeGroup;
+const recipeGroup = (collection: Partial<Collection>) => collection?.recipeGroup ?? [];
 
 const initialState: Group[] = [];
 

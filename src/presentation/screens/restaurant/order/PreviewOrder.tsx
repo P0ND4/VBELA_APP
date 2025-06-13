@@ -6,8 +6,9 @@ import { add } from "application/slice/restaurants/menu.slice";
 import { Order, Element, Save } from "domain/entities/data/common";
 import SalesPreviewScreen from "presentation/screens/common/sales/trade/SalesPreviewScreen";
 import useSave, { CallbackProps } from "../hooks/useSave";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import { useTheme } from "@react-navigation/native";
 import { useInvoiceHtml } from "presentation/screens/common/sales/hooks/useInvoiceHtml";
 import StyledText from "presentation/components/text/StyledText";
@@ -15,6 +16,7 @@ import { useOrganizeData } from "presentation/screens/common/sales/hooks";
 import { useOrder } from "application/context/OrderContext";
 import { Status } from "domain/enums/data/element/status.enums";
 import { printPDF } from "infrastructure/services";
+import endpoints from "config/constants/api.endpoints";
 
 type PreviewOrderProps = {
   navigation: StackNavigationProp<RootRestaurant>;
@@ -23,6 +25,7 @@ type PreviewOrderProps = {
 
 const PreviewOrder: React.FC<PreviewOrderProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
   const { kitchen } = useSave();
   const { organizeOrder } = useOrganizeData();
   const { info, selection, order } = useOrder();
@@ -96,6 +99,7 @@ const PreviewOrder: React.FC<PreviewOrderProps> = ({ navigation, route }) => {
       method: "POST",
       data,
     });
+    emit("accessToRestaurant");
   };
 
   return (

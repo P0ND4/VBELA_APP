@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-export const invoices = (collection: Collection) => collection.invoices;
+export const invoices = (collection: Partial<Collection>) => collection?.invoices ?? [];
 
 const initialState: Invoice[] = [];
 

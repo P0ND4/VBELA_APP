@@ -5,8 +5,6 @@ import { Collection } from "domain/entities/data/user";
 import countries from "shared/data/countries.json";
 import * as localization from "expo-localization";
 
-const invoiceInformation = (collection: Collection) => collection.invoiceInformation;
-
 const regionCode = localization.getLocales()[0].regionCode;
 const found = countries.find((c) => c.country_short_name === regionCode);
 
@@ -19,6 +17,9 @@ const initialState: InvoiceInformation = {
   phoneNumber: "",
   complement: "",
 };
+
+const invoiceInformation = (collection: Partial<Collection>) =>
+  collection?.invoiceInformation ?? initialState;
 
 export const invoiceInformationSlice = createSlice({
   name: "invoice-information",

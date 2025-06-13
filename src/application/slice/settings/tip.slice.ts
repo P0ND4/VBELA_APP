@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const tip = (collection: Collection) => collection.tip;
+const tip = (collection: Partial<Collection>) => collection?.tip ?? 0;
 
 const initialState: number = 0;
 

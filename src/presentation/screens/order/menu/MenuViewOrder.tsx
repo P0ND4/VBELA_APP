@@ -23,7 +23,6 @@ type MenuViewOrderProps = {
 
 const MenuViewOrder: React.FC<MenuViewOrderProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
-
   const { update } = useSave();
 
   const order = route.params.order;

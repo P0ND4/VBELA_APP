@@ -13,10 +13,12 @@ import { batch } from "react-redux";
 import { discount } from "application/slice/restaurants/menu.slice";
 import { Kitchen } from "domain/entities/data/kitchens";
 import { Movement, Portion } from "domain/entities/data/inventories";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { add as addMovement } from "application/slice/inventories/movements.slice";
 import { edit as editPortion } from "application/slice/inventories/portions.slice";
 import { useExtractPortion } from "presentation/screens/common/sales/hooks/useExtractPortion";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
+import endpoints from "config/constants/api.endpoints";
 
 export type CallbackProps = { order: Order; kitchen: Kitchen | null };
 
@@ -24,6 +26,7 @@ const useSave = () => {
   const menu = useAppSelector((state) => state.menu);
 
   const { organizeOrder, organizeKitchen } = useOrganizeData();
+  const { emit } = useWebSocketContext();
   const extractStock = useExtractStock();
   const extractMovement = useExtractMovement();
   const extractPortion = useExtractPortion();
@@ -76,6 +79,7 @@ const useSave = () => {
         portions,
       },
     });
+    emit("accessToRestaurant");
   };
 
   const update = async (order: Order, callback?: (props: CallbackProps) => void) => {
@@ -107,6 +111,7 @@ const useSave = () => {
         portions,
       },
     });
+    emit("accessToRestaurant");
   };
 
   const kitchen = async (
@@ -132,6 +137,7 @@ const useSave = () => {
         order: data,
       },
     });
+    emit("accessToRestaurant");
   };
 
   return { save, update, kitchen };

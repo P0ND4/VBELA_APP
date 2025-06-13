@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const tax = (collection: Collection) => collection.tax;
+const tax = (collection: Partial<Collection>) => collection?.tax ?? 0;
 
 const initialState: number = 0;
 

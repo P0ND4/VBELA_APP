@@ -3,16 +3,19 @@ import { StyleSheet } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import { thousandsSystem } from "shared/utils";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
+import apiClient from "infrastructure/api/server";
 import { change } from "application/slice/settings/initial.basis.slice";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
+import endpoints from "config/constants/api.endpoints";
 
 const Statistic = () => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const initialBasis = useAppSelector((state) => state.initialBasis);
 
@@ -27,6 +30,7 @@ const Statistic = () => {
       method: "PATCH",
       data: { initialBasis },
     });
+    emit("accessToStatistics");
   };
 
   return (

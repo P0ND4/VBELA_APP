@@ -6,11 +6,13 @@ import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.stor
 import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { Element } from "domain/entities/data/common/element.entity";
 import { add } from "application/slice/stores/products.slice";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { Group } from "domain/entities/data";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import SalesBoxScreen from "presentation/screens/common/sales/trade/SalesBoxScreen";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledText from "presentation/components/text/StyledText";
+import endpoints from "config/constants/api.endpoints";
 
 type CreateOrderProps = {
   navigation: StackNavigationProp<RootStore>;
@@ -19,6 +21,7 @@ type CreateOrderProps = {
 
 const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const productGroup = useAppSelector((state) => state.productGroup);
   const products = useAppSelector((state) => state.products);
@@ -38,6 +41,7 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
       method: "POST",
       data,
     });
+    emit("accessToStore");
   };
 
   useEffect(() => {

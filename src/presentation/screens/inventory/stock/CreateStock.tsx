@@ -12,7 +12,7 @@ import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { Stock, StockSubCategory } from "domain/entities/data/inventories";
 import { add, edit } from "application/slice/inventories/stocks.slice";
 import { unitOptions, UnitValue } from "shared/constants/unit";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import StyledText from "presentation/components/text/StyledText";
 import StyledInput from "presentation/components/input/StyledInput";
 import StyledButton from "presentation/components/button/StyledButton";
@@ -21,6 +21,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import { Group, GroupSubCategory } from "domain/entities/data";
+import endpoints from "config/constants/api.endpoints";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 
 type CreateStockProps = {
   navigation: StackNavigationProp<RootInventory>;
@@ -55,6 +57,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
   const stockGroup = useAppSelector((state) => state.stockGroup);
 
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const [loading, setLoading] = useState<boolean>(false);
   const [optional, setOptional] = useState<boolean>(false);
@@ -84,6 +87,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
       method: "POST",
       data,
     });
+    emit("accessToInventory");
   };
 
   const update = async (data: Stock) => {
@@ -94,6 +98,7 @@ const CreateStock: React.FC<CreateStockProps> = ({ navigation, route }) => {
       method: "PUT",
       data,
     });
+    emit("accessToInventory");
   };
 
   const handleSaveOrUpdate = (data: Stock) => {

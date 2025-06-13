@@ -10,12 +10,13 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import FlagButton from "presentation/components/button/FlagButton";
 import PhoneNumberPicker from "presentation/components/forms/PhoneNumberPicker";
 import { Country } from "domain/entities/shared/Country";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import countries from "shared/data/countries.json";
 
 import * as localization from "expo-localization";
 import * as WebBrowser from "expo-web-browser";
 import { PHONE_EXPRESSION } from "shared/constants/expressions";
+import endpoints from "config/constants/api.endpoints";
 
 const TERMS_OF_SERVICE_URL = "https://sites.google.com/view/terminos-y-condiciones-vbela/inicio";
 const PRIVACY_POLICY_URL = "https://sites.google.com/view/politica-de-privacidad-vbela/principal";

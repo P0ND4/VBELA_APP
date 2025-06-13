@@ -16,6 +16,8 @@ import {
   InventoryRouteProp,
   RootInventory,
 } from "domain/entities/navigation/root.inventory.entity";
+import { Group, GroupSubCategory } from "domain/entities/data";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import Layout from "presentation/components/layout/Layout";
 import StyledButton from "presentation/components/button/StyledButton";
 import StyledText from "presentation/components/text/StyledText";
@@ -24,9 +26,9 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import ScreenModal from "presentation/components/modal/ScreenModal";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
-import { Group, GroupSubCategory } from "domain/entities/data";
+import endpoints from "config/constants/api.endpoints";
 
 type PickerProps = { label: string; value: string };
 
@@ -89,9 +91,9 @@ const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
   onClose,
   onSave,
 }) => {
-  const stocks = useAppSelector((state) => state.stocks);
-
   const { colors } = useTheme();
+
+  const stocks = useAppSelector((state) => state.stocks);
 
   const [data, setData] = useState<Stock[]>([]);
   const [ingredients, setIngredients] = useState<PortionIngredients[]>(defaultValue);
@@ -145,6 +147,8 @@ type CreateRecipeProps = {
 };
 
 const CreatePortion: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
+  const { emit } = useWebSocketContext();
+
   const defaultValue = route.params?.portion;
   const inventoryID = route.params.inventoryID;
 
@@ -194,6 +198,7 @@ const CreatePortion: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
       method: "POST",
       data,
     });
+    emit("accessToInventory");
   };
 
   const update = async (data: Portion) => {
@@ -204,6 +209,7 @@ const CreatePortion: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
       method: "PUT",
       data,
     });
+    emit("accessToInventory");
   };
 
   useEffect(() => {

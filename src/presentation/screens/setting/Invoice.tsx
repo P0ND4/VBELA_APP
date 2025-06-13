@@ -3,8 +3,9 @@ import { View, StyleSheet, Alert } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import { Country } from "domain/entities/shared/Country";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import { change } from "application/slice/settings/invoice.information.slice";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledInput from "presentation/components/input/StyledInput";
 import StyledButton from "presentation/components/button/StyledButton";
@@ -14,9 +15,11 @@ import FlagButton from "presentation/components/button/FlagButton";
 import PhoneNumberPicker from "presentation/components/forms/PhoneNumberPicker";
 import countries from "shared/data/countries.json";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
+import endpoints from "config/constants/api.endpoints";
 
 const Invoice = () => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const invoiceInformation = useAppSelector((state) => state.invoiceInformation);
 
@@ -60,6 +63,8 @@ const Invoice = () => {
       method: "PATCH",
       data,
     });
+    emit("accessToRestaurant");
+    emit("accessToStore");
   };
 
   return (

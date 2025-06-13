@@ -6,11 +6,13 @@ import { RestaurantRouteProp, RootRestaurant } from "domain/entities/navigation"
 import { useAppDispatch } from "application/store/hook";
 import { add, edit, remove } from "application/slice/restaurants/menu.group.slice";
 import { Group } from "domain/entities/data";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { batch } from "react-redux";
 import { removeCategory, updateSubcategories } from "application/slice/restaurants/menu.slice";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import { useTheme } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import endpoints from "config/constants/api.endpoints";
 
 type CreateGroupProps = {
   navigation: StackNavigationProp<RootRestaurant>;
@@ -19,6 +21,7 @@ type CreateGroupProps = {
 
 const CreateGroup: React.FC<CreateGroupProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const restaurantID = route.params.restaurantID;
   const group = route.params?.group;
@@ -35,6 +38,7 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ navigation, route }) => {
       url: endpoints.menuGroup.delete(id),
       method: "DELETE",
     });
+    emit("accessToRestaurant");
   };
 
   useEffect(() => {
@@ -58,6 +62,7 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ navigation, route }) => {
       method: "POST",
       data,
     });
+    emit("accessToRestaurant");
   };
 
   const update = async (data: Group) => {
@@ -71,6 +76,7 @@ const CreateGroup: React.FC<CreateGroupProps> = ({ navigation, route }) => {
       method: "PUT",
       data,
     });
+    emit("accessToRestaurant");
   };
 
   return <GroupForm ownerID={restaurantID} onSave={save} onUpdate={update} defaultValue={group} />;

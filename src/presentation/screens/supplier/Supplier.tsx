@@ -98,21 +98,12 @@ const Supplier: React.FC<AppNavigationProp> = ({ navigation }) => {
               NO SE ENCONTRARON PROVEEDORES
             </StyledText>
           )}
-          {!!data.length && (
-            <>
-              {!data.length && (
-                <StyledText color={colors.primary} style={{ marginVertical: 10 }}>
-                  NO HAY ÍTEMS PARA LA BUSQUEDA
-                </StyledText>
-              )}
-              <FlatList
-                data={data}
-                style={{ flexGrow: 1 }}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => <Card supplier={item} />}
-              />
-            </>
-          )}
+          <FlatList
+            data={data}
+            style={{ flexGrow: 1 }}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <Card supplier={item} />}
+          />
         </>
       )}
     </Layout>

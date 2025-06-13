@@ -14,15 +14,17 @@ import {
 } from "domain/entities/navigation/root.inventory.entity";
 import { Type as TypeMovement } from "domain/enums/data/inventory/movement.enums";
 import { Type as TypePortion } from "domain/enums/data/inventory/portion.enums";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { batch } from "react-redux";
 import { extractMovementsFromPortion } from "presentation/screens/common/sales/hooks";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledButton from "presentation/components/button/StyledButton";
 import Layout from "presentation/components/layout/Layout";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import StyledText from "presentation/components/text/StyledText";
+import endpoints from "config/constants/api.endpoints";
 
 type PickerFloorModalData = { label: string; value: string }[];
 
@@ -42,6 +44,7 @@ type FormProps = {
 };
 
 const CreateActivity: React.FC<CreateEntryProps> = ({ navigation, route }) => {
+  const { emit } = useWebSocketContext();
   const { colors } = useTheme();
 
   const stocks = useAppSelector((state) => state.stocks);
@@ -104,6 +107,7 @@ const CreateActivity: React.FC<CreateEntryProps> = ({ navigation, route }) => {
         movements,
       },
     });
+    emit("accessToInventory");
   };
 
   return (

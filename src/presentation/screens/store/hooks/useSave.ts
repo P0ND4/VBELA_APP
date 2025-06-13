@@ -13,8 +13,10 @@ import { add as addMovement } from "application/slice/inventories/movements.slic
 import { edit as editPortion } from "application/slice/inventories/portions.slice";
 import { Status } from "domain/enums/data/element/status.enums";
 import { Movement, Portion } from "domain/entities/data/inventories";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { useExtractPortion } from "presentation/screens/common/sales/hooks/useExtractPortion";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
+import endpoints from "config/constants/api.endpoints";
 
 export type CallbackProps = { order: Order };
 
@@ -22,6 +24,7 @@ const useSave = () => {
   const products = useAppSelector((state) => state.products);
 
   const { organizeOrder } = useOrganizeData();
+  const { emit } = useWebSocketContext();
   const extractMovement = useExtractMovement();
   const extractStock = useExtractStock();
   const extractPortion = useExtractPortion();
@@ -72,6 +75,7 @@ const useSave = () => {
         portions,
       },
     });
+    emit("accessToStore");
   };
 
   const update = async (order: Order, callback?: (props: CallbackProps) => void): Promise<void> => {
@@ -102,6 +106,7 @@ const useSave = () => {
         portions,
       },
     });
+    emit("accessToStore");
   };
 
   return { save, update };

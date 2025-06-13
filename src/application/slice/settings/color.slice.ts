@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const color = (collection: Collection) => collection.color;
+const color = (collection: Partial<Collection>) => collection?.color ?? 0;
 
 const initialState: number = 0;
 

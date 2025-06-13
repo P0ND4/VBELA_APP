@@ -4,7 +4,7 @@ import { RootStore, StoreRouteProp } from "domain/entities/navigation/route.stor
 import { add } from "application/slice/stores/products.slice";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Element } from "domain/entities/data/common/element.entity";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import SalesPreviewScreen from "presentation/screens/common/sales/trade/SalesPreviewScreen";
@@ -13,7 +13,9 @@ import { useOrganizeData } from "presentation/screens/common/sales/hooks";
 import { useOrder } from "application/context/OrderContext";
 import { Status } from "domain/enums/data/element/status.enums";
 import { useInvoiceHtml } from "presentation/screens/common/sales/hooks/useInvoiceHtml";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import { printPDF } from "infrastructure/services";
+import endpoints from "config/constants/api.endpoints";
 // import { useInvoiceHtml } from "presentation/screens/common/sales/hooks/useInvoiceHtml";
 
 type PreviewOrderProps = {
@@ -23,6 +25,7 @@ type PreviewOrderProps = {
 
 const PreviewOrder: React.FC<PreviewOrderProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
   const { organizeOrder } = useOrganizeData();
   const { info, selection } = useOrder();
   const { getHtml } = useInvoiceHtml();
@@ -65,6 +68,7 @@ const PreviewOrder: React.FC<PreviewOrderProps> = ({ navigation, route }) => {
       method: "POST",
       data,
     });
+    emit("accessToStore");
   };
 
   return (

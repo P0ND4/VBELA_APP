@@ -18,9 +18,11 @@ import { batch } from "react-redux";
 import { remove } from "application/slice/inventories/recipes.slice";
 import { removeRecipe as removeRecipeProduct } from "application/slice/stores/products.slice";
 import { removeRecipe as removeRecipeMenu } from "application/slice/restaurants/menu.slice";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { Type } from "domain/enums/data/inventory/ingredient.enums";
 import { useRecipeCost } from "../hooks/useRecipeCost";
+import endpoints from "config/constants/api.endpoints";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   const { colors } = useTheme();
@@ -119,6 +121,7 @@ type CreateStockProps = {
 
 const RecipeInformation: React.FC<CreateStockProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const recipes = useAppSelector((state) => state.recipes);
 
@@ -150,6 +153,7 @@ const RecipeInformation: React.FC<CreateStockProps> = ({ navigation, route }) =>
       url: endpoints.recipe.delete(recipe.id),
       method: "DELETE",
     });
+    emit("accessToInventory");
   };
 
   return (

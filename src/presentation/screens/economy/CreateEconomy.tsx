@@ -10,8 +10,9 @@ import { useAppDispatch, useAppSelector } from "application/store/hook";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootEconomy, EconomyRouteProp } from "domain/entities/navigation/root.economy.entity";
 import { add, edit } from "application/slice/economies/economies.slice";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { EconomicGroup } from "domain/entities/data";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
@@ -21,6 +22,7 @@ import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import SimpleCalendarModal from "presentation/components/modal/SimpleCalendarModal";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
+import endpoints from "config/constants/api.endpoints";
 
 type CreateEconomyProps = {
   navigation: StackNavigationProp<RootEconomy>;
@@ -30,6 +32,8 @@ type CreateEconomyProps = {
 type PickerType = { label: string; value: string }[];
 
 const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
+  const { emit } = useWebSocketContext();
+
   const suppliers = useAppSelector((state) => state.suppliers);
   const economicGroup = useAppSelector((state) => state.economicGroup);
 
@@ -119,6 +123,7 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
       method: "POST",
       data,
     });
+    emit("accessToEconomy");
   };
 
   const update = async (data: Economy) => {
@@ -129,6 +134,7 @@ const CreateEconomy: React.FC<CreateEconomyProps> = ({ navigation, route }) => {
       method: "PUT",
       data,
     });
+    emit("accessToEconomy");
   };
 
   const handleSaveOrUpdate = (data: Economy) => {

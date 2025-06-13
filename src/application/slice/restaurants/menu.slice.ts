@@ -4,7 +4,7 @@ import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 import { Group } from "domain/entities/data";
 
-const menu = (collection: Collection) => collection.menu;
+const menu = (collection: Partial<Collection>) => collection?.menu ?? [];
 
 const initialState: Element[] = [];
 

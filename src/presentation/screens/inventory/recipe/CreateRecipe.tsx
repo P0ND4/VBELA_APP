@@ -27,11 +27,13 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import ScreenModal from "presentation/components/modal/ScreenModal";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
 import CountScreenModal from "presentation/components/modal/CountScreenModal";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import { Group, GroupSubCategory } from "domain/entities/data";
 import { Type } from "domain/enums/data/inventory/ingredient.enums";
 import { useRecipeCost } from "../hooks/useRecipeCost";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
+import endpoints from "config/constants/api.endpoints";
 
 const GET_TAB_NAME = {
   [Visible.Both]: "RECETAS/PAQUETES",
@@ -216,6 +218,8 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
   const defaultValue = route.params?.recipe;
   const inventory = route.params.inventory;
 
+  const { emit } = useWebSocketContext();
+
   const { control, handleSubmit, watch, formState } = useForm<Recipe>({
     defaultValues: {
       id: defaultValue?.id || random(10),
@@ -263,6 +267,7 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
       method: "POST",
       data,
     });
+    emit("accessToInventory");
   };
 
   const update = async (data: Recipe) => {
@@ -273,6 +278,7 @@ const CreateRecipe: React.FC<CreateRecipeProps> = ({ navigation, route }) => {
       method: "PUT",
       data,
     });
+    emit("accessToInventory");
   };
 
   useEffect(() => {

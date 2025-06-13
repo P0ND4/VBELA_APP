@@ -6,8 +6,9 @@ import { useTheme } from "@react-navigation/native";
 import { random, thousandsSystem } from "shared/utils";
 import { useAppDispatch } from "application/store/hook";
 import { RootSupplier, SupplierRouteProp } from "domain/entities/navigation/root.supplier.entity";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import { Supplier } from "domain/entities/data";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { add, edit } from "application/slice/suppliers/suppliers.slice";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
@@ -15,6 +16,7 @@ import StyledButton from "presentation/components/button/StyledButton";
 import StyledInput from "presentation/components/input/StyledInput";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
+import endpoints from "config/constants/api.endpoints";
 
 type CreateSupplierProps = {
   navigation: StackNavigationProp<RootSupplier>;
@@ -37,6 +39,7 @@ const CreateSupplier: React.FC<CreateSupplierProps> = ({ navigation, route }) =>
   });
 
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const [loading, setLoading] = useState<boolean>(false);
   const [optional, setOptional] = useState<boolean>(false);
@@ -55,6 +58,7 @@ const CreateSupplier: React.FC<CreateSupplierProps> = ({ navigation, route }) =>
       method: "POST",
       data,
     });
+    emit("accessToSupplier");
   };
 
   const update = async (data: Supplier) => {
@@ -66,6 +70,7 @@ const CreateSupplier: React.FC<CreateSupplierProps> = ({ navigation, route }) =>
       method: "PUT",
       data,
     });
+    emit("accessToSupplier");
   };
 
   const handleSaveOrUpdate = (data: Supplier) => (defaultValue ? update(data) : save(data));

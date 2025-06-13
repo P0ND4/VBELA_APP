@@ -1,31 +1,33 @@
 import React from "react";
 import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
-import { useAppDispatch } from "application/store/hook";
+import { useAppSelector } from "application/store/hook";
 import { useTheme } from "@react-navigation/native";
-import { cleanAll } from "application/store/actions";
-import { signOutWithGoogle } from "infrastructure/auth/google.auth";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { useSyncCheck } from "presentation/hooks/useSyncCheck";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { readQueueOperation } from "infrastructure/offline/operation.queue";
+import endpoints from "config/constants/api.endpoints";
+import { useLogout } from "infrastructure/auth/useLogout";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 
 const Account = () => {
   const { colors } = useTheme();
   const { isSynchronized } = useSyncCheck();
-
-  const dispatch = useAppDispatch();
-
-  const logOut = async (callback: () => void) => {
-    await signOutWithGoogle();
-    dispatch(cleanAll());
-    callback();
-  };
+  const { identifier, selected } = useAppSelector((state) => state.user);
+  const { logout } = useLogout();
+  const { disconnect } = useWebSocketContext();
 
   return (
     <Layout style={{ justifyContent: "space-between" }}>
       <View style={styles.information}>
+        {identifier !== selected && (
+          <StyledText center color={colors.primary} style={{ marginBottom: 15 }}>
+            Colaborador
+          </StyledText>
+        )}
         <TouchableOpacity
           style={[styles.picture, { backgroundColor: colors.card }]}
           onPress={() => {}}
@@ -33,7 +35,7 @@ const Account = () => {
           <Ionicons name="image-outline" size={35} color={colors.text} />
         </TouchableOpacity>
         <View style={{ marginVertical: 15 }}>
-          <StyledText>melvincolmenares.m@gmail.com</StyledText>
+          <StyledText>{identifier}</StyledText>
           <StyledText center color={colors.primary}>
             {isSynchronized ? "Sincronizado" : "No Sincronizado"}
           </StyledText>
@@ -46,55 +48,70 @@ const Account = () => {
       </View>
       <View>
         <StyledText right>4.0.0-beta.1</StyledText>
-        <StyledButton
-          style={styles.row}
-          onPress={() => {
-            Alert.alert(
-              "EY!",
-              "¿Estás seguro de que deseas borrar tu cuenta?",
-              [
-                {
-                  text: "Si",
-                  onPress: () => {
-                    const callback = async () => {
-                      await apiClient(
-                        {
-                          url: endpoints.user.delete(),
-                          method: "DELETE",
-                        },
-                        { synchronization: false },
-                      );
-                    };
-                    logOut(callback);
+        {identifier === selected && (
+          <StyledButton
+            style={styles.row}
+            onPress={() => {
+              Alert.alert(
+                "EY!",
+                "¿Estás seguro de que deseas borrar tu cuenta?",
+                [
+                  {
+                    text: "Si",
+                    onPress: () => {
+                      const callback = async () => {
+                        await apiClient(
+                          {
+                            url: endpoints.user.delete(),
+                            method: "DELETE",
+                          },
+                          { synchronization: false, token: true },
+                        );
+                      };
+                      logout(callback);
+                    },
                   },
-                },
+                  {
+                    text: "No",
+                    style: "cancel",
+                  },
+                ],
                 {
-                  text: "No",
-                  style: "cancel",
+                  cancelable: true,
                 },
-              ],
-              {
-                cancelable: true,
-              },
-            );
-          }}
-        >
-          <StyledText>Borrar cuenta</StyledText>
-          <Ionicons name="chevron-forward" color={colors.text} size={19} />
-        </StyledButton>
+              );
+            }}
+          >
+            <StyledText>Borrar cuenta</StyledText>
+            <Ionicons name="chevron-forward" color={colors.text} size={19} />
+          </StyledButton>
+        )}
         <StyledButton
           backgroundColor={colors.primary}
-          onPress={() => {
-            const callback = async () => {
-              await apiClient(
+          onPress={async () => {
+            const currentQueue = await readQueueOperation();
+
+            const callback = async () => await disconnect();
+
+            if (currentQueue.length > 0) {
+              Alert.alert(
+                "EY!",
+                "Tienes datos sin sincronizar ¿Estás seguro de que deseas cerrar sesión? los datos no sincronizados se perderan",
+                [
+                  {
+                    text: "Si",
+                    onPress: () => logout(callback),
+                  },
+                  {
+                    text: "No",
+                    style: "cancel",
+                  },
+                ],
                 {
-                  url: endpoints.auth.logout(),
-                  method: "POST",
+                  cancelable: true,
                 },
-                { synchronization: false },
               );
-            };
-            logOut(callback);
+            } else logout(callback);
           }}
         >
           <StyledText color="#FFFFFF" center>

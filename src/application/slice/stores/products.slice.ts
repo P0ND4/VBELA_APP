@@ -4,7 +4,7 @@ import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 import { Group } from "domain/entities/data";
 
-const products = (collection: Collection) => collection.products;
+const products = (collection: Partial<Collection>) => collection?.products ?? [];
 
 const initialState: Element[] = [];
 

@@ -22,18 +22,25 @@ import Setting from "presentation/screens/setting/Setting";
 import Kitchen from "presentation/screens/kitchen/Kitchen";
 // import Delivery from "presentation/screens/delivery/Delivery";
 import Home from "presentation/screens/Home";
-// import Collaborator from "presentation/screens/collaborator/Collaborator";
+import Collaborator from "presentation/screens/collaborator/Collaborator";
 import Supplier from "presentation/screens/supplier/Supplier";
 // import Payroll from "presentation/screens/payroll/Payroll";
 import Economy from "presentation/screens/economy/Economy";
 import StatisticTab from "presentation/screens/statistic/StatisticTab";
+import { Permissions } from "domain/entities/data";
 
 const Drawer = createDrawerNavigator<RootApp>();
 
+type PermissionKeys = keyof Permissions;
+
 function App() {
+  const { permissions } = useAppSelector((state) => state.user);
   const sales = useAppSelector(selectPendingSales);
   const orders = useAppSelector(selectPendingOrders);
   const kitchens = useAppSelector(selectPendingKitchen);
+
+  const validatePermission = (permission: PermissionKeys): boolean =>
+    permissions === null || permissions?.[permission];
 
   const { colors } = useTheme();
 
@@ -52,14 +59,16 @@ function App() {
       }}
       drawerContent={(props) => <CustomDrawer {...props} />}
     >
-      <Drawer.Screen
-        name="Home"
-        component={Home}
-        options={{
-          title: "Inicio",
-          drawerIcon: ({ color }) => <Ionicons name="home-outline" size={22} color={color} />,
-        }}
-      />
+      {validatePermission("admin") && (
+        <Drawer.Screen
+          name="Home"
+          component={Home}
+          options={{
+            title: "Inicio",
+            drawerIcon: ({ color }) => <Ionicons name="home-outline" size={22} color={color} />,
+          }}
+        />
+      )}
       {/* <Drawer.Screen
         name="Reservation"
         component={Accommodation}
@@ -68,59 +77,73 @@ function App() {
           drawerIcon: ({ color }) => <Ionicons name="business-outline" size={22} color={color} />,
         }}
       /> */}
-      <Drawer.Screen
-        name="Statistic"
-        component={StatisticTab}
-        options={{
-          title: "Estadística",
-          unmountOnBlur: true,
-          drawerIcon: ({ color }) => <Ionicons name="pie-chart-outline" size={22} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="Store"
-        component={Store}
-        options={{
-          title: "Tiendas",
-          drawerIcon: ({ color }) => <Ionicons name="storefront-outline" size={22} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="Restaurant"
-        component={Restaurant}
-        options={{
-          title: "Restaurantes/Bars",
-          drawerIcon: ({ color }) => <Ionicons name="pricetag-outline" size={22} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="Order"
-        component={Order}
-        options={{
-          title: "Pedidos",
-          drawerIcon: () => (
-            <View style={[styles.order, { backgroundColor: colors.primary }]}>
-              <StyledText verySmall color="#FFFFFF">
-                {thousandsSystem(sales.length + orders.length)}
-              </StyledText>
-            </View>
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="Kitchen"
-        component={Kitchen}
-        options={{
-          title: "Producción",
-          drawerIcon: () => (
-            <View style={[styles.order, { backgroundColor: colors.primary }]}>
-              <StyledText verySmall color="#FFFFFF">
-                {thousandsSystem(kitchens.length)}
-              </StyledText>
-            </View>
-          ),
-        }}
-      />
+      {validatePermission("accessToStatistics") && (
+        <Drawer.Screen
+          name="Statistic"
+          component={StatisticTab}
+          options={{
+            title: "Estadística",
+            unmountOnBlur: true,
+            drawerIcon: ({ color }) => (
+              <Ionicons name="pie-chart-outline" size={22} color={color} />
+            ),
+          }}
+        />
+      )}
+      {validatePermission("accessToStore") && (
+        <Drawer.Screen
+          name="Store"
+          component={Store}
+          options={{
+            title: "Tiendas",
+            drawerIcon: ({ color }) => (
+              <Ionicons name="storefront-outline" size={22} color={color} />
+            ),
+          }}
+        />
+      )}
+      {validatePermission("accessToRestaurant") && (
+        <Drawer.Screen
+          name="Restaurant"
+          component={Restaurant}
+          options={{
+            title: "Restaurantes/Bars",
+            drawerIcon: ({ color }) => <Ionicons name="pricetag-outline" size={22} color={color} />,
+          }}
+        />
+      )}
+      {(validatePermission("accessToRestaurant") || validatePermission("accessToStore")) && (
+        <Drawer.Screen
+          name="Order"
+          component={Order}
+          options={{
+            title: "Pedidos",
+            drawerIcon: () => (
+              <View style={[styles.order, { backgroundColor: colors.primary }]}>
+                <StyledText verySmall color="#FFFFFF">
+                  {thousandsSystem(sales.length + orders.length)}
+                </StyledText>
+              </View>
+            ),
+          }}
+        />
+      )}
+      {validatePermission("accessToKitchen") && (
+        <Drawer.Screen
+          name="Kitchen"
+          component={Kitchen}
+          options={{
+            title: "Producción",
+            drawerIcon: () => (
+              <View style={[styles.order, { backgroundColor: colors.primary }]}>
+                <StyledText verySmall color="#FFFFFF">
+                  {thousandsSystem(kitchens.length)}
+                </StyledText>
+              </View>
+            ),
+          }}
+        />
+      )}
       {/* <Drawer.Screen
         name="Delivery"
         component={Delivery}
@@ -145,38 +168,46 @@ function App() {
           drawerIcon: ({ color }) => <Ionicons name="newspaper-outline" size={22} color={color} />,
         }}
       /> */}
-      <Drawer.Screen
-        name="Economy"
-        component={Economy}
-        options={{
-          title: "Ingreso/Egreso",
-          drawerIcon: ({ color }) => <Ionicons name="card-outline" size={22} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="Supplier"
-        component={Supplier}
-        options={{
-          title: "Proveedores",
-          drawerIcon: ({ color }) => <Ionicons name="albums-outline" size={22} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="Inventory"
-        component={Inventory}
-        options={{
-          title: "Inventarios",
-          drawerIcon: ({ color }) => <Ionicons name="grid-outline" size={22} color={color} />,
-        }}
-      />
-      {/* <Drawer.Screen
-        name="Collaborator"
-        component={Collaborator}
-        options={{
-          title: "Colaboradores",
-          drawerIcon: ({ color }) => <Ionicons name="people-outline" size={22} color={color} />,
-        }}
-      /> */}
+      {validatePermission("accessToEconomy") && (
+        <Drawer.Screen
+          name="Economy"
+          component={Economy}
+          options={{
+            title: "Ingreso/Egreso",
+            drawerIcon: ({ color }) => <Ionicons name="card-outline" size={22} color={color} />,
+          }}
+        />
+      )}
+      {validatePermission("accessToSupplier") && (
+        <Drawer.Screen
+          name="Supplier"
+          component={Supplier}
+          options={{
+            title: "Proveedores",
+            drawerIcon: ({ color }) => <Ionicons name="albums-outline" size={22} color={color} />,
+          }}
+        />
+      )}
+      {validatePermission("accessToInventory") && (
+        <Drawer.Screen
+          name="Inventory"
+          component={Inventory}
+          options={{
+            title: "Inventarios",
+            drawerIcon: ({ color }) => <Ionicons name="grid-outline" size={22} color={color} />,
+          }}
+        />
+      )}
+      {validatePermission("accessToCollaborator") && (
+        <Drawer.Screen
+          name="Collaborator"
+          component={Collaborator}
+          options={{
+            title: "Colaboradores",
+            drawerIcon: ({ color }) => <Ionicons name="people-outline" size={22} color={color} />,
+          }}
+        />
+      )}
       <Drawer.Screen
         name="Setting"
         component={Setting}

@@ -13,16 +13,20 @@ import {
 } from "application/appState/navigation/sales.navigation.method.slice";
 import { Order } from "domain/entities/data/common";
 import { Status } from "domain/enums/data/element/status.enums";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
+import apiClient from "infrastructure/api/server";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledButton from "presentation/components/button/StyledButton";
+import endpoints from "config/constants/api.endpoints";
 
 type NavigationProps = StackNavigationProp<RootRestaurant>;
 
 const Card: React.FC<{ item: TableEntity; refresh: boolean }> = React.memo(({ item, refresh }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
+
   const orders = useAppSelector((state) => state.orders);
   const [showInformation, setShowInformation] = useState<boolean>(false);
   const [order, setOrder] = useState<Order | null>(null);
@@ -51,6 +55,7 @@ const Card: React.FC<{ item: TableEntity; refresh: boolean }> = React.memo(({ it
       url: endpoints.table.delete(item.id),
       method: "DELETE",
     });
+    emit("accessToRestaurant");
   };
 
   return (

@@ -6,15 +6,17 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RestaurantRouteProp, RootRestaurant } from "domain/entities/navigation";
 import { random, thousandsSystem } from "shared/utils";
 import { useAppDispatch, useAppSelector } from "application/store/hook";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import { addMultiple, edit } from "application/slice/restaurants/tables.slice";
 import { Table } from "domain/entities/data/restaurants";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledInput from "presentation/components/input/StyledInput";
 import StyledButton from "presentation/components/button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import InputScreenModal from "presentation/components/modal/InputScreenModal";
+import endpoints from "config/constants/api.endpoints";
 
 type CreateTableProps = {
   navigation: StackNavigationProp<RootRestaurant>;
@@ -40,6 +42,7 @@ const CreateTable: React.FC<CreateTableProps> = ({ navigation, route }) => {
   const restaurants = useAppSelector((state) => state.restaurants);
 
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const [loading, setLoading] = useState<boolean>(false);
   const [optional, setOptional] = useState<boolean>(false);
@@ -70,6 +73,7 @@ const CreateTable: React.FC<CreateTableProps> = ({ navigation, route }) => {
       method: "POST",
       data: multiple,
     });
+    emit("accessToRestaurant");
   };
 
   const update = async (data: Table) => {
@@ -80,6 +84,7 @@ const CreateTable: React.FC<CreateTableProps> = ({ navigation, route }) => {
       method: "PUT",
       data,
     });
+    emit("accessToRestaurant");
   };
 
   const handleSaveOrUpdate = (data: Table) => {

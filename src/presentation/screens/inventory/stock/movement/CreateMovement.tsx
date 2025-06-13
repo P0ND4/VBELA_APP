@@ -16,8 +16,9 @@ import {
   RootInventory,
 } from "domain/entities/navigation/root.inventory.entity";
 import { Type as TypeMovement } from "domain/enums/data/inventory/movement.enums";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { batch } from "react-redux";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledButton from "presentation/components/button/StyledButton";
 import Layout from "presentation/components/layout/Layout";
@@ -25,6 +26,7 @@ import CountScreenModal from "presentation/components/modal/CountScreenModal";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import SimpleCalendarModal from "presentation/components/modal/SimpleCalendarModal";
 import StyledText from "presentation/components/text/StyledText";
+import endpoints from "config/constants/api.endpoints";
 
 type CreateEntryProps = {
   navigation: StackNavigationProp<RootInventory>;
@@ -39,6 +41,7 @@ export const calculateQuantity = (movements: Movement[], stockID: string) => {
 };
 
 const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
+  const { emit } = useWebSocketContext();
   const { colors } = useTheme();
 
   const inventories = useAppSelector((state) => state.inventories);
@@ -126,6 +129,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
       method: "POST",
       data,
     });
+    emit("accessToInventory");
   };
 
   const update = async (data: Movement) => {
@@ -136,6 +140,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
       method: "PUT",
       data,
     });
+    emit("accessToInventory");
   };
 
   const handleSaveOrUpdate = async (data: Movement) => {

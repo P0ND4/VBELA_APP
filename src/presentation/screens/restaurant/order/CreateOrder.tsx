@@ -7,10 +7,12 @@ import { TouchableOpacity, StyleSheet } from "react-native";
 import { Element, Group, Order, Save } from "domain/entities/data/common";
 import { add } from "application/slice/restaurants/menu.slice";
 import useSave, { CallbackProps } from "../hooks/useSave";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
+import apiClient from "infrastructure/api/server";
 import SalesBoxScreen from "presentation/screens/common/sales/trade/SalesBoxScreen";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import StyledText from "presentation/components/text/StyledText";
+import endpoints from "config/constants/api.endpoints";
 
 type CreateOrderProps = {
   navigation: StackNavigationProp<RootRestaurant>;
@@ -20,6 +22,7 @@ type CreateOrderProps = {
 const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
   const { kitchen } = useSave();
+  const { emit } = useWebSocketContext();
 
   const menuGroup = useAppSelector((state) => state.menuGroup);
   const menu = useAppSelector((state) => state.menu);
@@ -74,11 +77,12 @@ const CreateOrder: React.FC<CreateOrderProps> = ({ navigation, route }) => {
       method: "POST",
       data,
     });
+    emit("accessToRestaurant");
   };
 
   return (
     <SalesBoxScreen
-      defaultValue={defaultValue}
+      defaultValue={defaultValue!}
       locationID={restaurantID}
       tableID={tableID}
       groups={groups}

@@ -10,7 +10,9 @@ import { Element } from "domain/entities/data/common";
 import { Visible } from "domain/enums/data/inventory/visible.enums";
 import ElementTab from "presentation/screens/common/sales/element/ElementTab";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
+import endpoints from "config/constants/api.endpoints";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 
 type MenuTabProps = {
   navigation: StackNavigationProp<RootRestaurant>;
@@ -19,6 +21,7 @@ type MenuTabProps = {
 
 const MenuTab: React.FC<MenuTabProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const menuGroup = useAppSelector((state) => state.menuGroup);
   const restaurants = useAppSelector((state) => state.restaurants);
@@ -38,6 +41,7 @@ const MenuTab: React.FC<MenuTabProps> = ({ navigation, route }) => {
       method: "POST",
       data,
     });
+    emit("accessToRestaurant");
   };
 
   const update = async (data: Element) => {
@@ -48,6 +52,7 @@ const MenuTab: React.FC<MenuTabProps> = ({ navigation, route }) => {
       method: "PUT",
       data,
     });
+    emit("accessToRestaurant");
   };
 
   const removeItem = async (id: string) => {
@@ -57,6 +62,7 @@ const MenuTab: React.FC<MenuTabProps> = ({ navigation, route }) => {
       url: endpoints.menu.delete(id),
       method: "DELETE",
     });
+    emit("accessToRestaurant");
   };
 
   useEffect(() => {

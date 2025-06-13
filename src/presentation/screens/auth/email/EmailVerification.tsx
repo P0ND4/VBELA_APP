@@ -1,8 +1,9 @@
 import React from "react";
 import { Alert } from "react-native";
 import { AuthNavigationProp, AuthRouteProp } from "domain/entities/navigation";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import VerificationScreen from "../common/VerificationScreen";
+import endpoints from "config/constants/api.endpoints";
 
 type EmailVerificationProps = {
   navigation: AuthNavigationProp;

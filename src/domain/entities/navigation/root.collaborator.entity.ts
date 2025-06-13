@@ -4,6 +4,7 @@ import { Collaborator } from "../data/collaborators";
 
 export type RootCollaborator = {
   CreateCollaborator: { collaborator?: Collaborator };
+  CollaboratorInformation: { collaborator: Collaborator };
 };
 
 export type CollaboratorNavigationProp = { navigation: StackNavigationProp<RootCollaborator> };

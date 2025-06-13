@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const initialBasis = (collection: Collection) => collection.initialBasis;
+const initialBasis = (collection: Partial<Collection>) => collection?.initialBasis ?? 0;
 
 const initialState: number = 0;
 

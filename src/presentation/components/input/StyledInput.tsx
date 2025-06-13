@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
   defaultInput: {
     paddingVertical: 8,
     paddingHorizontal: 12,
-    fontSize: 18,
+    fontSize: 15,
     flexGrow: 1,
     flexShrink: 1,
   },

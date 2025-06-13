@@ -7,13 +7,15 @@ import { Kitchen, Kitchen as KitchenType } from "domain/entities/data/kitchens";
 import { Status } from "domain/enums/data/kitchen/status.enums";
 import { useTheme } from "@react-navigation/native";
 import { changeDate, thousandsSystem } from "shared/utils";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
+import apiClient from "infrastructure/api/server";
 import Layout from "presentation/components/layout/Layout";
 import StyledInput from "presentation/components/input/StyledInput";
 import StyledButton from "presentation/components/button/StyledButton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import StyledText from "presentation/components/text/StyledText";
+import endpoints from "config/constants/api.endpoints";
 
 const Order: React.FC<{ order: Selection }> = ({ order }) => {
   return (
@@ -91,6 +93,7 @@ type KitchenScreenProps = {
 
 const KitchenScreen: React.FC<KitchenScreenProps> = ({ orders, status }) => {
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const restaurants = useAppSelector((state) => state.restaurants);
 
@@ -130,6 +133,7 @@ const KitchenScreen: React.FC<KitchenScreenProps> = ({ orders, status }) => {
       method: "PUT",
       data,
     });
+    emit("accessToKitchen");
   };
 
   useEffect(() => {

@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const handlers = (collection: Collection) => collection.handlers;
+const handlers = (collection: Partial<Collection>) => collection?.handlers ?? [];
 
 const initialState: Handler[] = [];
 

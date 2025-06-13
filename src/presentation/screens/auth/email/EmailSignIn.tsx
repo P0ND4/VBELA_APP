@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Keyboard, View, StyleSheet, Alert } from "react-native";
 import { AuthNavigationProp } from "domain/entities/navigation";
 import { useTheme } from "@react-navigation/native";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { EMAIL_EXPRESSION } from "shared/constants/expressions";
 import StyledText from "presentation/components/text/StyledText";
 import StyledInput from "presentation/components/input/StyledInput";
@@ -11,6 +11,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 
 import * as WebBrowser from "expo-web-browser";
 import StyledButton from "presentation/components/button/StyledButton";
+import endpoints from "config/constants/api.endpoints";
 
 const TERMS_OF_SERVICE_URL = "https://sites.google.com/view/terminos-y-condiciones-vbela/inicio";
 const PRIVACY_POLICY_URL = "https://sites.google.com/view/politica-de-privacidad-vbela/principal";

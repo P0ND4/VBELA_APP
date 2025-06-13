@@ -15,7 +15,7 @@ import { remove } from "application/slice/inventories/inventories.slice";
 import { batch } from "react-redux";
 import { removeInventory as removeInventoryRestaurant } from "application/slice/restaurants/restaurants.slices";
 import { removeInventory as removeInventoryStore } from "application/slice/stores/stores.slice";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import apiClient from "infrastructure/api/server";
 import { removeByInventoryID as removeByInventoryIDStock } from "application/slice/inventories/stocks.slice";
 import { removeByInventoryID as removeByInventoryIDRecipe } from "application/slice/inventories/recipes.slice";
 import {
@@ -31,7 +31,9 @@ import { removeByInventoryID as removeByInventoryIDRecipeGroup } from "applicati
 import { removeByInventoryID as removeByInventoryIDPortion } from "application/slice/inventories/portions.slice";
 import { removeByInventoryID as removeByInventoryIDPortionGroup } from "application/slice/inventories/portion.group.slice";
 import { useMovementsMap } from "./hooks/useMovementsMap";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 import { calculateCost } from "./portion/Portion";
+import endpoints from "config/constants/api.endpoints";
 
 type CardInformationProps = {
   visible: boolean;
@@ -120,6 +122,7 @@ const Card: React.FC<{ item: InventoryType }> = ({ item }) => {
   const recipes = useAppSelector((state) => state.recipes);
 
   const { colors } = useTheme();
+  const { emit } = useWebSocketContext();
 
   const [showInformation, setShowInformation] = useState<boolean>(false);
 
@@ -159,6 +162,7 @@ const Card: React.FC<{ item: InventoryType }> = ({ item }) => {
       url: endpoints.inventory.delete(item.id),
       method: "DELETE",
     });
+    emit("accessToInventory");
   }, [dispatch, item.id, recipes, stocks]);
 
   return (

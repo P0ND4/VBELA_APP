@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { changeAll, cleanAll } from "application/store/actions";
 import { Collection } from "domain/entities/data/user";
 
-const mode = (collection: Collection) => collection.darkMode;
+const mode = (collection: Partial<Collection>) => collection?.darkMode ?? false;
 
 const initialState: boolean = false;
 

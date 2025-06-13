@@ -17,7 +17,9 @@ import StyledTextInformation from "presentation/components/text/StyledTextInform
 import { batch } from "react-redux";
 import { removeIngredient } from "application/slice/inventories/recipes.slice";
 import { remove } from "application/slice/inventories/portions.slice";
-import apiClient, { endpoints } from "infrastructure/api/server";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
+import apiClient from "infrastructure/api/server";
+import endpoints from "config/constants/api.endpoints";
 
 const Card: React.FC<{ name: string; value: string }> = ({ name, value }) => {
   const { colors } = useTheme();
@@ -98,6 +100,7 @@ type PortionInformationProps = {
 };
 
 const PortionInformation: React.FC<PortionInformationProps> = ({ navigation, route }) => {
+  const { emit } = useWebSocketContext();
   const { colors } = useTheme();
 
   const portions = useAppSelector((state) => state.portions);
@@ -128,6 +131,7 @@ const PortionInformation: React.FC<PortionInformationProps> = ({ navigation, rou
       url: endpoints.portion.delete(portion.id),
       method: "DELETE",
     });
+    emit("accessToInventory");
   };
 
   return (
