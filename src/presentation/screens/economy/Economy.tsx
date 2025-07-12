@@ -1,22 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
-import { useAppSelector } from "application/store/hook";
 import { useNavigation, useTheme } from "@react-navigation/native";
-import { Economy as EconomyType, Order } from "domain/entities/data";
+import { Economy as EconomyType } from "domain/entities/data";
 import { AppNavigationProp, RootApp } from "domain/entities/navigation";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { thousandsSystem } from "shared/utils";
-import { selectEgress, selectIncome } from "application/selectors/economies.selectors";
 import { Type as EconomyEnums } from "domain/enums/data/economy/economy.enums";
 import FullFilterDate, {
   DateType,
   filterByDate,
   resetDate,
 } from "presentation/components/layout/FullFilterDate";
-import { selectCompletedOrders, selectCompletedSales } from "application/selectors";
-import moment from "moment";
+import { GroupedEconomy, useEconomyData } from "./hooks/useEconomyData";
 import Layout from "presentation/components/layout/Layout";
 import StyledText from "presentation/components/text/StyledText";
 import StyledInput from "presentation/components/input/StyledInput";
@@ -27,97 +24,78 @@ const Tab = createMaterialTopTabNavigator();
 
 type NavigationProps = StackNavigationProp<RootApp>;
 
-const Card: React.FC<{ economy: EconomyType; detail: boolean }> = ({ economy, detail }) => {
+const Card: React.FC<{ group: GroupedEconomy }> = ({ group }) => {
   const { colors } = useTheme();
-
-  const path = useMemo(
-    () =>
-      [economy.type, economy.category.name, economy.subcategory?.name].filter(Boolean).join("/"),
-    [economy],
-  );
 
   const navigation = useNavigation<NavigationProps>();
 
   return (
     <StyledButton
-      style={[styles.row, { opacity: !economy.isSpecial ? 1 : 0.6 }]}
+      style={styles.row}
       onPress={() => {
         navigation.navigate("EconomyRoutes", {
-          screen: "EconomyInformation",
-          params: { economy },
+          screen: "GroupInformation",
+          params: { economies: group.economies },
         });
-      }}
-      onLongPress={() => {
-        if (!economy.isSpecial) {
-          navigation.navigate("EconomyRoutes", {
-            screen: "CreateEconomy",
-            params: { economy, type: economy.type },
-          });
-        }
       }}
     >
       <StyledText ellipsizeMode="tail" numberOfLines={1}>
-        {detail ? path : economy.category.name}
+        {group.key}
       </StyledText>
-      <StyledText color={economy.type === EconomyEnums.Income ? colors.primary : "#f71010"}>
-        ({thousandsSystem(economy.quantity)}) {thousandsSystem(economy.value)}
+      <StyledText color={group.value < 0 ? "#f71010" : colors.primary}>
+        ({thousandsSystem(group.quantity)}) {thousandsSystem(group.value)}
       </StyledText>
     </StyledButton>
   );
 };
 
-// Función para convertir una orden a EconomyType
-const convertOrderToEconomy = (order: Order): EconomyType => ({
-  id: order.id,
-  supplier: null,
-  type: EconomyEnums.Income, // Las órdenes siempre son ingresos
-  category: { id: "order", name: "Venta" },
-  subcategory: null,
-  value: order.total,
-  quantity: order.selection.reduce((a, b) => a + b.quantity, 0),
-  unit: "",
-  description: `Orden #${order.order}`,
-  date: order.creationDate,
-  reference: order.invoice,
-  brand: "",
-  creationDate: order.creationDate,
-  modificationDate: order.modificationDate,
-  operative: true,
-  isSpecial: true,
-});
+const getGroupKey = (economy: EconomyType): string => {
+  const { name: categoryName } = economy.category;
+  const { name: subcategoryName } = economy.subcategory ?? {};
 
-const combineData = (economies: EconomyType[], orders: Order[]): EconomyType[] => {
-  // Convertir órdenes al formato EconomyType
-  const convertedOrders = orders.map(convertOrderToEconomy);
-
-  // Combinar economies, convertedOrders
-  const combinedData = economies.concat(convertedOrders);
-
-  // Ordenar por fecha de creación (de más reciente a más antiguo)
-  combinedData.sort((a, b) => moment(b.creationDate).diff(moment(a.creationDate)));
-
-  return combinedData;
+  const unit = economy.unit ? `/${economy.unit}` : "";
+  if (categoryName && subcategoryName)
+    return `${categoryName.toUpperCase()}/${subcategoryName.toUpperCase()}${unit}`;
+  if (categoryName) return economy.category.name.toUpperCase();
+  return "SIN GRUPO";
 };
 
-type EconomyScreenProps = {
-  economies: EconomyType[];
-  orders?: Order[];
+const groupEconomies = (economies: EconomyType[]): GroupedEconomy[] => {
+  const groups = new Map<string, GroupedEconomy>();
+
+  for (const eco of economies) {
+    const key = getGroupKey(eco);
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        quantity: 0,
+        economies: [],
+        unit: eco.unit,
+        value: 0,
+      });
+    }
+
+    const group = groups.get(key)!;
+    group.economies.push(eco);
+    group.quantity += eco.quantity;
+    group.value += eco.value;
+  }
+
+  return Array.from(groups.values());
 };
 
-const EconomyScreen: React.FC<EconomyScreenProps> = ({ economies, orders = [] }) => {
+const EconomyScreen: React.FC<{ economies: EconomyType[] }> = ({ economies }) => {
   const { colors } = useTheme();
 
   const navigation = useNavigation<NavigationProps>();
 
-  const [isDetail, setDetail] = useState<boolean>(false);
   const [search, setSearch] = useState<string>("");
 
   const [date, setDate] = useState<DateType>(resetDate);
 
-  const sorted = useMemo(() => combineData(economies, orders), [orders, economies]);
-
   const data: EconomyType[] = useMemo(() => {
-    const filteredByDate = filterByDate<EconomyType>(sorted, date);
+    const filteredByDate = filterByDate<EconomyType>(economies, date);
     if (!search) return filteredByDate;
     const searchTerm = search.toLowerCase();
     const filteredBySearch = filteredByDate.filter(
@@ -126,7 +104,7 @@ const EconomyScreen: React.FC<EconomyScreenProps> = ({ economies, orders = [] })
         d.description.toLowerCase().includes(searchTerm),
     );
     return filteredBySearch;
-  }, [sorted, search, date]);
+  }, [economies, search, date]);
 
   const getValue = (type: EconomyEnums) =>
     data.filter((d) => d.type === type).reduce((a, b) => a + b.value, 0);
@@ -135,9 +113,11 @@ const EconomyScreen: React.FC<EconomyScreenProps> = ({ economies, orders = [] })
   const egress = useMemo(() => getValue(EconomyEnums.Egress), [data]);
   const totalValue = useMemo(() => data.reduce((a, b) => a + b.value, 0), [data]);
 
+  const groupedData = useMemo(() => groupEconomies(data), [data]);
+
   return (
     <Layout style={{ padding: 0 }}>
-      {!sorted.length ? (
+      {!economies.length ? (
         <StyledText color={colors.primary} style={{ padding: 20 }}>
           NO HAY INFORMACIÓN EN ESTE ESTADO
         </StyledText>
@@ -154,24 +134,14 @@ const EconomyScreen: React.FC<EconomyScreenProps> = ({ economies, orders = [] })
           <View style={{ flex: 1, paddingHorizontal: 20 }}>
             <FullFilterDate date={date} setDate={setDate} style={{ paddingVertical: 10 }} />
             {!data.length && (
-              <StyledText color={colors.primary}>NO HAY ORDENES PARA LA BÚSQUEDA</StyledText>
+              <StyledText color={colors.primary}>NO HAY INFORMACIÓN PARA LA BÚSQUEDA</StyledText>
             )}
             <FlatList
-              data={data}
-              style={{ flexGrow: 1 }}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <Card economy={item} detail={isDetail} />}
+              data={groupedData}
+              keyExtractor={(item) => item.key}
+              renderItem={({ item }) => <Card group={item} />}
             />
             <View style={styles.features}>
-              <StyledButton
-                style={{ marginRight: 5, width: "auto" }}
-                backgroundColor={isDetail ? colors.primary : colors.card}
-                onPress={() => setDetail(!isDetail)}
-              >
-                <StyledText smallParagraph color={isDetail ? "#FFFFFF" : colors.text}>
-                  Detalles
-                </StyledText>
-              </StyledButton>
               <StyledButton
                 onPress={() => navigation.navigate("SettingRoutes", { screen: "EconomicGroup" })}
                 auto
@@ -205,13 +175,7 @@ const EconomyScreen: React.FC<EconomyScreenProps> = ({ economies, orders = [] })
 
 const Economy: React.FC<AppNavigationProp> = ({ navigation }) => {
   const { colors } = useTheme();
-
-  const orders = useAppSelector(selectCompletedOrders);
-  const sales = useAppSelector(selectCompletedSales);
-
-  const economies = useAppSelector((state) => state.economies);
-  const income = useAppSelector(selectIncome);
-  const egress = useAppSelector(selectEgress);
+  const { all, income, egress } = useEconomyData();
 
   useEffect(() => {
     navigation.setOptions({
@@ -248,12 +212,8 @@ const Economy: React.FC<AppNavigationProp> = ({ navigation }) => {
 
   return (
     <Tab.Navigator>
-      <Tab.Screen name="TODO">
-        {() => <EconomyScreen economies={economies} orders={[...sales, ...orders]} />}
-      </Tab.Screen>
-      <Tab.Screen name="INGRESO">
-        {() => <EconomyScreen economies={income} orders={[...sales, ...orders]} />}
-      </Tab.Screen>
+      <Tab.Screen name="TODO">{() => <EconomyScreen economies={all} />}</Tab.Screen>
+      <Tab.Screen name="INGRESO">{() => <EconomyScreen economies={income} />}</Tab.Screen>
       <Tab.Screen name="EGRESO">{() => <EconomyScreen economies={egress} />}</Tab.Screen>
     </Tab.Navigator>
   );

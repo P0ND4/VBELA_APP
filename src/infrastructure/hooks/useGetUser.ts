@@ -5,15 +5,11 @@ import endpoints from "config/constants/api.endpoints";
 import apiClient from "infrastructure/api/server";
 import { signOutWithGoogle } from "infrastructure/auth/google.auth";
 import { clearQueue } from "infrastructure/offline/operation.queue";
-import { getTokens } from "infrastructure/security/tokens";
 
 const useGetUser = () => {
   const dispatch = useAppDispatch();
 
   const getUserInformation = async () => {
-    const { refreshToken } = await getTokens();
-    if (!refreshToken) return;
-
     try {
       const res = await apiClient<Partial<Collection>>(
         {

@@ -3,7 +3,6 @@ import { View, FlatList, StyleSheet, Alert } from "react-native";
 import { useAppSelector } from "application/store/hook";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import type { Inventory, Recipe as RecipeType } from "domain/entities/data/inventories";
-import { Visible } from "domain/enums/data/inventory/visible.enums";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootApp } from "domain/entities/navigation";
 import { thousandsSystem } from "shared/utils";
@@ -47,14 +46,6 @@ const Card: React.FC<{ recipe: RecipeType; onPress: () => void; onLongPress: () 
       </View>
     </StyledButton>
   );
-};
-
-// Mapping for visibility types
-const GET_TAB_NAME: { [key in Visible]: string } = {
-  [Visible.Both]: "RECETAS/PAQUETES",
-  [Visible.Restaurant]: "RECETAS",
-  [Visible.Store]: "PAQUETES",
-  [Visible.None]: "SIN VISIBILIDAD",
 };
 
 type RecipeProps = {
@@ -126,8 +117,6 @@ const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
     setGroups(data);
   }, [recipeGroup, inventory.id]);
 
-  const NAME = GET_TAB_NAME[inventory.visible];
-
   return (
     <Layout style={{ padding: 0 }}>
       {!!found.length && (
@@ -142,7 +131,7 @@ const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
       <View style={{ paddingHorizontal: 20, paddingVertical: 15, flex: 1 }}>
         <View style={{ flex: 1 }}>
           {!found.length && (
-            <StyledText color={colors.primary}>NO HAY {NAME} REGISTRADOS</StyledText>
+            <StyledText color={colors.primary}>NO HAY AGRUPACIONES REGISTRADOS</StyledText>
           )}
           {!!found.length && (
             <>
@@ -168,7 +157,7 @@ const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
                 }}
               />
               {!data.length && (
-                <StyledText color={colors.primary}>NO HAY {NAME} PARA LA BUSQUEDA</StyledText>
+                <StyledText color={colors.primary}>NO HAY AGRUPACIONES PARA LA BUSQUEDA</StyledText>
               )}
               {!!data.length && (
                 <>
@@ -221,7 +210,7 @@ const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
           onPress={() => {
             const found = stocks.filter((s) => s.inventoryID === inventory.id);
             if (!found.length) {
-              Alert.alert("OOPS!", `No hay stocks registrados para crear ${NAME}`, [], {
+              Alert.alert("OOPS!", `No hay stocks registrados para crear AGRUPACIONES`, [], {
                 cancelable: true,
               });
               return;
@@ -234,7 +223,7 @@ const Recipe: React.FC<RecipeProps> = ({ inventory, visualization }) => {
           }}
         >
           <StyledText center color="#FFFFFF">
-            Crear {NAME}
+            Crear agrupación
           </StyledText>
         </StyledButton>
       </View>

@@ -8,6 +8,7 @@ type DetailsType = {
 export type Movement = {
   id: string;
   inventory: DetailsType;
+  reason: string;
   stock: DetailsType & { unit?: string; currentValue: number };
   supplier: DetailsType | null;
   supplierValue: number;

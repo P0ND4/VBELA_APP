@@ -34,11 +34,13 @@ const TablePropsContext = createContext<TableProps>({});
 interface TableHeaderProps {
   data: (string | { text: string; onPress?: () => void; style?: StyleProp<TextStyle> })[];
   children?: React.ReactNode;
+  cellColor?: string;
 }
 
 interface TableBodyProps {
   onPressCompleteData?: boolean;
   data: (string | { text: string; onPress?: () => void; style?: StyleProp<TextStyle> })[];
+  cellColor?: string;
 }
 
 interface TableComponent extends React.FC<TableProps> {
@@ -118,7 +120,13 @@ const TableCell: React.FC<TableCellProps> = ({
   const onPress = typeof item === "object" ? item.onPress : undefined;
 
   const renderContent = (text: string, style: StyleProp<ViewStyle>, color?: string) => (
-    <StyledText smallParagraph style={style} color={color} numberOfLines={1} ellipsizeMode="tail">
+    <StyledText
+      smallParagraph
+      style={style}
+      color={color || colors.text}
+      numberOfLines={1}
+      ellipsizeMode="tail"
+    >
       {text}
     </StyledText>
   );
@@ -148,7 +156,7 @@ const TableCell: React.FC<TableCellProps> = ({
   );
 };
 // Componente Table.Header
-const TableHeader: React.FC<TableHeaderProps> = ({ data, children }) => {
+const TableHeader: React.FC<TableHeaderProps> = ({ data, children, cellColor }) => {
   const isInsideTable = useContext(TableContext);
   const isInsideHeader = useContext(TableHeaderContext);
   const tableProps = useContext(TablePropsContext);
@@ -165,7 +173,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({ data, children }) => {
             key={index}
             item={item}
             defaultStyle={[tableProps.headerStyle, ...defaultStyles(tableProps, colors.border)]}
-            color={colors.primary}
+            color={cellColor || colors.primary}
           />
         ))}
       </View>
@@ -175,7 +183,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({ data, children }) => {
 };
 
 // Componente Table.Body
-const TableBody: React.FC<TableBodyProps> = ({ data, onPressCompleteData }) => {
+const TableBody: React.FC<TableBodyProps> = ({ data, onPressCompleteData, cellColor }) => {
   const isInsideTable = useContext(TableContext);
   const isInsideHeader = useContext(TableHeaderContext);
   const tableProps = useContext(TablePropsContext);
@@ -191,6 +199,7 @@ const TableBody: React.FC<TableBodyProps> = ({ data, onPressCompleteData }) => {
         <TableCell
           key={index}
           item={item}
+          color={cellColor}
           defaultStyle={[tableProps.bodyStyle, ...defaultStyles(tableProps, colors.border)]}
           onPressCompleteData={onPressCompleteData}
         />

@@ -16,6 +16,7 @@ const createMovement = (
   date: number,
 ): Movement => ({
   id: random(10),
+  reason: "VENTA",
   supplier: null,
   supplierValue: 0,
   type: Type.Output,

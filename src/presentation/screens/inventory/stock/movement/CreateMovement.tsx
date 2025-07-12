@@ -27,6 +27,7 @@ import PickerFloorModal from "presentation/components/modal/PickerFloorModal";
 import SimpleCalendarModal from "presentation/components/modal/SimpleCalendarModal";
 import StyledText from "presentation/components/text/StyledText";
 import endpoints from "config/constants/api.endpoints";
+import StyledInput from "presentation/components/input/StyledInput";
 
 type CreateEntryProps = {
   navigation: StackNavigationProp<RootInventory>;
@@ -67,6 +68,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
   const { control, handleSubmit, setValue, watch, formState } = useForm<Movement>({
     defaultValues: {
       id: defaultValue?.id || random(10),
+      reason: defaultValue?.reason || type === TypeMovement.Entry ? "COMPRA" : "",
       type,
       inventory: defaultValue?.inventory || undefined,
       stock: defaultValue?.stock || undefined,
@@ -118,6 +120,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
   const isRequired = (value: unknown) => Boolean(value);
 
   const save = async (data: Movement) => {
+    data.reason = data.reason.trim();
     const stockSelected = stocks.find((stock) => stock.id === data.stock.id)!;
     batch(() => {
       dispatch(editStock({ ...stockSelected, currentValue: data.currentValue }));
@@ -133,6 +136,7 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
   };
 
   const update = async (data: Movement) => {
+    data.reason = data.reason.trim();
     dispatch(editMovement(data));
     navigation.pop();
     await apiClient({
@@ -224,6 +228,25 @@ const CreateMovement: React.FC<CreateEntryProps> = ({ navigation, route }) => {
             {formState.errors.date && (
               <StyledText color={colors.primary} verySmall>
                 La fecha de entrada es requerida
+              </StyledText>
+            )}
+            <Controller
+              name="reason"
+              control={control}
+              rules={{ required: true }}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <StyledInput
+                  placeholder="Motivo"
+                  maxLength={20}
+                  onChangeText={(value) => onChange(value.toUpperCase())}
+                  onBlur={onBlur}
+                  value={value}
+                />
+              )}
+            />
+            {formState.errors.reason && (
+              <StyledText color={colors.primary} verySmall>
+                El nombre es requerido
               </StyledText>
             )}
             <StyledButton style={styles.row} onPress={() => setOptional(!optional)}>

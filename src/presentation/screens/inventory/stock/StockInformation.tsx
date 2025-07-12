@@ -73,6 +73,7 @@ const StockInformation: React.FC<StockInformationProps> = ({ navigation, route }
 
             const movement: Movement = {
               id: random(10),
+              reason: "COMPRA",
               type: Type.Entry,
               inventory: { id: inventory!.id, name: inventory!.name },
               stock: {

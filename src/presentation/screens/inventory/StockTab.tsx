@@ -7,7 +7,6 @@ import {
 } from "domain/entities/navigation/root.inventory.entity";
 import { useAppSelector } from "application/store/hook";
 import { Inventory } from "domain/entities/data/inventories";
-import { Visible } from "domain/enums/data/inventory/visible.enums";
 import Stock from "./stock/Stock";
 import Recipe from "./recipe/Recipe";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
@@ -15,15 +14,9 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTheme } from "@react-navigation/native";
 import Portion from "./portion/Portion";
 import Shortage from "./shortage/Shortage";
+import Movement from "./movement/Movement";
 
 const Tab = createMaterialTopTabNavigator();
-
-const GET_TAB_NAME: { [key in Visible]: string } = {
-  [Visible.Both]: "RECETAS/PAQUETES",
-  [Visible.Restaurant]: "RECETAS",
-  [Visible.Store]: "PAQUETES",
-  [Visible.None]: "SIN VISIBILIDAD",
-};
 
 type StockTabProps = {
   navigation: StackNavigationProp<RootInventory>;
@@ -70,19 +63,24 @@ const StockTab: React.FC<StockTabProps> = ({ navigation, route }) => {
   }, [data, visualization]);
 
   return (
-    <Tab.Navigator>
+    <Tab.Navigator screenOptions={{ tabBarLabelStyle: { fontSize: 12 } }}>
       <Tab.Screen name="STOCK">
         {(props) => <Stock {...props} inventoryID={inventory.id} visualization={visualization} />}
       </Tab.Screen>
       <Tab.Screen name="PORCIONES">
         {(props) => <Portion {...props} inventoryID={inventory.id} visualization={visualization} />}
       </Tab.Screen>
-      <Tab.Screen name={GET_TAB_NAME[data.visible]}>
+      <Tab.Screen name="AGRUPACIÓN">
         {(props) => <Recipe {...props} inventory={data} visualization={visualization} />}
       </Tab.Screen>
       <Tab.Screen name="PEDIDOS">
         {(props) => (
           <Shortage {...props} inventoryID={inventory.id} visualization={visualization} />
+        )}
+      </Tab.Screen>
+      <Tab.Screen name="MOVIMIENTO">
+        {(props) => (
+          <Movement {...props} inventoryID={inventory.id} visualization={visualization} />
         )}
       </Tab.Screen>
     </Tab.Navigator>

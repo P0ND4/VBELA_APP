@@ -2,11 +2,11 @@ import { ConfigContext, ExpoConfig } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "VBELA",
+  name: "Fappture",
   description:
-    "VBELA es una aplicación móvil desarrollada con React Native y Expo. Este proyecto está diseñado para proporcionar una experiencia de usuario fluida y eficiente en dispositivos Android.",
+    "Fappture es una aplicación móvil desarrollada con React Native y Expo. Este proyecto está diseñado para proporcionar una experiencia de usuario fluida y eficiente en dispositivos Android.",
   slug: "vbela",
-  version: process.env.EXPO_PUBLIC_VERSION ?? "1.0.0",
+  version: process.env.EXPO_PUBLIC_VERSION ?? "4.0.0-beta.1",
   platforms: ["android"],
   orientation: "portrait",
   icon: "./src/presentation/assets/logo.png",
@@ -32,6 +32,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: "com.app.vbela",
+    versionCode: 67,
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json",
     adaptiveIcon: {
       foregroundImage: "./src/presentation/assets/adaptive-icon.png",
