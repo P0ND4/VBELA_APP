@@ -92,7 +92,8 @@ const SalesBalancing: React.FC<AppNavigationProp> = ({ navigation }) => {
   const netSale = total - discounts;
   const currentIncome = netSale - tax - tip;
   const netCash = currentIncome - egress + initialBasis;
-  const cash = netCash - paymentMethods.reduce((a, b) => a + b.value, 0);
+  const cash =
+    netCash - paymentMethods.filter((p) => p.id !== "default").reduce((a, b) => a + b.value, 0);
 
   return (
     <>

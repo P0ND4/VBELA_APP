@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { TouchableOpacity, FlatList } from "react-native";
+import { TouchableOpacity, FlatList, StyleSheet, View } from "react-native";
 import { useAppSelector } from "application/store/hook";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import { PaymentMethods as PaymentMethodsType } from "domain/entities/data/settings/payment.methods.entity";
@@ -19,11 +19,15 @@ const Card: React.FC<{ item: PaymentMethodsType }> = ({ item }) => {
 
   return (
     <StyledButton
-      style={{ flexDirection: "row", alignItems: "center" }}
+      style={styles.row}
+      disable={item.id === "default"}
       onPress={() => navigation.navigate("CreatePaymentMethod", { defaultValue: item })}
     >
-      <Ionicons name={item.icon} size={32} color={colors.text} />
-      <StyledText style={{ marginLeft: 10 }}>{item.name}</StyledText>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <Ionicons name={item.icon} size={32} color={colors.text} />
+        <StyledText style={{ marginLeft: 10 }}>{item.name}</StyledText>
+      </View>
+      {item.id === "default" && <StyledText color={colors.primary}>(POR DEFECTO)</StyledText>}
     </StyledButton>
   );
 };
@@ -60,5 +64,13 @@ const PaymentMethods: React.FC<SettingNavigationProp> = ({ navigation }) => {
     </Layout>
   );
 };
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+});
 
 export default PaymentMethods;
