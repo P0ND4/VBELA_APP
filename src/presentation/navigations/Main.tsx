@@ -19,21 +19,24 @@ import StatisticsRoutes from "./routes/StatisticsRoutes";
 import CollaboratorRoutes from "./routes/CollaboratorRoutes";
 import SupplierRoutes from "./routes/SupplierRoutes";
 import EconomyRoutes from "./routes/EconomyRoutes";
-import App from "./App";
 import WifiConnection from "./modal/WifiConnection";
+import Banned from "presentation/screens/Banned";
+import Maintenance from "presentation/screens/Maintenance";
+import UpdateAvailable from "presentation/screens/UpdateAvailable";
+import App from "./App";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
 const Main: React.FC = () => {
   const session = useAppSelector((state) => state.session);
 
-  // Procesa la información fuera de conexión
+  // Processes information offline
   useBackgroundSync();
 
-  // Procesa la información acerca del usuario
+  // Processes information about the user
   useUser();
 
-  // Escucha si ya no existen token (access_token, refresh_token)
+  // Check if the token does not exist (access_token, refresh_token)
   useTokenValidator();
 
   return (
@@ -58,6 +61,9 @@ const Main: React.FC = () => {
             <Stack.Screen name="CollaboratorRoutes" component={CollaboratorRoutes} />
             <Stack.Screen name="SupplierRoutes" component={SupplierRoutes} />
             <Stack.Screen name="EconomyRoutes" component={EconomyRoutes} />
+            <Stack.Screen name="Banned" component={Banned} />
+            <Stack.Screen name="Maintenance" component={Maintenance} />
+            <Stack.Screen name="UpdateAvailable" component={UpdateAvailable} />
           </>
         )}
       </Stack.Navigator>

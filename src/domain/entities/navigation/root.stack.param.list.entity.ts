@@ -14,4 +14,7 @@ export type RootStackParamList = {
   SupplierRoutes: undefined;
   EconomyRoutes: undefined;
   App: undefined;
+  Banned: undefined;
+  Maintenance: undefined;
+  UpdateAvailable: { version: string; url: string };
 };
