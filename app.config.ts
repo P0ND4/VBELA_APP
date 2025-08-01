@@ -15,7 +15,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     backgroundColor: "#FFFFFF",
   },
   updates: {
+    url: "https://u.expo.dev/0dd838a6-95db-4883-9a7f-7e6112496cd0",
     fallbackToCacheTimeout: 0,
+  },
+  runtimeVersion: {
+    policy: "appVersion",
   },
   assetBundlePatterns: ["**/*"],
   ios: {
@@ -30,7 +34,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: "com.app.vbela",
-    versionCode: 68,
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json",
     adaptiveIcon: {
       foregroundImage: "./src/presentation/assets/adaptive-icon.png",
