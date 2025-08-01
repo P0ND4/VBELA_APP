@@ -13,7 +13,8 @@ import {
 import StyledText from "../text/StyledText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAppSelector } from "application/store/hook";
-import { Status } from "application/appState/internet/status.slice";
+import { InternetStatus } from "application/appState/internet/status.slice";
+import { ServerStatus } from "application/appState/server/status.slice";
 
 type Icons = keyof typeof Ionicons.glyphMap;
 
@@ -79,14 +80,15 @@ type StyledButtonProps = {
 
 const Layout: React.FC<StyledButtonProps> = ({ style, children }) => {
   const internetStatus = useAppSelector((state) => state.internetStatus);
+  const serverStatus = useAppSelector((state) => state.serverStatus);
   const { colors, dark } = useTheme();
 
   return (
     <>
-      {internetStatus.status === Status.Offline && (
+      {internetStatus.status === InternetStatus.Offline && (
         <Bar name="Sin conexión" backgroundColor="#FF8000" icon="wifi-outline" />
       )}
-      {internetStatus.status === Status.Syncing && (
+      {internetStatus.status === InternetStatus.Syncing && (
         <Bar
           name="Sincronizando"
           backgroundColor={colors.primary}
@@ -95,9 +97,19 @@ const Layout: React.FC<StyledButtonProps> = ({ style, children }) => {
           color="#FFFFFF"
         />
       )}
-      {internetStatus.status === Status.Synchronized && (
+      {internetStatus.status === InternetStatus.Synchronized && (
         <Bar name="Sincronizado" backgroundColor="#1ED565" icon="checkbox-outline" />
       )}
+      {serverStatus.status === ServerStatus.Unreachable &&
+        internetStatus.status === InternetStatus.Online && (
+          <Bar
+            name="Tratando de conectar al servidor"
+            backgroundColor={colors.primary}
+            color="#FFFFFF"
+            icon="sync-outline"
+            iconAnimation={true}
+          />
+        )}
       <SafeAreaView style={[{ flex: 1, padding: 20 }, style]}>
         <StatusBar style={dark ? "light" : "dark"} backgroundColor={colors.notification} />
         {children}

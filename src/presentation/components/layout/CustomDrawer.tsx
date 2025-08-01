@@ -34,15 +34,6 @@ const CustomDrawer: React.FC<DrawerContentComponentProps> = (props) => {
 
   const navigation = useNavigation<NavigationProps>();
 
-  // const shareApp = async () => {
-  //   try {
-  //     const message = `Descarga VBELA, la app para gestionar alquileres, restaurantes y ventas. Descárgala en la Play Store https://play.google.com/store/apps/details?id=com.app.vbela. ¡Controla tu negocio ahora!`;
-  //     await Share.share({ message });
-  //   } catch (e: any) {
-  //     console.log(e.message);
-  //   }
-  // };
-
   const condition = useMemo(() => stateController.status === Status.Active, [stateController]);
 
   return (

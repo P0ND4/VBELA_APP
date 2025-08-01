@@ -1,25 +1,34 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { readQueueOperation, deleteQueueOperation, Queue } from "./operation.queue";
-import { useAppDispatch } from "application/store/hook";
-import { change, Status } from "application/appState/internet/status.slice";
+import { useAppDispatch, useAppSelector } from "application/store/hook";
+import { change, InternetStatus } from "application/appState/internet/status.slice";
 import axios, { AxiosError } from "axios";
 import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
 import { getTokens } from "infrastructure/security/tokens";
 import { baseURL } from "infrastructure/api/route.constants";
+import { ServerStatus } from "application/appState/server/status.slice";
+import { useWebSocketContext } from "infrastructure/context/SocketContext";
 
 const SYNC_DELAY = 2000;
 const NETWORK_CHECK_DELAY = 1000;
 
 export const useSync = () => {
+  const serverStatus = useAppSelector((state) => state.serverStatus);
+  const { socket } = useWebSocketContext();
+
+  const triggeredRef = useRef(false);
   const abortControllerRef = useRef(new AbortController());
+
   const [isSyncing, setIsSyncing] = useState(false);
+  const [triggerChangeAll, setTriggerChangeAll] = useState(false);
+
   const dispatch = useAppDispatch();
 
   const processQueueItem = async (queueItem: Queue) => {
     const state = await NetInfo.fetch();
     if (!state.isConnected) throw new Error("NO_INTERNET");
 
-    const token = (await getTokens()).accessToken;
+    const token = (await getTokens())?.accessToken;
 
     try {
       await axios({
@@ -47,11 +56,11 @@ export const useSync = () => {
   const sync = useCallback(async (): Promise<void> => {
     const queues = await readQueueOperation();
     if (isSyncing || queues.length === 0) {
-      dispatch(change(Status.Online));
+      dispatch(change(InternetStatus.Online));
       return;
     }
 
-    dispatch(change(Status.Syncing));
+    dispatch(change(InternetStatus.Syncing));
     setIsSyncing(true);
 
     try {
@@ -69,29 +78,37 @@ export const useSync = () => {
       }
     } finally {
       setIsSyncing(false);
-      dispatch(change(Status.Online));
+      dispatch(change(InternetStatus.Online));
+      setTriggerChangeAll(true);
     }
   }, [isSyncing, dispatch]);
 
   useEffect(() => {
+    if (!triggerChangeAll) return;
+
+    const timeoutId = setTimeout(() => {
+      if (socket) socket.emit("change-all");
+      setTriggerChangeAll(false);
+    }, 5000);
+
+    return () => clearTimeout(timeoutId);
+  }, [triggerChangeAll, socket]);
+
+  useEffect(() => {
     let syncTimeout: NodeJS.Timeout;
-    let isMounted = true;
     let lastState: boolean | null = null;
 
     const handleNetworkChange = (state: NetInfoState) => {
-      if (!isMounted) return;
-
       if (lastState === state.isConnected) return;
       lastState = state.isConnected;
 
       clearTimeout(syncTimeout);
 
       syncTimeout = setTimeout(() => {
-        if (!isMounted) return;
-
-        if (state.isConnected) {
-          if (!isSyncing) sync();
-        } else dispatch(change(Status.Offline));
+        if (state.isConnected && !isSyncing && !triggeredRef.current) {
+          triggeredRef.current = true;
+          sync().finally(() => (triggeredRef.current = false));
+        } else dispatch(change(InternetStatus.Offline));
       }, NETWORK_CHECK_DELAY);
     };
 
@@ -99,13 +116,19 @@ export const useSync = () => {
     NetInfo.fetch().then(handleNetworkChange);
 
     return () => {
-      isMounted = false;
       clearTimeout(syncTimeout);
       unsubscribeNetInfo();
       abortControllerRef.current.abort();
       abortControllerRef.current = new AbortController();
     };
   }, [isSyncing, sync, dispatch]);
+
+  useEffect(() => {
+    if (serverStatus.status === ServerStatus.Online && !isSyncing && !triggeredRef.current) {
+      triggeredRef.current = true;
+      sync().finally(() => (triggeredRef.current = false));
+    }
+  }, [serverStatus.status, isSyncing, sync]);
 
   return { sync, isSyncing };
 };

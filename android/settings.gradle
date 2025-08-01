@@ -1,4 +1,4 @@
-rootProject.name = 'VBELA'
+rootProject.name = 'Fappture'
 
 dependencyResolutionManagement {
   versionCatalogs {

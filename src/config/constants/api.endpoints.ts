@@ -1,4 +1,10 @@
 export const endpoints = {
+  health: {
+    get: () => "/api/v1/health",
+  },
+  config: {
+    get: () => "/api/v1/config",
+  },
   auth: {
     serverTime: () => "/api/v1/user/auth/server-time",
     login: () => "/api/v1/user/auth/login",

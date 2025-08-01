@@ -1,6 +1,6 @@
 import React from "react";
 import { AppNavigationProp } from "domain/entities/navigation";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Share } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import { Permissions } from "domain/entities/data";
 import StyledText from "presentation/components/text/StyledText";
@@ -100,6 +100,14 @@ const Setting: React.FC<AppNavigationProp> = ({ navigation }) => {
         onPress={async () =>
           await WebBrowser.openBrowserAsync("https://chat.whatsapp.com/G0Hiyr2ZcsG5wzY2Txo5Qm")
         }
+      />
+      <Card
+        icon="share-social-outline"
+        left="Compartir Fappture con un amigo"
+        onPress={async () => {
+          const message = `Descarga FAPPTURE, la app para gestionar alquileres, restaurantes y ventas. Descárgala en la Play Store https://play.google.com/store/apps/details?id=com.app.vbela. ¡Controla tu negocio ahora!`;
+          await Share.share({ message });
+        }}
       />
       <Card
         icon="document-outline"

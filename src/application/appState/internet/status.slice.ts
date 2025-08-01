@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-export enum Status {
+export enum InternetStatus {
   Online = "En línea",
   Offline = "Sin conexión",
   Syncing = "Sincronizando",
@@ -8,18 +8,18 @@ export enum Status {
 }
 
 interface InternetState {
-  status: Status;
+  status: InternetStatus;
 }
 
 const initialState: InternetState = {
-  status: Status.Online,
+  status: InternetStatus.Online,
 };
 
 export const internetSlice = createSlice({
   name: "internet-status",
   initialState,
   reducers: {
-    change: (state, action: PayloadAction<Status>) => {
+    change: (state, action: PayloadAction<InternetStatus>) => {
       state.status = action.payload;
     },
     clean: (state) => {

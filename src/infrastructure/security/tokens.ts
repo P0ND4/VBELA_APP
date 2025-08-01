@@ -102,19 +102,25 @@ export const getValidTokens = async () => {
   }
 };
 
-export const getTokens = async (): Promise<AccessRefresh> => {
-  let tokens;
-  try {
-    tokens = await getValidTokens();
-    if (!tokens) throw new Error("TOKEN_EXPIRED");
-  } catch {
+let refreshingPromise: Promise<AccessRefresh> | null = null;
+
+export const getTokens = async (): Promise<AccessRefresh | null> => {
+  let tokens = await getValidTokens();
+
+  if (!tokens) {
     notify();
-    throw new Error("Sesión expirada. Redirigiendo a login...");
+    throw new Error("NO_TOKENS");
   }
 
   if (tokens.needsRefresh) {
+    if (!refreshingPromise) {
+      refreshingPromise = refreshToken(tokens.refreshToken).finally(() => {
+        refreshingPromise = null;
+      });
+    }
+
     try {
-      return await refreshToken(tokens.refreshToken);
+      return await refreshingPromise;
     } catch (refreshError: any) {
       const status = refreshError?.response?.status;
       if ([400, 401, 403, 404, 422].includes(status || 0)) {
@@ -122,7 +128,7 @@ export const getTokens = async (): Promise<AccessRefresh> => {
         throw new Error("Sesión expirada. Redirigiendo a login...");
       }
 
-      throw new Error("NO_CONNECTION");
+      return null;
     }
   }
 

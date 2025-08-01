@@ -1,3 +1,5 @@
+import { RouteProp } from "@react-navigation/native";
+
 export type RootStackParamList = {
   AuthRoutes: undefined;
   ReservationRoutes: undefined;
@@ -18,3 +20,8 @@ export type RootStackParamList = {
   Maintenance: undefined;
   UpdateAvailable: { version: string; url: string };
 };
+
+export type StackParamListRouteProp<RouteName extends keyof RootStackParamList> = RouteProp<
+  RootStackParamList,
+  RouteName
+>;

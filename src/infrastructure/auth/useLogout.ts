@@ -10,7 +10,7 @@ export const useLogout = () => {
   const dispatch = useAppDispatch();
 
   const logout = async (callback: () => void = () => {}) => {
-    const { accessToken, refreshToken } = await getTokens();
+    const { accessToken, refreshToken } = (await getTokens()) || {};
 
     await clearQueue();
     await signOutWithGoogle();

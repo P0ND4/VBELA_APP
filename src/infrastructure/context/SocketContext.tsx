@@ -3,16 +3,18 @@ import { Socket, io } from "socket.io-client";
 import { getTokens } from "infrastructure/security/tokens";
 import { Permissions } from "domain/entities/data";
 import { useLogout } from "infrastructure/auth/useLogout";
-import useGetUser from "infrastructure/hooks/useGetUser";
 import { useAppSelector } from "application/store/hook";
+import useGetUser from "infrastructure/hooks/useGetUser";
 
 export type WebSocketEventMap = {
+  "change-all": () => void;
   "update-change": (data: string) => void;
   logout: (data: string) => void;
   PONG: (data: { timestamp: number }) => void;
 };
 
 export type WebSocketEmitMap = {
+  "change-all": () => void;
   "update-change": ({ entity }: { entity: string }) => void;
   "account-updated": ({ identifier }: { identifier: string }) => void;
   PING: () => void;
@@ -85,9 +87,9 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const connect = async () => {
-    if (socketRef.current?.connected) return;
+    if (typeof socketRef.current?.connected === "boolean") return;
 
-    const { accessToken } = await getTokens();
+    const { accessToken } = (await getTokens()) || {};
 
     const newSocket = io(process.env.EXPO_PUBLIC_WEBSOCKET as string, {
       auth: { token: accessToken },
@@ -105,8 +107,17 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       newSocket.emit("validate", { logout: sessionRef.current });
     });
 
-    newSocket.on("disconnect", () => {
+    newSocket.on("disconnect", async (reason) => {
       setIsConnected(false);
+
+      if (reason === "io server disconnect") {
+        await disconnect();
+        await connect();
+      }
+    });
+
+    newSocket.on("change-all", async () => {
+      await getUserInformation();
     });
 
     newSocket.on("update-change", async () => {

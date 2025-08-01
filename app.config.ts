@@ -6,15 +6,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   description:
     "Fappture es una aplicación móvil desarrollada con React Native y Expo. Este proyecto está diseñado para proporcionar una experiencia de usuario fluida y eficiente en dispositivos Android.",
   slug: "vbela",
-  version: process.env.EXPO_PUBLIC_VERSION ?? "4.0.0-beta.2",
+  version: process.env.EXPO_PUBLIC_VERSION ?? "4.0.0",
   platforms: ["android"],
   orientation: "portrait",
   icon: "./src/presentation/assets/logo.png",
   userInterfaceStyle: "automatic",
   splash: {
-    image: "./src/presentation/assets/splash.png",
-    resizeMode: "contain",
-    backgroundColor: "#1D1E1F",
+    backgroundColor: "#FFFFFF",
   },
   updates: {
     fallbackToCacheTimeout: 0,
@@ -43,6 +41,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: "./src/presentation/assets/favicon.png",
   },
   plugins: [
+    "expo-font",
     ["@react-native-google-signin/google-signin"],
     [
       "expo-notifications",

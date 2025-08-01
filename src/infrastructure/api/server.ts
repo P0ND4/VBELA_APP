@@ -21,7 +21,7 @@ const apiClient = async <T>(
   options: { synchronization?: boolean; token?: boolean } = { synchronization: true, token: true },
 ): Promise<ApiResponse<T>> => {
   let accessToken;
-  if (options.token) accessToken = (await getTokens()).accessToken;
+  if (options.token) accessToken = (await getTokens())?.accessToken;
 
   if (options.synchronization) {
     const currentQueue = await readQueueOperation();
